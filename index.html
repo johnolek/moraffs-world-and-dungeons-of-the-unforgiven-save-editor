@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Moraff Save Editor</title>
+<style>
+  :root {
+    --bg: #1a1822;
+    --panel: #25222f;
+    --panel-2: #2e2a3a;
+    --ink: #ece8f5;
+    --muted: #9a93b3;
+    --accent: #ffb454;
+    --accent-dim: #b5793a;
+    --good: #7bd88f;
+    --warn: #ffb454;
+    --line: #3a3548;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  header {
+    padding: 28px 32px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  header h1 { margin: 0 0 4px; font-size: 22px; color: var(--accent); letter-spacing: 0.5px; }
+  header p  { margin: 0; color: var(--muted); font-size: 13px; }
+  main { padding: 24px 32px 48px; max-width: 880px; }
+
+  .drop-zone {
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s ease;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent); color: var(--ink);
+  }
+  .drop-zone strong { color: var(--accent); }
+  .drop-zone input { display: none; }
+
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .filename { color: var(--muted); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+  .game-badge {
+    background: var(--panel); color: var(--accent); border: 1px solid var(--accent-dim);
+    padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+
+  button {
+    background: var(--accent); color: #1a1822; border: none;
+    padding: 9px 16px; border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer;
+    transition: background 0.1s;
+  }
+  button:hover { background: var(--accent-dim); color: var(--ink); }
+  button.ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--line);
+  }
+  button.ghost:hover { color: var(--ink); border-color: var(--accent); }
+
+  .section {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 22px 22px; margin-bottom: 18px;
+  }
+  .section h2 {
+    margin: 0 0 14px; font-size: 15px; color: var(--accent);
+    letter-spacing: 0.4px; text-transform: uppercase;
+  }
+  .section p.section-note {
+    margin: -8px 0 14px; font-size: 12px; color: var(--muted);
+  }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 18px; }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label {
+    font-size: 12px; color: var(--muted);
+    display: flex; justify-content: space-between;
+  }
+  .field label .offset {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; opacity: 0.6;
+  }
+  .field input, .field select {
+    background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 5px;
+    padding: 7px 9px; font: inherit;
+  }
+  .field input:focus, .field select:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .field small.hint { color: var(--muted); font-size: 11px; }
+
+  .row {
+    display: grid; grid-template-columns: 24px 1fr 110px;
+    align-items: center; gap: 10px; padding: 3px 0;
+  }
+  .row input[type="checkbox"] { accent-color: var(--accent); }
+  .row .name { font-size: 13px; cursor: pointer; color: var(--ink); }
+  .row .level {
+    background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 5px;
+    padding: 5px 7px; font: inherit; font-size: 12px; width: 100%;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--good); color: #102014;
+    padding: 10px 16px; border-radius: 6px; font-weight: 600;
+    opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.warn { background: var(--warn); color: #1a1822; }
+
+  .game-picker {
+    display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .game-picker button { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+  .game-picker button:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="appTitle">Moraff Save Editor</h1>
+  <p>Edit Moraff's World character files in your browser. Nothing is uploaded — all editing happens locally.</p>
+</header>
+
+<main>
+  <label class="drop-zone" id="dropZone">
+    <div><strong>Click to choose</strong> or drag a save file here</div>
+    <input type="file" id="fileInput">
+  </label>
+
+  <div id="picker" class="hidden">
+    <p>Couldn't identify this file by size. Pick a game:</p>
+    <div class="game-picker" id="pickerButtons"></div>
+  </div>
+
+  <div id="editor" class="hidden">
+    <div class="toolbar">
+      <button id="downloadBtn">Download edited file</button>
+      <button class="ghost" id="resetBtn">Discard changes</button>
+      <button class="ghost" id="closeBtn">Load different file</button>
+      <span class="game-badge" id="gameBadge"></span>
+      <span class="filename" id="filename"></span>
+    </div>
+    <div id="sections"></div>
+  </div>
+</main>
+
+<div class="toast" id="toast">Saved!</div>
+
+<script>
+"use strict";
+
+// ============================================================================
+// PART 1 — GAME SCHEMAS
+//
+// Each game is a plain data object describing its save file layout. To add
+// support for an additional game, append a new entry to GAMES below — no
+// engine code changes are required.
+//
+// Schema shape:
+//   {
+//     id, displayName,
+//     fileSize,           // bytes; used for auto-detection
+//     sections: [...],    // ordered list of UI sections
+//     onSave?: (view, buffer) => void   // optional pre-download hook
+//                                       // (e.g. recompute checksum)
+//   }
+//
+// Each section is { title, note?, fields: [...] }.
+// Each field is one of the following kinds:
+//
+//   { kind: "string",      offset, length, label }
+//   { kind: "uint8" | "int8" | "uint16" | "uint32"
+//                          offset, label, hint? }
+//   { kind: "float32" | "float64",
+//                          offset, label, hint? }
+//   { kind: "enum_uint8",  offset, label, choices: [name, name, ...] }
+//      // dropdown where the choice's array index is the stored byte
+//   { kind: "select_uint8", offset, label, choices: [{ value, label }, ...] }
+//      // dropdown with explicit value mapping (for sparse codes
+//      // like 0/1/100 for none/preparation/permanent)
+//   { kind: "owned_list",  ownedOffset, levelOffset, count, names }
+//      // a list of items with a "do I own it?" checkbox + enchant level
+//   { kind: "checkbox_list", offset, names }
+//      // a list of byte-booleans (one byte per item, nonzero = on)
+//   { kind: "counter_list", offset, itemKind, names, stride }
+//      // a list of same-typed counters laid out at a constant stride
+//      // (e.g. 6 stones at 4-byte stride)
+//   { kind: "spell_list", offset, label }
+//      // a Moraff spell list: 4 sub-categories (permanent/preparation/
+//      // wizard/priest) × 45 u8 slot counts, laid out contiguously.
+// ============================================================================
+
+const MORAFFS_WORLD_WEAPONS = [
+  "Fists", "Stick", "Club", "Mace",
+  "Knife", "Short Sword", "Long Sword", "Great Sword",
+];
+
+const MORAFFS_WORLD_ARMOR = [
+  "Skin", "Leather", "Chain", "Scale",
+  "Breast Plate", "Field Plate", "Titanium", "Slot 8 (glitch)",
+];
+
+const MORAFFS_WORLD_STONES = [
+  "Copper", "Silver", "Ivory", "Gold", "Platinum", "Jewel",
+];
+
+// Spell names for Moraff's World, by sub-category. The in-game spell browser
+// shows 3 columns × 10 rows = 30 named spells per sub-category; the trailing
+// 15 bytes per sub-category are unused padding (per the original docs).
+// Slots are 1-indexed in the UI, 0-indexed in the array.
+const MW_SPELL_NAMES = {
+  permanent: [
+    "Enchant Weapon Level 1", "Extra Health Point", "Write Scroll to Level 3",
+    "Enchant Armor Level 1", "Extra 3 Health Points", "Enchant Wand Level 3",
+    "Enchant Weapon Level 2", "Extra 5 Health Points", "Enchant Ring Level 1",
+    "Enchant Armor Level 2", "Anti-Magic Ring Level 1", "Write Scroll - Level 10",
+    "Enchant Weapon Level 3", "Enchant Ring Level 2", "Body Armor Level 1",
+    "Enchant Armor Level 3", "Anti-Magic Ring Level 2", "Enchant Wand Level 8",
+    "Enchant Ring Level 3", "Anti-Magic Ring Level 3", "Body Armor Level 2",
+    "Enchant Weapon Level 4", "Enchant Armor Level 4", "Enchant Wand Any Level",
+    "Permanent Feather", "Anti-Magic Ring Level 5", "Extra 25 Health Points",
+    "Permanent Invisibility", "Youth", "Body Armor Level 4",
+  ],
+  preparation: [
+    "Enchant Armor Level 1", "Enchant Weapon Level 1", "Little Cure",
+    "Enchant Weapon Level 2", "Relocate", "Detect Level",
+    "Cure", "Enchant Armor Level 2", "Strength",
+    "Enchant Weapon Level 3", "Agility", "Descend",
+    "Ascend", "Detect Position", "Feather",
+    "Big Cure", "Double Ascend", "Enchant Weapon Level 4",
+    "Invisibility", "Enchant Armor Level 3", "Fast Move",
+    "Super Strength", "Enchant Weapon Level 5", "Major Descend",
+    "Super Agility", "Cure Poison", "Heal All Wounds",
+    "Major Ascend", "Cure Disease", "Enchant Armor Level 4",
+  ],
+  wizard: [
+    "Sleep", "Magic Zap", "Minor Protection",
+    "Slow Enemies", "Strength", "Minor Shock",
+    "Lightning", "Magic Missile", "Speed",
+    "Go Away", "Relocate", "Power Weapon I",
+    "Minor Explosion", "Protection", "Resist Poison",
+    "Magic Zot", "Shock", "Anti-Cold",
+    "Explosion", "Pass Wall", "Anti-Fire",
+    "Magic Bolt", "Major Protection", "Power Weapon II",
+    "Hold Monster", "Drain Monster", "Major Shock",
+    "Major Explosion", "Autokill", "Power Weapon III",
+  ],
+  priest: [
+    "Sleep", "Minor Protection", "Strength",
+    "Resist Poison", "Speed", "Fast Cure",
+    "Resist Disease", "Relocate", "Slow Enemies",
+    "Anti-Cold", "Go Away", "Power Weapon I",
+    "Protection", "Anti-Fire", "Pass Wall",
+    "Resist Level Drain", "Drain Monster", "Fast Big Cure",
+    "Hold Monster", "Power Weapon II", "Shock",
+    "Major Protection", "Explosion", "Magic Zot",
+    "Autokill", "Power Weapon III", "Strength and Speed",
+    "Ultra Protection", "Fast Heal", "Major Shock",
+  ],
+};
+
+const MORAFFS_WORLD = {
+  id: "moraffsWorld",
+  displayName: "Moraff's World",
+  fileSize: 2344,
+  sections: [
+    {
+      title: "Identity",
+      fields: [
+        { kind: "string", offset: 0x0000, length: 32, label: "Character Name" },
+      ],
+    },
+    {
+      title: "Level & Experience",
+      fields: [
+        { kind: "int16",   offset: 0x07a8, label: "Player Level" },
+        { kind: "float64", offset: 0x0858, label: "Experience Points",
+          hint: "Setting this to roughly 5.3 × 10¹⁵ and then resting at an inn levels the character to 100." },
+      ],
+    },
+    {
+      title: "Vitals",
+      fields: [
+        { kind: "uint16",  offset: 0x0031, label: "Current HP" },
+        { kind: "uint16",  offset: 0x0033, label: "Maximum HP" },
+        { kind: "float32", offset: 0x0035, label: "Current SP" },
+        { kind: "float32", offset: 0x0039, label: "Maximum SP" },
+        { kind: "uint16",  offset: 0x003f, label: "Naked Weight" },
+        { kind: "uint16",  offset: 0x0041, label: "Loaded Weight",
+          hint: "Game recalculates this on play." },
+      ],
+    },
+    {
+      title: "Stats",
+      fields: [
+        { kind: "uint16", offset: 0x0812, label: "Strength" },
+        { kind: "uint16", offset: 0x0814, label: "Intelligence" },
+        { kind: "uint16", offset: 0x0816, label: "Wisdom" },
+        { kind: "uint16", offset: 0x0818, label: "Constitution" },
+        { kind: "uint16", offset: 0x081a, label: "Agility / Dexterity" },
+        { kind: "uint16", offset: 0x081c, label: "Luck" },
+      ],
+    },
+    {
+      title: "Money",
+      fields: [
+        { kind: "uint32", offset: 0x0454, label: "Jewels in Pocket" },
+        { kind: "uint32", offset: 0x0458, label: "Jewels in Bank" },
+      ],
+    },
+    {
+      title: "Stones",
+      note: "Stone currencies — 4-byte counters starting at 0x045C.",
+      fields: [
+        { kind: "counter_list", offset: 0x045c, stride: 4,
+          itemKind: "uint32", names: MORAFFS_WORLD_STONES },
+      ],
+    },
+    {
+      title: "Position",
+      note: "Warp the character by changing Current Floor and the X/Y coordinates. Module = 0 for the main game.",
+      fields: [
+        { kind: "enum_uint8", offset: 0x07aa, label: "Facing Direction",
+          choices: ["North", "South", "West", "East"] },
+        { kind: "uint16", offset: 0x07ac, label: "Position X" },
+        { kind: "uint16", offset: 0x07ae, label: "Position Y" },
+        { kind: "uint16", offset: 0x07b0, label: "Current Floor" },
+        { kind: "uint16", offset: 0x07b2, label: "Module" },
+      ],
+    },
+    {
+      title: "Weapons",
+      fields: [
+        { kind: "owned_list", ownedOffset: 0x0081, levelOffset: 0x008e,
+          count: 8, names: MORAFFS_WORLD_WEAPONS },
+        { kind: "enum_uint8", offset: 0x009b, label: "Currently Equipped",
+          choices: MORAFFS_WORLD_WEAPONS },
+      ],
+    },
+    {
+      title: "Armor",
+      fields: [
+        { kind: "owned_list", ownedOffset: 0x00b0, levelOffset: 0x00b8,
+          count: 8, names: MORAFFS_WORLD_ARMOR },
+        { kind: "enum_uint8", offset: 0x00c0, label: "Currently Equipped",
+          choices: MORAFFS_WORLD_ARMOR },
+      ],
+    },
+    {
+      title: "Vitamin Pills",
+      note: "Each pill bumps one stat by +2 and another by −2 when consumed.",
+      fields: [
+        { kind: "int8", offset: 0x015d, label: "Orange  (+2 STR / −2 LCK)" },
+        { kind: "int8", offset: 0x015e, label: "Green   (+2 INT / −2 AGI)" },
+        { kind: "int8", offset: 0x015f, label: "Blue    (+2 WIS / −2 CON)" },
+        { kind: "int8", offset: 0x0160, label: "Red     (+2 CON / −2 WIS)" },
+        { kind: "int8", offset: 0x0161, label: "White   (+2 AGI / −2 INT)" },
+        { kind: "int8", offset: 0x0162, label: "Yellow  (+2 LCK / −2 STR)" },
+      ],
+    },
+    {
+      title: "Afflictions",
+      note: "Active disease or poison. The timer counts down each turn until it damages the affected stat. Set to 0 or −1 to clear the affliction entirely.",
+      fields: [
+        { kind: "int16", offset: 0x07ca, label: "Disease Timer",
+          hint: "Damages Constitution when it hits zero." },
+        { kind: "int16", offset: 0x07cc, label: "Poison Timer",
+          hint: "Damages Strength when it hits zero." },
+      ],
+    },
+    {
+      title: "Special Items",
+      fields: [
+        { kind: "uint16", offset: 0x080e, label: "Potions of Healing" },
+        { kind: "int16",  offset: 0x0810, label: "Stones of Teleportation",
+          hint: "Signed 16-bit. The game can show negative values if the upstream byte at 0x0811 was non-zero — setting any value here cleans both bytes." },
+        { kind: "uint8",  offset: 0x07c8, label: "Holy Hand Grenades" },
+        { kind: "uint8",  offset: 0x07c9, label: "Stones of Seeing" },
+        { kind: "int8",   offset: 0x07fe, label: "Floor Sloshers" },
+        { kind: "select_uint8", offset: 0x07d3, label: "Feather",
+          choices: [
+            { value: 0,   label: "None" },
+            { value: 1,   label: "Preparation (temporary)" },
+            { value: 100, label: "Permanent" },
+          ] },
+        { kind: "select_uint8", offset: 0x07d5, label: "Invisibility",
+          choices: [
+            { value: 0,   label: "None" },
+            { value: 1,   label: "Preparation (temporary)" },
+            { value: 100, label: "Permanent" },
+          ] },
+        { kind: "select_uint8", offset: 0x07d4, label: "Fast Move",
+          choices: [
+            { value: 0,   label: "None" },
+            { value: 1,   label: "Preparation (temporary)" },
+            { value: 100, label: "Permanent" },
+          ] },
+      ],
+    },
+    {
+      title: "Rings & Worn Items",
+      note: "Body Armor stores a level (the in-game UI displays it as 'LEVEL N'). The rings and gauntlets store a bonus value (displayed as 'PLUS N').",
+      fields: [
+        { kind: "uint8", offset: 0x07c6, label: "Rings of Regeneration" },
+        { kind: "uint8", offset: 0x07d0, label: "Body Armor Level" },
+        { kind: "uint8", offset: 0x07d1, label: "Ring of Protection (+N)" },
+        { kind: "uint8", offset: 0x07d2, label: "Anti-Magic Ring (+N)" },
+        { kind: "int8",  offset: 0x0846, label: "Gauntlets (+N)" },
+      ],
+    },
+    {
+      title: "Trapdoor Keys",
+      note: "One key per floor (10, 20, … 200). Each key allows use of trapdoors leading to that floor.",
+      fields: [
+        { kind: "checkbox_list", offset: 0x081f,
+          names: Array.from({ length: 20 }, (_, i) => `Floor ${(i + 1) * 10}`) },
+      ],
+    },
+    {
+      title: "Spellbook",
+      note: "Spells the character has learned and can cast directly using spell points. Each entry is binary — check a box to grant the spell, uncheck to remove. Layout mirrors the in-game spell browser (3 columns × 10 rows per sub-category).",
+      fields: [{ kind: "spell_list", offset: 0x0177, binary: true }],
+    },
+    {
+      title: "Scrolls",
+      fields: [{ kind: "spell_list", offset: 0x022b }],
+    },
+    {
+      title: "Wands",
+      fields: [{ kind: "spell_list", offset: 0x02df }],
+    },
+    {
+      title: "Papers",
+      fields: [{ kind: "spell_list", offset: 0x0393 }],
+    },
+  ],
+};
+
+const GAMES = [MORAFFS_WORLD];
+
+// ============================================================================
+// PART 2 — ENGINE: game-agnostic readers, writers, and UI builders.
+// Modifying anything below should be unnecessary when adding a new game —
+// only when adding a new *field kind*.
+// ============================================================================
+
+// ---- Binary readers/writers (all little-endian) ----------------------------
+
+function readNullTerminatedString(view, offset, maxLength) {
+  const bytes = [];
+  for (let i = 0; i < maxLength; i++) {
+    const b = view.getUint8(offset + i);
+    if (b === 0) break;
+    bytes.push(b);
+  }
+  return new TextDecoder("ascii").decode(new Uint8Array(bytes));
+}
+
+function writeFixedLengthString(view, offset, maxLength, value) {
+  const encoded = new TextEncoder().encode(value).slice(0, maxLength);
+  for (let i = 0; i < maxLength; i++) {
+    view.setUint8(offset + i, i < encoded.length ? encoded[i] : 0);
+  }
+}
+
+const READERS = {
+  uint8:   (view, off) => view.getUint8(off),
+  int8:    (view, off) => view.getInt8(off),
+  uint16:  (view, off) => view.getUint16(off, true),
+  int16:   (view, off) => view.getInt16(off, true),
+  uint32:  (view, off) => view.getUint32(off, true),
+  int32:   (view, off) => view.getInt32(off, true),
+  float32: (view, off) => view.getFloat32(off, true),
+  float64: (view, off) => view.getFloat64(off, true),
+  string:  (view, off, field) => readNullTerminatedString(view, off, field.length),
+  bit:     (view, off) => view.getUint8(off) !== 0,
+};
+
+const WRITERS = {
+  uint8:   (view, off, v) => view.setUint8(off, v & 0xff),
+  int8:    (view, off, v) => view.setInt8(off, v),
+  uint16:  (view, off, v) => view.setUint16(off, v >>> 0, true),
+  int16:   (view, off, v) => view.setInt16(off, v, true),
+  uint32:  (view, off, v) => view.setUint32(off, v >>> 0, true),
+  int32:   (view, off, v) => view.setInt32(off, v, true),
+  float32: (view, off, v) => view.setFloat32(off, v, true),
+  float64: (view, off, v) => view.setFloat64(off, v, true),
+  string:  (view, off, v, field) => writeFixedLengthString(view, off, field.length, v),
+  bit:     (view, off, v) => view.setUint8(off, v ? 1 : 0),
+};
+
+const INT_RANGES = {
+  uint8:  [0, 255],
+  int8:   [-128, 127],
+  uint16: [0, 65535],
+  int16:  [-32768, 32767],
+  uint32: [0, 4294967295],
+  int32:  [-2147483648, 2147483647],
+};
+
+const SCALAR_KINDS = new Set([
+  "string", "uint8", "int8", "uint16", "int16",
+  "uint32", "int32", "float32", "float64",
+]);
+
+// Human-readable shorthand for each binary type, used in field captions.
+const KIND_LABELS = {
+  uint8: "u8", int8: "i8",
+  uint16: "u16", int16: "i16",
+  uint32: "u32", int32: "i32",
+  float32: "f32", float64: "f64",
+  string: "string",
+};
+
+const FLOAT_RANGES = {
+  float32: "±3.4 × 10³⁸ (any decimal)",
+  float64: "±1.8 × 10³⁰⁸ (any decimal)",
+};
+
+const NUM_FMT = new Intl.NumberFormat("en-US");
+
+// Returns a short caption like "u16 · 0 to 65,535" for any field kind.
+function describeFieldType(field) {
+  if (field.kind === "string") return `string · max ${field.length} chars`;
+  const range = INT_RANGES[field.kind];
+  if (range) {
+    return `${KIND_LABELS[field.kind]} · ${NUM_FMT.format(range[0])} to ${NUM_FMT.format(range[1])}`;
+  }
+  if (FLOAT_RANGES[field.kind]) return `${KIND_LABELS[field.kind]} · ${FLOAT_RANGES[field.kind]}`;
+  return KIND_LABELS[field.kind] || field.kind;
+}
+
+// ---- Field builders --------------------------------------------------------
+
+function hex(offset) { return "0x" + offset.toString(16).padStart(4, "0"); }
+
+function makeLabel(text, offsetText) {
+  const label = document.createElement("label");
+  label.innerHTML = `<span>${text}</span><span class="offset">${offsetText}</span>`;
+  return label;
+}
+
+function buildScalarField(field) {
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  wrap.appendChild(makeLabel(field.label, hex(field.offset)));
+
+  const input = document.createElement("input");
+  const isString = field.kind === "string";
+  input.type = isString ? "text" : "number";
+
+  if (isString) input.maxLength = field.length;
+  if (INT_RANGES[field.kind]) { [input.min, input.max] = INT_RANGES[field.kind]; }
+  if (field.kind === "float32" || field.kind === "float64") input.step = "any";
+
+  input.value = READERS[field.kind](state.view, field.offset, field);
+  input.addEventListener("input", () => {
+    const raw = isString ? input.value : Number(input.value);
+    if (!isString && Number.isNaN(raw)) return;
+    WRITERS[field.kind](state.view, field.offset, raw, field);
+  });
+  // Number inputs increment on scroll-wheel by default, which silently
+  // mutated values that users had already typed. Block scroll while the
+  // input is focused (still allowing page scroll otherwise).
+  if (!isString) {
+    input.addEventListener("wheel", e => {
+      if (document.activeElement === input) e.preventDefault();
+    }, { passive: false });
+  }
+  wrap.appendChild(input);
+
+  wrap.appendChild(makeCaption(describeFieldType(field), field.hint));
+  return wrap;
+}
+
+// Caption shown beneath an input: "u16 · 0 to 65,535 · custom hint here".
+// Both parts are optional — at least one will always render for scalars.
+function makeCaption(typeDesc, extraHint) {
+  const small = document.createElement("small");
+  small.className = "hint";
+  small.textContent = extraHint ? `${typeDesc} · ${extraHint}` : typeDesc;
+  return small;
+}
+
+function buildEnumField(field) {
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  wrap.appendChild(makeLabel(field.label, hex(field.offset)));
+
+  const select = document.createElement("select");
+  field.choices.forEach((name, idx) => {
+    const opt = document.createElement("option");
+    opt.value = idx;
+    opt.textContent = `${idx} — ${name}`;
+    select.appendChild(opt);
+  });
+  select.value = READERS.uint8(state.view, field.offset);
+  select.addEventListener("change", () => {
+    WRITERS.uint8(state.view, field.offset, Number(select.value));
+  });
+  wrap.appendChild(select);
+  wrap.appendChild(makeCaption("u8 · choose by index", field.hint));
+  return wrap;
+}
+
+// Dropdown for sparse value codes (e.g. 0 / 1 / 100). If the file contains
+// a value that isn't in the choices list, a "Custom (N)" option is added so
+// nothing gets silently rewritten.
+function buildSelectField(field) {
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  wrap.appendChild(makeLabel(field.label, hex(field.offset)));
+
+  const select = document.createElement("select");
+  field.choices.forEach(({ value, label }) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = `${label} (${value})`;
+    select.appendChild(opt);
+  });
+  const current = READERS.uint8(state.view, field.offset);
+  if (!field.choices.some(c => c.value === current)) {
+    const opt = document.createElement("option");
+    opt.value = current;
+    opt.textContent = `Custom (${current})`;
+    select.appendChild(opt);
+  }
+  select.value = current;
+  select.addEventListener("change", () => {
+    WRITERS.uint8(state.view, field.offset, Number(select.value));
+  });
+  wrap.appendChild(select);
+  wrap.appendChild(makeCaption("u8 · 0 to 255", field.hint));
+  return wrap;
+}
+
+function buildOwnedListField(field) {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:grid;gap:6px;";
+
+  // Header row labels the right-hand input column so it's obvious those
+  // numbers are enchantment levels (not item counts).
+  const header = document.createElement("div");
+  header.className = "row";
+  header.style.cssText = "font-size:11px;color:var(--muted);padding:0;";
+  const colOwned = document.createElement("span");
+  colOwned.textContent = "Owned";
+  const colName  = document.createElement("span");
+  colName.textContent  = "Item";
+  const colLvl   = document.createElement("span");
+  colLvl.textContent   = "Enchant Level";
+  header.append(colOwned, colName, colLvl);
+  wrap.appendChild(header);
+
+  for (let i = 0; i < field.count; i++) {
+    const ownedOff = field.ownedOffset + i;
+    const levelOff = field.levelOffset + i;
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = READERS.bit(state.view, ownedOff);
+    cb.addEventListener("change", () => WRITERS.bit(state.view, ownedOff, cb.checked));
+
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = field.names[i];
+    name.addEventListener("click", () => cb.click());
+
+    const lvl = document.createElement("input");
+    lvl.type = "number";
+    lvl.min = -128; lvl.max = 127;
+    lvl.className = "level";
+    lvl.title = `Enchant level (${hex(levelOff)})`;
+    lvl.value = READERS.int8(state.view, levelOff);
+    lvl.addEventListener("input", () => {
+      const v = Number(lvl.value);
+      if (!Number.isNaN(v)) WRITERS.int8(state.view, levelOff, v);
+    });
+    lvl.addEventListener("wheel", e => {
+      if (document.activeElement === lvl) e.preventDefault();
+    }, { passive: false });
+
+    row.append(cb, name, lvl);
+    wrap.appendChild(row);
+  }
+
+  // Type/range caption, matching the format used by scalar fields.
+  wrap.appendChild(makeCaption(
+    "Enchant level: " + describeFieldType({ kind: "int8" }),
+  ));
+  return wrap;
+}
+
+function buildCheckboxListField(field) {
+  // One byte per entry, nonzero = on. Layout is a multi-column grid so a
+  // 20-entry list (trapdoor keys) doesn't run off the page. A small toolbar
+  // above the grid lets the player toggle every checkbox at once.
+  const wrap = document.createElement("div");
+
+  const actions = document.createElement("div");
+  actions.style.cssText = "display:flex;gap:8px;margin-bottom:10px;";
+
+  const checkboxes = [];
+
+  const makeBulkButton = (label, value) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = label;
+    btn.className = "ghost";
+    btn.style.cssText = "padding:5px 12px;font-size:12px;";
+    btn.addEventListener("click", () => {
+      checkboxes.forEach(({ cb, off }) => {
+        WRITERS.bit(state.view, off, value);
+        cb.checked = value;
+      });
+    });
+    return btn;
+  };
+  actions.append(makeBulkButton("Enable all", true), makeBulkButton("Clear all", false));
+  wrap.appendChild(actions);
+
+  const grid = document.createElement("div");
+  grid.style.cssText =
+    "display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));" +
+    "gap:4px 14px;";
+
+  field.names.forEach((name, i) => {
+    const byteOffset = field.offset + i;
+    const id = "cbl_" + byteOffset;
+
+    const label = document.createElement("label");
+    label.htmlFor = id;
+    label.style.cssText = "display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.id = id;
+    cb.style.accentColor = "var(--accent)";
+    cb.checked = READERS.bit(state.view, byteOffset);
+    cb.addEventListener("change", () => WRITERS.bit(state.view, byteOffset, cb.checked));
+
+    const text = document.createElement("span");
+    text.textContent = name;
+
+    label.append(cb, text);
+    grid.appendChild(label);
+    checkboxes.push({ cb, off: byteOffset });
+  });
+
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+// Renders a Moraff spell list as 4 stacked sub-category sections
+// (Permanent / Preparation / Wizard / Priest). Each sub-category lays out
+// its 30 named spells in a 3-column × 10-row grid matching the in-game
+// spell browser. The 15 trailing unused padding slots per sub-category
+// stay hidden by default; a toggle reveals them for advanced editing.
+//
+// `field.binary === true` switches each spell from a numeric count input
+// to a checkbox (spellbook semantics: you know the spell or you don't).
+function buildSpellListField(field) {
+  const SUBCATS = [
+    { key: "permanent",   title: "Permanent"   },
+    { key: "preparation", title: "Preparation" },
+    { key: "wizard",      title: "Wizard"      },
+    { key: "priest",      title: "Priest"      },
+  ];
+  const SLOTS_PER_SUBCAT = 45;
+  const NAMED_SLOTS = 30;
+  const isBinary = field.binary === true;
+
+  const wrap = document.createElement("div");
+
+  const toggleBar = document.createElement("div");
+  toggleBar.style.cssText =
+    "display:flex;align-items:center;gap:8px;margin-bottom:12px;" +
+    "font-size:12px;color:var(--muted);";
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.id = "spellShow_" + field.offset;
+  const toggleLabel = document.createElement("label");
+  toggleLabel.htmlFor = toggle.id;
+  toggleLabel.textContent = "Show unused padding slots (advanced)";
+  toggleBar.append(toggle, toggleLabel);
+  wrap.appendChild(toggleBar);
+
+  const paddingGrids = [];
+
+  SUBCATS.forEach((subcat, subIdx) => {
+    const heading = document.createElement("div");
+    heading.textContent = subcat.title;
+    heading.style.cssText =
+      "font-size:12px;color:var(--accent);letter-spacing:0.5px;" +
+      "text-transform:uppercase;margin:14px 0 8px;border-bottom:1px solid var(--line);" +
+      "padding-bottom:4px;";
+    wrap.appendChild(heading);
+
+    const names = MW_SPELL_NAMES[subcat.key] || [];
+
+    const namedGrid = makeSpellGrid();
+    wrap.appendChild(namedGrid);
+    for (let slot = 0; slot < NAMED_SLOTS; slot++) {
+      const off = field.offset + subIdx * SLOTS_PER_SUBCAT + slot;
+      namedGrid.appendChild(makeSpellCell(names[slot], off, isBinary, true));
+    }
+
+    const paddingGrid = makeSpellGrid();
+    paddingGrid.style.marginTop = "6px";
+    wrap.appendChild(paddingGrid);
+    for (let slot = NAMED_SLOTS; slot < SLOTS_PER_SUBCAT; slot++) {
+      const off = field.offset + subIdx * SLOTS_PER_SUBCAT + slot;
+      paddingGrid.appendChild(makeSpellCell(`Slot ${slot + 1} (unused)`, off, isBinary, false));
+    }
+    paddingGrids.push(paddingGrid);
+  });
+
+  const caption = document.createElement("small");
+  caption.className = "hint";
+  caption.style.cssText = "display:block;margin-top:12px;";
+  caption.textContent = isBinary
+    ? "Spellbook entries are boolean — a checked box means the player knows the spell and can cast it for SP."
+    : "Each value is a count of that consumable. i8 · 0 to 127 (the game treats these as signed bytes).";
+  wrap.appendChild(caption);
+
+  const applyVisibility = () => {
+    const visible = toggle.checked;
+    paddingGrids.forEach(g => { g.style.display = visible ? "" : "none"; });
+  };
+  toggle.addEventListener("change", applyVisibility);
+  applyVisibility();
+
+  return wrap;
+}
+
+function makeSpellGrid() {
+  const grid = document.createElement("div");
+  grid.style.cssText =
+    "display:grid;grid-template-columns:repeat(3, 1fr);" +
+    "gap:5px 18px;";
+  return grid;
+}
+
+function makeSpellCell(name, off, isBinary, isNamed) {
+  const current = READERS.uint8(state.view, off);
+  const nameColor = isNamed ? "var(--ink)" : "var(--muted)";
+
+  if (isBinary) {
+    const cell = document.createElement("label");
+    cell.style.cssText =
+      "display:grid;grid-template-columns:20px 1fr;gap:8px;" +
+      "align-items:center;cursor:pointer;";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.style.accentColor = "var(--accent)";
+    cb.checked = current !== 0;
+    cb.title = `0x${off.toString(16).padStart(4, "0")}`;
+    cb.addEventListener("change", () =>
+      WRITERS.uint8(state.view, off, cb.checked ? 1 : 0));
+    const nameEl = document.createElement("span");
+    nameEl.textContent = name;
+    nameEl.style.cssText = `font-size:13px;color:${nameColor};`;
+    cell.append(cb, nameEl);
+    return cell;
+  }
+
+  const cell = document.createElement("div");
+  cell.style.cssText =
+    "display:grid;grid-template-columns:1fr 56px;gap:8px;align-items:center;";
+  const nameEl = document.createElement("span");
+  nameEl.textContent = name;
+  nameEl.style.cssText = `font-size:13px;color:${nameColor};`;
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = 0; input.max = 127;
+  input.value = current;
+  input.title = `0x${off.toString(16).padStart(4, "0")}`;
+  input.style.cssText =
+    "background:var(--panel-2);color:var(--ink);" +
+    "border:1px solid var(--line);border-radius:4px;" +
+    "padding:4px 7px;font:inherit;font-size:12px;width:100%;";
+  input.addEventListener("input", () => {
+    const v = Number(input.value);
+    if (!Number.isNaN(v)) WRITERS.uint8(state.view, off, v);
+  });
+  input.addEventListener("wheel", e => {
+    if (document.activeElement === input) e.preventDefault();
+  }, { passive: false });
+  cell.append(nameEl, input);
+  return cell;
+}
+
+function buildCounterListField(field) {
+  // Render as a grid of scalar inputs at offset + i * stride.
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  const stride = field.stride;
+  const itemKind = field.itemKind;
+  field.names.forEach((name, i) => {
+    grid.appendChild(buildScalarField({
+      kind: itemKind, offset: field.offset + i * stride, label: name,
+    }));
+  });
+  return grid;
+}
+
+function buildField(field) {
+  if (SCALAR_KINDS.has(field.kind))   return buildScalarField(field);
+  if (field.kind === "enum_uint8")    return buildEnumField(field);
+  if (field.kind === "select_uint8")  return buildSelectField(field);
+  if (field.kind === "owned_list")    return buildOwnedListField(field);
+  if (field.kind === "checkbox_list") return buildCheckboxListField(field);
+  if (field.kind === "counter_list")  return buildCounterListField(field);
+  if (field.kind === "spell_list")    return buildSpellListField(field);
+  throw new Error("Unknown field kind: " + field.kind);
+}
+
+// Fields that span the full width of a section get rendered outside the grid
+// so their own internal layout reads cleanly.
+const WIDE_KINDS = new Set(["owned_list", "checkbox_list", "counter_list", "spell_list"]);
+
+function buildSection(section) {
+  const el = document.createElement("section");
+  el.className = "section";
+
+  const h = document.createElement("h2");
+  h.textContent = section.title;
+  el.appendChild(h);
+
+  if (section.note) {
+    const p = document.createElement("p");
+    p.className = "section-note";
+    p.textContent = section.note;
+    el.appendChild(p);
+  }
+
+  let grid = null;
+  for (const f of section.fields) {
+    if (WIDE_KINDS.has(f.kind)) {
+      grid = null;
+      el.appendChild(buildField(f));
+    } else {
+      if (!grid) {
+        grid = document.createElement("div");
+        grid.className = "grid";
+        el.appendChild(grid);
+      }
+      grid.appendChild(buildField(f));
+    }
+  }
+  return el;
+}
+
+// ---- State, load, save, render --------------------------------------------
+
+const state = {
+  buffer: null,     // live ArrayBuffer being edited
+  pristine: null,   // copy of original file for "Discard changes"
+  view: null,
+  filename: null,
+  game: null,       // active schema from GAMES
+};
+
+function pickGameByFileSize(size) {
+  return GAMES.find(g => g.fileSize === size) || null;
+}
+
+function renderEditor() {
+  const container = document.getElementById("sections");
+  container.innerHTML = "";
+  state.game.sections.forEach(s => container.appendChild(buildSection(s)));
+  document.getElementById("filename").textContent = state.filename;
+  document.getElementById("gameBadge").textContent = state.game.displayName;
+  document.getElementById("editor").classList.remove("hidden");
+  document.getElementById("dropZone").classList.add("hidden");
+  document.getElementById("picker").classList.add("hidden");
+}
+
+function loadFileWithGame(file, game) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.buffer = reader.result;
+    state.pristine = state.buffer.slice(0);
+    state.view = new DataView(state.buffer);
+    state.filename = file.name;
+    state.game = game;
+    renderEditor();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function handleIncomingFile(file) {
+  const game = pickGameByFileSize(file.size);
+  if (game) {
+    loadFileWithGame(file, game);
+  } else {
+    showGamePicker(file);
+  }
+}
+
+function showGamePicker(file) {
+  const picker = document.getElementById("picker");
+  const buttons = document.getElementById("pickerButtons");
+  buttons.innerHTML = "";
+  GAMES.forEach(g => {
+    const b = document.createElement("button");
+    b.textContent = `${g.displayName} (${g.fileSize}b)`;
+    b.addEventListener("click", () => loadFileWithGame(file, g));
+    buttons.appendChild(b);
+  });
+  document.getElementById("dropZone").classList.add("hidden");
+  picker.classList.remove("hidden");
+}
+
+function downloadEdited() {
+  if (state.game.onSave) state.game.onSave(state.view, state.buffer);
+  const blob = new Blob([state.buffer], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "edited-" + state.filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded " + a.download);
+}
+
+function discardChanges() {
+  state.buffer = state.pristine.slice(0);
+  state.view = new DataView(state.buffer);
+  renderEditor();
+  showToast("Changes discarded");
+}
+
+function unloadFile() {
+  state.buffer = state.pristine = state.view = state.game = null;
+  state.filename = null;
+  document.getElementById("editor").classList.add("hidden");
+  document.getElementById("picker").classList.add("hidden");
+  document.getElementById("dropZone").classList.remove("hidden");
+  document.getElementById("fileInput").value = "";
+}
+
+function showToast(message, kind) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.toggle("warn", kind === "warn");
+  t.classList.add("show");
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+// ---- Event wiring ---------------------------------------------------------
+
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+
+fileInput.addEventListener("change", () => {
+  if (fileInput.files[0]) handleIncomingFile(fileInput.files[0]);
+});
+["dragenter", "dragover"].forEach(evt =>
+  dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add("dragover"); })
+);
+["dragleave", "drop"].forEach(evt =>
+  dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove("dragover"); })
+);
+dropZone.addEventListener("drop", e => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleIncomingFile(file);
+});
+
+document.getElementById("downloadBtn").addEventListener("click", downloadEdited);
+document.getElementById("resetBtn").addEventListener("click", discardChanges);
+document.getElementById("closeBtn").addEventListener("click", unloadFile);
+</script>
+</body>
+</html>
