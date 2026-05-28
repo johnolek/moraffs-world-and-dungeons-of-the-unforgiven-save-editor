@@ -321,31 +321,31 @@ const MORAFFS_WORLD = {
     {
       title: "Vitals",
       fields: [
-        { kind: "uint16",  offset: 0x0031, label: "Current HP" },
-        { kind: "uint16",  offset: 0x0033, label: "Maximum HP" },
+        { kind: "int16",  offset: 0x0031, label: "Current HP" },
+        { kind: "int16",  offset: 0x0033, label: "Maximum HP" },
         { kind: "float32", offset: 0x0035, label: "Current SP" },
         { kind: "float32", offset: 0x0039, label: "Maximum SP" },
-        { kind: "uint16",  offset: 0x003f, label: "Naked Weight" },
-        { kind: "uint16",  offset: 0x0041, label: "Loaded Weight",
+        { kind: "int16",  offset: 0x003f, label: "Naked Weight" },
+        { kind: "int16",  offset: 0x0041, label: "Loaded Weight",
           hint: "Game recalculates this on play." },
       ],
     },
     {
       title: "Stats",
       fields: [
-        { kind: "uint16", offset: 0x0812, label: "Strength" },
-        { kind: "uint16", offset: 0x0814, label: "Intelligence" },
-        { kind: "uint16", offset: 0x0816, label: "Wisdom" },
-        { kind: "uint16", offset: 0x0818, label: "Constitution" },
-        { kind: "uint16", offset: 0x081a, label: "Agility / Dexterity" },
-        { kind: "uint16", offset: 0x081c, label: "Luck" },
+        { kind: "int16", offset: 0x0812, label: "Strength" },
+        { kind: "int16", offset: 0x0814, label: "Intelligence" },
+        { kind: "int16", offset: 0x0816, label: "Wisdom" },
+        { kind: "int16", offset: 0x0818, label: "Constitution" },
+        { kind: "int16", offset: 0x081a, label: "Agility / Dexterity" },
+        { kind: "int16", offset: 0x081c, label: "Luck" },
       ],
     },
     {
       title: "Money",
       fields: [
-        { kind: "uint32", offset: 0x0454, label: "Jewels in Pocket" },
-        { kind: "uint32", offset: 0x0458, label: "Jewels in Bank" },
+        { kind: "int32", offset: 0x0454, label: "Jewels in Pocket" },
+        { kind: "int32", offset: 0x0458, label: "Jewels in Bank" },
       ],
     },
     {
@@ -353,7 +353,7 @@ const MORAFFS_WORLD = {
       note: "Stone currencies — 4-byte counters starting at 0x045C.",
       fields: [
         { kind: "counter_list", offset: 0x045c, stride: 4,
-          itemKind: "uint32", names: MORAFFS_WORLD_STONES },
+          itemKind: "int32", names: MORAFFS_WORLD_STONES },
       ],
     },
     {
@@ -362,10 +362,10 @@ const MORAFFS_WORLD = {
       fields: [
         { kind: "enum_uint8", offset: 0x07aa, label: "Facing Direction",
           choices: ["North", "South", "West", "East"] },
-        { kind: "uint16", offset: 0x07ac, label: "Position X" },
-        { kind: "uint16", offset: 0x07ae, label: "Position Y" },
-        { kind: "uint16", offset: 0x07b0, label: "Current Floor" },
-        { kind: "uint16", offset: 0x07b2, label: "Module" },
+        { kind: "int16", offset: 0x07ac, label: "Position X" },
+        { kind: "int16", offset: 0x07ae, label: "Position Y" },
+        { kind: "int16", offset: 0x07b0, label: "Current Floor" },
+        { kind: "int16", offset: 0x07b2, label: "Module" },
       ],
     },
     {
@@ -411,7 +411,7 @@ const MORAFFS_WORLD = {
     {
       title: "Special Items",
       fields: [
-        { kind: "uint16", offset: 0x080e, label: "Potions of Healing" },
+        { kind: "int16", offset: 0x080e, label: "Potions of Healing" },
         { kind: "int16",  offset: 0x0810, label: "Stones of Teleportation",
           hint: "Signed 16-bit. The game can show negative values if the upstream byte at 0x0811 was non-zero — setting any value here cleans both bytes." },
         { kind: "uint8",  offset: 0x07c8, label: "Holy Hand Grenades" },
@@ -863,7 +863,7 @@ function buildSpellListField(field) {
   caption.style.cssText = "display:block;margin-top:12px;";
   caption.textContent = isBinary
     ? "Spellbook entries are boolean — a checked box means the player knows the spell and can cast it for SP."
-    : "Each value is a count of that consumable. i8 · 0 to 127 (the game treats these as signed bytes).";
+    : "Each value is a count of that consumable. u8 · 0 to 255.";
   wrap.appendChild(caption);
 
   const applyVisibility = () => {
@@ -915,7 +915,7 @@ function makeSpellCell(name, off, isBinary, isNamed) {
   nameEl.style.cssText = `font-size:13px;color:${nameColor};`;
   const input = document.createElement("input");
   input.type = "number";
-  input.min = 0; input.max = 127;
+  input.min = 0; input.max = 255;
   input.value = current;
   input.title = `0x${off.toString(16).padStart(4, "0")}`;
   input.style.cssText =
