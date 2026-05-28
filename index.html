@@ -5,16 +5,18 @@
 <title>Moraff Save Editor</title>
 <style>
   :root {
-    --bg: #1a1822;
-    --panel: #25222f;
-    --panel-2: #2e2a3a;
-    --ink: #ece8f5;
-    --muted: #9a93b3;
-    --accent: #ffb454;
-    --accent-dim: #b5793a;
-    --good: #7bd88f;
-    --warn: #ffb454;
-    --line: #3a3548;
+    --bg: #0c0c18;
+    --panel: #161628;
+    --panel-2: #1f1f36;
+    --ink: #f4f4fa;
+    --muted: #8c92b4;
+    --accent: #ffd040;       /* MW menu yellow */
+    --accent-dim: #c89820;
+    --mw-green: #5cff7a;     /* MW spell list green */
+    --mw-cyan:  #6cd8ff;     /* MW stat cyan */
+    --good: #5cff7a;
+    --warn: #ffd040;
+    --line: #353560;
   }
   * { box-sizing: border-box; }
   body {
@@ -25,12 +27,17 @@
     min-height: 100vh;
   }
   header {
-    padding: 28px 32px 16px;
+    padding: 28px 0 16px;
     border-bottom: 1px solid var(--line);
+  }
+  .header-inner {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 32px;
   }
   header h1 { margin: 0 0 4px; font-size: 22px; color: var(--accent); letter-spacing: 0.5px; }
   header p  { margin: 0; color: var(--muted); font-size: 13px; }
-  main { padding: 24px 32px 48px; max-width: 880px; }
+  main { padding: 24px 32px 48px; max-width: 880px; margin: 0 auto; }
 
   .drop-zone {
     display: block;
@@ -95,10 +102,26 @@
     border: 1px solid var(--line); border-radius: 5px;
     padding: 7px 9px; font: inherit;
   }
-  .field input:focus, .field select:focus {
-    outline: none; border-color: var(--accent);
+  .field small.hint { color: var(--mw-cyan); opacity: 0.75; font-size: 11px; }
+
+  /* Animated rainbow halo on focused fields — a wink at MW/DotU's selection
+     highlights. Pure box-shadow so it overlays cleanly regardless of the
+     input's own border styling. */
+  @keyframes rainbow-border {
+    0%   { box-shadow: 0 0 0 2px #ff5050; }
+    16%  { box-shadow: 0 0 0 2px #ffaa00; }
+    33%  { box-shadow: 0 0 0 2px #fff050; }
+    50%  { box-shadow: 0 0 0 2px #5cff7a; }
+    66%  { box-shadow: 0 0 0 2px #6cd8ff; }
+    83%  { box-shadow: 0 0 0 2px #c060ff; }
+    100% { box-shadow: 0 0 0 2px #ff5050; }
   }
-  .field small.hint { color: var(--muted); font-size: 11px; }
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  select:focus {
+    outline: none;
+    animation: rainbow-border 2.5s linear infinite;
+  }
 
   .row {
     display: grid; grid-template-columns: 24px 1fr 110px;
@@ -132,8 +155,10 @@
 </head>
 <body>
 <header>
-  <h1 id="appTitle">Moraff Save Editor</h1>
-  <p>Edit Moraff's World character files in your browser. Nothing is uploaded — all editing happens locally.</p>
+  <div class="header-inner">
+    <h1 id="appTitle">Moraff Save Editor</h1>
+    <p>Edit Moraff's World character files in your browser. Nothing is uploaded — all editing happens locally.</p>
+  </div>
 </header>
 
 <main>
@@ -809,7 +834,7 @@ function buildSpellListField(field) {
     const heading = document.createElement("div");
     heading.textContent = subcat.title;
     heading.style.cssText =
-      "font-size:12px;color:var(--accent);letter-spacing:0.5px;" +
+      "font-size:12px;color:var(--mw-green);letter-spacing:0.5px;" +
       "text-transform:uppercase;margin:14px 0 8px;border-bottom:1px solid var(--line);" +
       "padding-bottom:4px;";
     wrap.appendChild(heading);
@@ -1036,7 +1061,7 @@ function downloadEdited() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "edited-" + state.filename;
+  a.download = state.filename;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
   showToast("Downloaded " + a.download);
