@@ -18,9 +18,9 @@ everything.
 
 ### Moraff's World
 
-- **Identity** — character name
+- **Identity** — character name, race, gender, class
 - **Level & Experience** — player level, experience points
-- **Vitals** — current/max HP, current/max SP, naked/loaded weight
+- **Vitals** — current/max HP, current/max SP, height, naked/loaded weight
 - **Stats** — strength, intelligence, wisdom, constitution, agility, luck
 - **Money** — jewels in pocket, jewels in bank
 - **Stones** — copper, silver, ivory, gold, platinum, jewel

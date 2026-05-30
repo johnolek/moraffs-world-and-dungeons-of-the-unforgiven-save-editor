@@ -300,6 +300,18 @@ const MORAFFS_WORLD_STONES = [
   "Copper", "Silver", "Ivory", "Gold", "Platinum", "Jewel",
 ];
 
+// Race/class lists per the game's own ROLL.TXT. The classes match DotU's, but
+// the races are MW's own (DotU uses Humanoid/Ape/Childman/…). The byte layout
+// is identical to DotU: race @0x28, gender @0x29, class @0x2a — confirmed by
+// diffing real save files (e.g. MONKY → class 2 = Monk, fighters → class 0).
+const MORAFFS_WORLD_RACES = [
+  "Human", "Elf", "Dwarf", "Hobbit", "Gnome", "Ogre", "Sprite", "Imp",
+];
+
+const MORAFFS_WORLD_CLASSES = [
+  "Fighter", "Worshipper", "Monk", "Wizard", "Priest", "Sage", "Mage",
+];
+
 // Spell names for Moraff's World, by sub-category. The in-game spell browser
 // shows 3 columns × 10 rows = 30 named spells per sub-category; the trailing
 // 15 bytes per sub-category are unused padding (per the original docs).
@@ -364,6 +376,9 @@ const MORAFFS_WORLD = {
       title: "Identity",
       fields: [
         { kind: "string", offset: 0x0000, length: 32, label: "Character Name" },
+        { kind: "enum_uint8", offset: 0x0028, label: "Race",   choices: MORAFFS_WORLD_RACES   },
+        { kind: "enum_uint8", offset: 0x0029, label: "Gender", choices: ["Male", "Female"] },
+        { kind: "enum_uint8", offset: 0x002a, label: "Class",  choices: MORAFFS_WORLD_CLASSES },
       ],
     },
     {
@@ -381,6 +396,8 @@ const MORAFFS_WORLD = {
         { kind: "int16",  offset: 0x0033, label: "Maximum HP" },
         { kind: "float32", offset: 0x0035, label: "Current SP" },
         { kind: "float32", offset: 0x0039, label: "Maximum SP" },
+        { kind: "int16",  offset: 0x003d, label: "Height (inches)",
+          hint: "Stored as raw inches (a 93-inch character reads 93). Note this differs from DotU, which stores height ÷ 4." },
         { kind: "int16",  offset: 0x003f, label: "Naked Weight" },
         { kind: "int16",  offset: 0x0041, label: "Loaded Weight",
           hint: "Game recalculates this on play." },
