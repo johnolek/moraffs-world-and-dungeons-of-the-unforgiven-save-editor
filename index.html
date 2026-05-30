@@ -151,6 +151,39 @@
   .game-picker button:hover { border-color: var(--accent); color: var(--accent); }
 
   .hidden { display: none !important; }
+
+  /* "How it works" intro block, shown above the upload zone. */
+  .intro {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 22px; margin-bottom: 20px;
+    color: var(--muted); font-size: 13px;
+  }
+  .intro h2 {
+    margin: 0 0 10px; font-size: 13px; color: var(--accent);
+    letter-spacing: 0.4px; text-transform: uppercase;
+  }
+  .intro ol { margin: 0; padding-left: 20px; }
+  .intro li { margin-bottom: 5px; }
+  .intro li strong { color: var(--ink); }
+  .intro code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: var(--panel-2); color: var(--mw-cyan);
+    padding: 1px 5px; border-radius: 4px; font-size: 12px;
+  }
+  .intro .warn-note {
+    margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--line);
+    color: var(--warn);
+  }
+  .intro .warn-note strong { color: var(--warn); }
+
+  .footer {
+    max-width: 880px; margin: 0 auto; padding: 24px 32px 48px;
+    color: var(--muted); font-size: 12px; line-height: 1.6;
+    border-top: 1px solid var(--line);
+  }
+  .footer p { margin: 0 0 8px; }
+  .footer a { color: var(--accent-dim); }
+  .footer a:hover { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -162,6 +195,16 @@
 </header>
 
 <main>
+  <div class="intro">
+    <h2>How it works</h2>
+    <ol>
+      <li><strong>Upload your save file.</strong> These are plain, numbered files in your game directory — named <code>1</code>, <code>2</code>, <code>3</code>, etc. in Moraff's World, and <code>21</code>, <code>22</code>, <code>23</code>, etc. in Dungeons of the Unforgiven (one file per character).</li>
+      <li><strong>Make your changes</strong> using the editor that appears.</li>
+      <li><strong>Download the new file</strong> and overwrite the original in your game directory.</li>
+    </ol>
+    <p class="warn-note"><strong>Back up your save files first.</strong> This tool is provided as-is and isn't guaranteed to work correctly for everything — keep a copy of the original so you can restore it if something goes wrong.</p>
+  </div>
+
   <label class="drop-zone" id="dropZone">
     <div><strong>Click to choose</strong> or drag a save file here</div>
     <input type="file" id="fileInput">
@@ -183,6 +226,19 @@
     <div id="sections"></div>
   </div>
 </main>
+
+<footer class="footer">
+  <p>Runs entirely in your browser. No data leaves your computer.</p>
+  <p>
+    The Dungeons of the Unforgiven character file format was reverse engineered and
+    documented by <strong>Spectere</strong> and <strong>Bag of Magic Food</strong>.
+    Credit and thanks to them, and to the
+    <a href="https://moddingwiki.shikadi.net/wiki/Dungeons_of_the_Unforgiven_Player_Character" target="_blank" rel="noopener">DOS Game Modding Wiki</a>.
+  </p>
+  <p>
+    Source on <a href="https://github.com/johnolek/moraffs-world-and-dungeons-of-the-unforgiven-save-editor" target="_blank" rel="noopener">GitHub</a>.
+  </p>
+</footer>
 
 <div class="toast" id="toast">Saved!</div>
 
