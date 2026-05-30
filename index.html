@@ -157,7 +157,7 @@
 <header>
   <div class="header-inner">
     <h1 id="appTitle">Moraff Save Editor</h1>
-    <p>Edit Moraff's World character files in your browser. Nothing is uploaded — all editing happens locally.</p>
+    <p>Edit Moraff's World and Dungeons of the Unforgiven character files in your browser. Nothing is uploaded — all editing happens locally.</p>
   </div>
 </header>
 
@@ -476,7 +476,269 @@ const MORAFFS_WORLD = {
   ],
 };
 
-const GAMES = [MORAFFS_WORLD];
+// ============================================================================
+// SCHEMA — Dungeons of the Unforgiven
+//
+// Both Moraff's World and Dungeons of the Unforgiven share the same SPELL_LIST
+// layout (4 sub-categories × 45 INT8 slots, 30 named + 15 unused padding) and
+// the spell-name → byte-position mapping is identical, so the spell sections
+// reuse MW_SPELL_NAMES. The game ID list (races/classes/weapons/armor) differs
+// from MW; see the documented enums below.
+//
+// Source: Spectere & Bag of Magic Food's reverse-engineered docs.
+// ============================================================================
+
+const UNFORGIVEN_RACES = [
+  "Humanoid", "Ape", "Childman", "Rodent", "Hobo", "Giant", "Midget", "Shrimp",
+];
+
+const UNFORGIVEN_CLASSES = [
+  "Fighter", "Worshipper", "Monk", "Wizard", "Priest", "Sage", "Mage",
+];
+
+// Weapon and armor ID arrays match Moraff's World — same set, same order.
+const UNFORGIVEN_WEAPONS = MORAFFS_WORLD_WEAPONS;
+const UNFORGIVEN_ARMOR   = MORAFFS_WORLD_ARMOR;
+
+const UNFORGIVEN = {
+  id: "unforgiven",
+  displayName: "Dungeons of the Unforgiven",
+  fileSize: 2697,
+  // Recompute the 16-bit checksum over the first 0xA87 bytes and write it
+  // to 0xA87/0xA88 right before the file is serialized. Without this, MW...
+  // sorry, *DotU* will boot the player back to DOS with "corrupted character".
+  onSave: (view, buffer) => {
+    let c0 = 0, c1 = 0;
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < 0x0a87; i++) {
+      c0 = (c0 + bytes[i]) & 0xff;
+      c1 = (c1 + c0 - c0 * c0) & 0xff;
+    }
+    view.setUint8(0x0a87, c0);
+    view.setUint8(0x0a88, c1);
+  },
+  sections: [
+    {
+      title: "Identity",
+      fields: [
+        { kind: "string", offset: 0x0000, length: 18, label: "Character Name" },
+        { kind: "enum_uint8", offset: 0x0028, label: "Race",   choices: UNFORGIVEN_RACES   },
+        { kind: "enum_uint8", offset: 0x0029, label: "Gender", choices: ["Male", "Female"] },
+        { kind: "enum_uint8", offset: 0x002a, label: "Class",  choices: UNFORGIVEN_CLASSES },
+      ],
+    },
+    {
+      title: "Level & Experience",
+      fields: [
+        { kind: "int16",   offset: 0x07ac, label: "Player Level" },
+        { kind: "float64", offset: 0x07a4, label: "Experience Points" },
+      ],
+    },
+    {
+      title: "Vitals",
+      fields: [
+        { kind: "int16",   offset: 0x0031, label: "Current HP" },
+        { kind: "int16",   offset: 0x0033, label: "Maximum HP" },
+        { kind: "float32", offset: 0x0035, label: "Current SP" },
+        { kind: "float32", offset: 0x0039, label: "Maximum SP" },
+        { kind: "int16",   offset: 0x003d, label: "Height (÷ 4)",
+          hint: "Stored as inches/4. Set to 18 for a 72-inch character." },
+        { kind: "int16",   offset: 0x003f, label: "Naked Weight" },
+        { kind: "int16",   offset: 0x0041, label: "Loaded Weight",
+          hint: "Game recalculates this on play." },
+        { kind: "int32",   offset: 0x07da, label: "Age" },
+      ],
+    },
+    {
+      title: "Stats",
+      fields: [
+        { kind: "int16", offset: 0x0816, label: "Strength" },
+        { kind: "int16", offset: 0x0818, label: "Intelligence" },
+        { kind: "int16", offset: 0x081a, label: "Wisdom" },
+        { kind: "int16", offset: 0x081c, label: "Constitution" },
+        { kind: "int16", offset: 0x081e, label: "Agility" },
+        { kind: "int16", offset: 0x0820, label: "Luck" },
+      ],
+    },
+    {
+      title: "Money & Resources",
+      fields: [
+        { kind: "int32", offset: 0x0454, label: "Rubles in Pocket" },
+        { kind: "int32", offset: 0x0458, label: "Rubles in Bank" },
+        { kind: "int32", offset: 0x0464, label: "Culture Stock" },
+        { kind: "int32", offset: 0x0468, label: "Children Helped" },
+        { kind: "int32", offset: 0x046c, label: "Magic Crystals" },
+        { kind: "int32", offset: 0x0470, label: "American Dollars" },
+      ],
+    },
+    {
+      title: "Position",
+      note: "Warp the character by changing Current Floor and the X/Y coordinates. Module = 0 for the main game.",
+      fields: [
+        { kind: "enum_uint8", offset: 0x07ae, label: "Facing Direction",
+          choices: ["North", "South", "West", "East"] },
+        { kind: "int16", offset: 0x07b0, label: "Position X" },
+        { kind: "int16", offset: 0x07b2, label: "Position Y" },
+        { kind: "int16", offset: 0x07b4, label: "Current Floor" },
+        { kind: "int16", offset: 0x07b6, label: "Module" },
+      ],
+    },
+    {
+      title: "Weapons",
+      fields: [
+        { kind: "owned_list", ownedOffset: 0x0081, levelOffset: 0x008e,
+          count: 8, names: UNFORGIVEN_WEAPONS },
+        { kind: "enum_uint8", offset: 0x009b, label: "Currently Equipped",
+          choices: UNFORGIVEN_WEAPONS },
+      ],
+    },
+    {
+      title: "Armor",
+      fields: [
+        { kind: "owned_list", ownedOffset: 0x00b0, levelOffset: 0x00b8,
+          count: 8, names: UNFORGIVEN_ARMOR },
+        { kind: "enum_uint8", offset: 0x00c0, label: "Currently Equipped",
+          choices: UNFORGIVEN_ARMOR },
+      ],
+    },
+    {
+      title: "Potions",
+      note: "Each potion bumps one stat by +6 and another by −3 when consumed.",
+      fields: [
+        { kind: "int8", offset: 0x015d, label: "Orange  (+6 STR / −3 LCK)" },
+        { kind: "int8", offset: 0x015e, label: "Green   (+6 INT / −3 AGI)" },
+        { kind: "int8", offset: 0x015f, label: "Blue    (+6 WIS / −3 CON)" },
+        { kind: "int8", offset: 0x0160, label: "Red     (+6 CON / −3 WIS)" },
+        { kind: "int8", offset: 0x0161, label: "White   (+6 AGI / −3 INT)" },
+        { kind: "int8", offset: 0x0162, label: "Yellow  (+6 LCK / −3 STR)" },
+      ],
+    },
+    {
+      title: "Afflictions",
+      note: "Active disease or poison. The timer counts down each turn until it damages the affected stat. Set to 0 or −1 to clear the affliction entirely.",
+      fields: [
+        { kind: "int16", offset: 0x07ce, label: "Disease Timer",
+          hint: "Damages Constitution when it hits zero." },
+        { kind: "int16", offset: 0x07d0, label: "Poison Timer",
+          hint: "Damages Strength when it hits zero." },
+      ],
+    },
+    {
+      title: "Special Items",
+      fields: [
+        { kind: "int16", offset: 0x0812, label: "Potions of Healing" },
+        { kind: "int16", offset: 0x0814, label: "Stones of Teleportation" },
+        { kind: "uint8", offset: 0x07cc, label: "Nuclear Hand Grenades" },
+        { kind: "uint8", offset: 0x07cd, label: "Stones of Seeing" },
+        { kind: "int8",  offset: 0x0802, label: "Floor Sloshers" },
+      ],
+    },
+    {
+      title: "Rings & Worn Items",
+      note: "Body Armor stores a level. The rings and gauntlets store a bonus value (the in-game UI shows it as 'PLUS N').",
+      fields: [
+        { kind: "uint8", offset: 0x07ca, label: "Rings of Regeneration" },
+        { kind: "uint8", offset: 0x07d4, label: "Body Armor" },
+        { kind: "uint8", offset: 0x07d5, label: "Ring of Protection" },
+        { kind: "uint8", offset: 0x07d6, label: "Anti-Magic Ring" },
+        { kind: "int8",  offset: 0x0853, label: "Gauntlets" },
+      ],
+    },
+    {
+      title: "Preparation Spells in Effect",
+      fields: [
+        { kind: "uint8", offset: 0x07d2, label: "Enchant Weapon Level" },
+        { kind: "uint8", offset: 0x07d3, label: "Enchant Armor Level" },
+        { kind: "select_uint8", offset: 0x07d7, label: "Feather",
+          choices: [
+            { value: 0,    label: "None" },
+            { value: 1,    label: "Preparation (temporary)" },
+            { value: 0x64, label: "Permanent" },
+          ] },
+        { kind: "select_uint8", offset: 0x07d8, label: "Fast Move",
+          choices: [
+            { value: 0, label: "None" },
+            { value: 1, label: "Preparation (temporary)" },
+            { value: 2, label: "Permanent (any value > 1)" },
+          ],
+          hint: "Any value > 1 makes it stick around like a permanent." },
+        { kind: "select_uint8", offset: 0x07d9, label: "Invisibility",
+          choices: [
+            { value: 0,    label: "None" },
+            { value: 1,    label: "Preparation (temporary)" },
+            { value: 0x64, label: "Permanent" },
+          ] },
+        { kind: "uint8", offset: 0x07de, label: "Preparation Strength" },
+        { kind: "uint8", offset: 0x07df, label: "Preparation Agility" },
+        { kind: "uint8", offset: 0x07e0, label: "Super Strength" },
+        { kind: "uint8", offset: 0x07e1, label: "Super Agility" },
+      ],
+    },
+    {
+      title: "Battle Spell Timers",
+      note: "Turns remaining on each battle-spell effect. Set to 0 to clear. Beware: Power Weapon and Protection share a level/timer pair — if the level is non-zero while the timer is ≤ 0, that spell never wears off until an inn stay.",
+      fields: [
+        { kind: "int16", offset: 0x07e2, label: "Strength Timer" },
+        { kind: "int16", offset: 0x07e4, label: "Speed Timer" },
+        { kind: "int16", offset: 0x07e6, label: "Slow Enemies Timer" },
+        { kind: "uint8", offset: 0x07e8, label: "Power Weapon Level" },
+        { kind: "int16", offset: 0x07e9, label: "Power Weapon Timer" },
+        { kind: "select_uint8", offset: 0x07eb, label: "Protection Level",
+          choices: [
+            { value: 0, label: "None" },
+            { value: 1, label: "Minor Protection" },
+            { value: 2, label: "Protection" },
+            { value: 3, label: "Major Protection" },
+            { value: 4, label: "Ultra Protection" },
+          ] },
+        { kind: "int16", offset: 0x07ec, label: "Protection Timer" },
+        { kind: "int16", offset: 0x07ee, label: "Resist Poison Timer" },
+        { kind: "int16", offset: 0x07f0, label: "Resist Disease Timer" },
+        { kind: "int16", offset: 0x07f2, label: "Anti-Cold Timer" },
+        { kind: "int16", offset: 0x07f4, label: "Anti-Fire Timer" },
+        { kind: "int16", offset: 0x07f6, label: "Resist Level Drain Timer" },
+        { kind: "int16", offset: 0x07f8, label: "Sleep Timer" },
+        { kind: "int16", offset: 0x07fa, label: "Hold Monster Timer" },
+      ],
+    },
+    {
+      title: "Trapdoor Keys",
+      note: "One key per floor (0, 5, 10, … 100). Each key allows use of trapdoors leading to that floor.",
+      fields: [
+        { kind: "checkbox_list", offset: 0x0822,
+          names: Array.from({ length: 21 }, (_, i) => `Floor ${i * 5}`) },
+      ],
+    },
+    {
+      title: "Spellbook",
+      note: "Spells the character has learned and can cast directly using spell points. Each entry is binary — check a box to grant the spell.",
+      fields: [{ kind: "spell_list", offset: 0x0177, binary: true }],
+    },
+    {
+      title: "Scrolls",
+      fields: [{ kind: "spell_list", offset: 0x022b }],
+    },
+    {
+      title: "Wands",
+      fields: [{ kind: "spell_list", offset: 0x02df }],
+    },
+    {
+      title: "Papers",
+      fields: [{ kind: "spell_list", offset: 0x0393 }],
+    },
+    {
+      title: "Misc",
+      fields: [
+        { kind: "enum_uint8", offset: 0x08f6, label: "Difficulty",
+          choices: ["Normal", "I can handle anything!"] },
+        { kind: "uint8", offset: 0x0854, label: "Fill HP/SP on Load",
+          hint: "Non-zero refills HP and SP to maximum on load (then resets to 0). Docs claim this is a 16-bit field, but the next byte appears to belong to a different field, so the editor treats it as a single byte." },
+      ],
+    },
+  ],
+};
+
+const GAMES = [MORAFFS_WORLD, UNFORGIVEN];
 
 // ============================================================================
 // PART 2 — ENGINE: game-agnostic readers, writers, and UI builders.
