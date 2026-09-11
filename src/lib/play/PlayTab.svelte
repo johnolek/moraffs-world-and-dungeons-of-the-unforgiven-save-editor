@@ -26,6 +26,7 @@
   import { downloadRunLog } from './export-run';
   import type { PlayGame, PlaySession, PlayStage, PlayViewBase } from './games';
   import { runPlayLoop } from './loop';
+  import NewCharacter from '../roller/NewCharacter.svelte';
   import PlayRoster from './PlayRoster.svelte';
   import ScreenSwitch from './ScreenSwitch.svelte';
   import { streamedSession, streamRun, type RunMark, type RunStreamer } from './streaming';
@@ -408,6 +409,10 @@
         {/if}
       {/if}
       <PlayRoster game={game.id} />
+      <section class="roller">
+        <h3><PixelText text="New Character" /></h3>
+        <NewCharacter standalone={false} tab="play" />
+      </section>
     </div>
   {:else}
     {@const stage = { session, view, mode, display, redraw }}

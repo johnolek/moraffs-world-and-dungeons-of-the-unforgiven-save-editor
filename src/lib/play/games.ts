@@ -175,7 +175,7 @@ export const PLAY_GAMES = {
       "Dungeons of the Unforgiven, played in a browser: the game's own dungeon, its own monsters and its own keys, on " +
       'the screen the game draws them on. The character on the roster is the one who walks, and the game saves them ' +
       'back where it would have saved them, so they can go on playing in DOS.',
-    hint: 'Load a Dungeons of the Unforgiven save or roll a character, and this is where they play.',
+    hint: 'Load a Dungeons of the Unforgiven save, or roll a character below, and this is where they play.',
     cell: 22,
     start: startUnforgiven,
     loop: (session) => runMoveControl(session),
@@ -190,7 +190,7 @@ export const PLAY_GAMES = {
       "Moraff's World, played in a browser: the game's own dungeon, its own monsters and its own keys, on the screen " +
       'the game draws them on. The character on the roster is the one who walks, and the game saves them back where ' +
       'it would have saved them, so they can go on playing in DOS.',
-    hint: "Load a Moraff's World save or roll a character, and this is where they play.",
+    hint: "Load a Moraff's World save, or roll a character below, and this is where they play.",
     cell: 22,
     start: startMoraffsWorld,
     loop: (session) => runMwMoveControl(session),
@@ -207,7 +207,7 @@ export const PLAY_GAMES = {
       "disk has standing on it, and the game's own keys. The monsters move on their own clock while you think, " +
       'and a fight is turn based once one is beside you. The character on the roster is the one who walks, and the ' +
       'game saves them back where it would have saved them.',
-    hint: "Load a Moraff's Revenge save or roll a character, and this is where they play.",
+    hint: "Load a Moraff's Revenge save, or roll a character below, and this is where they play.",
     cell: 26,
     start: startMoraffsRevenge,
     loop: (session) => runRevDungeon(session),

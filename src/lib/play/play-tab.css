@@ -47,6 +47,16 @@
   font-weight: 600;
   cursor: pointer;
 }
+/* The character roller on the landing page (`../roller/NewCharacter.svelte`), which is how a
+   character is rolled and walked into the dungeon without leaving the tab. */
+.play .roller {
+  margin-top: 28px;
+}
+.play .roller > h3 {
+  margin: 0 0 10px;
+  line-height: 0;
+  color: var(--accent);
+}
 .play .stage {
   display: flex;
   flex: 1;
