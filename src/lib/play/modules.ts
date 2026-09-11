@@ -32,8 +32,11 @@ const STAY = 0x33;
 const LAST_MODULE = 4;
 
 /**
- * Take the teleporter. Returns whether the character went anywhere, which is what tells
- * movecontrol to load the new module's town.
+ * Take the teleporter. Returns whether the character went anywhere.
+ *
+ * movecontrol is what loads the new module's town in the original, off that answer; here the
+ * loading is done at the end of this function instead, since the snake's greeting waits for a key
+ * and only a caller that can wait could take it.
  *
  * `took` is the action the run counts for the crossing, which is whichever of the two ways of
  * reaching the teleporter was used. It is pushed as the crossing begins rather than when it is
@@ -68,7 +71,6 @@ export async function changeModule(
   game.events.push({ kind: 'dungeonReached', dungeon: pc.module });
   relocate(game);
   session.save();
-  session.enterFloor(0);
   showHint(game, ARRIVED);
   game.pressAnyKey();
   // The arrival box and its plaque are drawn on the tunnel, which nothing paints over until
@@ -76,5 +78,10 @@ export async function changeModule(
   // key is taken here rather than at the top of the loop and the tunnel comes down with it.
   await session.settle();
   session.tunnel = null;
+  // change_module hands back the moment the arrival box has its key, and it is movecontrol that
+  // loads the new module's town afterwards (unf.c "movecontrol", the two `change_module()` calls),
+  // so the snake's greeting is read after the arrival box rather than behind it.
+  session.enterFloor(0);
+  await session.settle();
   return true;
 }

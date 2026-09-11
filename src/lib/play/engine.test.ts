@@ -270,12 +270,16 @@ describe('changing floors', () => {
     expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
     // The arrival box is read on the tunnel, which the key that answers it takes down.
     expect(session.view().tunnel).toEqual({ module: 1, welcome: false });
+    // change_module saves the character where it drops them, before movecontrol loads the town.
+    expect(parseSave(file.bytes).module).toBe(1);
+    // Only once that box has its key does movecontrol load the new module's town, which is where
+    // the snake greets the character with a tablet of its own.
+    expect(session.view().tablet).toBeNull();
     await press(session, KEY.escape);
     expect(session.view().tunnel).toBeNull();
     expect(session.view().place.module).toBe(1);
     expect(session.view().place.floor).toBe(0);
-    // change_module saves the character where it drops them, before movecontrol loads the town.
-    expect(parseSave(file.bytes).module).toBe(1);
+    expect(session.view().tablet?.[0]).toContain('As you reach the town');
   });
 
   it('digs through the floor to whatever is under it', async () => {
@@ -539,11 +543,13 @@ describe('the map the character discovers', () => {
     const teleporter = findSquare(1, (square) => square.e === 4 && square.ladder === 0 && square.trapdoor === -1 && square.chute === 0);
     const session = playing(characterFile({ level: 1, dir: 3, ...teleporter }));
     await press(session, KEY.arrowUp);
-    // The key the crossing's welcome waits for, which is what lets the arrival happen.
+    // The key the crossing's welcome waits for and the key the arrival box waits for, which
+    // between them are what lets the new module's town be loaded at all.
+    await press(session, KEY.escape);
+    expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
     await press(session, KEY.escape);
     const place = session.view().place;
     expect(place).toMatchObject({ module: 1, floor: 0 });
-    expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
     // The teleporter drops the character on any square of the town it comes out in, and seventy
     // of that town's squares are cells whose only ways out are doors, which no view sees through.
     expect(session.memory.isKnown(place.x, place.y)).toBe(true);
