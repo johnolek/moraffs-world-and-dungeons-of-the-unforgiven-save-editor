@@ -169,6 +169,21 @@
    * and the teleporter faces back to their starting colours on every keypress.
    */
   let crawlStep = 0;
+  /**
+   * The fade now running and the moment it started, so that its steps are counted from that one
+   * moment rather than from whenever the screen was last painted.
+   *
+   * The screen under a fade is drawn again while the fade runs — the HIT ANY KEY plaque goes up
+   * over a tablet that is still coming out of black — and a fade counted from each painting would
+   * take the screen back to black there and bring it up a second time.
+   */
+  let fadeClock: { fade: Fade; started: number } | null = null;
+
+  /** How many of its DAC steps the fade now running has reached (`fade.ts`). */
+  function fadeStep(running: Fade, now: number): number {
+    if (fadeClock?.fade !== running) fadeClock = { fade: running, started: now };
+    return Math.min(fadeSteps(running), Math.floor((now - fadeClock.started) / FADE_STEP_MS));
+  }
   /** How long this screen takes to appear: the player's choice, and nothing at all behind a tab
    *  nobody is looking at, where a wipe would be drawing for no one. */
   const revealed = $derived(visible.showing ? redraw : 0);
@@ -378,7 +393,7 @@
       const crawls = holdsGradientBank(frame);
       const shown =
         fade !== null
-          ? fadedPalette(palette, fade, 0)
+          ? fadedPalette(palette, fade, fadeStep(fade, performance.now()))
           : crawls
             ? cycleGradientBank(palette, crawlStep)
             : palette;
@@ -409,10 +424,10 @@
       highlight: highlightMonsterId,
       route: routeSquares,
     };
-    // A fade's first step is drawn here so that nothing of the screen shows at full strength
-    // before the animation below has its first frame, and it is not revealed a row at a time: the
-    // fade repaints the whole screen many times a second below. The crawl repaints too, and waits
-    // a wipe out instead.
+    // A fading screen is drawn here at the step the fade has reached, so that nothing of it shows
+    // at full strength before the animation below has its next frame, and it is not revealed a row
+    // at a time: the fade repaints the whole screen many times a second below. The crawl repaints
+    // too, and waits a wipe out instead.
     const paint = (): void => show(frame, fade !== null || plaque === 'showing' ? 0 : revealed);
     // The module teleporter's tunnel (exe 4000:771b), which is drawn on a black screen and stands
     // there until the key that answers the arrival box: that box is printed on the tunnel, and
@@ -631,14 +646,15 @@
     const holding = painted;
     const running = fade;
     const target = canvas;
+    // A fade that is over leaves the clock behind, so that the next one starts from its own moment.
+    if (running === null) fadeClock = null;
     if (!holding || !target || running === null || !visible.showing) return;
     const context = target.getContext('2d');
     if (!context) return;
-    const started = performance.now();
     const last = fadeSteps(running);
     let request = 0;
     const tick = (now: number): void => {
-      const step = Math.min(last, Math.floor((now - started) / FADE_STEP_MS));
+      const step = fadeStep(running, now);
       painter.paint(context, holding.frame, fadedPalette(holding.palette, running, step));
       // The last step stands until something else is drawn, so there is nothing left to ask the
       // browser for.
