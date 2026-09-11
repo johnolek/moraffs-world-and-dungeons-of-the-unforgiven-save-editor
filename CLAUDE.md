@@ -58,6 +58,22 @@ pnpm dev:all       # the site and the server together on the local Postgres
   that played it, so `pnpm build:engine` bundles the engine into
   `server/engines/<commit>/` and `pnpm publish:engine` puts that build in the
   database, which the deployed server also does for its own commit at start.
+- Test files share workers (`isolate: false`), so they share one module registry.
+  Two rules follow, and breaking either gives a test that passes alone and fails
+  perhaps half the time in a full run:
+  - Never import anything from a `*.test.ts` file. Importing a test file runs it,
+    so its tests are declared again in the importer. Shared helpers go in a
+    `test-*.ts` module beside it, which the vitest globs do not collect
+    (`src/lib/play/mw/test-engine.ts`, `server/test-sql.ts`).
+  - Never `vi.mock` a module. By the time a file registers one, another file may
+    already have loaded a module that imports the real thing, and that copy keeps
+    it. Spy on the shared module object instead, and restore it afterwards:
+    `const spy = vi.spyOn(speaker, 'playTones')` with an `afterAll` that calls
+    `spy.mockRestore()` (`src/lib/play/mw/sound.test.ts`).
+- A server test gets its database from `openTestDatabase()`, which starts PGlite
+  from a copy of an already migrated one rather than building a fresh one, because
+  building one costs most of a second. Adding a migration needs nothing: the copy
+  is made once per worker from whatever `server/migrations/` holds.
 - Real game folders live in `~/games/4unf for claude/` (DotU), `~/games/mworld/`
   (Moraff's World) and `~/games/rev2/` (Moraff's Revenge); never modify them and
   never commit copies of saves or executables. Tests use synthetic buffers.
