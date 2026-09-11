@@ -1,5 +1,5 @@
 import type { Game } from './state';
-import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
+import { MAP_EMPTY, MAP_PLAYER, monsterAt, monsterSeen, setMonsterMap } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked executable. The comment on each say call gives the address of every line it
@@ -239,6 +239,15 @@ export function bossImmuneCheck(game: Game): boolean {
 }
 
 /**
+ * The hit points a battle spell takes off the monster being fought, taken off where the spell's
+ * own message names them so that a run journal has the number the player was shown.
+ */
+function damageTheMonster(game: Game, damage: number): void {
+  game.monsters[game.engaged].hp -= damage;
+  game.events.push({ kind: 'spellDamaged', monster: monsterSeen(game, game.engaged), damage });
+}
+
+/**
  * explosion (exe 3000:d818, unf.c "explosion"): Minor Explosion, Explosion and Major Explosion.
  * `kind` is 0, 1 or 2 for the three sizes.
  */
@@ -264,7 +273,7 @@ export function explosion(game: Game, kind: number): boolean {
   if (damage === 0) damage = game.rng.random(101) + 75;
   if (damage === 1) damage = game.rng.random(101) + 125;
   if (damage === 2) damage = game.rng.random(301) + 200;
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:38e6 3900 38cf 3916 258b 2d43, after the headline
   game.say(
     headline,
@@ -1165,7 +1174,7 @@ export function magicZap(game: Game): boolean {
     return false;
   }
   const damage = game.pc.lev * 2 + 2;
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:3ec4 3edc 3eb0 3ef7
   game.say(
     'WISPS OF COLORFUL LIGHT',
@@ -1203,7 +1212,7 @@ export function minorShock(game: Game): boolean {
     msgNoMonster(game);
     return false;
   }
-  game.monsters[game.engaged].hp -= 25;
+  damageTheMonster(game, 25);
   // DS:3f4a 3f60 3f79 3f90 3faa 258b 2d43
   game.say(
     'YOU TOUCH THE MONSTER',
@@ -1227,7 +1236,7 @@ export function lightningBolt(game: Game): boolean {
     return false;
   }
   const damage = game.pc.lev * 4 + 4;
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:3fc6 3fe0 3ff9 3eb0 3916 258b 2d43
   game.say(
     'YOU FORM A BALL WITH YOUR',
@@ -1250,7 +1259,7 @@ export function magicMissile(game: Game): boolean {
     msgNoMonster(game);
     return false;
   }
-  game.monsters[game.engaged].hp -= 50;
+  damageTheMonster(game, 50);
   // DS:4013 402a 4044 3916 258b 2d43
   game.say(
     'A MISSLE BOLTS FORWARD',
@@ -1276,7 +1285,7 @@ export function magicZot(game: Game): boolean {
   // Ghidra lost the argument to Random here; that it is 5, making each missile 4 to 8, is what
   // the RE notes and dotu-mech.js's magicZot range say.
   for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 4;
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:4071 408b 40a9 40c5 405e 3916 258b 2d43
   game.say(
     'A GROUP OF MISSLES SPRING',
@@ -1300,7 +1309,7 @@ export function shock(game: Game): boolean {
     msgNoMonster(game);
     return false;
   }
-  game.monsters[game.engaged].hp -= 125;
+  damageTheMonster(game, 125);
   // DS:3f4a 3f60 3f79 3f90 40da 258b 2d43
   game.say(
     'YOU TOUCH THE MONSTER',
@@ -1327,7 +1336,7 @@ export function magicBolt(game: Game): boolean {
   // The argument to Random is the same 5 the RE notes and dotu-mech.js give Magic Zot, which
   // makes each charge 7 to 11.
   for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 7;
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:410b 408b 4124 4142 40f7 3916 258b 2d43
   game.say(
     'AN ELECTRIC CHARGE LEAPS',
@@ -1370,7 +1379,7 @@ export function majorShock(game: Game): boolean {
     msgNoMonster(game);
     return false;
   }
-  game.monsters[game.engaged].hp -= 300;
+  damageTheMonster(game, 300);
   // DS:3f4a 3f60 3f79 3f90 415e 258b 2d43
   game.say(
     'YOU TOUCH THE MONSTER',

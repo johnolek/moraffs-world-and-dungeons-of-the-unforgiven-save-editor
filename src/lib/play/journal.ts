@@ -171,6 +171,8 @@ export function unforgivenJournal(pushed: { kind: string }): string | null {
         : `The ${event.monster.name} hit you for ${event.damage}`;
     case 'killed':
       return `Killed ${monsterWords(event.monster)} for ${event.experience} experience`;
+    case 'spellDamaged':
+      return `The spell hit ${monsterWords(event.monster)} for ${event.damage}`;
     case 'levelLost':
       return `The ${event.monster.name} drained ${event.levels === 1 ? 'a level' : `${event.levels} levels`}, down to level ${event.level}`;
     case 'experienceDrained':

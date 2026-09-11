@@ -416,6 +416,8 @@ export type GameEvent =
   | { kind: 'hintRead'; hint: number }
   /** bank (exe 2000:568b), menu entry 1: Greater-American Dollars changed into rubles. */
   | { kind: 'dollarsChanged'; dollars: number; rubles: number }
+  /** Hit points a battle spell took off the monster being fought. */
+  | { kind: 'spellDamaged'; monster: MonsterSeen; damage: number }
   /** One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
    *  where the kinds a run counts as actions carry their numbers. */
   | JournalEvent;
