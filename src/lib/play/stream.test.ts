@@ -110,6 +110,25 @@ describe('sending a run as it is played', () => {
     ]);
   });
 
+  it('leaves the keys played while a batch was in the air to the next round', async () => {
+    const game = played();
+    const sent: RunBatch[] = [];
+    // Moraff's Revenge writes a tick of its monsters' clock into the log every two hundred
+    // milliseconds, so there is always something new to send by the time a batch has gone.
+    const stream = new RunStream(game.sitting, (batch) => {
+      sent.push(structuredClone(batch));
+      game.unpressed(-0x202);
+      return Promise.resolve({ took: true });
+    });
+
+    game.press(104);
+    expect(await stream.send(false)).toEqual({ sent: 'taken' });
+    expect(sent).toHaveLength(1);
+
+    expect(await stream.send(false)).toEqual({ sent: 'taken' });
+    expect(sent.map((batch) => batch.inputs)).toEqual([[104], [-0x202]]);
+  });
+
   it('sends nothing when nothing has been played', async () => {
     const game = played();
     const server = takesEverything();
@@ -259,6 +278,25 @@ describe('sending a run as it is played', () => {
     // Nobody wrote down how many of those keys were pressed, and a batch on its own has no
     // stretch of time to be judged over.
     expect(server.sent[0].pressed).toBe(0);
+  });
+
+  it('sends the sittings before this one in one round however fast the keys arrive', async () => {
+    const game = played(2);
+    const sent: RunBatch[] = [];
+    const stream = new RunStream(
+      game.sitting,
+      (batch) => {
+        sent.push(structuredClone(batch));
+        game.unpressed(-0x202);
+        return Promise.resolve({ took: true });
+      },
+      [session({ inputs: [1, 2] }), session({ inputs: [3] })],
+    );
+
+    game.press(104);
+    await stream.send(false);
+
+    expect(sent.map((batch) => batch.sessionIndex)).toEqual([0, 1, 2]);
   });
 
   it('holds the sitting being played back until the ones before it have gone', async () => {

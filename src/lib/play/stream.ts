@@ -188,8 +188,8 @@ export class RunStream {
    * batch rather than a bigger one.
    */
   next(ending: boolean): RunBatch | null {
-    const waiting = this.earlier[0] ?? this.pending[0];
-    if (waiting !== undefined) return waiting;
+    const waiting = this.waiting();
+    if (waiting !== null) return waiting;
     const log = this.session.log();
     const inputs = log.inputs.slice(this.built);
     // The first batch of a sitting goes even with nothing played, since it is what tells the
@@ -221,6 +221,14 @@ export class RunStream {
   }
 
   /**
+   * A batch that was built in an earlier round and that the server has not said it has: a sitting
+   * from before this one, or one of this sitting's that did not get through.
+   */
+  private waiting(): RunBatch | null {
+    return this.earlier[0] ?? this.pending[0] ?? null;
+  }
+
+  /**
    * The character as this batch carries it: the maps only where they are not the ones the batch
    * before it carried.
    *
@@ -244,12 +252,21 @@ export class RunStream {
     if (this.pending[0]?.sequence === batch.sequence) this.pending.shift();
   }
 
-  /** Send everything the server has not said it has: the sittings before this one, and then the
-   *  batches of this one in the order they were built. */
+  /**
+   * Send what the server has not said it has: the batches built in earlier rounds, oldest first,
+   * and then one batch of what has been played since.
+   *
+   * The round stops at that one batch. The game goes on being played while a batch is in the air,
+   * and Moraff's Revenge writes an input every two hundred milliseconds whether anybody presses
+   * anything or not, so a round that went on until there was nothing new to send would go on
+   * sending for as long as the game was played. Those keys are the next round's, five seconds
+   * later.
+   */
   async send(ending: boolean): Promise<SendResult> {
     if (this.refused !== null) return { sent: 'refused', ...this.refused };
     let anything = false;
     for (;;) {
+      const behind = this.waiting() !== null;
       const batch = this.next(ending);
       if (batch === null) return anything ? { sent: 'taken' } : { sent: 'nothing' };
       const answer = await this.post(batch);
@@ -260,6 +277,9 @@ export class RunStream {
       }
       this.took(batch);
       anything = true;
+      // The batch just sent was built in this round rather than an earlier one, which also means
+      // there was no backlog left in front of it, so the round is done.
+      if (!behind) return { sent: 'taken' };
     }
   }
 }
