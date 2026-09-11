@@ -32,13 +32,21 @@ export function boxesOf(session: GameSession, print: () => void): string[][] {
   return boxes;
 }
 
-/** Every box a ported function printed, shown in turn, each one waiting for a key. */
-export async function printMenus(session: GameSession, print: () => void): Promise<void> {
-  for (const box of boxesOf(session, print)) {
+/**
+ * Every box a ported function printed, shown in turn, each one waiting for a key, and whatever
+ * the function itself handed back.
+ */
+export async function printMenus<T>(session: GameSession, print: () => T): Promise<T> {
+  let result!: T;
+  const boxes = boxesOf(session, () => {
+    result = print();
+  });
+  for (const box of boxes) {
     session.showBox(box);
     await session.game.key();
   }
   session.wipeMessageBlock();
+  return result;
 }
 
 /**
