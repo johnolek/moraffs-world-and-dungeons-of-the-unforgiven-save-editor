@@ -9,7 +9,7 @@ import { runMwMoveControl, startMwGame } from './mw/engine';
 import { findMwSquare, mwCharacterFile } from './mw/test-engine';
 import { MW_KEY, mwTurn } from './mw/keys';
 import { runRevDungeon, startRevGame } from './rev/engine';
-import { revCharacterFile, revRecord } from './rev/engine.test';
+import { revCharacterFile, revRecord } from './rev/test-engine';
 import { REV_KEY } from './rev/keys';
 import { ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
 import { RUN_LOG_VERSION } from './run';

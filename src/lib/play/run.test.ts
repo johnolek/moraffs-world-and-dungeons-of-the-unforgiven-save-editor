@@ -9,7 +9,7 @@ import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
 import { findMwSquare, mwCharacterFile } from './mw/test-engine';
 import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile, type RevGameSession } from './rev/engine';
-import { revCharacterFile, revRecord } from './rev/engine.test';
+import { revCharacterFile, revRecord } from './rev/test-engine';
 import { REV_KEY } from './rev/keys';
 import { loadMwPlayer, saveMwPlayer } from './mw/record';
 import { MW_KEY, mwTurn } from './mw/keys';

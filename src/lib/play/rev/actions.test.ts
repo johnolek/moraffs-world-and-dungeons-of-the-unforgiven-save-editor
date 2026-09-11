@@ -3,7 +3,7 @@ import { isActionKind, type CastEvent } from '../../game/action';
 import { SeededRng } from '../../game/port/rng';
 import { COLUMNS, ROWS, blocked, townBuilding } from '../../game/revmap.js';
 import { RevGameSession, runRevDungeon, startRevGame } from './engine';
-import { revCharacterFile, revRecord } from './engine.test';
+import { revCharacterFile, revRecord } from './test-engine';
 import { REV_KEY } from './keys';
 import { revFeatureUnder } from './ladders';
 import type { RevGame } from './state';

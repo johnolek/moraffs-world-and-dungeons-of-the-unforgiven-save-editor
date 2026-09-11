@@ -5,7 +5,7 @@ import { revMonsterAttack } from './attack';
 import { revFallDownAChute } from './chute';
 import { revDie } from './death';
 import { RevGameSession, runRevDungeon, startRevGame } from './engine';
-import { revCharacterFile, revRecord } from './engine.test';
+import { revCharacterFile, revRecord } from './test-engine';
 import { revLeaveTheFight, revMeetMonster } from './fight';
 import { revUseAnItem, revWearOffPotions } from './items';
 import { revKillMonster } from './kill';
