@@ -32,9 +32,14 @@
     standalone?: boolean;
     /** The tab the roller is mounted on, which is the one its keys are answered on. */
     tab?: Tab;
+    /**
+     * Shut the roller, for a tab that shows it in a panel over the page rather than as the page
+     * itself. Escape calls it while no character is being rolled.
+     */
+    onclose?: () => void;
   }
 
-  let { standalone = true, tab = 'roller' }: Props = $props();
+  let { standalone = true, tab = 'roller', onclose }: Props = $props();
 
   const STATS = ['STRENGTH', 'INTELLIGENCE', 'WISDOM', 'CONSTITUTION', 'AGILITY', 'LUCK'];
 
@@ -148,6 +153,9 @@
   const chosen = $derived(GAMES[rolling]);
   /** The screen a key would answer: the game's own, or the character number asked for first. */
   const screen = $derived<RollerScreen | null>(session && view ? view.question : 'number');
+  /** Whether a character is part-way through being rolled: the roller has a session and it is
+   *  still asking questions. Before the first question and after the last it is not. */
+  const midRoll = $derived(screen !== null && screen !== 'number');
   const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length, numbers: chosen.slots.length });
   const fileName = $derived(chosen.fileName(slot));
   const showing = $derived(
@@ -256,8 +264,17 @@
    *  screens ask for. A key belongs to whatever is being typed into, and a shortcut belongs to
    *  the browser. */
   function onKeyDown(event: KeyboardEvent) {
-    if (app.tab !== tab || screen === null) return;
+    if (app.tab !== tab) return;
     if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
+    // Escape shuts the panel the roller is in, but not while a character is part-way through
+    // being rolled: there Escape belongs to the roller, which reads it on the screen a character
+    // is designed on (`keys.ts`), and a roll half answered is not worth losing to a stray key.
+    if (event.key === 'Escape' && onclose && !midRoll) {
+      event.preventDefault();
+      onclose();
+      return;
+    }
+    if (screen === null) return;
     const action = rollerKey(screen, event.key, typed, menus);
     if (!action) return;
     event.preventDefault();

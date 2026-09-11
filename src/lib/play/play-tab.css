@@ -47,15 +47,23 @@
   font-weight: 600;
   cursor: pointer;
 }
-/* The character roller on the landing page (`../roller/NewCharacter.svelte`), which is how a
-   character is rolled and walked into the dungeon without leaving the tab. */
-.play .roller {
-  margin-top: 28px;
-}
-.play .roller > h3 {
+/* The character roller (`../roller/NewCharacter.svelte`), which the landing page opens in a panel
+   over itself: a character can be rolled and walked into the dungeon without leaving the tab. */
+.play .roller-title {
   margin: 0 0 10px;
   line-height: 0;
   color: var(--accent);
+}
+/* The panel fills the tab, which has to be positioned for it to. */
+.play {
+  position: relative;
+}
+/* The landing page is the one page of the tab that can outgrow it, so it scrolls rather than
+   running under the character's status block at the foot of the window. */
+.play > .page {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
 }
 .play .stage {
   display: flex;

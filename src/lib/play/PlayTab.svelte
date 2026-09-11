@@ -27,6 +27,7 @@
   import type { PlayGame, PlaySession, PlayStage, PlayViewBase } from './games';
   import { runPlayLoop } from './loop';
   import NewCharacter from '../roller/NewCharacter.svelte';
+  import Overlay from '../ui/Overlay.svelte';
   import PlayRoster from './PlayRoster.svelte';
   import ScreenSwitch from './ScreenSwitch.svelte';
   import { streamedSession, streamRun, type RunMark, type RunStreamer } from './streaming';
@@ -49,6 +50,10 @@
 
   /** What the tab says instead of starting a game the player is already playing somewhere else. */
   const BEING_PLAYED_ELSEWHERE = 'Being played on another device.';
+
+  /** The button that opens the character roller over the landing page, and what the panel is
+   *  called for anything reading the page aloud. */
+  const NEW_CHARACTER = 'New Character';
 
   interface Props {
     game: PlayGame<Session, View>;
@@ -122,6 +127,8 @@
   /** The server is being asked whether the character is free to play, so a second click on the
    *  button does not start a second game behind the first. */
   let starting = $state.raw(false);
+  /** Whether the character roller is open over the landing page. */
+  let rollerOpen = $state(false);
   let display = $state<PlayDisplay>(untrack(() => readPlayDisplay(game.id)));
   let colourblind = $state(untrack(() => readPlayColourblind(game.id)));
   let redraw = $state(untrack(() => readPlayRedraw(game.id)));
@@ -409,11 +416,16 @@
         {/if}
       {/if}
       <PlayRoster game={game.id} />
-      <section class="roller">
-        <h3><PixelText text="New Character" /></h3>
-        <NewCharacter standalone={false} tab="play" />
-      </section>
+      <div class="row">
+        <button type="button" onclick={() => (rollerOpen = true)}>{NEW_CHARACTER}</button>
+      </div>
     </div>
+    {#if rollerOpen}
+      <Overlay label={NEW_CHARACTER} onclose={() => (rollerOpen = false)}>
+        <h3 class="roller-title"><PixelText text="New Character" /></h3>
+        <NewCharacter standalone={false} tab="play" onclose={() => (rollerOpen = false)} />
+      </Overlay>
+    {/if}
   {:else}
     {@const stage = { session, view, mode, display, redraw }}
     <div class="stage">
