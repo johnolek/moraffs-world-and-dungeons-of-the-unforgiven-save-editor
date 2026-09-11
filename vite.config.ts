@@ -35,6 +35,10 @@ export default defineConfig({
     // A server test starts a PGlite of its own, which takes about a second alone and several
     // under a full run of every file at once, so the default five seconds is not enough.
     testTimeout: 20000,
+    // Each file gets a worker of its own by default, and spawning one is a tenth of a second
+    // against test files that mostly take less than that. They share a worker instead, which is
+    // safe here because no test file imports another one.
+    isolate: false,
     include: ['src/**/*.test.ts', 'server/**/*.test.ts', '*.test.ts'],
   },
 });
