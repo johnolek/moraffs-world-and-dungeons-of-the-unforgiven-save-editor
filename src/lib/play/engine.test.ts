@@ -226,6 +226,21 @@ describe('changing floors', () => {
     expect(session.view().box).toEqual([]);
   });
 
+  it('keeps the floor the character fell off on the screen until the fall has its key', async () => {
+    // movecontrol draws the map window and the four views at the top of a pass, so the floor the
+    // chute loaded is not on the screen while the words about the fall are being read: the
+    // character is still standing in the corridor they fell out of.
+    const chute = findSquare(3, (square) => square.chute !== 0 && square.ladder === 0 && square.trapdoor === -1);
+    const landing = bundledDungeon.chute(chute.x, chute.y, 3, 0);
+    const session = playing(characterFile({ level: 3, ...chute }));
+    await settle();
+    expect(session.view().place.floor).toBe(landing);
+    expect(session.view().screenFloor.rows).not.toBe(session.rows);
+    expect(session.view().screenFloor.rows[chute.y][chute.x].chute).toBe(landing);
+    await press(session, KEY.escape);
+    expect(session.view().screenFloor.rows).toBe(session.rows);
+  });
+
   it('throws away what was typed while the character was falling down a chute', async () => {
     // chute calls erase_message_block of its own before it waits (exe 2000:b5d3), so the wait is
     // for a key pressed after the words are up rather than one typed during the fall. The step

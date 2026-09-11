@@ -66,12 +66,13 @@
   }
 
   /**
-   * What the zoom map on the game's own screen knows: in faithful the map the character has
-   * discovered, and in the other two every square, since those are the modes that show the whole
-   * floor.
+   * What the zoom map on the game's own screen knows: in faithful the map the character had
+   * discovered when the loop last drew the screen, and in the other two every square, since those
+   * are the modes that show the whole floor.
    */
   function zoomMap(stage: Stage) {
-    return discoveredMap(stage) ?? { known: () => true, knownOnArrival: () => true };
+    const floor = stage.view.screenFloor;
+    return mapDrawn(stage.mode, { discovered: () => floor.discovered }) ?? { known: () => true, knownOnArrival: () => true };
   }
 
   /**
@@ -162,15 +163,15 @@
   {@const kind = highlightedKind(stage.mode)}
   <Screen
     game={stage.session.game}
-    rows={view.rows}
+    rows={view.screenFloor.rows}
     place={view.place}
     viewsFrom={view.viewsFrom}
-    monsters={monstersDrawn(stage.mode, view)}
+    monsters={monstersDrawn(stage.mode, { ...view.screenFloor, engaged: view.engaged })}
     box={view.box}
     screen={view.screen}
     screenCleared={view.screenCleared}
     discovered={zoomMap(stage)}
-    mapMonsters={zoomMapMonsters(stage.mode, view)}
+    mapMonsters={zoomMapMonsters(stage.mode, view.screenFloor)}
     highlightMonsterId={kind}
     routeSquares={route?.squares ?? []}
     debug={debugDrawn(stage.mode)}

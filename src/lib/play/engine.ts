@@ -10,6 +10,7 @@ import type { Rng } from '../game/port/rng';
 import type { Game, PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
 import { MAP_PLAYER, newGame, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
 import { UNFORGIVEN_AREA } from '../map/area';
+import type { DiscoveredMap } from '../map/draw-floor';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
 import { boxesOf } from './boxes';
@@ -107,6 +108,26 @@ export interface Turn {
 /** How far along the HIT ANY KEY plaque's own wait the screen is. */
 export type PlaqueState = 'blanked' | 'showing';
 
+/**
+ * The floor the game's own screen shows: the squares, the map they are drawn with and the
+ * monsters standing on them.
+ *
+ * movecontrol draws the map window (FUN_3000_8e75, exe 3000:8e75) and the four views
+ * (FUN_2000_ac9e, exe 2000:ac9e) at the top of a pass and nowhere else. A floor loaded half-way
+ * through one — by a chute, a ladder, a dig — is therefore not on the screen until the loop comes
+ * round: the original leaves the pixels of the last drawing where they are, so the character is
+ * still standing in the corridor they fell out of while the words about the fall are read. The
+ * port draws the screen from the game as it stands rather than leaving a drawing on it, so this
+ * is the floor it draws instead of the one the character is on.
+ */
+export interface ScreenFloor {
+  rows: MapSquare[][];
+  discovered: DiscoveredMap;
+  /** The monsters standing on that floor, and the ones of them the views could see. */
+  monsters: StockedMonster[];
+  visible: StockedMonster[];
+}
+
 /** One key movecontrol dispatches on. */
 export type KeyHandler = KeyedHandler<Turn>;
 
@@ -143,6 +164,10 @@ export interface PlayView {
   /** The monsters standing on a square the four 3-D views drew this turn, which is exactly the
    *  ones the character can see. */
   visible: StockedMonster[];
+  /** What the game's own screen is drawn from, which is a floor behind the character while
+   *  something about a fall or a climb is still being read ({@link ScreenFloor}). The three above
+   *  are the floor the character is on, which is what the site's own map draws. */
+  screenFloor: ScreenFloor;
   /** The message box, as the game draws it: the eight lines and the bar above them. */
   box: ScreenLine[];
   /** A screen the game has taken the whole display over with; empty when there is none. */
@@ -311,6 +336,9 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   /** Where the character was standing when the views were last drawn, which is what movecontrol
    *  compares against to decide whether to draw them again. */
   private drawnFrom: { x: number; y: number; level: number; module: number; dir: number } | null = null;
+  /** The floor the screen shows ({@link ScreenFloor}). {@link drawFloor} takes it, and the
+   *  constructor takes the first one before anything can be drawn. */
+  private screenFloor!: ScreenFloor;
   /**
    * The delays the game holds a drawn message for (exe 1000:2789), which the tab keeps to. The
    * loop runs straight past them; this is what decides which of the screens it drew is showing.
@@ -380,6 +408,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       floor: this.game.pc.level,
       dungeon: this.game.pc.module,
     }));
+    this.drawFloor();
   }
 
   protected override get frames(): HeldFrames {
@@ -668,6 +697,25 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * it, and the coin flip that mirrors the monster ahead is worked out from that number. The
    * place they were drawn from is what the screen draws them from in the meantime.
    */
+  /**
+   * The floor the screen is drawn on ({@link ScreenFloor}), which the loop takes at the top of a
+   * pass, where movecontrol draws the map window (FUN_3000_8e75) and the four views
+   * (FUN_2000_ac9e) on it.
+   *
+   * It is taken whether or not the views are drawn, since a key waiting stops the views and not
+   * the map window: a floor change with keys typed ahead reaches the map at once, the way it does
+   * in the original.
+   */
+  drawFloor(): void {
+    const monsters = drawnMonsters(this.game, this.game.pc.level);
+    this.screenFloor = {
+      rows: this.rows,
+      discovered: this.memory.discovered(),
+      monsters,
+      visible: monsters.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
+    };
+  }
+
   drawViews(): void {
     const pc = this.game.pc;
     const from = this.drawnFrom;
@@ -705,6 +753,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       rows: this.rows,
       monsters: drawn,
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
+      screenFloor: this.screenFloor,
       box: messageBoxScreen({ box: this.box, drawn: printed }),
       // The expanded map has covered the display, so every line the game has drawn belongs to
       // that screen — including the two the X branch puts in the corner the message box stands
@@ -864,6 +913,7 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     // changed — and only leaves the monsters on the screen a moment stale. This marks them every
     // pass, so the monsters that can be seen are the ones standing there now.
     session.memory.markViews(session.rows, pc.x, pc.y);
+    session.drawFloor();
     session.drawViews();
     const key = await session.keyOrEdit();
     // The square the pass was worked out from is the one the record has just replaced, so the
