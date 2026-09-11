@@ -60,6 +60,9 @@ describe('the key the game reads', () => {
 
   it('answers a box waiting for any key with the space bar', async () => {
     const session = inTheTown(new BorlandRng(3), { money: 1200 });
+    // The town's own tablet is waiting for a key, and the box it comes down for takes the
+    // keyboard with it, so the loop is let get back to waiting before anything else is typed.
+    await settle();
     session.press(KEY.money);
     await settle();
     expect(session.box).toContain('LIST OF ASSETS:');
@@ -94,6 +97,7 @@ describe("Moraff's World's arrows in Dungeons of the Unforgiven", () => {
 
   it('walks a character north who was facing east, both keys through movecontrol', async () => {
     const session = inTheTown(new BorlandRng(3), { dir: 3 });
+    await settle();
     const start = session.view().place;
     for (const key of compassKeys(KEY.arrowUp, session.game.pc.dir)) session.press(key);
     await settle();

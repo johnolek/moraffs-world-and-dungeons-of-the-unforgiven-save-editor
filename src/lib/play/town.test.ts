@@ -4,7 +4,7 @@ import { savePlayer } from '../game/port/record';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { newCharacterFile } from '../roller/save-file';
-import { startPlaying } from './battle.test-support';
+import { press, startPlaying } from './battle.test-support';
 import { GameSession, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
@@ -18,12 +18,6 @@ function characterFile(overrides: Partial<PlayerCharacter> = {}): CharacterFile 
     },
     died() {},
   };
-}
-
-/** Press a key and let the loop get back to waiting for the next one. */
-async function press(session: GameSession, key: number): Promise<void> {
-  session.press(key);
-  await new Promise((resolve) => setTimeout(resolve));
 }
 
 /** Type a number a digit at a time and hit Enter, the way typed_name reads one. */

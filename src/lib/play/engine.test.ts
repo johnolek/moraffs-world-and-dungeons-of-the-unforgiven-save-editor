@@ -40,8 +40,15 @@ function playing(file: CharacterFile, rng: Rng = new BorlandRng(3)): GameSession
  *  it finds a free one, and every draw from this comes back the same. */
 const lowest: Rng = { random: () => 0 };
 
-/** Press a key and let the loop get back to waiting for the next one. */
+/**
+ * Press a key and let the loop get back to waiting for the next one.
+ *
+ * The wait in front of the press is what a player has and a test otherwise does not: the loop
+ * reaches the point it is waiting at, and a key pressed before it got there would be one of the
+ * keys a box takes off the keyboard (`GameSession.showBox`).
+ */
 async function press(session: GameSession, key: number): Promise<void> {
+  await settle();
   session.press(key);
   await new Promise((resolve) => setTimeout(resolve));
 }
@@ -335,6 +342,20 @@ describe('the message box', () => {
     expect(game.screen.some((line) => line.text === 'A MENU LINE')).toBe(false);
     game.say('SECOND BOX');
     expect(session.box).toEqual(['SECOND BOX']);
+  });
+
+  it('takes the keyboard with it, so a key typed ahead cannot answer it', async () => {
+    // FUN_2000_2f5d ends with erase_message_block (exe 4000:430e), which is the
+    // `while (kbhit()) getch();` strike: a box takes whatever was typed while the game was busy
+    // off the keyboard rather than being answered by it.
+    const session = playing(characterFile({ level: 0, ...townWalk(), money: 1200 }));
+    await settle();
+    session.press(KEY.money);
+    session.press(KEY.escape);
+    await settle();
+    expect(session.box).toContain('LIST OF ASSETS:');
+    await press(session, KEY.escape);
+    expect(session.box).toEqual([]);
   });
 
   it('keeps what it last said while the character walks on', async () => {

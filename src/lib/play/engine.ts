@@ -485,7 +485,13 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       });
     }
     try {
-      return await this.key();
+      const key = await this.key();
+      // erase_message_block (exe 4000:430e) is the last thing FUN_2000_4054 does, and the last
+      // thing FUN_2000_412a (exe 2000:412a) does for the tablet: anything else typed while the
+      // box stood is thrown away, so the box after this one is not answered by a key meant for
+      // this one.
+      this.flushKeys();
+      return key;
     } finally {
       this.timed.cancelAfter();
       this.plaque = null;
@@ -585,6 +591,10 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     const box = MESSAGE_BOX_RECT;
     this.timed.wipe(box.x, MESSAGE_BOX_LINES_TOP, box.right, box.bottom);
     this.box = lines.slice(0, MESSAGE_BOX_LINES);
+    // erase_message_block (exe 4000:430e), which FUN_2000_2f5d ends with: a box takes the
+    // keyboard with it, so a key typed while the game was busy cannot answer the box that goes
+    // up next.
+    this.flushKeys();
   }
 
   /** Arriving on a floor: the floor itself, then its monsters. */
