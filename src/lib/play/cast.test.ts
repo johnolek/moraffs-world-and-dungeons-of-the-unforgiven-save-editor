@@ -7,7 +7,7 @@ import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
-import { floorSquare, standingOn, startPlaying } from './battle.test-support';
+import { facingAMonster, floorSquare, standingOn, startPlaying } from './battle.test-support';
 import { GameSession, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
@@ -83,10 +83,13 @@ function wizard(owned: number[], overrides: Partial<PlayerCharacter> = {}): Char
 /** The wizard battle spells: Minor Protection on the first line and Pass Wall on the seventh. */
 const MINOR_PROTECTION = spellIndex(2, 0, 2);
 const PASS_WALL = spellIndex(2, 6, 1);
+/** MAGIC ZAP, the second wizard battle spell, which does two damage per level of the caster. */
+const MAGIC_ZAP = spellIndex(2, 0, 1);
 /** DESCEND, the twelfth preparation spell, which is the fourth line's third slot. */
 const DESCEND = spellIndex(1, 3, 2);
 
 /** The keys those spells sit under in the thirty-spell table. */
+const SPELL_B = 0x62;
 const SPELL_C = 0x63;
 const SPELL_L = 0x6c;
 const SPELL_T = 0x74;
@@ -110,14 +113,18 @@ describe('casting from the spellbook', () => {
     expect(screenText(session).some((text) => text.includes('MINOR PROTECTION'))).toBe(true);
     await press(session, SPELL_C);
     expect(session.game.pc.protection).toBe(1);
+    expect(session.game.pc.sp).toBe(19);
+    // What the spell printed about itself waits for a key, and the cast is only over once it
+    // has been given one.
+    expect(session.box[0]).toBe('YOUR BODY BEGINS TO SHIMMER');
+    await press(session, KEY.escape);
     // The spell lasts 60 moves and the moment the cast itself costs is the first of them.
     expect(session.game.pc.protectionTime).toBe(59);
-    expect(session.game.pc.sp).toBe(19);
   });
 
   it('spends the ten seconds a battle spell takes', async () => {
     const session = playing(wizard([MINOR_PROTECTION]));
-    await press(session, KEY.cast, 0x33, SPELL_C);
+    await press(session, KEY.cast, 0x33, SPELL_C, KEY.escape);
     expect(session.view().seconds).toBe(10);
   });
 
@@ -186,6 +193,22 @@ describe('casting from the spellbook', () => {
     expect(screenText(session).some((text) => text.includes('SLEEP'))).toBe(true);
     await press(session, KEY.enter);
     expect(session.game.pc.sp).toBe(20);
+  });
+
+  it('leaves what a damage spell did to the monster standing for a key', async () => {
+    const spellbook = Array.from({ length: 180 }, () => 0);
+    spellbook[MAGIC_ZAP] = 1;
+    const session = await facingAMonster(new BorlandRng(3), { cls: 3, sp: 20, maxSp: 20, spellbook });
+    const monster = session.game.monsters[0];
+    const before = monster.hp;
+    await press(session, KEY.cast, 0x33, SPELL_B);
+    expect(monster.hp).toBe(before - (session.game.pc.lev * 2 + 2));
+    expect(session.box).toEqual([
+      'WISPS OF COLORFUL LIGHT',
+      '   GATHER TOGETHER AND ZAP',
+      `   THE MONSTER FOR ${before - monster.hp}`,
+      '   POINTS OF DAMAGE!',
+    ]);
   });
 
   it('swaps the two layouts of the spell table and ends the spell', async () => {
@@ -329,7 +352,7 @@ describe('the time each of the two cast keys spends', () => {
     const slot = plantMonster(session, at);
     session.game.monsterTimers[slot] = TIMER;
     const before = session.view().seconds;
-    await press(session, KEY.useItem, 0x32, 0x33, SPELL_C);
+    await press(session, KEY.useItem, 0x32, 0x33, SPELL_C, KEY.escape);
     expect(session.game.pc.protection).toBe(1);
     expect(session.view().seconds).toBe(before + BATTLE_SPELL_SECONDS);
     // The I key spends the seconds and passes no moment, so the monster is where it was and has
@@ -342,7 +365,7 @@ describe('the time each of the two cast keys spends', () => {
     const session = castingOnAFloor(1);
     const slot = plantMonster(session, nearbySquare(1, session.game.pc));
     session.game.monsterTimers[slot] = TIMER;
-    await press(session, KEY.cast, 0x33, SPELL_C);
+    await press(session, KEY.cast, 0x33, SPELL_C, KEY.escape);
     expect(session.game.pc.protection).toBe(1);
     // pass_moment starts every monster near the character on nought before it walks them.
     expect(session.game.monsterTimers[slot]).toBe(0);

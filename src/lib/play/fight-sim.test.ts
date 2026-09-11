@@ -15,12 +15,14 @@ import {
   monsterLevelRange,
   rollFightHp,
   sendInTheMonster,
+  settle,
   startFight,
   FIGHT_SPELL_LISTS,
   type FightMonster,
   type FightSetup,
 } from './fight-sim';
 import { monsterById } from '../map/stocking';
+import { KEY } from './keys';
 
 /** The class byte of a Sage, who is the one class allowed both lists of battle spells out of
  *  their own spellbook. A Fighter casts nothing out of one at all. */
@@ -177,6 +179,11 @@ describe('a spell button', () => {
     // level 1 for sixty moves.
     await castFightSpell(session, spellAt(1, 0, 2));
     expect(session.game.pc.protection).toBe(1);
+    // The spell leaves what it said standing, and the moment the cast costs is only spent once
+    // that box has been given the key it waits for.
+    expect(session.box[0]).toBe('YOUR BODY BEGINS TO SHIMMER');
+    session.press(KEY.escape);
+    await settle();
     // Sixty moves, less the one the cast itself spends.
     expect(session.game.pc.protectionTime).toBe(59);
     session.finish();

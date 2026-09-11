@@ -31,6 +31,7 @@ import {
 } from '../game/port/screens';
 import type { Game, SpellChoice } from '../game/port/state';
 import type { Turn } from './engine';
+import { printMenus } from './boxes';
 import { gearMenuLines } from './gear';
 import { drinkAPotion } from './potions';
 
@@ -144,11 +145,12 @@ async function castPickedSpell(
   const affordable = source !== CAST_SPELLBOOK || spellCost(level) <= game.pc.sp;
   if (affordable) await askSpellQuestion(game, type, level, slot);
   const floorBefore = game.pc.level;
-  const result = castSpell(game, source, type, level, slot, session.battleSpellsShown);
+  // What a spell says about itself — the damage it did, the refusal it printed instead — goes
+  // through print_menu_only (exe 2000:309e), which waits for a key at the end of every box.
+  const result = await printMenus(session, () =>
+    castSpell(game, source, type, level, slot, session.battleSpellsShown),
+  );
   session.battleSpellsShown = result.battleSpellsShown;
-  // The refusal cast_a_spell prints for a spell there are no points for is a print_menu_only,
-  // which waits for a key.
-  if (!affordable) game.pressAnyKey();
   if (game.pc.level !== floorBefore) session.enterFloor(game.pc.level);
   return result.seconds;
 }
