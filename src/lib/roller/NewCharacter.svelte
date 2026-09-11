@@ -549,7 +549,9 @@
   button.ghost {
     background: none;
   }
-  input {
+  /* The box the character's name is typed into, and nothing else: a bare `input` would draw
+     every leaderboard radio 280 pixels wide and leave its label stranded off to the right. */
+  input[type='text'] {
     background: var(--panel-2);
     border: 1px solid var(--line);
     border-radius: 6px;
