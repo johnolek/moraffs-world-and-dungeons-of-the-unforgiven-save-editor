@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { playTones } from '../../speaker';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as speaker from '../../speaker';
 import type { MwStockedMonster } from '../../game/mw-port/stocking';
 import { mwSetOccupant } from '../../game/mw-port/state';
 import type { Rng } from '../../game/port/rng';
@@ -7,13 +7,13 @@ import type { MwGameSession } from './engine';
 import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
-/** The speaker is the one thing these tests watch, so it is the one thing they stand in for. */
-vi.mock('../../speaker', () => ({
-  playTones: vi.fn(),
-  armSpeaker: vi.fn(),
-  silence: vi.fn(),
-  speakerIsOpen: () => false,
-}));
+/**
+ * The speaker is the one thing these tests watch. It is watched rather than stood in for: nothing
+ * has opened one under Node, so playing a sequence already does nothing, and a spy on the module
+ * every caller shares counts the calls wherever the caller was loaded from.
+ */
+const playTones = vi.spyOn(speaker, 'playTones');
+afterAll(() => playTones.mockRestore());
 
 /** An Rng whose every roll comes out as high as it can, so a swing lands and does damage. */
 const highest: Rng = { random: (n) => (n > 1 ? n - 1 : 0) };
@@ -41,13 +41,13 @@ function fighting(hp: number): MwGameSession {
   );
 }
 
-beforeEach(() => vi.mocked(playTones).mockClear());
+beforeEach(() => playTones.mockClear());
 
 describe('the sound switch', () => {
   it('silences the blow that lands', async () => {
     const session = fighting(4000);
     await pressMw(session, MW_KEY.sound);
-    vi.mocked(playTones).mockClear();
+    playTones.mockClear();
     await pressMw(session, MW_KEY.fight);
     expect(session.game.monsters[0].hp).toBeLessThan(4000);
     expect(playTones).not.toHaveBeenCalled();
@@ -56,7 +56,7 @@ describe('the sound switch', () => {
   it('silences the kill, which the port runs twice over for its menus', async () => {
     const session = fighting(1);
     await pressMw(session, MW_KEY.sound);
-    vi.mocked(playTones).mockClear();
+    playTones.mockClear();
     await pressMw(session, MW_KEY.fight);
     expect(session.game.monsters[0].hp).toBe(0);
     expect(playTones).not.toHaveBeenCalled();
