@@ -13,6 +13,12 @@ export function isAllowedOrigin(origin: string | undefined, allowedOrigin: strin
 }
 
 /**
+ * How long a browser may reuse the answer to a preflight, in seconds. Chrome caps what it will
+ * honour at ten minutes, which is what this is.
+ */
+const PREFLIGHT_HOLDS_FOR_SECONDS = 600;
+
+/**
  * `Vary: Origin` goes on every answer, allowed or not: it tells anything caching in between that
  * the answer depends on who asked, so one origin's answer is never handed to another.
  */
@@ -28,4 +34,8 @@ export function writeCorsHeaders(
   // The site puts its player secret in `Authorization`, and a browser will not send a header the
   // answer to the preflight has not named.
   response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // How long the browser may go on believing the answer above. Without it Chrome asks again
+  // every five seconds, which is exactly how often a run being played sends a batch, so every
+  // batch costs a preflight and the POST behind it waits for that preflight to come back.
+  response.setHeader('Access-Control-Max-Age', String(PREFLIGHT_HOLDS_FOR_SECONDS));
 }

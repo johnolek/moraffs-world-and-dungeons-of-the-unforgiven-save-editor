@@ -89,6 +89,9 @@ describe('the run server over HTTP', () => {
     expect(allowed.headers.get('access-control-allow-methods')).toContain('POST');
     expect(allowed.headers.get('access-control-allow-headers')).toContain('Content-Type');
     expect(allowed.headers.get('access-control-allow-headers')).toContain('Authorization');
+    // Without this the browser asks again every five seconds, which is how often a run being
+    // played sends a batch, so every batch would cost a preflight of its own.
+    expect(allowed.headers.get('access-control-max-age')).toBe('600');
 
     const refused = await fetch(`${origin}/health`, {
       method: 'OPTIONS',
