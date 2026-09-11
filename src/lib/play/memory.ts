@@ -239,12 +239,16 @@ export class MapMemory {
    * The floor as the game's own map draws it.
    *
    * The same object comes back until a square is marked, so a screen drawn from it can skip a
-   * repaint on a key that discovered nothing.
+   * repaint on a key that discovered nothing. It answers for the floor it was handed out on
+   * rather than for whichever floor is resident when it is asked, so a screen still showing the
+   * floor a character has just fallen off (`engine.ts` ScreenFloor) can go on drawing its map.
    */
   discovered(): DiscoveredMap {
+    const live = this.live;
+    const arrival = this.arrival;
     this.handedOut ??= {
-      known: (x, y) => this.isKnown(x, y),
-      knownOnArrival: (x, y) => this.wasKnownOnArrival(x, y),
+      known: (x, y) => bitSet(live, x, y),
+      knownOnArrival: (x, y) => bitSet(arrival, x, y),
     };
     return this.handedOut;
   }
