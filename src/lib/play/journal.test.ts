@@ -12,7 +12,7 @@ import {
   loseItem,
   useMagicItem,
 } from '../game/port/drops';
-import { writeScrollOrWand } from '../game/port/magic';
+import { magicZap, writeScrollOrWand } from '../game/port/magic';
 import type { Rng } from '../game/port/rng';
 import { BorlandRng } from '../game/port/rng';
 import type { Game, MonsterKind, PlayerCharacter } from '../game/port/state';
@@ -26,6 +26,7 @@ import {
   stayTheNight,
   temple,
 } from '../game/port/town';
+import { castSpell, spellIndex, CAST_SPELLBOOK } from '../game/port/inventory';
 import { hintOnFloor } from './arrival';
 import {
   characterFile,
@@ -305,6 +306,25 @@ describe('a fight', () => {
 });
 
 describe('spells and what they write', () => {
+  it('says what a battle spell hit the monster for', () => {
+    const game = fighting(rolls(), { lev: 20 });
+    expect(magicZap(game)).toBe(true);
+    expect(pushed(game, 'spellDamaged')).toEqual([
+      { kind: 'spellDamaged', monster: { type: REGULAR, level: 40, name: gargalon(game) }, damage: 42 },
+    ]);
+    expect(lines(game)).toContain(`The spell hit a Level 40 ${gargalon(game)} for 42`);
+  });
+
+  it('reads the cast out before what the spell did, the way it happened', () => {
+    const game = fighting(rolls(), { lev: 20, cls: 3, sp: 20, maxSp: 20 });
+    game.pc.spellbook[spellIndex(2, 0, 1)] = 1;
+    castSpell(game, CAST_SPELLBOOK, 2, 0, 1);
+    expect(lines(game)).toEqual([
+      'Cast MAGIC ZAP from spell points',
+      `The spell hit a Level 40 ${gargalon(game)} for 42`,
+    ]);
+  });
+
   it('names the wand a spell wrote and its charges', () => {
     const game = newGame({ rng: rolls(), chooseSpell: () => ({ type: 2, level: 2, slot: 0 }) });
     expect(writeScrollOrWand(game, 10, 2)).toBe(true);

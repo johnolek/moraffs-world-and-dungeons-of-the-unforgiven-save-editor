@@ -16,7 +16,7 @@ import {
 import { drinkHealingPotion, dropCoins, dropWeapon, takeAPill } from '../../game/mw-port/items';
 import { inventoryScreen } from '../../game/mw-port/inventory';
 import { die } from '../../game/mw-port/levels';
-import { explosion, writeScrollOrWand } from '../../game/mw-port/magic';
+import { castSpell, explosion, writeScrollOrWand, MW_FROM_SPELLBOOK } from '../../game/mw-port/magic';
 import type { MwGame, MwGameOverrides } from '../../game/mw-port/state';
 import { newMwGame, mwSetOccupant } from '../../game/mw-port/state';
 import type { MwStockedMonster } from '../../game/mw-port/stocking';
@@ -379,6 +379,20 @@ describe('spells and what they do', () => {
       { kind: 'spellDamaged', monster: { type: 1, level: 12, name: 'WEREWOLF' }, damage: 115 },
     ]);
     expect(lines(game)).toContain('The spell hit a Level 12 WEREWOLF for 115');
+  });
+
+  it('reads the cast out before what the spell did, the way it happened', () => {
+    const game = fightGame([{ x: 5, y: 4, hp: 4000, type: 1, depth: 12 }], {
+      rng: scripted([40]),
+      engaged: 0,
+      pc: { x: 5, y: 5, floor: 12, cls: 3, sp: 20, maxSp: 20 },
+    });
+    // Minor Explosion, the first slot of the wizard list's fifth line.
+    castSpell(game, MW_FROM_SPELLBOOK, 2, 4, 0);
+    expect(lines(game)).toEqual([
+      'Cast MINOR EXPLOSION from spell points',
+      'The spell hit a Level 12 WEREWOLF for 115',
+    ]);
   });
 });
 

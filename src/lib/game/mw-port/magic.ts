@@ -1556,8 +1556,13 @@ export function castSpell(
     );
     return 0;
   }
+  // spell_effect pushes what the spell did as it does it, and a spell that refused itself is no
+  // cast at all, so the cast is only known to have happened once it comes back true. Its own
+  // event goes in where the spell started rather than after it, so that a journal reads the
+  // cast and then what it did.
+  const beforeTheSpell = game.events.length;
   if (!spellEffect(game, category, levelIndex, slot)) return 0;
-  game.events.push({
+  game.events.splice(beforeTheSpell, 0, {
     kind: 'cast',
     spell: {
       game: 'moraffsWorld',
