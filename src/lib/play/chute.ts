@@ -56,6 +56,10 @@ export async function fallDownChute(turn: Turn, destination: number): Promise<vo
   game.delay(game.highSpeed ? SINKING_MS_HIGH_SPEED : SINKING_MS);
   game.draw(chuteLine('YOU HAVE FALLEN DOWN A CHUTE!', 1)); // DS:1abc
   game.draw(chuteLine('  HIT ANY KEY TO CONTINUE...', 2)); // DS:1ada
+  // erase_message_block (exe 4000:430e) again, on its own this time (exe 2000:b5d3): whatever was
+  // typed while the character was falling is thrown away, so the wait is for a key pressed after
+  // the words are up.
+  session.flushKeys();
   await session.key();
   session.wipeMessageBlock();
   game.redrawView = true;

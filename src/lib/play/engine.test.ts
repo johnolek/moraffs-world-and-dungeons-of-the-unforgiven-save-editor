@@ -226,6 +226,24 @@ describe('changing floors', () => {
     expect(session.view().box).toEqual([]);
   });
 
+  it('throws away what was typed while the character was falling down a chute', async () => {
+    // chute calls erase_message_block of its own before it waits (exe 2000:b5d3), so the wait is
+    // for a key pressed after the words are up rather than one typed during the fall. The step
+    // onto the chute and the key behind it are what a player walking with the arrow held does.
+    const below = findSquare(3, (square, x, y, rows) => {
+      const ahead = rows[y - 1][x];
+      return square.n === 3 && square.chute === 0 && ahead.chute !== 0 && ahead.ladder === 0 && ahead.trapdoor === -1;
+    });
+    const session = playing(characterFile({ level: 3, dir: 0, ...below }));
+    await settle();
+    session.press(KEY.arrowUp);
+    session.press(KEY.escape);
+    await settle();
+    expect(session.game.screen.map((line) => line.text)).toContain('  HIT ANY KEY TO CONTINUE...');
+    await press(session, KEY.escape);
+    expect(session.view().box).toEqual([]);
+  });
+
   it('goes through a trap door to the square every one of them lands on', async () => {
     const door = findSquare(3, (square) => square.trapdoor >= 0 && square.ladder === 0);
     const destination = bundledDungeon.trapdoor(door.x, door.y, 3, 0);
