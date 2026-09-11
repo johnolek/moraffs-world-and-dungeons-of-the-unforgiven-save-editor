@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, currentEntry, type GameId, type Leaderboard } from '../app-state.svelte';
+  import { app, currentEntry, type GameId, type Leaderboard, type Tab } from '../app-state.svelte';
   import { keepRolledCharacter } from '../character/current';
   import { LEADERBOARD_CHOICES } from '../character/leaderboard';
   import { downloadBytes } from '../download';
@@ -22,6 +22,19 @@
   import { REV_ROLLER_PORT, type RevRollerView } from './rev-session';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
   import { ROLLER_PORT, RollerSession, type RollerView } from './session';
+
+  interface Props {
+    /**
+     * Whether this is the New Character tab, which draws its own scrolling frame, its title and
+     * the page they sit on. The Play tab mounts the same roller under a heading of its own so
+     * that a character can be rolled and walked into the dungeon without leaving the page.
+     */
+    standalone?: boolean;
+    /** The tab the roller is mounted on, which is the one its keys are answered on. */
+    tab?: Tab;
+  }
+
+  let { standalone = true, tab = 'roller' }: Props = $props();
 
   const STATS = ['STRENGTH', 'INTELLIGENCE', 'WISDOM', 'CONSTITUTION', 'AGILITY', 'LUCK'];
 
@@ -243,7 +256,7 @@
    *  screens ask for. A key belongs to whatever is being typed into, and a shortcut belongs to
    *  the browser. */
   function onKeyDown(event: KeyboardEvent) {
-    if (app.tab !== 'roller' || screen === null) return;
+    if (app.tab !== tab || screen === null) return;
     if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
     const action = rollerKey(screen, event.key, typed, menus);
     if (!action) return;
@@ -276,10 +289,19 @@
 
 <svelte:window onkeydown={onKeyDown} />
 
-<div class="roller">
-  <div class="page">
+{#if standalone}
+  <div class="roller">
+    <div class="page body">{@render roller()}</div>
+  </div>
+{:else}
+  <div class="body">{@render roller()}</div>
+{/if}
+
+{#snippet roller()}
     {#if !session || !view}
-      <h2><PixelText text="New Character" scale={2} /></h2>
+      {#if standalone}
+        <h2><PixelText text="New Character" scale={2} /></h2>
+      {/if}
       <p class="lead">
         Roll up a character the way the game does: the same questions, the same dice, the same starting kit. The finished
         character joins your roster and downloads as a character file you can drop into your game folder.
@@ -411,8 +433,7 @@
         {#if note}<p class="note">{note}</p>{/if}
       {/if}
     {/if}
-  </div>
-</div>
+{/snippet}
 
 <style>
   .roller {
@@ -477,12 +498,13 @@
     font-size: 12px;
     line-height: 1.4;
   }
-  .row,
-  .choices {
+  .body .row,
+  .body .choices {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     align-items: center;
+    margin-top: 0;
   }
   .choices {
     margin: 14px 0;
