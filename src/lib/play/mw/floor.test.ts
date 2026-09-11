@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MORAFFS_WORLD_MAP } from '../../map/game';
 import { mwEnterLevel } from './floor';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /** A square of the town with a ladder that goes down. */

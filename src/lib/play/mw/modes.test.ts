@@ -8,7 +8,7 @@ import { drawZoomMonsters, ZOOM_MONSTER_COLOUR } from '../zoom-monsters';
 import { MW_SCREEN_PIXELS } from './view3d/screen';
 import { MORAFFS_WORLD_ZOOM_MAP } from './map';
 import type { MwGameSession } from './engine';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /**

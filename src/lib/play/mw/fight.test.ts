@@ -6,7 +6,7 @@ import { BorlandRng, type Rng } from '../../game/port/rng';
 import type { MwGameSession } from './engine';
 import { spendTime } from '../../game/mw-port/combat';
 import { startMwGame } from './engine';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /** An Rng whose every roll comes out as high as it can, so a swing lands and does damage. */

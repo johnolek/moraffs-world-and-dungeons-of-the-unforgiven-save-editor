@@ -4,7 +4,7 @@ import type { MwStockedMonster } from '../../game/mw-port/stocking';
 import { mwSetOccupant } from '../../game/mw-port/state';
 import type { Rng } from '../../game/port/rng';
 import type { MwGameSession } from './engine';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /** The speaker is the one thing these tests watch, so it is the one thing they stand in for. */

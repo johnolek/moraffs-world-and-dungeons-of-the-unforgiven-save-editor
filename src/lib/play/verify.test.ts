@@ -6,7 +6,7 @@ import { characterFile, press, settle, teleporterSquare, townSquare } from './ba
 import { runMoveControl, startGame } from './engine';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame } from './mw/engine';
-import { findMwSquare, mwCharacterFile } from './mw/engine.test';
+import { findMwSquare, mwCharacterFile } from './mw/test-engine';
 import { MW_KEY, mwTurn } from './mw/keys';
 import { runRevDungeon, startRevGame } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/engine.test';

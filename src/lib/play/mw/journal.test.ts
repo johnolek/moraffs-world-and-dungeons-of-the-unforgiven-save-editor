@@ -24,7 +24,7 @@ import { MONSTER_SLOTS } from '../../game/mw-port/stocking';
 import { bank, inn, store, temple } from '../../game/mw-port/town';
 import type { Rng } from '../../game/port/rng';
 import type { MwGameSession } from './engine';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw, settleMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw, settleMw } from './test-engine';
 import { moraffsWorldJournal } from './journal';
 import { MW_KEY } from './keys';
 

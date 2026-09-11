@@ -3,7 +3,7 @@ import { readScalar } from '../../editor/fields';
 import { MORAFFS_WORLD } from '../../editor/games';
 import type { ScalarField } from '../../editor/schema';
 import { BorlandRng } from '../../game/port/rng';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw, settleMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw, settleMw } from './test-engine';
 import { MW_KEY } from './keys';
 import { loadMwPlayer } from './record';
 

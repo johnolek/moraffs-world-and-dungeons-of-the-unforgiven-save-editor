@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /** A square of the town with nothing on it, so the key pressed is the only thing happening. */

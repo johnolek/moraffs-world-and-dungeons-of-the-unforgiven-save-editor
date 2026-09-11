@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY, mwFacingArrow, mwGameKey, mwStepKey, mwTurn } from './keys';
 
 const press = (key: string, modifiers: Partial<KeyboardEvent> = {}) =>

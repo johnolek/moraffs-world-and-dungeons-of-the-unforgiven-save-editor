@@ -4,7 +4,7 @@ import type { MwCharacter } from '../../game/mw-port/state';
 import { BorlandRng, type Rng } from '../../game/port/rng';
 import { adviseTheWalker } from './advice';
 import { startMwGame } from './engine';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 import { MW_MESSAGE_BOX } from './screens';
 

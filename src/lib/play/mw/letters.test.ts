@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Rng } from '../../game/port/rng';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /** An empty square of the town to stand on while a screen is open. */

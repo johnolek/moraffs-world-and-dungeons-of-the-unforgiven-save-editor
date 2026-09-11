@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MwGameSession } from './engine';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /** A square of the town holding one of the five things floor 0 can hold. */

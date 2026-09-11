@@ -5,7 +5,7 @@ import { describeEffects, MONSTERS } from '../../mw-bestiary/monsters';
 import { mwDebugMonsterLines } from './debug-screen';
 import { mwEngagedMonster } from './panel';
 import { BorlandRng } from '../../game/port/rng';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_SQUARE_EMPTY, mwSetOccupant } from '../../game/mw-port/state';
 import type { MwGameSession } from './engine';
 import { MW_KEY } from './keys';

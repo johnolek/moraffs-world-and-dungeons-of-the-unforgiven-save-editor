@@ -7,7 +7,7 @@ import { runMoveControl, startGame, type CharacterFile, type GameSession } from 
 import { runPlayLoop } from './loop';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
-import { findMwSquare, mwCharacterFile } from './mw/engine.test';
+import { findMwSquare, mwCharacterFile } from './mw/test-engine';
 import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile, type RevGameSession } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/engine.test';
 import { REV_KEY } from './rev/keys';

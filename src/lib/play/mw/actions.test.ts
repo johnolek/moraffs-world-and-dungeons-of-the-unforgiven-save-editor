@@ -7,7 +7,7 @@ import { mwSetOccupant } from '../../game/mw-port/state';
 import type { MwStockedMonster } from '../../game/mw-port/stocking';
 import type { Rng } from '../../game/port/rng';
 import type { MwGameSession } from './engine';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw, settleMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw, settleMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /**

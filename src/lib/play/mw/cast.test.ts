@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mwSpellBookSlot } from '../../game/mw-port/spells';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './test-engine';
 import { MW_KEY } from './keys';
 
 /** The character record's index for one spell, by the category, level and place on its line. */
