@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { declarations } from './citations';
+import { declarations, mentions } from './citations';
 
 const FILE = 'src/lib/game/port/magic.ts';
 
@@ -68,5 +68,34 @@ describe('declarations', () => {
   it('finds a citation the line wrapping split in two', () => {
     const mw = declarations('src/lib/game/mw-port/spells.ts', MW_FRAGMENT);
     expect(mw[1].c).toEqual({ name: 'FUN_3000_b7fd', address: '3000:b7fd', game: 'moraffsWorld' });
+  });
+});
+
+describe('mentions', () => {
+  it('finds a bare address and the executable named in front of one', () => {
+    const text = 'wipes nothing where it takes its key (exe 2000:c82d); getch (WORLD.EXE 1000:28b4) lower-cases it';
+    expect(mentions(text)).toEqual([
+      { address: '2000:c82d', prefix: 'exe' },
+      { address: '1000:28b4', prefix: 'WORLD.EXE' },
+    ]);
+  });
+
+  it("lowers Moraff's Revenge's capitals and keeps DUNSMALL.EXE in front", () => {
+    expect(mentions('asks at DUNSMALL.EXE 1000:0517, and 1000:B674 lays them out')).toEqual([
+      { address: '1000:0517', prefix: 'DUNSMALL.EXE' },
+      { address: '1000:b674', prefix: null },
+    ]);
+  });
+
+  it('reads the address out of a function Ghidra could not name', () => {
+    expect(mentions('FUN_2000_c28b: the map has scrolled off')).toEqual([{ address: '2000:c28b', prefix: null }]);
+  });
+
+  it('sees the address inside a formal citation as well', () => {
+    expect(mentions('/** go_away (exe 3000:db1e, unf.c "go_away"). */')).toEqual([{ address: '3000:db1e', prefix: 'exe' }]);
+  });
+
+  it('finds nothing in text that names no address', () => {
+    expect(mentions('a 1024 by 768 frame, 60 steps at 7 ms')).toEqual([]);
   });
 });

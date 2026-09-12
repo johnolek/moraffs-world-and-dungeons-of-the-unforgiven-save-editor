@@ -4,7 +4,9 @@
  * Every ported function's doc comment cites the decompiled function it came from, as in
  * `(exe 3000:d904, unf.c "sleep_monster")` — see `Naming and citations` in
  * `src/lib/game/port/README.md`. That is the formal citation, and `declarations` reads it off
- * the comment above each declaration of a file.
+ * the comment above each declaration of a file. Prose comments also name bare addresses where
+ * they explain a decision, as in `movecontrol wipes nothing where it takes its key (exe
+ * 2000:c82d)`, and `mentions` finds those.
  *
  * Nothing here reads a file or knows which files exist: callers hand in the text. That keeps
  * this usable from the Source tab, which bundles the files with Vite, and from a Node script,
@@ -94,6 +96,42 @@ export function declarations<F extends string>(file: F, source: string): PortFun
       (method && method[1] !== 'constructor' && !BLOCK_WORDS.includes(method[1]) ? method[1] : null);
     if (name) found.push({ file, name, c: citation(comment) });
     comment = [];
+  }
+  return found;
+}
+
+/**
+ * The word written in front of an address to say which executable it is in. `exe` means the
+ * game the file is a port of, so it is the file and not the word that decides; the three
+ * executable names say outright. Null is a bare address.
+ */
+export type AddressPrefix = 'exe' | 'UNF.EXE' | 'WORLD.EXE' | 'DUNSMALL.EXE' | null;
+
+/** One address a comment names, in passing or as a citation. */
+export interface Mention {
+  /** Segment and offset in lower case, as `2000:c82d`, however the comment wrote it. */
+  address: string;
+  prefix: AddressPrefix;
+}
+
+/**
+ * An address as the comments write it: `2000:c82d`, `1000:B674` in Moraff's Revenge's capitals,
+ * with or without an executable's name in front, or the name Ghidra gives a function it could
+ * not name, `FUN_2000_c28b`, which is its address in other clothes.
+ */
+const MENTION = /(?:\b(exe|UNF\.EXE|WORLD\.EXE|DUNSMALL\.EXE)\s+)?\b([0-9a-f]{4}):([0-9a-f]{4})\b|\bFUN_([0-9a-f]{4})_([0-9a-f]{4})\b/gi;
+
+/**
+ * Every address the text names, in the order it names them, each with the executable's name
+ * written in front of it if one was. Addresses are found anywhere in the text, not only in
+ * comments: a data table that says where a value was read from counts as much as a comment.
+ */
+export function mentions(source: string): Mention[] {
+  const found: Mention[] = [];
+  for (const match of source.matchAll(MENTION)) {
+    const [, prefix, segment, offset, funSegment, funOffset] = match;
+    const address = `${segment ?? funSegment}:${offset ?? funOffset}`.toLowerCase();
+    found.push({ address, prefix: (prefix as AddressPrefix) ?? null });
   }
   return found;
 }
