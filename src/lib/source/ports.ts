@@ -11,6 +11,7 @@
  * citations name and the game whose Source tab lists it.
  */
 import type { GameId } from '../app-state.svelte';
+import { declarations, type PortFunction as CitedFunction } from './citations';
 import toHitSource from '../bestiary/to-hit.ts?raw';
 import rollSource from '../bestiary/roll.ts?raw';
 import dropsSource from '../calculators/drops.ts?raw';
@@ -133,96 +134,13 @@ export function sourceFiles(game: GameId = 'unforgiven'): SourceFile[] {
   return FILES[game];
 }
 
-/** Where in the executable, and under what name, a decompiled function sits. */
-export interface Citation {
-  name: string;
-  /** Segment and offset, as `3000:d904`. */
-  address: string;
-  /** The game whose decompilation holds the function: `unf.c` names Dungeons of the
-   *  Unforgiven's, `mw.c` names Moraff's World's. */
-  game: GameId;
-}
-
-/** One declaration of one file, with the decompiled function its comment cites. */
-export interface PortFunction {
-  file: SourceFile;
-  name: string;
-  /** Null where the comment above the declaration cites nothing. */
-  c: Citation | null;
-}
+/** One declaration of one of the files the Source tab lists. */
+export type PortFunction = CitedFunction<SourceFile>;
 
 /** One file with the declarations it holds. */
 export interface PortFile {
   file: SourceFile;
   functions: PortFunction[];
-}
-
-/**
- * A citation: `(exe 3000:d904, unf.c "sleep_monster")`, or the Moraff's World port's
- * `(WORLD.EXE 3000:4477, mw.c "show_roll")` — that game ships two executables, so its port names
- * the one it means.
- */
-const CITATION = /\((?:exe|WORLD\.EXE)\s+([0-9a-f]{4}:[0-9a-f]+),\s+(unf|mw)\.c\s+"([^"]+)"\)/;
-const CITED_GAME: Record<string, GameId> = { unf: 'unforgiven', mw: 'moraffsWorld' };
-const EXPORTED_FUNCTION = /^export (?:async )?function (\w+)\s*\(/;
-/** An exported value, with or without a type written on it: `export const TWINS: Twin[] = [`. */
-const EXPORTED_VALUE = /^export const (\w+)\s*(?::[^=\n]+)?=/;
-const CLASS_START = /^(?:export )?class \w/;
-/** A method of a class: two spaces of indentation, an argument list, and an opening brace. */
-const METHOD = /^ {2}(\w+)\s*\([^;]*\)\s*(?::[^{]+)?\{\s*$/;
-/** Words that start a block inside a method, which is not a declaration of anything. */
-const BLOCK_WORDS = ['if', 'for', 'while', 'switch', 'do', 'try', 'catch', 'else', 'return'];
-
-function isComment(line: string): boolean {
-  const text = line.trim();
-  return text.startsWith('//') || text.startsWith('/*') || text.startsWith('*');
-}
-
-/** One line of a comment with the `//`, `/**` or `*` that marks it as one taken off. */
-function commentText(line: string): string {
-  return line.trim().replace(/^(?:\/\/+|\/\*+|\*+)/, '').replace(/\*\/$/, '').trim();
-}
-
-/** The function a comment cites, read across the whole comment so that a citation the line
- *  wrapping happens to split in two is still found. */
-function citation(comment: string[]): Citation | null {
-  const cited = CITATION.exec(comment.map(commentText).join(' '));
-  if (!cited) return null;
-  return { address: cited[1], name: cited[3], game: CITED_GAME[cited[2]] };
-}
-
-/**
- * The declarations of one file, in the order it declares them: every exported function and
- * value, and every method of a class.
- *
- * A citation is carried down from the comment written directly on top of a declaration. Any
- * other line between the two, blank ones included, drops it, so a citation in a file's opening
- * comment is not handed to whatever happens to be declared first.
- */
-export function declarations(file: SourceFile, source: string): PortFunction[] {
-  const found: PortFunction[] = [];
-  let comment: string[] = [];
-  let inClass = false;
-  for (const line of source.split('\n')) {
-    if (line.trim() === '') {
-      comment = [];
-      continue;
-    }
-    if (isComment(line)) {
-      comment.push(line);
-      continue;
-    }
-    if (CLASS_START.test(line)) inClass = true;
-    else if (line === '}') inClass = false;
-    const method = inClass ? METHOD.exec(line) : null;
-    const name =
-      EXPORTED_FUNCTION.exec(line)?.[1] ??
-      EXPORTED_VALUE.exec(line)?.[1] ??
-      (method && method[1] !== 'constructor' && !BLOCK_WORDS.includes(method[1]) ? method[1] : null);
-    if (name) found.push({ file, name, c: citation(comment) });
-    comment = [];
-  }
-  return found;
 }
 
 const PORT_FILES: Record<GameId, PortFile[]> = {
