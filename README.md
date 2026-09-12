@@ -7,6 +7,9 @@ Live at <https://johnolek.github.io/moraffs-world-and-dungeons-of-the-unforgiven
 The build is a single self-contained HTML file, so it also works opened straight
 from disk.
 
+`docs/INDEX.md` says what every document in this repository is for, for the three
+games and for this port both.
+
 ## DotU map explorer
 
 Every floor of every module, computed on the fly from the dungeon generator

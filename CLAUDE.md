@@ -7,6 +7,9 @@ work is prefixed `MORF-n:` with the item URL at the bottom of the commit message
 the chunked feature loop applies: one approved chunk per commit series, then
 present the next chunk's plan and wait.
 
+`docs/INDEX.md` is the index to every document here: what each one answers, how
+long it is, and which of the three games it is about. Read it before going looking.
+
 ## Deploy map
 
 - Push to `main` → GitHub Actions runs the tests, builds `dist/`, and deploys it to
