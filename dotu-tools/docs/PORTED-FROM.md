@@ -256,29 +256,45 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 ## Routines nothing in the port points at
 
 20 routines the reverse engineering named, outside the runtime segment, that no file
-cites or mentions. Each is either not ported, ported without saying so, or something a browser has no
-use for; which one is the judgement the catalogue is for.
+cites or mentions.
 
-- `shade_palette` 2000:1b02
-- `section_number_p` 2000:1d12
-- `section_number2` 2000:1d35
-- `show_registration_notice` 2000:60e8
-- `main` 2000:620f
-- `save_monster_map` 2000:702e
-- `load_monster_map` 2000:70f4
-- `load_unfdung_bin` 2000:787d
-- `null_check` 2000:8f99
-- `load_level_screen` 2000:90be
-- `module_installed` 2000:c069
-- `set_16_colours` 3000:6c6b
+**This is not a list of gaps.** A routine lands here when nothing names it, and the port shares one
+piece of code between the two games wherever the games share a routine, citing only one of them — so a
+routine can sit in this list and be played all the same. It is a list of things nobody has accounted
+for, which is a different thing.
+
+### Called by nothing in the original either (2)
+
+Dead in the game as much as in the port. Nothing to do.
+
 - `load_picture_seq` 3000:968b
-- `title_screen` 3000:99bf
-- `load_font` 4000:0abf
-- `gmode` 4000:0fc0
-- `set_ega_colour` 4000:102d
-- `mouse_detect` 4000:39c0
-- `num_to_string` 4000:5a87
 - `shareware_plea_screen` 4000:751b
+
+### Called by something in the original (18)
+
+Each is either played somewhere without saying so, or something a browser has no use for. What each
+does is in `FUNCTION-CATALOG.md`.
+
+| routine | address | called by |
+|---|---|---|
+| `shade_palette` | 2000:1b02 | `FUN_2000_1b61` |
+| `section_number_p` | 2000:1d12 | `movecontrol` |
+| `section_number2` | 2000:1d35 | `stock_level`, `boss_office_message`, `monster_manual`, `gradient_palette`, `set_palette` |
+| `show_registration_notice` | 2000:60e8 | `main` |
+| `main` | 2000:620f | `entry` |
+| `save_monster_map` | 2000:702e | `quit_game` |
+| `load_monster_map` | 2000:70f4 | `load_level_map` |
+| `load_unfdung_bin` | 2000:787d | `main` |
+| `null_check` | 2000:8f99 | `load_level_screen` |
+| `load_level_screen` | 2000:90be | `FUN_2000_9232` |
+| `module_installed` | 2000:c069 | `change_module` |
+| `set_16_colours` | 3000:6c6b | `set_palette` |
+| `title_screen` | 3000:99bf | `FUN_3000_a0f1` |
+| `load_font` | 4000:0abf | `FUN_2000_1c5b` |
+| `gmode` | 4000:0fc0 | `FUN_2000_04b7`, `FUN_2000_1598`, `load_section_pictures`, `load_player`, `load_level_screen`, `quit_game` |
+| `set_ega_colour` | 4000:102d | `FUN_2000_1b61`, `set_palette` |
+| `mouse_detect` | 4000:39c0 | `main`, `FUN_2000_c200`, `movecontrol` |
+| `num_to_string` | 4000:5a87 | `store_refund`, `show_money`, `g_store`, `temple`, `view_prep_spells`, `view_battle_spells`, `engagement_timing`, `FUN_3000_7545`, `view_stats`, `FUN_3000_caac` |
 
 Also uncited: 364 routines Ghidra could not name, and 29 named routines of
 the Borland runtime in segment 1000.

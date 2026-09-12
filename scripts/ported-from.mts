@@ -216,14 +216,37 @@ export function page(walk: Walk, game: Game): string {
     const evidence = found.evidence.get(routine.address)!;
     lines.push(`| \`${routine.name}\` | ${routine.address} | ${fileList(evidence.named)} | ${fileList(evidence.mentioned)} |`);
   }
+  const dead = uncitedNamed.filter((routine) => routine.callers.length === 0);
+  const live = uncitedNamed.filter((routine) => routine.callers.length > 0);
   lines.push('', '## Routines nothing in the port points at', '');
   lines.push(
     `${uncitedNamed.length} routines the reverse engineering named, outside the runtime segment, that no file`,
-    `cites or mentions. Each is either not ported, ported without saying so, or something a browser has no`,
-    `use for; which one is the judgement the catalogue is for.`,
+    `cites or mentions.`,
+    '',
+    `**This is not a list of gaps.** A routine lands here when nothing names it, and the port shares one`,
+    `piece of code between the two games wherever the games share a routine, citing only one of them — so a`,
+    `routine can sit in this list and be played all the same. It is a list of things nobody has accounted`,
+    `for, which is a different thing.`,
+    '',
+    `### Called by nothing in the original either (${dead.length})`,
+    '',
+    `Dead in the game as much as in the port. Nothing to do.`,
     '',
   );
-  for (const routine of uncitedNamed) lines.push(`- \`${routine.name}\` ${routine.address}`);
+  for (const routine of dead) lines.push(`- \`${routine.name}\` ${routine.address}`);
+  lines.push(
+    '',
+    `### Called by something in the original (${live.length})`,
+    '',
+    `Each is either played somewhere without saying so, or something a browser has no use for. What each`,
+    `does is in \`${game.catalogue}\`.`,
+    '',
+    '| routine | address | called by |',
+    '|---|---|---|',
+  );
+  for (const routine of live) {
+    lines.push(`| \`${routine.name}\` | ${routine.address} | ${routine.callers.map((caller) => `\`${caller}\``).join(', ')} |`);
+  }
   const uncitedUnnamed = uncited.filter(unnamed).length;
   const uncitedRuntime = uncited.filter((routine) => runtime(routine) && !unnamed(routine)).length;
   lines.push(

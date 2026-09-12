@@ -212,27 +212,43 @@ citations rather than make them. What each routine does is in `../decomp/functio
 ## Routines nothing in the port points at
 
 18 routines the reverse engineering named, outside the runtime segment, that no file
-cites or mentions. Each is either not ported, ported without saying so, or something a browser has no
-use for; which one is the judgement the catalogue is for.
+cites or mentions.
 
-- `shade_palette_banks` 2000:1aca
-- `game_disk_prompt` 2000:4043
-- `check_v_file` 2000:412b
-- `load_worldmap_bin` 2000:4252
-- `monster_type_at` 2000:4538
-- `is_explored` 2000:51fd
+**This is not a list of gaps.** A routine lands here when nothing names it, and the port shares one
+piece of code between the two games wherever the games share a routine, citing only one of them — so a
+routine can sit in this list and be played all the same. It is a list of things nobody has accounted
+for, which is a different thing.
+
+### Called by nothing in the original either (5)
+
+Dead in the game as much as in the port. Nothing to do.
+
 - `random_walk` 2000:5708
 - `random_run` 2000:575a
 - `roll_dice` 2000:578c
-- `load_dung_bin` 2000:57d7
 - `spells_hlp_probe` 2000:590b
-- `draw_cell_corners` 3000:a932
 - `seeded_pick` 3000:af6f
-- `load_palette` 4000:100f
-- `palette_ramp` 4000:109d
-- `mouse_pick` 4000:2ef7
-- `format_two_numbers` 4000:42d2
-- `write_dac` 5110:009c
+
+### Called by something in the original (13)
+
+Each is either played somewhere without saying so, or something a browser has no use for. What each
+does is in `../decomp/functions.txt`.
+
+| routine | address | called by |
+|---|---|---|
+| `shade_palette_banks` | 2000:1aca | `FUN_2000_1b29` |
+| `game_disk_prompt` | 2000:4043 | `main` |
+| `check_v_file` | 2000:412b | `main` |
+| `load_worldmap_bin` | 2000:4252 | `main`, `FUN_2000_7b20`, `movecontrol` |
+| `monster_type_at` | 2000:4538 | `FUN_3000_1a08`, `FUN_3000_2796` |
+| `is_explored` | 2000:51fd | `draw_map_square` |
+| `load_dung_bin` | 2000:57d7 | `main`, `FUN_2000_7b20`, `movecontrol` |
+| `draw_cell_corners` | 3000:a932 | `draw_map_square` |
+| `load_palette` | 4000:100f | `shade_palette_banks`, `FUN_3000_66e9`, `set_palette` |
+| `palette_ramp` | 4000:109d | `set_palette` |
+| `mouse_pick` | 4000:2ef7 | `FUN_2000_1d0b`, `FUN_2000_1fbd`, `select_player`, `FUN_2000_919a`, `FUN_2000_9968`, `movecontrol`, `spell_screen`, `roll_char`, `FUN_3000_bdb5` |
+| `format_two_numbers` | 4000:42d2 | `FUN_2000_f853`, `roll_char` |
+| `write_dac` | 5110:009c | `FUN_4000_2e29` |
 
 Also uncited: 342 routines Ghidra could not name, and 30 named routines of
 the Borland runtime in segment 1000.
