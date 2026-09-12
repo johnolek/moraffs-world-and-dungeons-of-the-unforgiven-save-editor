@@ -27,6 +27,7 @@
     "verify-run": "vite build --config vite.verify.config.ts --logLevel warn && node dist-cli/verify-run.mjs",
     "build:server": "vite build --config vite.server.config.ts --logLevel warn",
     "build:engine": "vite build --config vite.engine.config.ts --logLevel warn",
+    "build:ported": "node scripts/build-ported-from.mts",
     "publish:engine": "vite build --config vite.publish-engine.config.ts --logLevel warn && node dist-server/publish-engine.mjs",
     "start:server": "node dist-server/main.mjs",
     "test": "vitest run",

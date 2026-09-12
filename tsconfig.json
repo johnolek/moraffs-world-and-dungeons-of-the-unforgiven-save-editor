@@ -13,6 +13,7 @@
     "src/**/*.js",
     "src/**/*.svelte",
     "server/**/*.ts",
+    "scripts/*.mts",
     "vite.config.ts",
     "vite.config.test.ts",
     "vite.verify.config.ts",

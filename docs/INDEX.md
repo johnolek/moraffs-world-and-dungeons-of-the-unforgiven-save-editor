@@ -13,6 +13,7 @@ page exists to prevent.
 | **What the port does differently on purpose** | the last section of each play README, `Where this leaves the original`, plus `The three deliberate departures` in `src/lib/game/port/README.md` |
 | What a routine of the original does | `dotu-tools/docs/FUNCTION-CATALOG.md` for Dungeons of the Unforgiven; the other two games have no catalogue yet |
 | How a rule or a formula works | the per-game documents below — `UNFORGIVEN-RE-NOTES.md`, `mw-tools/docs/DUNGEON.md`, `rev-tools/docs/MONSTERS.md` |
+| Where a routine of the original ended up in the port | `PORTED-FROM.md` in `dotu-tools/docs/` and `mw-tools/docs/`, generated from the port's own citations by `pnpm build:ported`; Moraff's Revenge has none yet |
 | Where a piece of the port came from | the doc comment above it: every ported function cites its address and its name in the decompilation |
 | How the reverse engineering was done | `dotu-tools/docs/METHOD.md` for the two C games, `rev-tools/docs/BRUN30.md` for the BASIC one |
 | Whether the codebase has known problems | `docs/REVIEW-2026-09-08.md`, and the MORF tracker |
@@ -47,6 +48,7 @@ reader gets from this code back to the game.
 |---|---:|---|
 | `HANDOFF.md` | 30K | The spec. What the tools are for, the game model, the file formats, and a formula sheet. Start here for the game as a whole. |
 | `docs/FUNCTION-CATALOG.md` | 63K | Every one of the 647 routines in `unf.exe`: address, name, size, callers, and what it does where that is known. 199 are named. |
+| `docs/PORTED-FROM.md` | 22K | Where the port plays each routine of `unf.exe`, and which routines nothing points at. Generated; do not edit. |
 | `docs/UNFORGIVEN-RE-NOTES.md` | 35K | The numbers and formulas recovered from the executable, with each one marked as read from the binary or only from the recovered source. |
 | `docs/SCREEN.md` | 19K | What the game's screen is made of, read off a screenshot and the drawing code. |
 | `docs/PICTURES.md` | 18K | The 33 `.PIC` files, what is in each, and the two different rules the game scales and draws them by. |
@@ -64,6 +66,7 @@ reader gets from this code back to the game.
 | document | size | what it answers |
 |---|---:|---|
 | `docs/DUNGEON.md` | 38K | The bulk of the game: how the dungeon is generated, what is on a square, the monsters, combat, spells, pictures and money. |
+| `docs/PORTED-FROM.md` | 18K | Where the port plays each routine of `WORLD.EXE`, and which routines nothing points at. Generated; do not edit. |
 | `docs/MAP-MEMORY.md` | 17K | What the game remembers of a floor and what the automap draws for it. |
 | `docs/SCREEN.md` | 14K | The game's screen, read off screenshots and a screen recording. |
 | `docs/ROLLER.md` | 12K | `roll_char`, the only routine that makes a character, read line by line. |
