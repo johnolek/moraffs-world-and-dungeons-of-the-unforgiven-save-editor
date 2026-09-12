@@ -39,6 +39,6 @@ export default defineConfig({
     // against test files that mostly take less than that. They share a worker instead, which is
     // safe here because no test file imports another one.
     isolate: false,
-    include: ['src/**/*.test.ts', 'server/**/*.test.ts', '*.test.ts'],
+    include: ['src/**/*.test.ts', 'server/**/*.test.ts', 'scripts/**/*.test.ts', '*.test.ts'],
   },
 });
