@@ -98,6 +98,17 @@ export function unloadCharacter(): void {
   chooseEntry(null);
 }
 
+/**
+ * Change which numbered character file this character downloads as, or null to keep downloading
+ * under the name the file came in with.
+ */
+export function renumberCharacter(id: string, slot: number | null): void {
+  const entry = app.roster.find((candidate) => candidate.id === id);
+  if (!entry) return;
+  entry.slot = slot;
+  keepNow(entry);
+}
+
 export function renameCharacter(id: string, name: string): void {
   const entry = app.roster.find((candidate) => candidate.id === id);
   if (!entry || name.trim() === '') return;

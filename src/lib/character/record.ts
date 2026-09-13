@@ -1,6 +1,9 @@
 import type { CurrentCharacter, GameId } from '../app-state.svelte';
 import { readString } from '../editor/fields';
 import { MORAFFS_REVENGE, MORAFFS_WORLD, UNFORGIVEN } from '../editor/games';
+import { MW_SLOTS } from '../roller/mw-save-file';
+import { REV_SLOTS } from '../roller/rev-save-file';
+import { SLOTS } from '../roller/save-file';
 import data from '../game/dotu-data.json';
 import { REV_CLASS_NAMES } from '../game/rev-port/character';
 import { loadRevPlayer, REV_ARMOUR_VALUE, REV_VALUE, revValue } from '../play/rev/record';
@@ -27,6 +30,13 @@ export function recordName(bytes: Uint8Array, game?: string): string {
 export function slotFromFileName(fileName: string): number | null {
   const numbered = /^(\d+)(\.EXE)?$/i.exec(fileName);
   return numbered ? Number(numbered[1]) : null;
+}
+
+/** The character numbers a game's folder has room for, which are the names a download can take. */
+export function characterSlots(game?: string): number[] {
+  if (game === MORAFFS_WORLD.id) return MW_SLOTS;
+  if (game === MORAFFS_REVENGE.id) return REV_SLOTS;
+  return SLOTS;
 }
 
 /** What a character's file is called: its number, or the name it was loaded under. */

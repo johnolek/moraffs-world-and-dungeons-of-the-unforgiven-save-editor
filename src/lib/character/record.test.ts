@@ -6,6 +6,7 @@ import { REV_ARMOUR_VALUE, REV_VALUE, revPlayerFromValues, saveRevPlayer, setRev
 import {
   battleSpellsInEffect,
   characterFileName,
+  characterSlots,
   characterStatus,
   collapsedLine,
   expLabel,
@@ -61,6 +62,19 @@ describe('the file a character came from', () => {
 
   it('keeps the name it was loaded under when there is no slot', () => {
     expect(characterFileName(null, 'sagey.sav')).toBe('sagey.sav');
+  });
+});
+
+describe('the numbers a character can be downloaded as', () => {
+  it('gives each game the numbers its own folder has room for', () => {
+    expect(characterSlots(UNFORGIVEN.id)).toEqual([20, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
+    expect(characterSlots(MORAFFS_WORLD.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(characterSlots(MORAFFS_REVENGE.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it('names every one of them the way that game names its files', () => {
+    expect(characterSlots(MORAFFS_REVENGE.id).map((slot) => characterFileName(slot, '', MORAFFS_REVENGE.id))).toContain('10.EXE');
+    expect(characterSlots(UNFORGIVEN.id).map((slot) => characterFileName(slot, '', UNFORGIVEN.id))).toContain('29');
   });
 });
 

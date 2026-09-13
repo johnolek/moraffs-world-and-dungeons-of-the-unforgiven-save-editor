@@ -5,12 +5,13 @@
     characterEdited,
     importCharacter,
     importRevExploredMap,
+    renumberCharacter,
     replaceCharacterBytes,
     unloadCharacter,
     voidCurrentLeaderboard,
   } from '../character/current';
   import { leaderboardEditWarning } from '../character/leaderboard';
-  import { characterFileName } from '../character/record';
+  import { characterFileName, characterSlots } from '../character/record';
   import { downloadBytes } from '../download';
   import { isRevExploredFile } from '../map/explored';
   import { GAME_SCHEMAS, GAMES, pickGameForFile } from './games';
@@ -43,6 +44,21 @@
     const current = currentEntry();
     return current ? characterFileName(current.slot, current.name, current.game) : '';
   });
+  /** The numbers the download can be named after: the ten the game keeps, and the name an
+   *  oddly named file was loaded under, which is only offered while it is still the one in use. */
+  const fileNames = $derived.by(() => {
+    const current = currentEntry();
+    if (!current) return [];
+    const numbered = characterSlots(current.game).map((slot) => ({ slot, name: characterFileName(slot, '', current.game) }));
+    return current.slot === null ? [{ slot: null, name: current.name }, ...numbered] : numbered;
+  });
+
+  /** The number picked in the toolbar, which is what the download is named after from now on. */
+  function renumber(event: Event) {
+    const current = currentEntry();
+    const picked = (event.currentTarget as HTMLSelectElement).value;
+    if (current) renumberCharacter(current.id, picked === '' ? null : Number(picked));
+  }
 
   function showToast(message: string, warn = false) {
     toast = { message, warn };
@@ -257,7 +273,12 @@
         <button type="button" class="ghost" onclick={discard}>Discard changes</button>
         <button type="button" class="ghost" onclick={unload}>Load different file</button>
         <span class="game-badge">{doc.game.displayName}</span>
-        <span class="filename">{fileName}</span>
+        <label class="filename">
+          File name
+          <select value={currentEntry()?.slot ?? ''} onchange={renumber}>
+            {#each fileNames as choice}<option value={choice.slot ?? ''}>{choice.name}</option>{/each}
+          </select>
+        </label>
       </div>
       <!-- The field components write straight into the bytes without telling anyone. The events
            their inputs bubble are how the rest of the app hears that the character changed. -->
@@ -381,7 +402,13 @@
     flex-wrap: wrap;
   }
   .filename {
+    display: flex;
+    gap: 6px;
+    align-items: center;
     color: var(--muted);
+    font-size: 13px;
+  }
+  .filename select {
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
     font-size: 13px;
   }
