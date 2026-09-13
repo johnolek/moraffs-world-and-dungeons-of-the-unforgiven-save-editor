@@ -126,16 +126,16 @@ describe('youArrow', () => {
 describe("the arrow the game's own map marks the character with", () => {
   it('turns it by the way the character faces', () => {
     // The point of the arrow is the middle of its top row, and it swings to the matching side.
-    expect(arrowPixel(0, 100, 100, 3, 0)).toEqual({ x: 102, y: 99 });
-    expect(arrowPixel(1, 100, 100, 3, 0)).toEqual({ x: 102, y: 105 });
-    expect(arrowPixel(2, 100, 100, 3, 0)).toEqual({ x: 99, y: 102 });
-    expect(arrowPixel(3, 100, 100, 3, 0)).toEqual({ x: 105, y: 102 });
+    expect(arrowPixel(0, 100, 100, 4, 0)).toEqual({ x: 103, y: 99 });
+    expect(arrowPixel(1, 100, 100, 4, 0)).toEqual({ x: 103, y: 107 });
+    expect(arrowPixel(2, 100, 100, 4, 0)).toEqual({ x: 99, y: 103 });
+    expect(arrowPixel(3, 100, 100, 4, 0)).toEqual({ x: 107, y: 103 });
   });
 
-  it('fills the same 25 cells of a seven by seven grid whichever way it faces', () => {
+  it('fills the same 37 cells of a nine by nine grid whichever way it faces', () => {
     for (let dir = 0; dir < 4; dir++) {
       const cells = facingArrowCells(dir);
-      expect(cells).toHaveLength(25);
+      expect(cells).toHaveLength(37);
       const inside = (along: number) => along >= 0 && along < FACING_ARROW_SIZE;
       expect(cells.every((cell) => inside(cell.x) && inside(cell.y))).toBe(true);
     }

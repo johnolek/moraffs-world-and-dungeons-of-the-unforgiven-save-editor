@@ -183,8 +183,8 @@ describe('drawYou', () => {
     const { ctx, rects, corners } = recordMarker();
     drawYou(ctx, 1, 2, view, 0.5, 0, true);
     expect(corners).toEqual([]);
-    // The 7 x 7 bitmap has 25 pixels lit, and the point of the arrow is the middle of its top row.
-    expect(rects).toHaveLength(25);
+    // The 9 x 9 bitmap has 37 pixels lit, and the point of the arrow is the middle of its top row.
+    expect(rects).toHaveLength(37);
     expect(rects).toContainEqual([30, 43, 2, 2]);
   });
 

@@ -232,8 +232,8 @@ export function drawExpandedZoomMap(
 }
 
 /**
- * The seven by seven square the arrow's own pixels stand in, for anything drawing the arrow over
- * the frame rather than into it.
+ * The square the arrow's own pixels stand in, for anything drawing the arrow over the frame
+ * rather than into it.
  *
  * The rotations of `arrowPixel` put a pixel one before the corner they are given, so the square
  * starts a pixel inside the cell rather than the two `drawsquare`'s fill starts at.

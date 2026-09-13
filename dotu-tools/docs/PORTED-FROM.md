@@ -62,7 +62,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `temple` | 2000:4d39 | `game/port/town.ts` | `formulas/formulas.ts`, `play/building.ts`, `play/town.ts` |
 | `flea_inn` | 2000:4fe7 | `game/port/hints.ts`, `game/port/town.ts` | `formulas/formulas.ts`, `map/explored.ts`, `map/write-explored.ts`, `play/building.ts`, `play/town.ts` |
 | `bank` | 2000:568b | `game/port/town.ts` | `game/port/state.ts`, `play/building.ts`, `play/town.ts` |
-| `FUN_2000_59c0` | 2000:59c0 |  | `play/display.ts` |
+| `FUN_2000_59c0` | 2000:59c0 |  | `map/you.ts`, `play/display.ts` |
 | `select_player` | 2000:5c0d |  | `game/port/state.ts` |
 | `decode_quit_message` | 2000:5f78 |  | `play/quit.ts` |
 | `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/port/state.ts`, `play/manual.ts` |

@@ -46,18 +46,35 @@ export function youAlpha(timeMs: number): number {
 
 /**
  * `FUN_2000_9d17` (exe 2000:9d17, unf.c "FUN_2000_9d17"): the arrow Dungeons of the Unforgiven
- * marks the character's square with on its own map, as the 7 x 7 bitmap at DS:046d that a cell of
- * eight pixels uses. Its point is at the top before the facing turns it.
+ * marks the character's square with on its own map. Its point is at the top before the facing
+ * turns it.
+ *
+ * The routine keeps four of these and picks between them by how many pixels a map square is: 5 x 5
+ * at DS:0439, this one at DS:0443, 12 x 12 at DS:0455 and 7 x 7 at DS:046d. `FUN_2000_59c0` (exe
+ * 2000:59c0) gives the square ten pixels in video classes 8, 9 and 10, and the port draws mode 9
+ * alone, so this is the only one it ever needs.
  */
 export const FACING_ARROW = [
-  '   X   ',
-  '  XXX  ',
-  ' XXXXX ',
-  'XXXXXXX',
-  '  XXX  ',
-  '  XXX  ',
-  '  XXX  ',
+  '    X    ',
+  '   XXX   ',
+  '  XXXXX  ',
+  ' XXXXXXX ',
+  'XX XXX XX',
+  'X  XXX  X',
+  '   XXX   ',
+  '   XXX   ',
+  '   XXX   ',
 ];
+
+/** How many pixels across the arrow's bitmap is. */
+export const FACING_ARROW_SIZE = FACING_ARROW.length;
+
+/**
+ * How far back a mirrored row is counted from. `FUN_2000_9d17` writes this down once per bitmap —
+ * 2, 5, 7 and 10 for its four — and every one of them is two short of that bitmap's own width,
+ * which is what lands the mirrored half over the same pixels the plain half covers.
+ */
+const MIRROR_FROM = FACING_ARROW_SIZE - 2;
 
 /**
  * Where one pixel of that bitmap lands, given the corner of the character's cell. The four cases
@@ -70,21 +87,19 @@ export function arrowPixel(
   column: number,
   row: number,
 ): Point {
-  if (facing === 1) return { x: x + column - 1, y: y - row + 5 };
+  if (facing === 1) return { x: x + column - 1, y: y - row + MIRROR_FROM };
   if (facing === 2) return { x: x + row - 1, y: y + column - 1 };
-  if (facing === 3) return { x: x - row + 5, y: y + column - 1 };
+  if (facing === 3) return { x: x - row + MIRROR_FROM, y: y + column - 1 };
   return { x: x + column - 1, y: y + row - 1 };
 }
 
-/** How many pixels across the arrow's bitmap is. */
-export const FACING_ARROW_SIZE = 7;
-
 /**
- * The squares of a 7 by 7 grid the arrow fills when it is turned to face `dir`, for anything
+ * The squares of the arrow's own grid it fills when it is turned to face `dir`, for anything
  * drawing it at a size of its own.
  *
- * The rotations put a pixel anywhere from one before the corner they are given to five past it,
- * so a corner of one puts the whole arrow between 0 and 6.
+ * The rotations put a pixel anywhere from one before the corner they are given to two short of
+ * the bitmap's width past it, so a corner of one puts the whole arrow between 0 and one short of
+ * its width.
  */
 export function facingArrowCells(dir: number): Point[] {
   const cells: Point[] = [];
