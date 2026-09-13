@@ -116,6 +116,50 @@ describe('setting a fight up', () => {
     expect(session.file.bytes).not.toEqual(before);
     session.finish();
   });
+
+  it('starts with the spells a night at the inn would have ended already ended', () => {
+    const built = setup({
+      str: 40,
+      dex: 30,
+      tempWeaponPlus: 6,
+      tempArmorPlus: 4,
+      prepStrength: 5,
+      superAgility: 10,
+      protection: 3,
+      protectionTime: 200,
+      strengthTimer: 150,
+      holdMonsterTimer: 90,
+      antiFireTimer: 60,
+    });
+    const session = startFight(built, new SeededRng(11));
+    const pc = session.game.pc;
+    expect(pc.tempWeaponPlus).toBe(0);
+    expect(pc.tempArmorPlus).toBe(0);
+    expect(pc.prepStrength).toBe(0);
+    expect(pc.superAgility).toBe(0);
+    expect(pc.protection).toBe(0);
+    expect(pc.protectionTime).toBe(0);
+    expect(pc.strengthTimer).toBe(0);
+    expect(pc.holdMonsterTimer).toBe(0);
+    expect(pc.antiFireTimer).toBe(0);
+    // Every spell that was lending a characteristic hands it back as it ends: 5 from the
+    // preparation Strength and 7 from the battle one, and 10 from Super Agility.
+    expect(pc.str).toBe(40 - 5 - 7);
+    expect(pc.dex).toBe(30 - 10);
+    session.finish();
+  });
+
+  it('keeps the permanent spells, which are as much the character as their armor', () => {
+    const built = setup({ bodyArmor: 4, protRing: 3, antiMagicRing: 2, invisible: 100, feather: 100 });
+    const session = startFight(built, new SeededRng(12));
+    const pc = session.game.pc;
+    expect(pc.bodyArmor).toBe(4);
+    expect(pc.protRing).toBe(3);
+    expect(pc.antiMagicRing).toBe(2);
+    expect(pc.invisible).toBe(100);
+    expect(pc.feather).toBe(100);
+    session.finish();
+  });
 });
 
 describe('sending the monster in', () => {

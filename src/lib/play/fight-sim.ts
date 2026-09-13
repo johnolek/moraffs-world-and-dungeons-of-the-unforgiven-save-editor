@@ -6,6 +6,7 @@ import { savePlayer } from '../game/port/record';
 import type { Rng } from '../game/port/rng';
 import { portedSpell } from '../game/port/spell-index';
 import { MAP_EMPTY, MAP_PLAYER, setMonsterMap, type PlayerCharacter } from '../game/port/state';
+import { endBattleSpells, endPrepSpells } from '../game/port/town';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
 import { monsterTypeOf } from './floor';
@@ -167,6 +168,11 @@ export function fightSquare(floor: number, module: number): { x: number; y: numb
  * The monster comes afterwards rather than now, because cast_a_spell refuses a preparation spell
  * while a monster is engaged (exe DS:206f) and `movecontrol` engages one on its first pass, so a
  * monster put down here would be a monster no preparation spell could be cast against.
+ *
+ * The character arrives as if they had just come from the inn: {@link endBattleSpells} and
+ * {@link endPrepSpells} are the two routines a night there calls, so a character saved in the
+ * middle of an adventure does not bring their running spells into a fight meant to measure the
+ * bare one. The permanent spells stay, since those are as much the character as their armor is.
  */
 export function startFight(setup: FightSetup, rng: Rng): GameSession {
   const square = fightSquare(setup.monster.floor, setup.monster.module);
@@ -179,6 +185,8 @@ export function startFight(setup: FightSetup, rng: Rng): GameSession {
     y: square.y,
   };
   const session = startGame(fightFile(savePlayer(character, setup.record)), rng);
+  endBattleSpells(session.game);
+  endPrepSpells(session.game);
   emptyTheFloor(session);
   void runPlayLoop(session, runMoveControl(session));
   return session;
