@@ -80,6 +80,13 @@ export interface RosterEntry extends CurrentCharacter {
   journal: JournalEntry[][];
 }
 
+/** A monster to set the fight simulator up with, on the floor the bestiary was reading it on. */
+export interface FightRequest {
+  monsterId: string;
+  module: number;
+  floor: number;
+}
+
 /** A square of the dungeon to send the map to, taken from where a character stands. */
 export interface PlaceRequest {
   game: GameId;
@@ -99,6 +106,8 @@ export interface AppState {
   mapHistory: HistoryCursor;
   /** Set to open a monster in the Monsters tab; the database clears it once it has. */
   requestedMonsterId: string | null;
+  /** Set to set the Fight tab up against a monster; that tab clears it once it has. */
+  requestedFight: FightRequest | null;
   /** Set to open a function in the Source tab; the viewer clears it once it has. */
   requestedSource: SourceRequest | null;
   /** Set to the id of a formula to open in the Formulas tab; that tab clears it once it has. */
@@ -126,6 +135,7 @@ export const app = $state<AppState>({
   tab: 'map',
   mapHistory: new HistoryCursor(),
   requestedMonsterId: null,
+  requestedFight: null,
   requestedSource: null,
   requestedFormula: null,
   requestedPlace: null,

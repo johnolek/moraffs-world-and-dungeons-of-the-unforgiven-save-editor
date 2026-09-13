@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app } from '../app-state.svelte';
+  import { goToTab } from '../history';
   import { currentCharacter } from '../calculators/character';
   import { weaponById } from '../calculators/combat';
   import {
@@ -44,6 +45,12 @@
   let module = $state(home.module);
   let floor = $state(home.floor);
   let baseLevel = $state(monsterLevelBase(home.floor, home.module));
+
+  /** The Fight tab, set up against this monster on the floor being read about here. */
+  function fightIt() {
+    app.requestedFight = { monsterId: entry.id, module, floor };
+    goToTab(app, 'fight');
+  }
 
   // The floor control only offers floors of the module the monster appears in, and every one of
   // those belongs to a section.
@@ -198,6 +205,9 @@
         gauntlet bonuses.
       </p>
       <p>{workedLine}</p>
+      <div>
+        <button type="button" class="fight" onclick={fightIt}>Fight it</button>
+      </div>
     </div>
 
     <div class="charts">
@@ -228,6 +238,21 @@
     flex-direction: column;
     gap: 4px;
     margin-top: 16px;
+  }
+  .fight {
+    margin-top: 4px;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .fight:hover {
+    border-color: var(--accent);
+    color: var(--ink);
   }
   .charts {
     display: flex;

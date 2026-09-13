@@ -121,6 +121,15 @@
     standOn(home.module, home.floor);
   }
 
+  // The Monsters tab can send a monster here to be fought, on the floor it was being read on.
+  $effect(() => {
+    const asked = app.requestedFight;
+    if (!asked) return;
+    app.requestedFight = null;
+    monsterId = asked.monsterId;
+    standOn(asked.module, asked.floor);
+  });
+
   /** The floor the fight is set on, and the level and hit points a fresh roll on it would give. */
   function standOn(pickedModule: number, pickedFloor: number) {
     module = pickedModule;
