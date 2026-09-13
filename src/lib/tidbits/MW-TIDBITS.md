@@ -20,6 +20,7 @@
 ## Exploits and shortcuts
 
 ### A priest can write wizard scrolls, and a wizard priest ones
+! YOUR PRIEST CAN WRITE WIZARD SCROLLS!! THE MENU ONLY LOOKS SHUT!
 
 Write Scroll and Enchant Wand ask three questions in a row: which kind of spell, which level, and
 which of the three spells on that line. The first menu draws the two battle lists your class
@@ -39,6 +40,7 @@ In the code: [cast_spell](source:c/cast_spell), [spell_screen](source:c/spell_sc
 [mwCanCast](source:ts/spells.ts/mwCanCast).
 
 ### Two pills are two free points
+! TWO PILLS, TWO FREE POINTS, AND NOBODY ASKS FOR THEM BACK!
 
 A vitamin pill puts four points on one characteristic and takes two off another, and the six pills
 are three pairs that trade the same two characteristics in opposite directions. Green is four
@@ -52,6 +54,7 @@ drainer that keeps handing them over is a characteristic farm.
 In the code: [take_pill](source:c/take_pill).
 
 ### A Power Weapon spell is a row better than it says
+! POWER WEAPON IS BETTER THAN ADVERTISED! A WHOLE ROW BETTER!
 
 Power Weapon writes 1, 2 or 3 and the swing looks the weapon table up eight rows past it. Row
 eight is already POWER WEAPON 1, so Power Weapon I swings the 129-point die labelled POWER WEAPON
@@ -72,6 +75,7 @@ In the code: [strike](source:c/strike),
 [WEAPONS](source:ts/monsters.ts/WEAPONS) and [spend_time](source:c/FUN_2000_7fb1).
 
 ### A monk starts with every spell in the game
+! THE MONK BEGINS WITH EVERY SPELL IN MORAFF'S WORLD!!
 
 The roller hands out three flags between them. Little Cure goes to every class but the fighter,
 Zap to the wizard, the sage and the mage, and Strength to the worshipper, the priest and the sage.
@@ -89,6 +93,7 @@ In the code: [startingSpells](source:ts/character.ts/startingSpells) and
 [roll_char](source:c/roll_char).
 
 ### Sleep works on a boss
+! SLEEP WORKS ON A BOSS! ONLY FIVE SPELLS EVER ASK WHO IT IS!
 
 Only five spells ask whether a monster is one of the spell-proof ten: Teleport Monster, Autokill,
 Drain Monster and the two Hold Monsters. Nothing else does. Every damage spell in the game lands
@@ -105,6 +110,7 @@ In the code: [sleep_monster](source:c/sleep_monster), [spell_proof](source:c/spe
 [isSpellProof](source:ts/monsters.ts/isSpellProof).
 
 ### The most important thing in town is free
+! THE FINEST THING IN TOWN COSTS YOU NOTHING! ZERO JEWELS!
 
 The temple sells five cures at 30, 200, 2,500, 300 and 500 jewels, and a sixth line, the raise
 dead contract, priced at zero. It writes down the dungeon and the square you are standing on and
@@ -118,6 +124,7 @@ so buying another is the first thing to do on every visit to town.
 In the code: [the temple](source:c/FUN_2000_3085) and [death](source:c/FUN_2000_726f).
 
 ### The floor slosher never runs out
+! THE FLOOR SLOSHER NEVER RUNS OUT! USE IT FOR EVER!
 
 Six magic items turn up on kills. Four of them are used up when you use them: the holy hand
 grenade, the stone of teleportation, the stone of seeing and the potion of healing. The ring of
@@ -138,6 +145,7 @@ In the code: [use_magic_item](source:c/use_magic_item).
 ## Combat
 
 ### Swing on the beat
+! THERE ARE GOOD MOMENTS TO SWING AND BAD ONES!
 
 Your to-hit roll is not random. The swing reseeds the random number generator from the PC's tick
 counter and then takes the very first number out of it, and Borland's generator answers
@@ -160,6 +168,7 @@ In the code: [strike](source:c/strike), [monster_turn](source:c/monster_turn) an
 which is why consecutive seeds give answers that lie on a straight line.
 
 ### A big swing rolls the damage die several times
+! ONE MIGHTY SWING ROLLS THE DICE AGAIN AND AGAIN!
 
 The to-hit roll is not pass or fail. A roll on 80 is added to twice your level, your strength,
 your luck, the weapon's own to-hit number and every plus you are carrying; twice the monster's
@@ -175,6 +184,7 @@ In the code: [strike](source:c/strike), [monster_turn](source:c/monster_turn) an
 [toHitTotal](source:ts/to-hit.ts/toHitTotal).
 
 ### Constitution only helps on a floor deeper than you are
+! CONSTITUTION ONLY SAVES YOU WHERE YOU DO NOT BELONG!
 
 Once a monster's swing has landed, and only while your level is below the floor number, the game
 piles on extra rolls: one on the difference between the floor and your level, one on four times
@@ -194,6 +204,7 @@ mattering again at exactly 100.
 In the code: [monster_turn](source:c/monster_turn).
 
 ### One monster attack in four is thrown away
+! ONE MONSTER SWING IN FOUR NEVER LANDS! LUCKY YOU!
 
 After the damage dice there is a roll on four, and on a 1 the entire total is discarded and
 replaced with a roll on `floor / 2 + 3`. That roll can come out zero, so a monster that landed a
@@ -207,6 +218,7 @@ of those piled on top of it.
 In the code: [monster_turn](source:c/monster_turn).
 
 ### A monk is easier to hit for being clever
+! THE MONK'S OWN CLEVERNESS HELPS THE MONSTERS HIT HIM!
 
 Every class is hit on the same arithmetic except one. A monk has a roll on their own intelligence
 **added** to the monster's chance of hitting them, which is the one place in the game where a
@@ -219,6 +231,7 @@ points — is paying for it on every swing anything takes at them.
 In the code: [monster_turn](source:c/monster_turn).
 
 ### A level 0 character cannot be hit for more than four
+! AT LEVEL 0 NOTHING HURTS YOU MORE THAN FOUR! WE LOOK AFTER BEGINNERS!
 
 Near the end of a monster's attack, after the damage is final, comes a line: if your level is 0
 and the damage is above 4, throw it away and take a roll on 4 plus 1 instead, which is 1 to 4. You
@@ -233,6 +246,7 @@ In the code: [monster_turn](source:c/monster_turn) and
 [experience_needed](source:c/experience_needed).
 
 ### You cannot fight through a door
+! WALK THROUGH A DOOR ALL YOU LIKE! YOU CANNOT SWING THROUGH ONE!
 
 A square's four sides are each a wall, a door, a secret door or open air, and only a wall stops
 you walking. A door is walked through as freely as open air; a secret door is a door the automap
@@ -248,6 +262,7 @@ In the code: [check_engagement](source:c/FUN_2000_7d60),
 [monsters_move](source:c/monsters_move) and [side](source:ts/mwmap.js/side).
 
 ### Breath throws the whole fight away
+! A BREATH WEAPON IGNORES YOUR ARMOUR AND EVERYTHING ELSE!!
 
 A monster whose row names a breath weapon breathes it instead of swinging half the time, and when
 it does, everything above — the roll on 80, your armour, your level, your constitution — is
@@ -264,6 +279,7 @@ In the code: [monster_turn](source:c/monster_turn) and
 ## Magic
 
 ### Go Away never fails, and charges you when it refuses
+! TELEPORT MONSTER NEVER FAILS! AND IT CHARGES YOU WHEN IT WILL NOT!
 
 The help text for Teleport Monster talks about your level against the monster's. There is no such
 test anywhere in the spell. Against anything but the ten spell-proof monsters it works every
@@ -278,6 +294,7 @@ In the code: [teleport_monster](source:c/teleport_monster), [spell_effect](sourc
 and [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
 
 ### Go Away can drop a monster inside solid rock
+! TELEPORT MONSTER PUTS THEM SOMEWHERE ELSE! SOMETIMES INSIDE A WALL!
 
 The spell rolls a new square for the monster and then checks whether it is solid before accepting
 it. It checks the wrong square: it asks about the square **you** are standing on, not the one the
@@ -289,6 +306,7 @@ Dungeons of the Unforgiven has exactly the same mistake in exactly the same spel
 In the code: [teleport_monster](source:c/teleport_monster).
 
 ### The three resistances are absolute while they last
+! THE HELP SAYS 95 PER CENT! IT IS EVERY LAST PER CENT!
 
 Resist Poison, Resist Disease and Resist Level Drain read as percentages in the help text — 95,
 95 and 90. They are not chances at all. While the timer is running the poisoning, the disease and
@@ -306,6 +324,7 @@ In the code: [resist_poison](source:c/resist_poison), [resist_drain](source:c/re
 [anti_fire](source:c/anti_fire) and [monster_turn](source:c/monster_turn).
 
 ### The anti-magic ring does nothing
+! THE ANTI-MAGIC RING IS ON YOUR SHEET FOR ALL TO ADMIRE!
 
 The Anti-Magic Ring is bought with four permanent spells, kept in the save file, shown on the
 inventory screen, and refused by the spell when you already have a better one. No line anywhere
@@ -318,6 +337,7 @@ In the code: [raise_ring_antimagic](source:c/raise_ring_antimagic) and
 [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
 
 ### Priest Protection is Minor Protection again
+! THE PRIEST'S PROTECTION IS EVERY BIT AS GOOD AS THE CHEAP ONE!
 
 Protection takes `2 * level * level` off a monster's attack roll, so level 1 is 2 and level 2 is
 8. The priestly list's Protection, on spell level 5, asks for protection level 1 — which is what
@@ -332,6 +352,7 @@ In the code: [raise_protection](source:c/raise_protection) and
 [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
 
 ### The permanent Invisibility is the weaker one
+! PERMANENT INVISIBILITY LASTS FOR EVER AND WORKS NO BETTER!
 
 Both Invisibilities write the same field: the preparation one writes 1 and the permanent one
 writes 100, which is what keeps a night at the inn from clearing it. The monster movement pass
@@ -346,6 +367,7 @@ In the code: [monsters_move](source:c/monsters_move) and
 [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
 
 ### Fast Move and Invisibility stack
+! RUN FAST AND VANISH AT ONCE! TWO CHANCES TO SKIP THE MONSTERS!
 
 Each of them skips the whole monster movement pass one move in four, and they are two separate
 rolls made a few lines apart rather than one roll used twice. Either on its own buys you four
@@ -358,6 +380,7 @@ and nothing says so.
 In the code: [monsters_move](source:c/monsters_move).
 
 ### Youth halves your age
+! YOUTH DOES NOT TAKE TEN YEARS! IT TAKES HALF OF THEM ALL!
 
 The help text offers ten years off. What the spell does is halve the age field outright, with a
 floor of 15,744 minutes, which is about eleven days, and give back nothing of the strength and
@@ -373,6 +396,7 @@ In the code: [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS),
 [MINUTES_PER_YEAR](source:ts/character.ts/MINUTES_PER_YEAR).
 
 ### Ascend and Descend put you anywhere on the floor
+! ASCEND DOES NOT LIFT YOU STRAIGHT UP! IT PUTS YOU ANYWHERE!
 
 All five of the floor-changing spells describe themselves as moving you straight up or straight
 down, into the open space above or below where you stand. None of them does. Each one rolls
@@ -392,6 +416,7 @@ In the code: [spell_effect](source:c/spell_effect) and
 [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
 
 ### Permanent spells are free off a scroll
+! PERMANENT MAGIC FOR NOTHING!! JUST READ THE SCROLL!
 
 Casting a permanent spell out of your spell book takes its level off your current spell points and
 the same number off your maximum, for good. That is the price of the improvement, and it is why
@@ -415,6 +440,7 @@ In the code: [spell_screen](source:c/spell_screen),
 ## Monsters
 
 ### MORAFF can never appear, twice over
+! THERE IS A MONSTER NAMED MORAFF! YOU WILL NEVER MEET HIM!
 
 Monster 9 of the table is called MORAFF. Its lowest floor is 120 and its highest is 90, so no
 floor in the game falls inside its range; and the picture flag for its slot is clear, so it has no
@@ -427,6 +453,7 @@ In the code: [pick_monster](source:c/pick_monster),
 [MONSTERS](source:ts/monsters.ts/MONSTERS).
 
 ### Seventeen monsters have no picture, and so no existence
+! SEVENTEEN MONSTERS HAVE NO PICTURE AND SO NO LIFE AT ALL!
 
 `WORLD.PIC` holds 37 images against a 48-byte table of flags saying which of them are there, and
 35 of those flags are set. A monster's row carries a picture number, and the routine that rolls a
@@ -444,6 +471,7 @@ In the code: [pick_monster](source:c/pick_monster),
 [stockingOdds](source:ts/monsters.ts/stockingOdds).
 
 ### Everything you kill becomes an ogre in the corner
+! EVERY MONSTER YOU SLAY BECOMES AN OGRE IN THE CORNER!!
 
 A dead monster is not removed. Its slot is rewritten in place as monster type 0 — an Ogre — with
 no hit points, no depth, and a position of x 100, y 100, which is off the side of an 80-wide
@@ -471,6 +499,7 @@ In the code: [monster_killed](source:c/monster_killed),
 [killExperience](source:ts/monsters.ts/killExperience).
 
 ### The Shadow dragons are holes in the shape of a dragon
+! ONE DRAGON PICTURE, PAINTED FIFTEEN DIFFERENT COLOURS!
 
 Every monster has a colour byte, and the picture drawer paints pixel value 17 with it — which is
 how one picture of a ball serves as fifteen coloured balls and one dragon picture serves as seven
@@ -485,6 +514,7 @@ In the code: [draw_picture](source:c/draw_picture) and
 [MONSTERS](source:ts/monsters.ts/MONSTERS).
 
 ### Ten monsters no spell touches, and they hand your grenade back
+! TEN MONSTERS LAUGH AT YOUR SPELLS AND HAND THE GRENADE BACK!
 
 Zeus, the Devil and the eight quest bosses carry a 100 in the byte that marks a monster's kind.
 Teleport Monster, Autokill, Drain Monster and both Hold Monsters ask about it first and print
@@ -499,6 +529,7 @@ In the code: [spell_proof](source:c/spell_proof), [use_magic_item](source:c/use_
 [isSpellProof](source:ts/monsters.ts/isSpellProof).
 
 ### Everything more than a few steps away is standing still
+! THE MONSTERS ONLY WAKE UP WHEN YOU GET CLOSE!
 
 A monster only moves if the two axes' distances add to less than `floor / 10 + 10`, and even
 then only four times in five. That is nine squares on floor 1 and twenty-nine on floor 200, and it
@@ -514,6 +545,7 @@ nothing left to try and stands there for ever.
 In the code: [monsters_move](source:c/monsters_move).
 
 ### The quest bosses stay where you left them
+! THE QUEST BOSSES WAIT EXACTLY WHERE YOU LEFT THEM!
 
 The eight quest bosses stand on floors 4, 8, 12, 16, 125, 150, 175 and 200, in the first of the
 floor's 145 monster slots, and only while the kill flag for that one is still clear. The first
@@ -531,6 +563,7 @@ In the code: [generate_section](source:c/generate_section),
 ## Map and travel
 
 ### There is no map, and it is the other game's map
+! THERE IS NO MAP! AND IT IS THE OTHER GAME'S MAP!
 
 The game ships no dungeon and saves none. Every question about a square — whether there is a wall
 between here and there, whether this is where a ladder stands — is answered by pushing the column,
@@ -555,6 +588,7 @@ In the code: [myrand](source:c/myrand), [wall_side](source:c/wall_side),
 [bundledMwTileset](source:ts/mw-dungeon.ts/bundledMwTileset).
 
 ### Every trap door to a floor drops you on the same square
+! EVERY TRAP DOOR TO A FLOOR DROPS YOU ON THE VERY SAME SQUARE!
 
 The landing square is not rolled fresh. The game seeds the C library's generator with the fixed
 number 10, asks it for `random(60) + 10` and `random(90) + 10`, and if that square is rock it
@@ -568,6 +602,7 @@ In the code: [the landing](source:c/FUN_2000_a6fa) and
 [trapdoorDest](source:ts/mwmap.js/trapdoorDest).
 
 ### Three trap door keys nobody can find, for doors that do not exist
+! THREE KEYS NOBODY CAN FIND, FOR DOORS THAT ARE NOT THERE!
 
 A trap door is labelled with the floor it leads to and wants the key with that number. The keys
 drop from level drainers, and the key you get is for your own floor's group of ten. Twenty flags
@@ -583,6 +618,7 @@ In the code: [monster_killed](source:c/monster_killed),
 [trapdoor](source:ts/mwmap.js/trapdoor).
 
 ### A secret door is a wall on the map and nothing else
+! A SECRET DOOR HIDES ONLY FROM THE MAP! WALK STRAIGHT THROUGH!
 
 The two bits that describe a side of a square have four values: wall, door, secret door, open. Only
 a wall stops you. A door and a secret door are both walked through without a word.
@@ -599,6 +635,7 @@ In the code: [wall_side](source:c/wall_side), [draw_map_square](source:c/draw_ma
 [side](source:ts/mwmap.js/side).
 
 ### Changing dungeon throws the map you have explored away
+! CHANGE DUNGEON AND EVERY STEP YOU MAPPED IS FORGOTTEN!
 
 Your explored squares are kept in `.DUN` files, one per save slot per block of 32 floors, and they
 are a bitmap of where you have been and nothing else — no walls, no monsters, no items. Nothing in
@@ -619,6 +656,7 @@ In the code: [save_dun](source:c/save_dun), [load_dun](source:c/load_dun) and
 [enter_level](source:c/enter_level).
 
 ### The overworld is a picture somebody typed
+! THE WHOLE OVERWORLD WAS TYPED OUT BY HAND! SPACES AND O'S AND P'S!
 
 `WORLDMAP.BIN` is 4,096 bytes, a 64 by 64 grid of one byte per region, and it holds exactly three
 values: a space, a capital `O` and a capital `P`. They are turned into heights for the landscape
@@ -629,6 +667,7 @@ In the code: [load_worldmap_bin](source:c/load_worldmap_bin) and
 [the world map](source:c/FUN_3000_8235).
 
 ### The dungeon number is arithmetic, and it can come out negative
+! THE DUNGEON YOU GET IS ARITHMETIC! IT CAN COME OUT NEGATIVE!
 
 Leaving the overworld computes `(cx * cy * cx) / (|cy| + 1) % 31000` from the region you are
 standing on and then adds one until that dungeon's surface has a square to come back out through.
@@ -652,6 +691,7 @@ In the code: [the world map](source:c/FUN_3000_8235), [surface_feature](source:c
 ## Town and money
 
 ### Seven kinds of money, and only one of them buys anything
+! SEVEN KINDS OF MONEY! ONLY ONE OF THEM BUYS A THING!
 
 The record keeps eight counters: jewels in your pocket, jewels in the bank, and piles of copper,
 silver, ivory, gold, platinum and jewel stones. The store, the temple, the inn and the boat all
@@ -673,6 +713,7 @@ In the code: [bank](source:c/bank), [financial_statement](source:c/financial_sta
 [view_stats](source:c/view_stats).
 
 ### The store wants you to have more than the price
+! THE STORE WANTS MORE THAN THE PRICE! BRING ONE JEWEL EXTRA!
 
 The test the store makes is `price < money`, not `price <= money`. A stick costs one jewel and
 cannot be bought with one jewel in your pocket; you need two. Every price in the shop is really
@@ -684,6 +725,7 @@ only when the price is genuinely above your money.
 In the code: [store](source:c/store) and [the temple](source:c/FUN_2000_3085).
 
 ### The two best things in the game are priced and never sold
+! THE TWO FINEST THINGS IN THE GAME HAVE PRICES AND NO SHELF!
 
 The store's tables have seven rows apiece and both menus stop at six. The rows nobody can reach
 are the great sword at 9,900 jewels and the titanium suit at 60,000 — the biggest damage die of
@@ -696,6 +738,7 @@ In the code: [store](source:c/store), [WEAPONS](source:ts/monsters.ts/WEAPONS) a
 [ARMOUR](source:ts/monsters.ts/ARMOUR).
 
 ### A night at the inn heals nothing
+! A NIGHT AT THE FLEA BAG INN HEALS NOT ONE HIT POINT!
 
 Ten jewels at the Flea Bag Inn buys back every spell point you have spent, clears every spell
 still running — taking back the strength and agility the preparation spells lent you — and hands
@@ -711,6 +754,7 @@ In the code: [inn](source:c/inn), [level_from_experience](source:c/level_from_ex
 [the level-up](source:c/FUN_3000_e5f5).
 
 ### Your money slows you down
+! YOUR FORTUNE WEIGHS YOU DOWN! THE MONSTERS GET FREE TURNS!
 
 Every step costs `(100 + what you are carrying - 10 times your agility) / 100 + 1` moves, and
 those moves are what buy an adjacent monster its turns. The weight counts your body, your armour,
@@ -729,6 +773,7 @@ In the code: [recompute_weight](source:c/recompute_weight),
 ## Bugs the game has
 
 ### An enchanted suit of armour protects no better than a plain one
+! YOUR ENCHANTED ARMOUR LOOKS MAGNIFICENT ON THE INVENTORY SCREEN!
 
 The permanent plus on the armour you are wearing appears nowhere in the sum that decides whether a
 monster hits you. Only the suit's own armour class is subtracted, along with the temporary Enchant
@@ -747,6 +792,7 @@ and a shield in the other.
 In the code: [monster_turn](source:c/monster_turn) and [strike](source:c/strike).
 
 ### Escaping the drop menu reads a byte that is not a count
+! NEVER PRESS ESCAPE AT THE ARMOUR LIST!! YOU HAVE BEEN WARNED!
 
 Pressing Escape at the list of armour slots hands the drop branch a -1. It subtracts one and uses
 the answer as an index, which lands on an unlabelled byte in front of the eight armour counts
@@ -766,6 +812,7 @@ you were carrying for weight, and you can never put down anything that matters.
 In the code: [drop_item](source:c/drop_item).
 
 ### The dig gives up after however many floors were on the stack
+! THE DIG GOES DOWN AS FAR AS IT FEELS LIKE! NO TWO ARE ALIKE!
 
 Digging a hole in the floor searches downwards for the first floor whose square under you is not
 rock, turning round at floor 124 and again at floor 1, and gives up after a set number of tries by
@@ -785,6 +832,7 @@ In the code: [dig_hole](source:c/dig_hole) and
 [generate_section](source:c/generate_section).
 
 ### The EXP NEEDED screen is one level out
+! THE EXP NEEDED SCREEN IS ONE LEVEL OUT! COUNT IT YOURSELF!
 
 The E key lists what the next several levels will cost. It labels each line with your level plus
 one, plus two, and so on, and works the number out for your level plus none, plus one, and so on.
@@ -796,6 +844,7 @@ In the code: [experience_for_level](source:c/experience_for_level) and
 [experience_needed](source:c/experience_needed).
 
 ### Three of the fourteen lessons say nothing at all
+! THE LITTLE MOUSE HAS FOURTEEN LESSONS! THREE OF THEM ARE SILENT!
 
 A character below their third level gets a lesson from a little mouse now and then, taken in turn
 from a list of fourteen. The routine that prints them has a case for the first eleven and nothing
@@ -810,6 +859,7 @@ The fourth lesson, when it does arrive, says `LEFT IS EAST, RIGHT IS WEST`.
 In the code: [the lessons](source:c/FUN_3000_8b27) and [the mouse](source:c/FUN_3000_9383).
 
 ### The design screen asks for a key it does not read
+! THE DESIGN SCREEN LISTS SIX KEYS! ONE OF THEM IS DECORATION!
 
 Designing your own character takes four points off each of the six characteristics and gives you
 twenty-four to put back where you like. The screen lists the keys: S, I, W, C, D or L, for
@@ -824,6 +874,7 @@ In the code: [designYourOwn](source:ts/character.ts/designYourOwn) and
 [roll_char](source:c/roll_char).
 
 ### A priest cannot even read about a wizard spell
+! YOUR PRIEST MAY NOT EVEN READ ABOUT A WIZARD SPELL!
 
 The spell screen's first menu has eight lines: four to cast with and four that print the
 `SPELLS.HLP` description instead. The gate that decides which categories your class may use covers
@@ -843,6 +894,7 @@ In the code: [spell_screen](source:c/spell_screen), [cast_spell](source:c/cast_s
 [mwCanCast](source:ts/spells.ts/mwCanCast).
 
 ### The teleport stone always lands on the same square
+! THE STONE OF TELEPORTATION ALWAYS PUTS YOU ON THE SAME SQUARE!
 
 The stone of teleportation puts you back in the town on the first open square its search finds —
 except that the two loops it searches with never stop early. Every open square inside the border
@@ -856,6 +908,7 @@ In the code: [use_magic_item](source:c/use_magic_item).
 ## Trivia and history
 
 ### The file called V, and the same five sums as the other game
+! THE GAME OPENS A FILE CALLED V AND ADDS IT UP FIVE WAYS!
 
 The first thing the game does is open a file called `V`, print it on the screen, and add up every
 byte in it in five different ways. The five sums have to come to exactly 1, 367, 4, 44,844 and
@@ -868,6 +921,7 @@ file, unchanged, two games apart. And neither of them checks that the file opene
 In the code: [check_v_file](source:c/check_v_file).
 
 ### The Flea Bag Inn is the other game's Flea Bag Inn
+! THE FLEA BAG INN STANDS IN BOTH GAMES, SIGN AND ALL!
 
 Moraff's World has one inn. Its sign reads `WELCOME TO THE FLEA BAG INN`, `A WOODEN SIGN READS:`,
 and then the warning to check the bed carefully before lying down and that the management is not
@@ -881,6 +935,7 @@ Moraff's World spells with one M and the other game with two.
 In the code: [inn](source:c/inn) and [load_h_bin](source:c/load_h_bin).
 
 ### One message nobody can be shown
+! ONE MESSAGE IS WRITTEN AND NOBODY CAN EVER BE SHOWN IT!
 
 `H.BIN` holds everything the game says in an eight-line box: the eight quest bosses' warnings in
 verse, the little mouse's advice, the town greeting, what the poison and the disease say when they
@@ -895,6 +950,7 @@ file, and nothing anywhere calls for it.
 In the code: [load_h_bin](source:c/load_h_bin) and [the arrival greeting](source:c/FUN_2000_248e).
 
 ### Insert the game disk
+! INSERT THE GAME DISK IN THE DISKETTE DRIVE AND HIT A KEY!
 
 Before the character list the game looks for a file in the current directory, and if it is not
 there it puts up a box: insert the game disk in the diskette drive and hit any key, and note that
@@ -911,6 +967,7 @@ In the code: [game_disk_prompt](source:c/game_disk_prompt) and
 [save_player](source:c/save_player).
 
 ### The walls change colour every eleven floors, and the monsters barely notice
+! THE WALLS TAKE A NEW COLOUR EVERY ELEVEN FLOORS!
 
 The palette is rebuilt from scratch whenever you enter a floor. Entries 1 to 15 are the same
 fifteen colours every time — dark blue through to white, the fifteen the coloured balls are named
@@ -928,6 +985,7 @@ changes colour as you go down.
 In the code: [set_palette](source:c/set_palette) and [draw_picture](source:c/draw_picture).
 
 ### Four routines that ship and never run
+! THERE ARE FOUR ROUTINES IN HERE THAT HAVE NEVER ONCE RUN!
 
 Nothing in the executable calls `random_walk`, which steps up or down while a roll on three keeps
 succeeding; or `random_run`, which counts consecutive coin flips won; or `roll_dice`, which is a
@@ -942,6 +1000,7 @@ In the code: [random_walk](source:c/random_walk), [random_run](source:c/random_r
 [roll_dice](source:c/roll_dice) and [seeded_pick](source:c/seeded_pick).
 
 ### Almost every random number is a reading of the clock
+! ALMOST EVERY ROLL IN THIS GAME IS A GLANCE AT THE CLOCK!
 
 There are three ways of getting a random number and two of them reseed constantly. `random_n`,
 which drives the monster's to-hit roll, the finds after a kill, every battle spell and the mouse's
@@ -962,6 +1021,7 @@ In the code: [random_n](source:c/random_n), [strike](source:c/strike) and
 [generate_section](source:c/generate_section).
 
 ### The second class is spelled two ways
+! THE SECOND CLASS IS SPELLED TWO WAYS! BOTH ARE OFFICIAL!
 
 `ROLL.TXT`, which is where the class descriptions on the character creation screen come from,
 calls the second class a WORSHIPER. The table of class names inside the executable, which is what
