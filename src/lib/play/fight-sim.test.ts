@@ -271,4 +271,23 @@ describe('the spells a fight has buttons for', () => {
     expect(named).toContain('HEAL ALL WOUNDS');
     expect(named).toContain('AUTOKILL');
   });
+
+  it('leaves out the ones that would leave the fight exactly as they found it', () => {
+    const named = FIGHT_SPELL_LISTS.flatMap((list) => list.spells.map((spell) => spell.name));
+    expect(named).not.toContain('DETECT LEVEL');
+    expect(named).not.toContain('DETECT POSITION');
+    expect(named).not.toContain('CURE POISON');
+    expect(named).not.toContain('CURE DISEASE');
+  });
+
+  it('keeps every battle spell, the resistances included', () => {
+    const battle = FIGHT_SPELL_LISTS.slice(1).flatMap((list) => list.spells.map((spell) => spell.name));
+    // Monsters breathe fire and cold and drain levels while a fight is going on, so the spells
+    // that hold those off are as much a part of one as the spells that do damage.
+    expect(battle).toContain('ANTI-FIRE');
+    expect(battle).toContain('ANTI-COLD');
+    expect(battle).toContain('RESIST LEVEL DRAIN');
+    expect(battle).toContain('RESIST POISON');
+    expect(battle).toContain('RESIST DISEASE');
+  });
 });

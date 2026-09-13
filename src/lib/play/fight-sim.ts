@@ -325,11 +325,24 @@ const SPELLS_THAT_LEAVE = new Set([
   'relocateSpell',
 ]);
 
+/**
+ * The spells that leave a fight exactly as they found it, all of them preparation spells.
+ *
+ * The two Detect spells only print something — the floor's level, and where on the floor the
+ * character stands. The two cures only clear the poison and disease clocks, and a fight starts
+ * with neither running ({@link startFight}).
+ *
+ * Every battle spell is here on purpose: even the resistances change a fight, since monsters
+ * breathe fire and cold, and drain levels, while it is going on.
+ */
+const SPELLS_THAT_CHANGE_NOTHING = new Set(['detectLevel', 'detectPosition', 'curePoison', 'cureDisease']);
+
 function fightSpells(type: number): FightSpell[] {
   const spells: FightSpell[] = [];
   for (let level = 0; level < SPELL_LINES; level++) {
     for (let slot = 0; slot < SPELLS_PER_LINE; slot++) {
-      if (SPELLS_THAT_LEAVE.has(portedSpell(type, level, slot).fn)) continue;
+      const { fn } = portedSpell(type, level, slot);
+      if (SPELLS_THAT_LEAVE.has(fn) || SPELLS_THAT_CHANGE_NOTHING.has(fn)) continue;
       spells.push({ type, level, slot, name: SPELL_MENU_NAMES[type][level * SPELLS_PER_LINE + slot] });
     }
   }
