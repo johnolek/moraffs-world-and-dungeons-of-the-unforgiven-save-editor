@@ -218,25 +218,22 @@ export const zoomMapWindow = (frameWidth: number): ZoomMapWindow => ({
 });
 
 /**
- * The arrow on the character's square flashes.
+ * The two colours the arrow on the character's square flashes between, as palette entries.
+ * `ARROW_FLASH_MS` in `../map/you` is how long each is held.
  *
- * `movecontrol` redraws it every time round the loop it waits for a key in (exe 2000:c748) and
- * turns its colour over each time `biostime() / 6` comes back a different number, which is once
- * every six BIOS ticks — a third of a second. The two colours are white and black: black is
- * `FUN_2000_9d17` plotting the same seven by seven bitmap in colour 0, so the arrow disappears
- * into the cell rather than changing colour. Colour 15 is what every video mode but the first
- * lights it in (exe 2000:c792), and the port draws mode 9 alone.
+ * Black is `FUN_2000_9d17` plotting the same bitmap in colour 0, so the arrow disappears into the
+ * cell rather than changing colour. Colour 15 is what every video mode but the first lights it in
+ * (exe 2000:c792), and the port draws mode 9 alone.
  *
  * Nothing else in the game draws the arrow, so it stands still in whatever colour it was left in
  * while a message box waits behind its plaque: that wait is `FUN_2000_2a2e` (exe 2000:2a2e),
  * which polls the keyboard without going round `movecontrol`'s loop.
  */
-export const ARROW_FLASH_MS = 330;
 export const ARROW_LIT_COLOUR = 15;
 export const ARROW_DARK_COLOUR = 0;
 
-/** The seven by seven square the arrow stands in on the game's own screen, which is fixed: the
- *  map's window is always centred on the character. */
+/** The square the arrow stands in on the game's own screen, which is fixed: the map's window is
+ *  always centred on the character. */
 export const FACING_ARROW_RECT = facingArrowRect(zoomMapWindow(SCREEN_PIXELS.width));
 
 /**

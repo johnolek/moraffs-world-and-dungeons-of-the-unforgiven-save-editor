@@ -9,7 +9,7 @@
   import type { DiscoveredMap } from '../map/draw-floor';
   import type { Point } from '../map/viewport';
   import { SeededRng } from '../game/port/rng';
-  import { facingArrowCells } from '../map/you';
+  import { ARROW_FLASH_MS, facingArrowCells } from '../map/you';
   import { debugMonsterLines } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
   import { onScreen } from '../ui/on-screen.svelte';
@@ -18,7 +18,6 @@
   import type { KilledOnScreen } from './engine';
   import {
     ARROW_DARK_COLOUR,
-    ARROW_FLASH_MS,
     ARROW_LIT_COLOUR,
     clearScreenRect,
     drawExpandedMap,
