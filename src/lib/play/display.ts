@@ -163,6 +163,46 @@ export function keyMenuLines(): ScreenLine[] {
   return [...lines, { ...place, text: SECTION_INFO.text, y: SECTION_INFO.y, colour: SECTION_INFO.colour }];
 }
 
+/** The numbers the green block along the bottom prints, which is the whole of what drawing it
+ *  needs to know about the character. */
+export type StatusNumbers = Pick<
+  PlayerCharacter,
+  | 'armor'
+  | 'weapon'
+  | 'lev'
+  | 'exp'
+  | 'hp'
+  | 'maxHp'
+  | 'sp'
+  | 'maxSp'
+  | 'str'
+  | 'iq'
+  | 'wis'
+  | 'con'
+  | 'dex'
+  | 'luck'
+>;
+
+/** The numbers as they stand, for the block to be drawn with. */
+export function statusNumbers(pc: PlayerCharacter): StatusNumbers {
+  return {
+    armor: pc.armor,
+    weapon: pc.weapon,
+    lev: pc.lev,
+    exp: pc.exp,
+    hp: pc.hp,
+    maxHp: pc.maxHp,
+    sp: pc.sp,
+    maxSp: pc.maxSp,
+    str: pc.str,
+    iq: pc.iq,
+    wis: pc.wis,
+    con: pc.con,
+    dex: pc.dex,
+    luck: pc.luck,
+  };
+}
+
 /**
  * `FUN_3000_caac` (exe 3000:caac, unf.c "FUN_3000_caac"): the green block along the bottom.
  *
@@ -170,7 +210,7 @@ export function keyMenuLines(): ScreenLine[] {
  * prints the number alone. A character of level 9 or more gets the short labels and a different
  * set of x's, which is how the experience of a deep character still fits on the line.
  */
-export function statusLines(pc: PlayerCharacter): ScreenLine[] {
+export function statusLines(pc: StatusNumbers): ScreenLine[] {
   const short = pc.lev >= 9;
   const at = (text: string, x: number, y: number, colour: number): ScreenLine => ({ text, x, y, font: 0, colour });
   return [
