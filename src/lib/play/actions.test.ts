@@ -88,6 +88,22 @@ describe('the ways off a floor', () => {
     expect(actionsPushed(session.game)).toEqual(['ladderTaken']);
   });
 
+  it('does not stop for a key on the hint the snake brings on arriving', async () => {
+    // Floor 5 of module I is a section boss's, and arriving on one with that boss still alive
+    // always gets its warning, so this is an arrival certain to print a hint and not the town's,
+    // whose stone tablet waits for a key of its own.
+    const session = standingOn(4, findSquare(4, (square) => square.ladder === 1));
+    await press(session, KEY.down);
+    expect(session.game.pc.level).toBe(5);
+    expect(session.box.join(' ')).not.toBe('');
+
+    // FUN_2000_31bc is give_hint and a return, so the loop is already waiting for the next key
+    // rather than for one to take the hint away: an arrow turns the character there and then.
+    const facing = session.game.pc.dir;
+    await press(session, KEY.arrowLeft);
+    expect(session.game.pc.dir).not.toBe(facing);
+  });
+
   it('counts nothing for U where there is no ladder', async () => {
     const session = standingOn(3, findSquare(3, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1));
     await press(session, KEY.up);

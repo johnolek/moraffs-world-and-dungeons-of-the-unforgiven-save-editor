@@ -13,6 +13,11 @@ import { skipTheNextTick } from './office';
  *
  * It also raises the flag that keeps the first step taken on the new floor from counting towards
  * the boss's next message.
+ *
+ * **Nothing waits for a key here.** Every branch of FUN_2000_31bc is `give_hint(); return;`, and
+ * all three of movecontrol's calls to it go straight on — to `load_level_map` at exe 2000:d3e7
+ * and to the next statement at the other two. The hint is printed and left standing until
+ * something else draws over the message block, the way `give_hint` alone always leaves it.
  */
 export function hintOnFloor(game: Game): void {
   skipTheNextTick(game);
@@ -20,5 +25,4 @@ export function hintOnFloor(game: Game): void {
   if (hint === null) return;
   game.events.push({ kind: 'hintRead', hint });
   showHint(game, hint);
-  game.pressAnyKey();
 }
