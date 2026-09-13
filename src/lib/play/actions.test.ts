@@ -11,6 +11,7 @@ import {
   innSquare,
   inTheTown,
   press,
+  settle,
   standingOn,
   startPlaying,
 } from './battle.test-support';
@@ -78,6 +79,27 @@ describe('the step', () => {
     const session = inTheTown(lowest);
     await press(session, KEY.enter);
     expect(actionsPushed(session.game)).toEqual(['waited']);
+  });
+});
+
+describe('what the player types while a message is up', () => {
+  it('is thrown away when the message block is wiped', async () => {
+    const start = findSquare(3, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1);
+    const session = standingOn(3, start);
+    // U where there is no ladder prints a box, so the loop is waiting on it rather than on a key
+    // of its own and anything else pressed now queues up behind it.
+    await press(session, KEY.up);
+    expect(session.box[0]).toContain('THERE IS NO LADDER HERE');
+    session.press(KEY.arrowLeft);
+    session.press(KEY.arrowLeft);
+    expect(session.keyWaiting()).toBe(true);
+
+    // erase_message_block (exe 4000:430e) ends with `while (kbhit()) getch();`, and wiping the
+    // block is the last thing FUN_2000_4054 does once its key has come.
+    session.wipeMessageBlock();
+
+    expect(session.keyWaiting()).toBe(false);
+    session.finish();
   });
 });
 

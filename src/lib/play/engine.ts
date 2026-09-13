@@ -569,6 +569,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   wipeMessageBlock(): void {
     clearMenuBlock(this.game);
     clearMessageLine(this.game);
+    this.flushKeys();
   }
 
   /**
