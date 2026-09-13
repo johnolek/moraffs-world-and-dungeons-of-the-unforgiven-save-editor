@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseSave } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { spellIndex } from '../game/port/inventory';
@@ -12,8 +12,10 @@ import { newCharacterFile } from '../roller/save-file';
 import { facingAMonster, inTheTown, startPlaying } from './battle.test-support';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { statusLines } from './display';
+import { fadeMs } from './fade';
 import { KEY } from './keys';
 import { PLAQUE_DELAY_MS } from './plaque';
+import { TABLET_PAUSE_MS } from './tablet';
 import { VIEW_DEPTH, viewedSquares } from './memory';
 
 /** A character file that lives in the test rather than in the roster. */
@@ -687,6 +689,58 @@ describe("the stone tablet the snake's words are read on", () => {
     expect(session.box).toEqual([]);
     // The loop has taken the tablet's key and drawn its first pass.
     expect(session.view().viewsDrawn).toBe(1);
+  });
+
+  it('lays the slab down, cuts the words in when it has arrived, then puts the sign up', async () => {
+    // FUN_3000_9026 in its order: the slab on a blacked screen, FUN_4000_5b91 to bring it up,
+    // the four lines cut in, FUN_3000_8fcc's pause, and FUN_2000_412a behind the sign.
+    vi.useFakeTimers();
+    try {
+      const start = townWalk();
+      const session = startGame(characterFile({ level: 0, dir: 0, ...start }), new BorlandRng(3));
+      void runMoveControl(session);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(session.view().fade).toBe('in');
+      expect(session.view().tablet).toEqual([]);
+      expect(session.view().plaque).toBeNull();
+
+      await vi.advanceTimersByTimeAsync(fadeMs('in'));
+      expect(session.view().fade).toBeNull();
+      expect(session.view().tablet?.[0]).toContain('As you reach the town');
+      // The sign is not up yet: the pause behind it is still running.
+      expect(session.view().plaque).toBeNull();
+
+      await vi.advanceTimersByTimeAsync(TABLET_PAUSE_MS);
+      // FUN_2000_3e73 blanks the sign's rectangle and counts 330 ms out with the hole in it.
+      expect(session.view().plaque).toBe('blanked');
+      await vi.advanceTimersByTimeAsync(PLAQUE_DELAY_MS);
+      expect(session.view().plaque).toBe('showing');
+      session.finish();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('skips the pause in front of the sign with the high speed option on', async () => {
+    // The DS:00c3 test at 3000:92e5, which is the only part of the three beats that option
+    // touches: the fade still runs and the words still wait for it.
+    vi.useFakeTimers();
+    try {
+      const start = findSquare(3, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1);
+      const session = playing(characterFile({ level: 3, ...start }));
+      await vi.advanceTimersByTimeAsync(0);
+      session.game.highSpeed = true;
+      session.game.tablet('A TABLET', '', '', '');
+      void session.settle();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(session.view().plaque).toBeNull();
+      await vi.advanceTimersByTimeAsync(fadeMs('in'));
+      expect(session.view().tablet?.[0]).toBe('A TABLET');
+      expect(session.view().plaque).toBe('showing');
+      session.finish();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('greets a character who has been deeper with what they have earned', async () => {

@@ -18,7 +18,7 @@ import { castFromSpellbook, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { debugMonsterLines } from './debug-screen';
 import { statusNumbers, type StatusNumbers } from './display';
-import { TABLET_WITHOUT_ITS_WORDS } from './tablet';
+import { TABLET_PAUSE_MS, TABLET_WITHOUT_ITS_WORDS } from './tablet';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
@@ -496,7 +496,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   async settle(): Promise<void> {
     while (this.waitOwed) {
       this.waitOwed = false;
-      await this.keyWithPlaque();
+      await this.keyWithPlaque(this.tablet === null ? undefined : { ms: this.tabletPause() });
       // The key the tablet was waiting on is what takes it off the screen (exe 3000:9086), and
       // FUN_4000_5c25 fades it away first (exe 3000:92fc). The frame the fade runs over is what
       // keeps it there while the game has already put it away.
@@ -514,11 +514,12 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * skips the delay, so with that on the plaque is there at once. The pause is a display timer of
    * the same kind the message delays are (`timed.ts`) and the game waits on nothing but the key.
    *
-   * @param before the one thing that ever stands in front of that delay: the module tunnel turns
-   *   the gradient bank 150 times before it prints its welcome (exe 4000:771b), and the plaque
-   *   goes up after the welcome rather than with the tunnel.
+   * @param before what stands in front of that delay. The module tunnel turns the gradient bank
+   *   150 times before it prints its welcome (exe 4000:771b), and the plaque goes up after the
+   *   welcome rather than with the tunnel; the stone tablet has {@link tabletPause} in front of
+   *   its sign and nothing to draw when that is over.
    */
-  async keyWithPlaque(before?: { ms: number; then: () => void }): Promise<number> {
+  async keyWithPlaque(before?: { ms: number; then?: () => void }): Promise<number> {
     const raisePlaque = (): void => {
       if (this.game.highSpeed) this.plaque = 'showing';
       else {
@@ -533,7 +534,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     if (before === undefined) raisePlaque();
     else {
       this.timed.after(before.ms, () => {
-        before.then();
+        before.then?.();
         raisePlaque();
       });
     }
@@ -604,6 +605,17 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * does, so this is a held frame like every other delay: the screen as it stands is kept for as
    * long as the fade lasts, the loop runs straight past, and a key gives up the rest of it.
    */
+  /**
+   * How long the tablet stands before its HIT ANY KEY sign: the fade that brings the slab out of
+   * black, and then the pause FUN_3000_8fcc counts out (`tablet.ts`).
+   *
+   * The fade is a held frame and this is a display timer, and both are started as the tablet goes
+   * up, so the timer covers the fade as well as the pause behind it.
+   */
+  private tabletPause(): number {
+    return fadeMs('in') + (this.game.highSpeed ? 0 : TABLET_PAUSE_MS);
+  }
+
   fadeScreen(fade: Fade, tablet: string[] | null = this.tablet): void {
     this.timed.hold(this.game.screen, fadeMs(fade), { fade, tablet });
   }

@@ -26,6 +26,17 @@ export const TABLET_LINES = 4;
 export const TABLET_WITHOUT_ITS_WORDS: string[] = [];
 
 /**
+ * The pause between the words being cut in and the HIT ANY KEY sign, in the 18.2 ticks a second
+ * the PC's clock counts: `FUN_3000_8fcc` (exe 3000:8fcc) reads INT 1Ah in a loop until the count
+ * has moved on by the number it is given, and the call for the tablet gives it 0x3c
+ * (exe 3000:92ec, a constant Ghidra's decompilation dropped). The high speed option at DS:00c3
+ * skips it (exe 3000:92e5).
+ */
+const TABLET_PAUSE_TICKS = 0x3c;
+const CLOCK_TICKS_PER_SECOND = 18.2065;
+export const TABLET_PAUSE_MS = Math.round((TABLET_PAUSE_TICKS * 1000) / CLOCK_TICKS_PER_SECOND);
+
+/**
  * How wide a line is by the time `tablet_message` (exe 3000:931c) hands it over: it writes spaces
  * from character 37 back to the end of the string and puts the terminator at 37, so every line is
  * exactly that long whatever it holds.
