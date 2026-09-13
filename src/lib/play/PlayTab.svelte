@@ -421,7 +421,7 @@
       </div>
     </div>
     {#if rollerOpen}
-      <Overlay label={NEW_CHARACTER} onclose={() => (rollerOpen = false)}>
+      <Overlay label={NEW_CHARACTER} overWindow onclose={() => (rollerOpen = false)}>
         <h3 class="roller-title"><PixelText text="New Character" /></h3>
         <NewCharacter standalone={false} tab="play" onclose={() => (rollerOpen = false)} />
       </Overlay>

@@ -5,6 +5,10 @@
   that a spell picked from the bottom line does not have to be scrolled to — and the Play tab's
   debug mode reads a monster's the same way. The parent has to be positioned, since the panel
   fills it.
+
+  A panel holding a whole form rather than one thing's details can be taller than the tab it is
+  opened from, and `overWindow` is for that: it lays the panel over the window instead, where
+  there is more room than the tab has.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -13,17 +17,20 @@
     /** What the panel is about, for anything reading the page aloud. */
     label: string;
     onclose: () => void;
+    /** Lay the panel over the whole window rather than over the tab alone, and give it most of
+     *  the window's height. */
+    overWindow?: boolean;
     /** The close button, so that a caller can put the keyboard on it as the panel opens. */
     closeButton?: HTMLButtonElement;
     children: Snippet;
   }
 
-  let { label, onclose, closeButton = $bindable(), children }: Props = $props();
+  let { label, onclose, overWindow = false, closeButton = $bindable(), children }: Props = $props();
 
   const CLOSE_LABEL = 'Close (Esc)';
 </script>
 
-<div class="overlay">
+<div class="overlay" class:over-window={overWindow}>
   <button type="button" class="dismiss" tabindex="-1" aria-hidden="true" onclick={onclose}></button>
   <div class="detail" role="dialog" aria-label={label}>
     <button
@@ -70,6 +77,14 @@
     border-radius: 6px;
     background: var(--panel);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  }
+  /* Over the window the panel is anchored to the viewport, so its height is the window's rather
+     than the tab's, which is the whole point of opening it this way. */
+  .overlay.over-window {
+    position: fixed;
+  }
+  .overlay.over-window .detail {
+    max-height: 90vh;
   }
   .detail-scroll {
     overflow-y: auto;
