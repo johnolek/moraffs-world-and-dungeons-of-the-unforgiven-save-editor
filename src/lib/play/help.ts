@@ -8,7 +8,7 @@ import { KEY } from './keys';
  * which F1 and H both open.
  *
  * It is a menu of twenty-eight topics in two columns of fourteen, and each one is a `.uhp` file
- * of pages that read_spell_help (exe 3000:7c6d) draws a line at a time. Every coordinate here is
+ * of pages that read_help_screen (exe 3000:7c6d) draws a line at a time. Every coordinate here is
  * the game's own.
  */
 

@@ -5255,7 +5255,7 @@ undefined2 __cdecl16far FUN_1000_3d90(uint param_1)
 }
 
 
-// ==== fclose @ 1000:3e07 (size 129) callers: FUN_1000_405f,give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,module_installed,roll_char,FUN_3000_6a6a,read_spell_help,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
+// ==== fclose @ 1000:3e07 (size 129) callers: FUN_1000_405f,give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,module_installed,roll_char,FUN_3000_6a6a,read_help_screen,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
 
 short __cdecl16far fclose(void *f)
 
@@ -5517,7 +5517,7 @@ uint __cdecl16near FUN_1000_40fb(void)
 }
 
 
-// ==== fopen @ 1000:4126 (size 31) callers: give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,module_installed,roll_char,FUN_3000_6a6a,read_spell_help,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
+// ==== fopen @ 1000:4126 (size 31) callers: give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,module_installed,roll_char,FUN_3000_6a6a,read_help_screen,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
 
 void * __cdecl16far fopen(char *name,char *mode)
 
@@ -5843,7 +5843,7 @@ void __cdecl16far FUN_1000_44d7(int *param_1)
 }
 
 
-// ==== fgetc @ 1000:44ec (size 173) callers: FUN_1000_44d7,load_overlay_pic,load_section_pictures,select_player,show_registration_notice,load_monster_map,load_maps,load_player,read_spell_help,read_uroll_line,read_spell_help,load_picture_seq,load_building_picture,load_font  // libc
+// ==== fgetc @ 1000:44ec (size 173) callers: FUN_1000_44d7,load_overlay_pic,load_section_pictures,select_player,show_registration_notice,load_monster_map,load_maps,load_player,read_spell_help,read_uroll_line,read_help_screen,load_picture_seq,load_building_picture,load_font  // libc
 
 short __cdecl16far fgetc(void *f)
 
@@ -5947,7 +5947,7 @@ char * __cdecl16far FUN_1000_45a5(char *param_1)
 }
 
 
-// ==== itoa @ 1000:4604 (size 40) callers: load_section_pictures,flea_inn,select_player,load_player,save_player,FUN_2000_7bcd,strike,defend,load_level_screen,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,show_rolled_character,roll_char,FUN_3000_71e6,read_spell_help,drop_weapon,drop_armor,spell_name_to_menu,drop_wand,kill_monster,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,explosion,spell_effect  // libc
+// ==== itoa @ 1000:4604 (size 40) callers: load_section_pictures,flea_inn,select_player,load_player,save_player,FUN_2000_7bcd,strike,defend,load_level_screen,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,show_rolled_character,roll_char,FUN_3000_71e6,read_help_screen,drop_weapon,drop_armor,spell_name_to_menu,drop_wand,kill_monster,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,explosion,spell_effect  // libc
 
 char * __cdecl16far itoa(short v,char *s,short radix)
 
@@ -6632,7 +6632,7 @@ void __cdecl16far FUN_1000_4fcf(undefined1 *param_1,undefined2 param_2,undefined
 }
 
 
-// ==== strcat @ 1000:4feb (size 57) callers: FUN_1000_17eb,store_refund,g_store,flea_inn,bank,select_player,decode_quit_message,show_registration_notice,FUN_2000_7bcd,strike,defend,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,print_spell_line,boss_office_message,read_spell_help,drop_weapon,drop_armor,drop_wand,kill_monster,FUN_3000_caac,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,spell_effect,FUN_4000_5a62,num_to_string,FUN_4000_5aca,drop_money,module_transition_screen  // libc
+// ==== strcat @ 1000:4feb (size 57) callers: FUN_1000_17eb,store_refund,g_store,flea_inn,bank,select_player,decode_quit_message,show_registration_notice,FUN_2000_7bcd,strike,defend,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,print_spell_line,boss_office_message,read_help_screen,drop_weapon,drop_armor,drop_wand,kill_monster,FUN_3000_caac,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,spell_effect,FUN_4000_5a62,num_to_string,FUN_4000_5aca,drop_money,module_transition_screen  // libc
 
 char * __cdecl16far strcat(char *param_1,char *param_2)
 
@@ -6684,7 +6684,7 @@ char * __cdecl16far strcat(char *param_1,char *param_2)
 }
 
 
-// ==== FUN_1000_5024 @ 1000:5024 (size 54) callers: movecontrol,read_spell_help
+// ==== FUN_1000_5024 @ 1000:5024 (size 54) callers: movecontrol,read_help_screen
 
 char * __cdecl16far FUN_1000_5024(char *param_1,char param_2)
 
@@ -6777,7 +6777,7 @@ char * __cdecl16far strcpy(char *dst,char *src)
 }
 
 
-// ==== strlen @ 1000:50ab (size 26) callers: FUN_1000_11fd,FUN_1000_12a6,FUN_1000_195e,FUN_1000_2337,FUN_1000_4d61,FUN_1000_4df7,FUN_1000_53da,FUN_2000_04d3,mset_gmenu,FUN_2000_2f5d,FUN_2000_34ea,FUN_2000_3533,FUN_2000_35bf,flea_inn,select_player,decode_quit_message,read_spell_help,FUN_2000_7bcd,strike,defend,print_battle_hp_info,engagement_timing,explain_trapdoor,FUN_2000_df0e,roll_char,read_spell_help,tablet_message,drop_weapon,drop_armor,spell_name_to_menu,drop_wand,kill_monster,write_scroll_or_wand,explosion,spell_effect,FUN_4000_069a,pfont,psfont,FUN_4000_593f  // libc
+// ==== strlen @ 1000:50ab (size 26) callers: FUN_1000_11fd,FUN_1000_12a6,FUN_1000_195e,FUN_1000_2337,FUN_1000_4d61,FUN_1000_4df7,FUN_1000_53da,FUN_2000_04d3,mset_gmenu,FUN_2000_2f5d,FUN_2000_34ea,FUN_2000_3533,FUN_2000_35bf,flea_inn,select_player,decode_quit_message,read_spell_help,FUN_2000_7bcd,strike,defend,print_battle_hp_info,engagement_timing,explain_trapdoor,FUN_2000_df0e,roll_char,read_help_screen,tablet_message,drop_weapon,drop_armor,spell_name_to_menu,drop_wand,kill_monster,write_scroll_or_wand,explosion,spell_effect,FUN_4000_069a,pfont,psfont,FUN_4000_593f  // libc
 
 short __cdecl16far strlen(char *s)
 
@@ -9204,7 +9204,7 @@ FUN_2000_295b(undefined2 param_1,undefined2 param_2,undefined2 param_3,undefined
 }
 
 
-// ==== FUN_2000_2a2e @ 2000:2a2e (size 81) callers: FUN_2000_4054,FUN_2000_412a,FUN_3000_7545,view_stats,read_spell_help
+// ==== FUN_2000_2a2e @ 2000:2a2e (size 81) callers: FUN_2000_4054,FUN_2000_412a,FUN_3000_7545,view_stats,read_help_screen
 
 undefined2 __cdecl16far FUN_2000_2a2e(void)
 
@@ -21104,7 +21104,7 @@ void __cdecl16far FUN_3000_71e6(int param_1)
 }
 
 
-// ==== FUN_3000_7508 @ 3000:7508 (size 61) callers: FUN_3000_7545,view_stats,read_spell_help,FUN_3000_7dfc
+// ==== FUN_3000_7508 @ 3000:7508 (size 61) callers: FUN_3000_7545,view_stats,read_help_screen,FUN_3000_7dfc
 
 void __cdecl16far FUN_3000_7508(void)
 
@@ -21292,9 +21292,9 @@ void __cdecl16far view_stats(void)
 }
 
 
-// ==== read_spell_help @ 3000:7c6d (size 399) callers: FUN_3000_7dfc  // USPELLS.HLP reader
+// ==== read_help_screen @ 3000:7c6d (size 399) callers: FUN_3000_7dfc  // reads one <n>.uhp help screen, the F1 help the game shows a page at a time
 
-void __cdecl16far read_spell_help(short param_1)
+void __cdecl16far read_help_screen(short param_1)
 
 {
   int iVar1;
@@ -21580,7 +21580,7 @@ override_jmp_3000_809b_case_17:
       erase_menu_block();
       return;
     }
-    read_spell_help(local_4);
+    read_help_screen(local_4);
   } while( true );
 }
 
@@ -26531,7 +26531,7 @@ void __cdecl16far load_font(int param_1)
 }
 
 
-// ==== pfont @ 4000:0bb3 (size 517) callers: FUN_2000_04d3,mset_gmenu,FUN_2000_2f5d,load_section_pictures,show_money,g_store,temple,bank,select_player,strike,defend,view_prep_spells,view_battle_spells,lose_item,quit_game,use_magic_item,chute,print_battle_hp_info,engagement_timing,dig_hole,FUN_2000_bf91,movecontrol,cast_a_spell,FUN_2000_fb25,FUN_3000_342d,show_rolled_character,roll_char,FUN_3000_6a6a,boss_office_message,FUN_3000_71be,FUN_3000_71e6,view_stats,read_spell_help,FUN_3000_a1c4,kill_monster,FUN_3000_caac,typed_name,FUN_4000_5cb9,FUN_4000_5e4a,FUN_4000_5fd4,FUN_4000_6144  // print text at x,y
+// ==== pfont @ 4000:0bb3 (size 517) callers: FUN_2000_04d3,mset_gmenu,FUN_2000_2f5d,load_section_pictures,show_money,g_store,temple,bank,select_player,strike,defend,view_prep_spells,view_battle_spells,lose_item,quit_game,use_magic_item,chute,print_battle_hp_info,engagement_timing,dig_hole,FUN_2000_bf91,movecontrol,cast_a_spell,FUN_2000_fb25,FUN_3000_342d,show_rolled_character,roll_char,FUN_3000_6a6a,boss_office_message,FUN_3000_71be,FUN_3000_71e6,view_stats,read_help_screen,FUN_3000_a1c4,kill_monster,FUN_3000_caac,typed_name,FUN_4000_5cb9,FUN_4000_5e4a,FUN_4000_5fd4,FUN_4000_6144  // print text at x,y
 
 void __cdecl16far pfont(int param_1,int param_2,int param_3,char *param_4,int param_5)
 
@@ -28741,7 +28741,7 @@ void __cdecl16far FUN_4000_417b(void)
 }
 
 
-// ==== mgetch_message @ 4000:418d (size 83) callers: g_store,show_registration_notice,quit_game,movecontrol,roll_char,boss_office_message,FUN_3000_71e6,read_spell_help,spell_effect,FUN_4000_5cb9  // wait for a key in the message box
+// ==== mgetch_message @ 4000:418d (size 83) callers: g_store,show_registration_notice,quit_game,movecontrol,roll_char,boss_office_message,FUN_3000_71e6,read_help_screen,spell_effect,FUN_4000_5cb9  // wait for a key in the message box
 
 int __cdecl16far mgetch_message(void)
 

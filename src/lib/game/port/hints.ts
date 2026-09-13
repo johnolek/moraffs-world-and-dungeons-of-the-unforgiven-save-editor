@@ -76,7 +76,7 @@ export function tabletMessage(index: number, text: string = uh2Text): string[] {
 
 /**
  * The colour codes of the .uhp help screens (exe DS:2d4f, "rgbynow") and the palette entry each
- * one switches the text to, from read_spell_help (exe 3000:7c6d).
+ * one switches the text to, from read_help_screen (exe 3000:7c6d).
  *
  * The letters are the initials of the colours they give: r red, g green, b blue, y yellow, o
  * orange, n a golden orange and w white. The numbers are indexes into the game's 256-colour
@@ -85,7 +85,7 @@ export function tabletMessage(index: number, text: string = uh2Text): string[] {
  */
 export const HELP_COLOURS: Record<string, number> = { r: 6, g: 8, b: 3, y: 4, n: 7, o: 5, w: 15 };
 
-/** The string of code letters read_spell_help looks a character up in (exe DS:2d4f). */
+/** The string of code letters read_help_screen looks a character up in (exe DS:2d4f). */
 export const HELP_CODE_LETTERS = 'rgbynow';
 
 /** The palette entry a help screen starts in, before any colour code: white. */
@@ -98,11 +98,12 @@ export interface HelpLine {
 }
 
 /**
- * read_spell_help (exe 3000:7c6d, unf.c "read_spell_help"): one .uhp help screen, page by page.
+ * read_help_screen (exe 3000:7c6d, unf.c "read_help_screen"): one .uhp help screen, page by
+ * page.
  *
- * The catalog's name for this function is wrong — it reads `<n>.uhp`, built by printing the
- * topic number and adding ".uhp" (exe DS:2d2a); the reader for USPELLS.HLP is the other
- * function of the same name at 2000:7a78. It walks the file a character at a time. A character
+ * The name of the file is `<n>.uhp`, built by printing the topic number and adding ".uhp" (exe
+ * DS:2d2a); the reader for USPELLS.HLP is a different function, `read_spell_help` at 2000:7a78.
+ * This one walks the file a character at a time. A character
  * in "rgbynow" changes the colour and is not printed; every other character joins the line
  * being built, and a newline draws that line in whichever colour is in effect at the end of it
  * — so a code halfway through a line would recolour the whole line, though none of the files
@@ -201,7 +202,7 @@ export const HELP_FILES: number[] = Object.keys(helpFiles)
   .map((path) => Number(path.replace('../hints/', '').replace('.uhp', '')))
   .sort((a, b) => a - b);
 
-/** The text of one .uhp file, as read_spell_help would read it. */
+/** The text of one .uhp file, as read_help_screen would read it. */
 export function helpScreen(file: number): HelpLine[][] {
   const text = helpFiles[`../hints/${file}.uhp`];
   if (text === undefined) throw new Error(`no ${file}.uhp`);

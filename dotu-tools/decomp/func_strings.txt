@@ -424,7 +424,7 @@
 3000:7508 FUN_3000_7508 size=61 ncallers=4 | 
 3000:7545 FUN_3000_7545 size=659 ncallers=1 | MISC__MAGIC_ITEMS_ ; HIT__I__AND__5__TO_USE_THESE_ ; 1__NUCLEAR_HAND_GRENADES_ ; 2__STONES_OF_TELEPORTATION_ ; 3__STONES_OF_SEEING_ ; 4__FLOOR_SLOSHERS_ ; 5__POTION_OF_HEALING_ ; HIT__I__AND__4__TO_USE_THESE_ ; 6__GREEN_POTIONS_ ; 7__ORANGE_POTIONS_ ; 8__YELLOW_POTIONS_ ; 9__RED_POTIONS_ ; 10__BLUE_POTIONS_ ; 11__WHITE_POTIONS_
 3000:77e2 view_stats size=1163 ncallers=1 | VIEW_STATS_FOR ; RACE_ ; CLASS_ ; MONEY_IN_POCKET_ ; MONEY_IN_BANK_ ; LOADED_WEIGHT_ ; NAKED_WEIGHT_ ; HEIGHT__INCHES__ ; STRENGTH_ ; INTELLIGENCE_ ; CONSTITUTION_ ; AGILITY_ ; WEAPON_IN_HAND_ ; CURRENT_ARMOR_
-3000:7c6d read_spell_help size=399 ncallers=1 | HELP_FILE_NOT_FOUND ; HIT_ANY_KEY
+3000:7c6d read_help_screen size=399 ncallers=1 | HELP_FILE_NOT_FOUND ; HIT_ANY_KEY
 3000:7dfc FUN_3000_7dfc size=866 ncallers=1 | A_little_snake_scurries_up_and_s ; _Smarty_is_my_name__and_informat ; is_my_game__Learning_means_earni ; so_what_can_I_do_for_you_ ; HIT_RIGHT_BUTTON_OR_ESCAPE_TO_EX
 3000:81ba myrand size=191 ncallers=5 | 
 3000:827f check_for_ladder size=221 ncallers=3 | 

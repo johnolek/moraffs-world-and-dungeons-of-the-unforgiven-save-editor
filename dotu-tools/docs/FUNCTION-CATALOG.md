@@ -226,7 +226,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 1000:4fb2 | FUN_1000_4fb2 | 29 |  | Borland runtime / libc | FUN_2000_7bcd, engagement_timing, FUN_2000_fb25, FUN_3000_caac |
 | 1000:4fcf | FUN_1000_4fcf | 28 |  | Borland runtime / libc |  |
 | 1000:4feb | strcat | 57 | libc | Borland runtime / libc | FUN_1000_17eb, store_refund, g_store, flea_inn, bank, select_player … |
-| 1000:5024 | FUN_1000_5024 | 54 |  | Borland runtime / libc | movecontrol, read_spell_help |
+| 1000:5024 | FUN_1000_5024 | 54 |  | Borland runtime / libc | movecontrol, read_help_screen |
 | 1000:505a | FUN_1000_505a | 47 |  | Borland runtime / libc | pfont, psfont |
 | 1000:5089 | strcpy | 34 | libc | Borland runtime / libc | FUN_1000_1b91, FUN_1000_1bc4, FUN_1000_4d61, FUN_1000_53da, FUN_2000_2a83, FUN_2000_2ecc … |
 | 1000:50ab | strlen | 26 | libc | Borland runtime / libc | FUN_1000_11fd, FUN_1000_12a6, FUN_1000_195e, FUN_1000_2337, FUN_1000_4d61, FUN_1000_4df7 … |
@@ -290,7 +290,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:2820 | FUN_2000_2820 | 158 |  | WORLD (UNF.CPP) | mset_gmenu, get_choice, FUN_2000_2f5d, FUN_2000_4054, show_money, g_store … |
 | 2000:28be | FUN_2000_28be | 157 |  | WORLD (UNF.CPP) | mset_gmenu, get_choice, FUN_2000_4054, show_money, temple, defend … |
 | 2000:295b | FUN_2000_295b | 211 |  | WORLD (UNF.CPP) | strike, defend, print_battle_hp_info |
-| 2000:2a2e | FUN_2000_2a2e | 81 |  | WORLD (UNF.CPP) | FUN_2000_4054, FUN_2000_412a, FUN_3000_7545, view_stats, read_spell_help |
+| 2000:2a2e | FUN_2000_2a2e | 81 |  | WORLD (UNF.CPP) | FUN_2000_4054, FUN_2000_412a, FUN_3000_7545, view_stats, read_help_screen |
 | 2000:2a83 | FUN_2000_2a83 | 133 |  | WORLD (UNF.CPP) | lose_item, movecontrol, kill_monster, enchant_weapon_perm, enchant_armor_perm |
 | 2000:2b08 | mset_gmenu | 645 | fill the 8 menu strings | WORLD (UNF.CPP) | FUN_2000_2ecc, flea_inn, lose_item, movecontrol, cast_a_spell, drop_spellbook … |
 | 2000:2d93 | get_choice | 309 | wait for a menu key in a range | WORLD (UNF.CPP) | g_store, temple, flea_inn, bank, lose_item, use_magic_item … |
@@ -430,10 +430,10 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 3000:7052 | FUN_3000_7052 | 352 |  | TOWN / MAGICFNC / CAT | movecontrol |
 | 3000:71be | FUN_3000_71be | 40 |  | TOWN / MAGICFNC / CAT | FUN_3000_7545 |
 | 3000:71e6 | FUN_3000_71e6 | 802 |  | TOWN / MAGICFNC / CAT | FUN_3000_7545 |
-| 3000:7508 | FUN_3000_7508 | 61 |  | TOWN / MAGICFNC / CAT | FUN_3000_7545, view_stats, read_spell_help, FUN_3000_7dfc |
+| 3000:7508 | FUN_3000_7508 | 61 |  | TOWN / MAGICFNC / CAT | FUN_3000_7545, view_stats, read_help_screen, FUN_3000_7dfc |
 | 3000:7545 | FUN_3000_7545 | 659 |  | TOWN / MAGICFNC / CAT | movecontrol |
 | 3000:77e2 | view_stats | 1163 | the V screen | TOWN / MAGICFNC / CAT | movecontrol |
-| 3000:7c6d | read_spell_help | 399 | USPELLS.HLP reader | TOWN / MAGICFNC / CAT | FUN_3000_7dfc |
+| 3000:7c6d | read_help_screen | 399 | reads one <n>.uhp help screen, the F1 help the game shows a page at a time | TOWN / MAGICFNC / CAT | FUN_3000_7dfc |
 | 3000:7dfc | FUN_3000_7dfc | 866 |  | TOWN / MAGICFNC / CAT | movecontrol |
 | 3000:81ba | myrand | 191 | the dungeon hash | TOWN / MAGICFNC / CAT | trapdoor, detect_chute, town_features, check_for_ladder, retdwall |
 | 3000:827f | check_for_ladder | 221 | up/down ladder at a square | TOWN / MAGICFNC / CAT | movecontrol, draw_map_square, drawsquare |

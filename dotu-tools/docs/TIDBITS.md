@@ -98,7 +98,7 @@ teleporter rule — are in the FAQ and the RE notes; this list is the rest.
 * **The intro demo has maps.**  `010.DUN` / `011.DUN` are explored-map files for the
   attract-mode demo character; they are deliberately not valid game maps.
 * **The `.uhp` files are the F1 help screens.**  `0.uhp`..`29.uhp` in the game folder are not
-  the snake's hints: `read_spell_help` (3000:7c6d) builds the name `<n>.uhp` out of the topic
+  the snake's hints: `read_help_screen` (3000:7c6d) builds the name `<n>.uhp` out of the topic
   number the F1 menu picked and reads one every time help is asked for.  A letter of `rgbynow`
   in the text is a colour code rather than a character, and `e` ends the page.  The snake's
   spoken hints are `UH.BIN` (138 messages of eight lines, `give_hint` 2000:313a) and the stone

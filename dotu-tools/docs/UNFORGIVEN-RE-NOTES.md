@@ -648,7 +648,7 @@ description lines. `parse_mdbin.py` prints the whole thing. `ldrain` −30 means
   (`hint.py`), 138 hints. `UH2.BIN` — the stone-tablet text, 4 lines per message, 86 of them,
   read the same way by `tablet_message` 3000:931c: town greetings, level-up congratulations,
   the "message from the office of" taunts and the notes under a monster.
-* `*.UHP` — the F1 help screens, read by `read_spell_help` 3000:7c6d.  A letter of `rgbynow`
+* `*.UHP` — the F1 help screens, read by `read_help_screen` 3000:7c6d.  A letter of `rgbynow`
   anywhere in the text is a colour code rather than a character; `e` ends a page, and a second
   `e` ends the file where anything else (the files use `X`) starts the next page.
 * `USPELLS.HLP` — 120 `~`-terminated spell descriptions in type/level/slot order.

@@ -13,7 +13,7 @@
   /**
    * The colour a help screen's code letter puts the text in.
    *
-   * read_spell_help turns each letter into an index into the game's palette, whose first sixteen
+   * read_help_screen turns each letter into an index into the game's palette, whose first sixteen
    * entries are the same in every palette the game loads: y is 4, a yellow (63, 63, 20); o is 5,
    * a burnt orange (53, 20, 0); r is 6, a red (63, 0, 10); n is 7, a golden orange (63, 45, 0);
    * g is 8, a pure green (0, 63, 0); b is 3, a pale blue (20, 50, 63); and w is 15, white. The
@@ -178,7 +178,7 @@
           same file. There is no 19.uhp, and nothing in the menu opens 18.uhp.
           <SourceLink
             ts={{ file: 'src/lib/game/port/hints.ts', name: 'readHelpScreen' }}
-            c="read_spell_help"
+            c="read_help_screen"
           />
         </p>
         <div class="cards">

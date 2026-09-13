@@ -152,7 +152,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_3000_7508` | 3000:7508 |  | `game/port/screens.ts` |
 | `FUN_3000_7545` | 3000:7545 |  | `game/port/inventory.ts`, `play/engine.ts`, `play/pockets.ts` |
 | `view_stats` | 3000:77e2 | `game/port/screens.ts` | `play/spellScreens.ts` |
-| `read_spell_help` | 3000:7c6d | `game/port/hints.ts` | `play/help.ts` |
+| `read_help_screen` | 3000:7c6d | `game/port/hints.ts` | `play/help.ts` |
 | `FUN_3000_7dfc` | 3000:7dfc | `game/port/hints.ts` | `play/Screen.svelte`, `play/engine.ts`, `play/help.ts` |
 | `myrand` | 3000:81ba |  | `formulas/formulas.ts` |
 | `check_for_ladder` | 3000:827f | `play/ladders.ts` | `formulas/formulas.ts`, `play/engine.ts` |

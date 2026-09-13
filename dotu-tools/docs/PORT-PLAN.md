@@ -23,7 +23,7 @@ the menus and hint system, and a few timing details.
 | all monsters (names, types, pictures, tints, drains, breath) | `dotu-data.json` `builtinMonsters` + `sections` | from DS:4fc9 and MD.BIN |
 | pictures: monsters, buildings, walls, ladders, water overlay | `dotu-pic.js`, `pics/`, `data/palettes.json` | pixel-exact |
 | save files (read AND write, checksum), `.DUN` explored maps, `?MON.MAP` | `dotu-files.js` | tested on real files |
-| hints (`UH.BIN`) and spell help (`USPELLS.HLP`) | `give_hint` 2000:313a, `read_spell_help` 2000:7a78 | readers identified; the `.uhp` files in the game folder are the F1 help screens, read by `read_spell_help` 3000:7c6d |
+| hints (`UH.BIN`) and spell help (`USPELLS.HLP`) | `give_hint` 2000:313a, `read_spell_help` 2000:7a78 | readers identified; the `.uhp` files in the game folder are the F1 help screens, read by `read_help_screen` 3000:7c6d |
 
 A browser port can therefore load one of John's real characters, place it on the real
 floor at the real square, draw the real monsters in the real colours, and run the real
