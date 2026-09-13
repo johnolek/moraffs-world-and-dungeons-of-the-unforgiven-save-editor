@@ -5,6 +5,7 @@ import { SPELL_MENU_KEYS, SPELL_MENU_NAMES, spellIndex } from '../game/port/inve
 import { savePlayer } from '../game/port/record';
 import type { Rng } from '../game/port/rng';
 import { portedSpell } from '../game/port/spell-index';
+import { cureDisease, curePoison } from '../game/port/magic';
 import { MAP_EMPTY, MAP_PLAYER, setMonsterMap, type PlayerCharacter } from '../game/port/state';
 import { endBattleSpells, endPrepSpells } from '../game/port/town';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
@@ -173,6 +174,12 @@ export function fightSquare(floor: number, module: number): { x: number; y: numb
  * {@link endPrepSpells} are the two routines a night there calls, so a character saved in the
  * middle of an adventure does not bring their running spells into a fight meant to measure the
  * bare one. The permanent spells stay, since those are as much the character as their armor is.
+ *
+ * The poison and the disease go too, which the inn does not do. A bite costs a characteristic
+ * for good and lands on whatever moment the saved clock happens to reach, so a character carrying
+ * one would make the same fight come out differently for a reason nothing on screen explains —
+ * and the two cures are not on the Fight tab's spell buttons, because a fight has nothing for
+ * them to cure.
  */
 export function startFight(setup: FightSetup, rng: Rng): GameSession {
   const square = fightSquare(setup.monster.floor, setup.monster.module);
@@ -187,6 +194,8 @@ export function startFight(setup: FightSetup, rng: Rng): GameSession {
   const session = startGame(fightFile(savePlayer(character, setup.record)), rng);
   endBattleSpells(session.game);
   endPrepSpells(session.game);
+  curePoison(session.game);
+  cureDisease(session.game);
   emptyTheFloor(session);
   void runPlayLoop(session, runMoveControl(session));
   return session;
@@ -329,8 +338,8 @@ const SPELLS_THAT_LEAVE = new Set([
  * The spells that leave a fight exactly as they found it, all of them preparation spells.
  *
  * The two Detect spells only print something — the floor's level, and where on the floor the
- * character stands. The two cures only clear the poison and disease clocks, and a fight starts
- * with neither running ({@link startFight}).
+ * character stands. The two cures only clear the poison and disease clocks, and {@link startFight}
+ * has already cured both.
  *
  * Every battle spell is here on purpose: even the resistances change a fight, since monsters
  * breathe fire and cold, and drain levels, while it is going on.

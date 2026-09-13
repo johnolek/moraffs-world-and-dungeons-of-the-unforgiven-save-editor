@@ -149,6 +149,14 @@ describe('setting a fight up', () => {
     session.finish();
   });
 
+  it('cures the poison and the disease, which no spell on the Fight tab could cure', () => {
+    const built = setup({ poison: 3, disease: 12 });
+    const session = startFight(built, new SeededRng(13));
+    expect(session.game.pc.poison).toBe(-1);
+    expect(session.game.pc.disease).toBe(-1);
+    session.finish();
+  });
+
   it('keeps the permanent spells, which are as much the character as their armor', () => {
     const built = setup({ bodyArmor: 4, protRing: 3, antiMagicRing: 2, invisible: 100, feather: 100 });
     const session = startFight(built, new SeededRng(12));
