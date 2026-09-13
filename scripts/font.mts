@@ -18,7 +18,7 @@ export const FAMILY_NAME = 'Moraff Bold';
  *
  * The em box is made exactly as tall as the glyph box, so `font-size: 30px` draws the ten-row
  * font three pixels to the pixel and nothing has to be scaled by eye. Sixty-four units a pixel
- * leaves plenty of room under TrueType's integer grid while keeping every edge on a whole unit,
+ * leaves plenty of room under the format's integer grid while keeping every edge on a whole unit,
  * which is what stops the glyphs blurring.
  */
 export const PIXEL = 64;
