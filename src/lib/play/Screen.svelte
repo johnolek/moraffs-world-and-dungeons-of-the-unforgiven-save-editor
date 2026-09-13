@@ -54,7 +54,7 @@
   import { drawModuleTunnel, type ModuleTunnel } from './tunnel';
   import { buildingPictures, viewPictures } from './view3d/browser';
   import { framePainter } from './view3d/canvas';
-  import { newFrame, type Frame } from './view3d/frame';
+  import { clearFrame, newFrame, type Frame } from './view3d/frame';
   import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
   import { drawDotuScreenText } from './view3d/text';
   import { viewLabels } from './view3d/views';
@@ -156,6 +156,25 @@
   const visible = onScreen(() => canvas);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
   const painter = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+  /**
+   * The frames every redraw is built in, kept rather than made, since one is 768 KB and a new one
+   * per step is what the browser collects every few steps.
+   *
+   * There are two because the palette crawl and the fades keep repainting the last screen while
+   * the next one is being built, so the next one cannot be the same buffer. They are taken in
+   * turn. {@link plaqueFrame} is a third, and only ever a scratch copy: the painter turns a frame
+   * into pixels the moment it is handed one, so nothing reads it afterwards.
+   */
+  const screens = [
+    newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height),
+    newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height),
+  ];
+  let screenInTurn = 0;
+  const nextScreen = (): Frame => {
+    screenInTurn = (screenInTurn + 1) % screens.length;
+    return clearFrame(screens[screenInTurn]);
+  };
+  const plaqueFrame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
   let markerCanvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen as it was last painted, for the palette crawl and the fades to work from, with
@@ -379,7 +398,7 @@
      */
     const withPlaque = (screen: Frame): Frame => {
       if (!plaque) return screen;
-      const over = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+      const over = plaqueFrame;
       over.pixels.set(screen.pixels);
       over.journal = screen.journal;
       if (plaque === 'blanked') blankPlaque(over, SCREEN_PIXELS);
@@ -413,7 +432,7 @@
       return;
     }
 
-    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    const frame = nextScreen();
     onCanvas = { drawnFrom, rows, discovered, plaque, screen: frame };
     const floor = {
       rows,

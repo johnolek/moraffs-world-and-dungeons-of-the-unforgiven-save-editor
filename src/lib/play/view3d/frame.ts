@@ -44,6 +44,21 @@ export const newFrame = (width: number, height: number): Frame => ({
   pixels: new Uint8Array(width * height),
 });
 
+/**
+ * A frame ready to be drawn on again: every pixel black and the journal dropped.
+ *
+ * A screen is three quarters of a megabyte, and building a new one for every step down a corridor
+ * hands the browser enough rubbish to collect every few steps, which the player feels as a stutter.
+ * A caller that draws a whole screen at a time keeps its frames and clears them with this instead.
+ * The journal is dropped rather than emptied because a reveal already under way is still reading
+ * the array it was given.
+ */
+export function clearFrame(frame: Frame): Frame {
+  frame.pixels.fill(0);
+  frame.journal = undefined;
+  return frame;
+}
+
 /** The colour at a pixel, for a test that wants to name one. */
 export const pixelAt = (frame: Frame, x: number, y: number): number => frame.pixels[y * frame.width + x];
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawLine, fillRect, newFrame, notePaint, pixelAt, toRgba } from './frame';
+import { clearFrame, drawLine, fillRect, newFrame, notePaint, pixelAt, toRgba } from './frame';
 
 describe('the screen the view is drawn on', () => {
   it('starts black', () => {
@@ -77,5 +77,35 @@ describe('the journal of paints', () => {
     frame.journal = [];
     notePaint(frame, 10, 10, 12, 12);
     expect(frame.journal).toEqual([]);
+  });
+});
+
+describe('clearing a frame to draw on it again', () => {
+  it('blacks every pixel', () => {
+    const frame = newFrame(4, 3);
+    fillRect(frame, 0, 0, 3, 2, 7);
+
+    clearFrame(frame);
+
+    expect([...frame.pixels]).toEqual(Array.from({ length: 12 }, () => 0));
+  });
+
+  it('is the same buffer, which is the point of it', () => {
+    const frame = newFrame(4, 3);
+    const pixels = frame.pixels;
+
+    expect(clearFrame(frame).pixels).toBe(pixels);
+  });
+
+  it('drops the journal rather than emptying it, since a reveal still holds the array', () => {
+    const frame = newFrame(4, 3);
+    frame.journal = [];
+    notePaint(frame, 0, 0, 1, 1);
+    const held = frame.journal;
+
+    clearFrame(frame);
+
+    expect(frame.journal).toBeUndefined();
+    expect(held).toHaveLength(1);
   });
 });
