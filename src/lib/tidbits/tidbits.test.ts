@@ -57,6 +57,20 @@ describe.each(tidbitsGames())('the tidbits of %s', (game) => {
     for (const entry of entries) expect(entry.blocks.length, entry.title).toBeGreaterThan(0);
   });
 
+  it('gives every entry a banner in the game\'s own voice', () => {
+    for (const entry of entries) expect(entry.banner, entry.title).not.toBe('');
+  });
+
+  // A banner is set in the game's font, which draws printable ASCII and nothing else. That the
+  // font really covers all of it is `scripts/font.test.ts`'s business; this only keeps a banner
+  // from reaching for a curly quote or a dash the font has never heard of.
+  it('writes every banner in printable ASCII', () => {
+    for (const entry of entries) {
+      const undrawable = [...entry.banner].filter((char) => char < ' ' || char > '~');
+      expect(undrawable, `${entry.title}: ${entry.banner}`).toEqual([]);
+    }
+  });
+
   it('names every entry once', () => {
     const ids = entries.map((entry) => entry.id);
     expect(new Set(ids).size).toBe(ids.length);

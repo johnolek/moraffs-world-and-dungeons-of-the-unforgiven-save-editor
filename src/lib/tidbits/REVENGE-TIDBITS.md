@@ -18,6 +18,7 @@
 ## The game itself
 
 ### Every statement in the game is an interrupt
+! EVERY SINGLE LINE OF THIS GAME IS AN INTERRUPT! ASTOUNDING!
 
 Moraff's Revenge is compiled Microsoft QuickBASIC 3.0, and a compiled QuickBASIC 3.0 program is
 very nearly nothing but calls into a run-time library shipped beside it as `BRUN30.EXE`. A
@@ -37,6 +38,7 @@ reads the function byte at BRUN30 `CS:00E9`.
 [QuickBASIC](https://en.wikipedia.org/wiki/QuickBASIC).
 
 ### Half the files that look like programs are not
+! HALF THE PROGRAMS IN THIS FOLDER ARE NOT PROGRAMS AT ALL!
 
 Eighteen files in the game folder carry an `.EXE` or a `.COM` name and only seven of them hold
 any code. Moraff gave his data files an executable's extension, presumably so that nobody would
@@ -55,6 +57,7 @@ the five is compressed.
 In the code: `rev-tools/docs/SURVEY.md` section 1.
 
 ### The game times your machine before it lets you in
+! THE GAME TIMES YOUR MACHINE BEFORE IT LETS YOU IN!
 
 Startup runs a calibration at `1000:BF60`: line up with a tick of the clock, count how many times
 round an empty loop the machine gets in one second, and divide that count by 326. The 326 is
@@ -69,6 +72,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the calibration at `1000:BF
 at `1000:7EEC`.
 
 ### The dungeon never waits for you, and neither does a fight
+! THE DUNGEON NEVER WAITS! STAND STILL AND IT MOVES WITHOUT YOU!
 
 The dungeon's main loop does not block on a key. It reads `INKEY$`, which comes back at once with
 an empty string when nothing has been typed, rolls a chance to move one monster, and goes round
@@ -86,6 +90,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the loop at `1000:087F`, th
 own poll at `1000:86E2` and the blocking wait at `1000:2F71`.
 
 ### All seventy levels are on the disk, and seventeen of them are yours
+! SEVENTY LEVELS ON THE DISK! SEVENTEEN OF THEM ARE YOURS!
 
 This is the beginner's build, and it stops the player at level 17. The data does not stop there.
 `1.NUM` and `2.NUM` carry forty monster slots for each of levels 1 to 70, `7.NUM` is an array
@@ -99,6 +104,7 @@ In the code: `rev-tools/docs/SURVEY.md` section 3, on the `BSAVE` shapes at `100
 ## The character
 
 ### Nothing you would want to raise is in the file as itself
+! NOTHING WORTH CHEATING AT IS WRITTEN DOWN AS ITSELF!
 
 A character record is 340 numbers of plain text, which anybody could open in an editor, and
 seven of its scalar fields have a fixed amount added on the way out and taken off again on the
@@ -117,6 +123,7 @@ adds the same constants back at `1000:B308`, and `CHCHAR.EXE` writes the file th
 first place.
 
 ### A characteristic is stored three times as big
+! YOUR STRENGTH IS FILED AT THREE TIMES ITS SIZE! GOOD LUCK!
 
 The six characteristics go into the file as `3 × stat + 237`, so the 255 to 303 the shipped
 records hold is a range of 6 to 22. That is five characters, not a scale. The roll hands out a
@@ -135,6 +142,7 @@ In the code: `rev-tools/docs/SURVEY.md` section 3, on the read-back at `1000:B6B
 `1000:B342` and the six lines at `1000:1A9A`.
 
 ### Your character starts at level zero
+! EVERY HERO BEGINS AT LEVEL ZERO! EVEN THE MIGHTY ONES!
 
 The level cell is the level plus 476, and the level underneath it is an ordinary count that
 starts at nothing. A new character is given 0, reincarnation puts it back to 0, and the only
@@ -146,6 +154,7 @@ to 0 at `1000:A172`, plus one at the temple at `1000:2044`, and printed raw on t
 screen at `1000:1BAF`.
 
 ### Laziness is a characteristic that does nothing, and the game says so
+! LAZINESS IS ONE OF YOUR SIX CHARACTERISTICS! IT DOES NOTHING!
 
 The six characteristics are strength, intelligence, wisdom, health, agility and laziness, and
 the instruction screen `CHCHAR.EXE` prints before the roll says of the last one that it wastes
@@ -160,6 +169,7 @@ the roller can throw your points.
 In the code: the characteristics screen at `CHCHAR.EXE` offset `0739` and the roll at `0ADA`.
 
 ### Every race adds up to twenty-four
+! EVERY RACE ADDS UP TO TWENTY-FOUR! CHOOSE WITH CARE!
 
 The four races are a `DATA` statement of twenty-four numbers, six to a race: 4,4,4,4,4,4 for a
 human, 4,1,1,7,7,4 for a dwarf, 2,6,5,3,5,3 for an elf and 2,2,2,5,9,4 for a hobbit. Each of
@@ -172,6 +182,7 @@ of the shipped ones do.
 In the code: the race table at `CHCHAR.EXE` offset `0578` and the scatter at `0B29`.
 
 ### Which dungeon you walk in is a field of your character
+! THE DUNGEON YOU WALK IN IS WRITTEN IN YOUR OWN RECORD!
 
 The wall rule divides by a number the game keeps in the character record, and every character on
 the disk holds 1 there. The fountain of youth adds two to it.
@@ -189,6 +200,7 @@ In the code: [wallSide](source:ts/revmap.js/wallSide), and `rev-tools/docs/DUNGE
 section 5 on the map at `1000:3DCC` and the fountain at `1000:3ED0`.
 
 ### Your explored map is twenty bits to a row
+! YOUR WHOLE EXPLORED MAP IS TWENTY BITS TO A ROW!
 
 The `<n>.BIN` beside a character record is a `BSAVE` of the array that remembers where it has
 walked: one number per row per level, with the twenty columns packed into it from the top bit
@@ -205,6 +217,7 @@ In the code: `rev-tools/docs/SURVEY.md` section 3, on the bit test at `1000:5449
 ## The dungeon
 
 ### There is no maze in the box
+! THERE IS NO MAZE IN THE BOX! A HUNDRED THOUSAND WALLS OUT OF THIN AIR!
 
 Seventy levels of twenty squares by nineteen, four sides to a square, is more than a hundred
 thousand walls, and not one of them is stored anywhere. Every `BSAVE` image in the game folder is
@@ -222,6 +235,7 @@ In the code: [floor](source:ts/revmap.js/floor), and `rev-tools/docs/DUNGEON.md`
 and 7.
 
 ### Eight and nine are a wall, six and seven a door
+! EIGHT AND NINE ARE A WALL! SIX AND SEVEN ARE A DOOR!
 
 Every side of every square is
 `INT(ABS(SIN(kind * column * row * (level + 2) / generation + 10)) * 10)`, with `kind` 1 for the
@@ -243,6 +257,7 @@ the move test at `1000:548B` and the map at `1000:4B5F` (`rev-tools/docs/DUNGEON
 to 4).
 
 ### Nearly a third of all the sides are a nine
+! NEARLY A THIRD OF EVERY WALL IN THE GAME IS A NINE!
 
 Of the 51,191 interior sides in the whole dungeon, 42.2% are a wall and 18.2% a door. The ten
 values are nowhere near evenly spread: 9 on its own accounts for 29% of all the sides in the game.
@@ -254,6 +269,7 @@ tighter than a uniform roll would have made it.
 In the code: [wallSide](source:ts/revmap.js/wallSide) and `rev-tools/docs/DUNGEON.md` section 2.
 
 ### QuickBASIC's sine is wrong, and the whole dungeon rests on it
+! THE WHOLE DUNGEON RESTS ON A SINE THAT IS WRONG!
 
 BRUN30's single-precision `SIN` reduces its angle by multiplying by a single-precision `1/(2*pi)`
 and keeping the fraction, which at the sort of angle this game asks for leaves about four correct
@@ -270,6 +286,7 @@ In the code: [mbfSin](source:ts/revmap.js/mbfSin), which is BRUN30 `CS:BF0C` ste
 [Microsoft Binary Format](https://en.wikipedia.org/wiki/Microsoft_Binary_Format).
 
 ### A door asks nothing of you
+! THE HELP SAYS STRENGTH OPENS DOORS! THE DOORS DISAGREE!
 
 `H5.OVL`, the game's own help, lists strength as useful for opening doors. It is not, and there is
 nothing behind the sentence at all. The move test computes one number, compares it with 7, and
@@ -285,6 +302,7 @@ In the code: [blocked](source:ts/revmap.js/blocked) and `rev-tools/docs/DUNGEON.
 on the four move directions at `1000:30D9`, `3192`, `3254` and `3316`.
 
 ### The floor is twenty squares by nineteen
+! TWENTY SQUARES ACROSS AND NINETEEN DOWN! NOT TWENTY!
 
 Columns run 1 to 20 and rows run 1 to 19 — not 20. The move code stops at 1 and at 19, and the
 map's own loop is `FOR row = 1 TO 19`.
@@ -298,6 +316,7 @@ In the code: [COLUMNS](source:ts/revmap.js/COLUMNS) and [ROWS](source:ts/revmap.
 `rev-tools/docs/DUNGEON.md` section 1.
 
 ### What is on a square is a second formula, and its own index does not quite agree
+! THE WALLS HAVE ONE FORMULA AND THE LADDERS HAVE ANOTHER!
 
 Walls are one rule; ladders and chutes are another, and the two know nothing about each other.
 The square's own coordinates go into
@@ -320,6 +339,7 @@ In the code: [featureCode](source:ts/revmap.js/featureCode) and
 (`rev-tools/docs/SURVEY.md` section 3).
 
 ### A ladder can be three levels long
+! A LADDER CAN CARRY YOU THREE WHOLE LEVELS AT ONCE!
 
 The feature code is not the number of levels a ladder spans; it is folded down to one. Take three
 off it twice, while it is still over three, and what is left is 1, 2 or 3 — how far the ladder
@@ -332,6 +352,7 @@ In the code: [fold](source:ts/revmap.js/fold) and [feature](source:ts/revmap.js/
 the folding at `1000:5649` and the search at `1000:552B`.
 
 ### A chute drops one, two or three levels, and the false floor under it drops one more
+! A CHUTE DROPS YOU THREE LEVELS AND THE FLOOR BELOW DROPS YOU AGAIN!
 
 Falling down a chute prints its line and leaves your column and row alone — you land on the same
 square, further down — and the game remembers the three coordinates it left you on. How much
@@ -360,6 +381,7 @@ In the code: [chuteLanding](source:ts/revmap.js/chuteLanding) and
 ## Monsters
 
 ### A monster is stopped by the same walls you are
+! THE MONSTERS ARE STOPPED BY THE VERY SAME WALLS YOU ARE!
 
 A monster's turn is one square, orthogonally, and two things can refuse it. One is another
 monster already standing there: the grid the game keeps them in holds slot numbers, and a square
@@ -376,6 +398,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the direction at `1000:7390
 at `1000:758D` and the commit at `1000:7667`.
 
 ### A slot number is the whole monster
+! A SLOT NUMBER IS THE WHOLE MONSTER! NAME, LEVEL AND ALL!
 
 Forty slots belong to each level, and everything about the monster in one is worked out from the
 slot's own number. Its name is the slot modulo twenty, plus one. Its level is the level it is
@@ -391,6 +414,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 2, on the name at `1000:80B0`, th
 `1000:80DE` and the kind at `1000:82E5`.
 
 ### The last two names have to be earned
+! TWO MONSTER NAMES MUST BE EARNED! THE SLOT WILL NOT GIVE THEM!
 
 Each of `F6.COM` and `F7.COM` holds twenty-two monster names, and the slot itself only ever picks
 one of the first twenty. Two corrections sit behind that, and both of them test the same pair of
@@ -405,6 +429,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 2, on `1000:80B0` and the two cor
 `1000:81A6`.
 
 ### The whole floor moves at the pace of the last monster you met
+! THE WHOLE FLOOR MOVES AT THE PACE OF THE LAST MONSTER YOU MET!
 
 A monster taking its turn decides between wandering and coming at you by rolling against a level
 plus 35 and asking whether the result is under 15, so the bigger that level is, the less anything
@@ -422,6 +447,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the odds at `1000:7EEC` and
 `1000:73B6`.
 
 ### Killing one puts a fresh one in its place
+! KILL ONE AND A FRESH ONE TAKES ITS PLACE AT ONCE!
 
 A monster that runs out of hit points banks its experience and then, rather than being cleared
 out of its slot, is written over. The slot gets `INT(RND * 8 * depth) + 2 * depth + 1` hit points,
@@ -435,6 +461,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the kill at `1000:8E36` and
 `1000:A3C8`.
 
 ### The monsters belong to the disk, not to you
+! THE MONSTERS BELONG TO THE DISK! EVERY CHARACTER SHARES THEM!
 
 `1.NUM` and `2.NUM` — where every monster on all seventy levels is standing and how much is left
 of it — are loaded once for the whole disk, not per character, and saved back out on the way out
@@ -448,6 +475,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 2 and `rev-tools/docs/SURVEY.md` 
 save at `1000:B5C8` and the survivor's remainder at `1000:8FB2`.
 
 ### Meeting a monster can weaken it for good
+! MEET A MONSTER AND IT MAY NEVER BE THE SAME AGAIN!
 
 The first thing the fight does is cap the monster: if its stored hit points are at or above ten
 times its level, they are set to ten times its level — and the new number is written back into
@@ -462,6 +490,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 2, on the cap at `1000:8223` and 
 `1000:825A`.
 
 ### No monster is ever put down on the outer ring
+! NO MONSTER IS EVER SET DOWN ON THE OUTER RING! WALK THE EDGE!
 
 When the stocking loop needs a square for a monster it rolls a row of 2 to 18 and a column of 2
 to 19. The floor is twenty by nineteen, so rows 1 and 19 and columns 1 and 20 — the whole border
@@ -476,6 +505,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 2, on the stocking loop at `1000:
 four clamps at `1000:75F0`, `7613`, `7636` and `765C`.
 
 ### Two casts of monsters, and depth alone decides which
+! TWO WHOLE CASTS OF MONSTERS! ONLY DEPTH DECIDES WHICH!
 
 There are two complete sets: twenty-two names in `F6.COM` with their pictures, and twenty-two
 more in `F7.COM` with a second set of pictures in the files whose names end in `A`. Levels 1 to
@@ -491,6 +521,7 @@ swap at `1000:4C6B` and `1000:4C97`.
 ## The town
 
 ### The town is an ordinary floor with a table written on top of it
+! THE TOWN IS AN ORDINARY FLOOR WITH TEN SQUARES MARKED ON IT!
 
 Level 0 is twenty squares by nineteen with the same sine walls as everywhere else, computed with
 the level set to zero. What makes it the town is ten `IF column = c AND row = r` tests in a row,
@@ -513,6 +544,7 @@ In the code: [townBuilding](source:ts/revmap.js/townBuilding) and
 dispatch at `1000:132A` (`rev-tools/docs/DUNGEON.md` section 9).
 
 ### A building is up a rope, and the map draws it as a letter
+! EVERY BUILDING IN TOWN IS UP A ROPE! HIT U TO CLIMB IT!
 
 Walking onto one of the ten squares tells you there is a rope above and to hit `U` to climb it,
 which is the ordinary go-up key doing something it does nowhere else.
@@ -532,6 +564,7 @@ In the code: `rev-tools/docs/DUNGEON.md` section 9, on the rope at `1000:12C6` a
 `1000:0DBD`, and `rev-tools/docs/MAP-MEMORY.md` on the letters at `1000:C102`.
 
 ### Three inns, and the cheap ones can rob you
+! THREE INNS! THE CHEAP ONES MAY ROB YOU IN YOUR SLEEP!
 
 A room at the Flea Bag Inn is 10 jewel pieces and heals one health point. A suite at the Yuppydom
 is 200 and heals three. A grand suite at the Kings Inn is 6,000, and a cleric on the staff heals
@@ -549,6 +582,7 @@ In the code: `rev-tools/docs/DUNGEON.md` section 9, on the three routines at `10
 `1F3D` and `1FCD` and the robbery at `1000:1EE2`.
 
 ### The temple sells a level for half a million
+! THE TEMPLE WILL SELL YOU A WHOLE LEVEL FOR HALF A MILLION!
 
 Its menu is five lines, and each one subtracts its own price: 75 to cure wounds, 1,000 to heal
 all of them, 400 to cure disease, 20,000 to remove poison, and 500,000 to gain a level. Curing
@@ -563,6 +597,7 @@ In the code: `rev-tools/docs/DUNGEON.md` section 9, on the menu at `1000:2663` a
 `1000:2044`.
 
 ### The store will sell you the town, and the bank will sell you the bank
+! THE STORE WILL SELL YOU THE TOWN! THE BANK WILL SELL YOU THE BANK!
 
 The store's list is seven lines of weapons and armour, from a knife at 10 jewel pieces to field
 plate armor at 10,000, and its `ON ... GOTO` has exactly seven targets. There is an eighth line
@@ -577,6 +612,7 @@ In the code: `rev-tools/docs/DUNGEON.md` section 9, on the store at `1000:281E`,
 at `1000:2B67` and the bank's sign at `1000:236C`.
 
 ### The wizard's guild sells you words
+! THE GUILD SELLS NOTHING BUT SENTENCES! 800 JEWELS A TIME!
 
 The guild sells two things and both of them are sentences. For 800 jewel pieces it tells you what
 the magic items do. For `INT(level ^ 1.75 * 220)` it reads out either the two prep spells of a
@@ -591,6 +627,7 @@ In the code: `rev-tools/docs/DUNGEON.md` section 9, on the guild at `1000:2BB8`,
 `1000:2DAE` and the two branches at `1000:2E24` and `1000:2E91`.
 
 ### The town's ladders ask a looser question than the rest of the dungeon
+! THE TOWN'S LADDERS ASK AN EASIER QUESTION THAN ANY OTHER!
 
 Level 0 skips the branch that reads a square's own feature code and goes straight to the search
 for a ladder down, which is why the town has no ladder up and no chute. Inside that search sits a
@@ -612,6 +649,7 @@ the spill at `1000:55F9` (`rev-tools/docs/DUNGEON.md` section 9).
 ## Bugs the game has
 
 ### Seven of the town's ladders lead to floor minus one
+! SEVEN OF THE TOWN'S TEN LADDERS GO SOMEWHERE THAT IS NOT THERE!
 
 The looser test the town uses takes any ladder that reaches **at least** as far as asked, which
 means seven of its ten ladders down are longer than the trip they were picked for. The square at
@@ -626,6 +664,7 @@ are the only place the pairing breaks.
 In the code: [feature](source:ts/revmap.js/feature) and `rev-tools/docs/DUNGEON.md` section 9.
 
 ### A magic mace makes you harder to hit
+! THE MAGIC MACE DEFENDS YOU WHILE YOU SWING IT! WHAT A WEAPON!
 
 Your own swing adds the plus on your weapon to the roll, which is what a plus is for. The
 monster's swing, on the way past, adds the magic mace's plus to your armour class — in the
@@ -638,6 +677,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the monster's swing at `100
 yours at `1000:8A5C`.
 
 ### The monster's die is never cleared
+! THE MONSTER'S DIE IS NEVER WIPED CLEAN! IT REMEMBERS!
 
 Both sides of a fight roll a twenty-sided die that explodes: roll a 20 and roll again, adding.
 Your roll assigns the result to its variable. The monster's adds to it.
@@ -651,6 +691,7 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the monster's roll at `1000
 yours at `1000:8A14`.
 
 ### After the fountain of youth, the game disagrees with itself about its own walls
+! DRINK FROM THE FOUNTAIN AND THE MAP STOPS AGREEING WITH THE WALLS!
 
 The wall rule divides by the generation, and two places in the game compute it. The move test
 divides first and multiplies the coordinates on afterwards; the map divides last. In
@@ -665,6 +706,7 @@ In the code: [wallSide](source:ts/revmap.js/wallSide), whose order is the move t
 `rev-tools/docs/DUNGEON.md` section 6.
 
 ### The last number of your saved map is cut in half
+! THE LAST NUMBER OF YOUR SAVED MAP IS CUT CLEAN IN HALF!
 
 The statement that writes a character's explored map asks for a length of "the address of the
 last element minus the address of the first, plus one". The two addresses are 6,044 bytes apart,
@@ -677,6 +719,7 @@ which is not a shape a `BSAVE` of an array of four-byte numbers can otherwise ta
 In the code: `rev-tools/docs/SURVEY.md` section 3, on the `BSAVE` at `1000:B583`.
 
 ### A zero in your saved map still carries the bytes that were there before
+! A ZERO IN YOUR MAP STILL CARRIES WHAT USED TO BE THERE!
 
 BRUN30 stores a floating-point zero by writing the exponent byte and nothing else, on the
 grounds that an exponent of zero is the whole of what makes a number zero — the other three bytes
@@ -692,6 +735,7 @@ clean, from the `BSAVE` at `CHCHAR.EXE` offset `1557`.
 ## Trivia
 
 ### The disk calls itself the advanced version, and it is not
+! MORAFF'S REVENGE ADVANCED VERSION 3.3! IT IS NOT THE ADVANCED ONE!
 
 `BEGIN.EXE` banners itself `MORAFF'S REVENGE ADVANCED VERSION 3.3` on the way in, and then offers
 "5...ORDER MORAFF'S REVENGE ADVANCED VER." as a menu item, and the order form behind that item is
@@ -702,6 +746,7 @@ In the code: `rev-tools/docs/SURVEY.md` section 1, on `BEGIN.EXE`'s strings and 
 order text.
 
 ### One file in the folder has nothing to do with the game
+! ONE FILE IN THIS FOLDER HAS NOTHING TO DO WITH THE GAME!
 
 `COLOR.COM` is a real `.COM` file, 1,092 bytes, and it identifies itself as copyright Diamond
 Flower Electric: a video-card utility dated 1987. Nothing in the game runs it and nothing in the
@@ -713,6 +758,7 @@ cannot run a statement without.
 In the code: `rev-tools/docs/SURVEY.md` section 1.
 
 ### A 41-byte text file decides which characters exist
+! 41 BYTES DECIDE WHICH HEROES EXIST! NOT ONE BYTE MORE!
 
 `F5.COM` is the list of names, one per line in slot order, ending with the word `END`, and it —
 not the presence of a character record — is what the front end offers you. The shipped disk has
@@ -722,6 +768,7 @@ so three complete characters from 1991 are on that disk and cannot be reached fr
 In the code: `rev-tools/docs/SURVEY.md` section 1, on the character picker in `BEGIN.EXE`.
 
 ### The hall of fame is not a table, it is a picture
+! THE HALL OF FAME IS NOT A LIST! IT IS A PHOTOGRAPH!
 
 `F9.EXE` is not a program and not a text file. It is a `BSAVE` image — a block of
 memory written straight to disk — 1,789 bytes, of which the first seven are the header and the
@@ -732,6 +779,7 @@ In the code: `rev-tools/docs/SURVEY.md` sections 1 and 3, on `F8.EXE`'s `BLOAD` 
 `01DD`.
 
 ### The seventh paragraph comes out blue
+! THE SEVENTH PARAGRAPH ALWAYS COMES OUT BLUE! EVERY TIME!
 
 The instruction screens take a new colour at the start of every paragraph from a table filled
 `C(J) = J + 9`, with a counter that goes up by one each time and wraps at 6 back to 0. The
@@ -745,6 +793,7 @@ the cycle never uses.
 In the code: the colour step at `CHCHAR.EXE` offset `16E8` and the table at `044E`.
 
 ### Picture 6 is a skull, a ribcage and a scythe
+! PICTURE 6 IS A SKULL, A RIBCAGE AND A SCYTHE!
 
 Which picture a monster is drawn with is two files deep: the first name in `F6.COM` is `SKELETON`,
 element 1 of `3.NUM` is a 6, and picture 6 of `4.NUM` is a skull, a ribcage and a scythe. That
@@ -754,6 +803,7 @@ for the close-up view and one for the distant one, in front of two files of pict
 In the code: `rev-tools/docs/SURVEY.md` section 3.
 
 ### The monsters are drawn in CGA's own two palettes
+! DRAWN IN BOTH OF CGA'S PALETTES! FOUR COLOURS AT A TIME!
 
 The game runs in `SCREEN 1`, which is four colours at two bits a pixel, and it starts on
 background 0 with the palette set to 2. In `SCREEN 1` an even palette number is CGA palette 0 —
