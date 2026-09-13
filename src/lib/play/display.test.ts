@@ -248,6 +248,23 @@ describe("the arrow on the character's square", () => {
     const cells = facingArrowCells(dir).map((cell) => `${cell.x},${cell.y}`);
     expect(litPixels(dir)).toEqual(cells.sort());
   });
+
+  /**
+   * The arrow reaches every pixel of its square but the first, which is the size FUN_2000_9d17
+   * draws it at when a square is ten pixels across. Drawing one of the routine's other three
+   * bitmaps here would leave a margin of the square's own colour, which is loud on a town
+   * building square and is what this holds the size against.
+   */
+  it('spans all but the first pixel of the square it stands on', () => {
+    expect(FACING_ARROW_RECT.size).toBe(ZOOM_CELL - 1);
+    const cell = FACING_ARROW_RECT.x - zoomMapLeft(SCREEN_PIXELS.width) - (ZOOM_COLUMNS >> 1) * ZOOM_CELL;
+    expect(cell).toBe(1);
+    for (const dir of [0, 1, 2, 3]) {
+      const along = facingArrowCells(dir).flatMap((at) => [at.x, at.y]);
+      expect(Math.min(...along)).toBe(0);
+      expect(Math.max(...along)).toBe(FACING_ARROW_RECT.size - 1);
+    }
+  });
 });
 
 describe('what the zoom map draws on one square', () => {
