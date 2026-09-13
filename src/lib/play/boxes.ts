@@ -12,7 +12,10 @@ import type { GameSession } from './engine';
  * The boxes a ported function printed, one array of lines each.
  *
  * print_menu_only (exe 2000:309e) shows eight lines and waits for a key, so a function that
- * prints three boxes stops three times over. Nothing in the port is asynchronous and none of it
+ * prints three boxes stops three times over. That wait is FUN_2000_4054 (exe 2000:4054), which
+ * puts the HIT ANY KEY NOW plaque up first, so a box here waits with {@link
+ * GameSession.keyWithPlaque} rather than with a plain key. A menu is different: mset_gmenu is not
+ * one of FUN_2000_4054's callers, so the key a menu is answered with draws no plaque. Nothing in the port is asynchronous and none of it
  * can wait, so all three are printed at once; this keeps them apart so that the play side can
  * show them one after another.
  */
@@ -43,7 +46,7 @@ export async function printMenus<T>(session: GameSession, print: () => T): Promi
   });
   for (const box of boxes) {
     session.showBox(box);
-    await session.game.key();
+    await session.keyWithPlaque();
   }
   session.wipeMessageBlock();
   return result;
@@ -60,7 +63,7 @@ export async function printMenusEndingInAMenu(
   const boxes = boxesOf(session, print);
   for (const box of boxes.slice(0, -1)) {
     session.showBox(box);
-    await session.game.key();
+    await session.keyWithPlaque();
   }
   session.showBox(boxes[boxes.length - 1] ?? []);
 }
@@ -86,7 +89,7 @@ export async function printMenusWhile(
   const showEach = async (): Promise<void> => {
     for (let box = queued.shift(); box !== undefined; box = queued.shift()) {
       session.showBox(box);
-      await askedKey();
+      await session.keyWithPlaque();
     }
   };
   const showBeforeAWait = async (): Promise<void> => {

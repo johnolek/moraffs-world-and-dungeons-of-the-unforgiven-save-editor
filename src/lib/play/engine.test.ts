@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseSave } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
+import { spellIndex } from '../game/port/inventory';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import { BATTLE_TEXT_COLOUR, messageLine } from '../game/port/screens';
 import { BorlandRng, type Rng } from '../game/port/rng';
@@ -734,6 +735,24 @@ describe('the HIT ANY KEY plaque', () => {
     expect(session.plaque).toBe('showing');
     await press(session, KEY.escape);
     expect(session.plaque).toBe(null);
+    session.finish();
+  });
+
+  it('stands behind a box a spell printed, which is a print_menu_only like any other', async () => {
+    const wands = Array.from({ length: 180 }, () => 0);
+    // MAGIC ZAP, the second wizard battle spell, off a wand so no spell points are needed.
+    wands[spellIndex(2, 0, 1)] = 3;
+    const session = await facingAMonster(lowest, { cls: 3, sp: 0, maxSp: 0, wands }, { hp: 100000 });
+    session.game.highSpeed = true;
+
+    // I, then WAND, then the battle list, then the spell's own key.
+    await press(session, KEY.useItem);
+    await press(session, 0x32);
+    await press(session, 0x33);
+    await press(session, 0x62);
+
+    expect(session.box[0]).toBe('WISPS OF COLORFUL LIGHT');
+    expect(session.plaque).toBe('showing');
     session.finish();
   });
 

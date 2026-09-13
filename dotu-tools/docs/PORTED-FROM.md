@@ -50,7 +50,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `allocate_buffers` | 2000:3bc7 |  | `map/explored.ts` |
 | `reset_view_caches` | 2000:3d9b | `game/port/character.ts` | `game/port/magic.ts` |
 | `FUN_2000_3e73` | 2000:3e73 |  | `game/port/screens.ts`, `play/engine.ts`, `play/plaque.ts`, `play/timed.ts` |
-| `FUN_2000_4054` | 2000:4054 | `play/engine.ts` | `game/port/drops.ts`, `game/port/screens.ts`, `play/Screen.svelte`, `play/dig.ts`, `play/plaque.ts` |
+| `FUN_2000_4054` | 2000:4054 | `play/engine.ts` | `game/port/drops.ts`, `game/port/screens.ts`, `play/Screen.svelte`, `play/boxes.ts`, `play/dig.ts`, `play/plaque.ts` |
 | `FUN_2000_412a` | 2000:412a |  | `play/engine.ts`, `play/plaque.ts` |
 | `Random` | 2000:4156 |  | `game/port/rng.ts`, `play/floor.ts` |
 | `compute_weight` | 2000:41ae | `game/port/magic.ts` | `play/gear.ts` |

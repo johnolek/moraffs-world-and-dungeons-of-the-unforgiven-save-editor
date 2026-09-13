@@ -494,7 +494,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    *   the gradient bank 150 times before it prints its welcome (exe 4000:771b), and the plaque
    *   goes up after the welcome rather than with the tunnel.
    */
-  private async keyWithPlaque(before?: { ms: number; then: () => void }): Promise<number> {
+  async keyWithPlaque(before?: { ms: number; then: () => void }): Promise<number> {
     const raisePlaque = (): void => {
       if (this.game.highSpeed) this.plaque = 'showing';
       else {
