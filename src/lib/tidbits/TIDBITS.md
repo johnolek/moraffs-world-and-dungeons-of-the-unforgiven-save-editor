@@ -1,10 +1,17 @@
 <!--
   How to add a tidbit
   -------------------
-  Put a `### Some title` under one of the `## Section` headings and write a paragraph or two
-  under it. Blank lines separate paragraphs, a line starting `- ` is a list item, `backticks`
-  make inline code and **stars** make bold. Every paragraph has to sit under a `###`; anything
-  written between a `##` and the first `###` under it is dropped.
+  Put a `### Some title` under one of the `## Section` headings, then a `! ` line straight under
+  the title with the banner on it, then write a paragraph or two.
+
+  The banner is the line shown above the title in the game's own font and in one of the colours
+  its help screens use. Write it the way Steve Moraff wrote his: shouting, in capitals, at the
+  reader. It has to be the very next line after the `###`, with no blank line between, or it is
+  read as an ordinary paragraph.
+
+  Blank lines separate paragraphs, a line starting `- ` is a list item, `backticks` make inline
+  code and **stars** make bold. Every paragraph has to sit under a `###`; anything written
+  between a `##` and the first `###` under it is dropped.
 
   Links are ordinary Markdown, `[text](https://example.com/)`. Three link forms point inside
   this app instead of at the web:
@@ -23,6 +30,7 @@
 ## Exploits and shortcuts
 
 ### A priest can write wizard scrolls, and a wizard priest ones
+! YOUR PRIEST CAN WRITE WIZARD SCROLLS!! NOBODY IS STOPPING YOU!
 
 Write Scroll and Enchant Wand ask three questions in a row: which spell book, which level, and
 which of the three spells on that line. The first menu draws the book your class cannot cast as
@@ -39,6 +47,7 @@ In the code: [writeScrollOrWand](source:ts/magic.ts/writeScrollOrWand) and
 [write_scroll_or_wand](source:c/write_scroll_or_wand).
 
 ### Swing on the beat
+! THERE ARE GOOD MOMENTS TO SWING AND BAD ONES!
 
 Your to-hit roll is not random. Every swing reseeds the random number generator from the PC's
 tick counter and then takes the very first number out of it, and the generator answers
@@ -56,6 +65,7 @@ In the code: [strike](source:ts/combat.ts/strike), [strike](source:c/strike) and
 which is why consecutive seeds give answers that lie on a straight line.
 
 ### Keep your best weapon in hand under a Power Weapon
+! NEVER PUT DOWN YOUR BEST WEAPON FOR A SPELL!
 
 A Power Weapon spell replaces the damage die and nothing else. The to-hit bonus, the permanent
 plus and the swing speed all still come from whatever is actually in your hand, so casting Power
@@ -70,6 +80,7 @@ In the code: [strike](source:ts/combat.ts/strike) and
 [powerWeapon](source:ts/magic.ts/powerWeapon).
 
 ### Permanent spells are free off a scroll
+! PERMANENT MAGIC FOR NOTHING!! JUST READ THE SCROLL!
 
 Casting a permanent spell out of your spell book takes its level off your maximum spell points
 for good. That is the price of the improvement, and it is the reason nobody casts the deep ones.
@@ -85,6 +96,7 @@ In the code: [permanentList](source:ts/magic.ts/permanentList) and
 [what casting costs](formula:spell-cost).
 
 ### Sleep is the one spell a Shadow boss cannot refuse
+! EVEN A SECTION BOSS MUST SLEEP!!
 
 A Shadow boss stops Go Away, Autokill, Drain Monster, Hold Monster and the hand grenades, and
 prints its taunt instead. That is the whole list. Sleep never asks whether the monster is a boss,
@@ -99,6 +111,7 @@ In the code: [sleepMonster](source:ts/magic.ts/sleepMonster),
 [boss_immune_check](source:c/boss_immune_check) and [Sleep](formula:sleep).
 
 ### Two strength spells run at once
+! STACK BOTH STRENGTH SPELLS! PLUS FIFTEEN AND NOT A WORD OF COMPLAINT!
 
 The preparation Strength gives +5 and Super Strength gives +10, and they are kept in two
 different fields, so both can be up at the same time for +15 until you next rest. Neither
@@ -111,6 +124,7 @@ In the code: [prepStrength](source:ts/magic.ts/prepStrength) and
 ## Combat
 
 ### A big swing rolls the damage die several times
+! ONE MIGHTY SWING ROLLS THE DICE AGAIN AND AGAIN!
 
 The to-hit roll is not pass or fail. Everything you bring to the swing is added up, the
 monster's level and its armour and speed are taken off, and then the game rolls your weapon's
@@ -125,6 +139,7 @@ In the code: [strike](source:ts/combat.ts/strike), [defend](source:ts/combat.ts/
 [what goes into your to-hit total](formula:to-hit-total).
 
 ### The damage cap is a cliff, not a ceiling
+! HIT TOO HARD AND THE DUNGEON TAKES IT ALL BACK!
 
 Near the end of the monster's attack there is a line that looks like a cap on four times the
 floor number. What it actually writes is the floor number. A hit that comes to four times the
@@ -142,6 +157,7 @@ In the code: [defend](source:ts/combat.ts/defend) and
 [the monster hitting back](formula:defend).
 
 ### One monster attack in four is thrown away
+! ONE MONSTER SWING IN FOUR NEVER LANDS! LUCKY YOU!
 
 After the dice are rolled, one attack in four discards the whole total and replaces it with a
 small roll based on the floor. That roll can come out zero, so a monster that landed a solid hit
@@ -150,6 +166,7 @@ does nothing at all a quarter of the time on shallow floors.
 In the code: [defend](source:ts/combat.ts/defend).
 
 ### Poison and disease are a clock, not a condition
+! POISON IS A CLOCK, NOT A WOUND! IT TICKS FOR 450 MOVES!
 
 Being poisoned does not take hit points. It sets a counter to 450 moves, and every 450 moves
 after that it takes a point of strength; disease does the same to constitution. Neither can take
@@ -163,6 +180,7 @@ In the code: [poison and disease](formula:poison-disease) and
 [drainsAndAilments in defend](source:c/defend).
 
 ### A life drainer always takes 30 experience
+! THE DRAINER NAMES ONE NUMBER AND TAKES ANOTHER! ALWAYS 30!
 
 When an experience drainer hits you the message names a number out of the monster's own record.
 The subtraction uses a constant of 30 instead. Every experience drainer in the game happens to
@@ -176,6 +194,7 @@ In the code: [defend](source:ts/combat.ts/defend), [goDownLevel](source:ts/comba
 and [what the next level costs](formula:exp-needed).
 
 ### Acid breath eats the armour you are wearing
+! ACID EATS YOUR ARMOUR RIGHT OFF YOUR BACK!!
 
 Acid is the only attack in the game that takes something away. It does its damage, sets the
 permanent plus on the suit you have on to zero, removes one of that suit from what you own, and
@@ -187,6 +206,7 @@ In the code: [defend](source:ts/combat.ts/defend) and [breath](formula:breath).
 ## Magic
 
 ### Fast Move and Invisibility are two rolls, not one
+! TWO SPELLS, TWO CHANCES TO SKIP THE MONSTERS ENTIRELY!
 
 Neither spell does anything to you. Each gives the moment a one-in-four chance of ending before
 the monsters have moved: the game rolls, and on a 1 nothing steps and nothing attacks. They are
@@ -207,6 +227,7 @@ In the code: [passMoment](source:ts/moment.ts/passMoment) and
 [attackTiming](source:ts/combat.ts/attackTiming).
 
 ### Youth costs you a tenth of everything
+! YOUTH IS NOT FREE! IT QUIETLY EATS A TENTH OF YOUR EXPERIENCE!
 
 Youth sets your age back to 20, which matters because the game ages you and old characters lose
 statistics. The price is not printed anywhere: it multiplies your experience by 0.9, and that is
@@ -220,6 +241,7 @@ In the code: [youth](source:ts/magic.ts/youth) and
 [what the next level costs](formula:exp-needed).
 
 ### Drain Monster kills pay level-0 experience
+! DRAIN MONSTER EMPTIES THEM OUT AND PAYS YOU NOTHING FOR IT!
 
 Drain Monster takes your wisdom off the monster's level, and a monster whose level is below your
 wisdom is emptied outright: level 0, no hit points, dead. The trouble is that the experience a
@@ -234,6 +256,7 @@ In the code: [drainMonster](source:ts/magic.ts/drainMonster),
 [drain_monster](source:c/drain_monster) and [what a kill is worth](formula:exp-value).
 
 ### Ascend works two floors deeper than it admits
+! ASCEND GOES DEEPER THAN IT PROMISES! TWO WHOLE FLOORS!
 
 The three Ascend spells refuse to work deep in the dungeon, and the message says they do not
 work below floor 64. The test is deeper than that: it asks whether the floor is over 65, so
@@ -243,6 +266,7 @@ In the code: [ascend](source:ts/magic.ts/ascend) and
 [majorAscend](source:ts/magic.ts/majorAscend).
 
 ### Feather leaves your gear behind
+! FEATHER FORGETS YOUR BODY AND REMEMBERS EVERY SUIT YOU OWN!
 
 Feather sets your own body weight to zero and stops there. Everything you own is then added back
 on: every suit of armour, every weapon, whether or not you are using it. A well equipped
@@ -256,6 +280,7 @@ In the code: [computeWeight](source:ts/magic.ts/computeWeight),
 [compute_weight](source:c/compute_weight) and [how long a step takes](formula:move-seconds).
 
 ### The permanent enchantments set the plus, they do not add to it
+! NEVER ENCHANT A FINE WEAPON WITH A CHEAP SPELL!!
 
 Enchant Weapon writes its plus over whatever the weapon already had. Casting the level 1 version,
 worth +1, on a weapon already carrying +4 takes it back down to +1. The same goes for Enchant
@@ -273,6 +298,7 @@ In the code: [enchantWeaponPerm](source:ts/magic.ts/enchantWeaponPerm),
 [setTempWeaponPlus](source:ts/magic.ts/setTempWeaponPlus) and [strike](source:ts/combat.ts/strike).
 
 ### Fast Big Cure has a hidden 20
+! FAST BIG CURE HIDES A BONUS 20! IT CAN NEVER BE WASTED!
 
 Fast Big Cure heals a roll on four times your wisdom and then adds 20, capped at 90. The 20 is
 in no description anywhere. It means the spell can never be a waste: even the worst roll gives
@@ -282,6 +308,7 @@ In the code: [fastBigCure](source:ts/magic.ts/fastBigCure), [bigCure](source:ts/
 and [what the cures heal](formula:cures).
 
 ### Go Away never fails
+! GO AWAY NEVER FAILS! NOT ONCE, NOT EVER!
 
 The help text for Go Away talks about the monster's level against yours. There is no such test
 anywhere in the spell. Against anything except a Shadow boss it works every single time, which
@@ -290,6 +317,7 @@ makes it the cheapest way out of a fight you cannot win.
 In the code: [goAway](source:ts/magic.ts/goAway) and [go_away](source:c/go_away).
 
 ### Major Descend works on the bottom floor
+! MAJOR DESCEND WILL TAKE YOU OFF THE BOTTOM OF THE WORLD!
 
 Descend refuses to go deeper than the bottom of the module. Major Descend's version of the same
 test is one number out, so on the bottom floor it goes through, and the ten-floor drop is then
@@ -300,6 +328,7 @@ In the code: [majorDescend](source:ts/magic.ts/majorDescend) and
 [descend](source:ts/magic.ts/descend).
 
 ### The resistances are absolute while they last
+! RESIST POISON IS NOT A CHANCE! IT IS A PROMISE!
 
 Resist Poison, Resist Disease and Resist Level Drain are not chances. While the timer is running
 the poisoning, the disease and the drain do not happen at all, with no roll anywhere, and the
@@ -312,6 +341,7 @@ In the code: [resistPoison](source:ts/magic.ts/resistPoison),
 [resistDrain](source:ts/magic.ts/resistDrain) and [defend](source:ts/combat.ts/defend).
 
 ### Pass Wall can find nowhere, and that one is free
+! PASS WALL SOMETIMES COSTS YOU NOTHING AT ALL!
 
 Pass Wall looks 2 to 19 squares along the direction you chose and takes the first square that is
 on the map, is not rock and has no monster standing on it. If there is no such square it does
@@ -326,6 +356,7 @@ In the code: [passWall](source:ts/magic.ts/passWall), [pass_wall](source:c/pass_
 ## Monsters
 
 ### Everything more than a few steps away is standing still
+! THE MONSTERS ONLY WAKE UP WHEN YOU GET CLOSE!
 
 A monster only moves if the two axes' distances add to less than `floor / 10 + 10`, and even then
 only four times in five. That is nine squares on floor 1 and nineteen on floor 100, and it is
@@ -343,6 +374,7 @@ there forever.
 In the code: [pass_moment](source:c/pass_moment).
 
 ### Every monster you kill becomes the same garbage can
+! EVERY MONSTER YOU SLAY BECOMES A GIANT GARBAGE CAN!!
 
 A dead monster is not removed. Its slot is rewritten in place as a Giant Garbage Can, type 0,
 level 0, no hit points at all, and moved to x 100, y 100, off the side of an 80-wide floor. The
@@ -367,6 +399,7 @@ In the code: [kill_monster](source:c/kill_monster), [puffball in defend](source:
 [the grid](source:c/set_monster_map) and [what a kill is worth](formula:exp-value).
 
 ### The monsters are laid out in diagonal stripes
+! THE MONSTERS LINE UP IN STRIPES! LEARN THEM AND HUNT THEM!
 
 A floor's 145 monsters are placed one after another, and the generator is reseeded from the tick
 counter before each one. Consecutive seeds give answers that lie on a line, so from one monster
@@ -381,6 +414,7 @@ In the code: [stockFloor](source:ts/stocking.ts/stockFloor) and
 [the 145 monsters on a floor](formula:stocking).
 
 ### The last three sections double their boss
+! THE LAST THREE BOSSES ARE TWICE THE MONSTER! BEWARE!!
 
 A Shadow boss already gets 20 extra hit points for each level of the floor it guards, on top of
 a normal monster's roll. In
@@ -391,6 +425,7 @@ In the code: [rollHp](source:ts/roll.ts/rollHp) and
 [why a Shadow boss takes so long](formula:boss-hp).
 
 ### Beat the bosses in order, or a reward takes one back
+! KILL THE BOSSES IN ORDER, OR YOUR REWARD IS A PUNISHMENT!
 
 Killing a section's Shadow boss pays a fixed reward, and ten of the twenty are written into a
 number rather than added to it. The fourth boss of Module I sets a suit of armour you own to +25
@@ -408,12 +443,14 @@ the +50 skin from Module IV is +25 skin the moment Module I's last boss dies.
 In the code: [kill_monster](source:c/kill_monster).
 
 ### The garbage cans float
+! THE GARBAGE CANS FLOAT ON THE WATER! WHAT A SIGHT!
 
 In the three water sections the built-in monsters are drawn 140 rows tall instead of 200, and
 the water overlay is drawn over the bottom of the picture. The cans and puffballs are not
 hovering; their feet are underneath the water.
 
 ### The Shadow bosses are holes in the shape of another monster
+! A SHADOW BOSS WEARS ANOTHER MONSTER'S FACE!!
 
 Every Shadow boss shares its picture with the first regular monster of its section. Shadow
 Ogeroth is the Ogeroth, Shadow Vulture is the Vulture Of Death, Shadow Evil God is Zeus. What
@@ -431,6 +468,7 @@ In the code: [scale_image2](source:c/scale_image2) and
 [which monster turns up](formula:monster-kind).
 
 ### The last boss's reward is the only one not in a text file
+! THE FINAL REWARD IS WRITTEN NOWHERE BUT IN THE GAME ITSELF!
 
 Killing a section's Shadow boss prints what you have won and points you at the next one. The
 nineteenth of them, for the boss on floor 75, ends `NOW FIND THE SHADOW OGEROTH ON LEVEL 100. IT
@@ -451,6 +489,7 @@ In the code: [kill_monster](source:c/kill_monster) and [allHints](source:ts/hint
 ## Map and travel
 
 ### There is no map, anywhere
+! THERE IS NO MAP! THE DUNGEON IS BUILT FRESH UNDER YOUR FEET!
 
 The game ships no dungeon and saves none. Every question about a square, from whether there is a
 wall between here and there to whether this is where a ladder stands, is answered by pushing the
@@ -470,6 +509,7 @@ In the code: [myrand](source:ts/unfmap.js/myrand), [myrand](source:c/myrand),
 [walls, doors and secret doors](formula:map-sides).
 
 ### Every trap door on a floor drops you on the same square
+! EVERY TRAP DOOR ON A FLOOR DROPS YOU ON THE VERY SAME SQUARE!
 
 The landing square is not rolled fresh. The game seeds the generator with 10, asks for
 `random(60) + 10` and `random(90) + 10`, and if that square is solid it tries seed 11, then 12,
@@ -481,6 +521,7 @@ In the code: [where a trap door lands you](formula:trap-door-landing) and
 [trap doors and the floors they reach](formula:trap-doors).
 
 ### Ladders and chutes are just more arithmetic
+! THE LADDERS ARE NOT PLACED! THEY ARE CALCULATED!
 
 A ladder stands on roughly one square in 27 and a chute on five in `230 - floor / 3`, both
 answered by the same hash that draws the walls. Nothing is stored, nothing is placed; the game
@@ -489,6 +530,7 @@ simply asks the square whether it is a ladder each time it draws it.
 In the code: [ladders up and down](formula:ladders) and [chutes](formula:chutes).
 
 ### Module II's town is Module I's town with the buildings moved
+! THE SECOND TOWN IS THE FIRST TOWN WITH THE SIGNS SWAPPED!
 
 Walk into the second module's town and the streets are the ones you already know: every wall,
 every door and every secret door across the whole floor stands where it does in the first
@@ -517,6 +559,7 @@ In the code: [myrand](source:ts/unfmap.js/myrand),
 [where the buildings are](formula:town-buildings).
 
 ### Seventeen floors are dealt the same walls twice
+! SEVENTEEN FLOORS ARE DEALT THE VERY SAME WALLS TWICE!
 
 The wall pattern of every sixteen-by-sixteen block is a remainder of 25 taken from the hash, and
 the module enters the hash through two terms that do not depend on the block. On a floor where
@@ -541,6 +584,7 @@ and [why every dungeon is the same](formula:map-hash).
 ## Town and money
 
 ### Two kills in the same second pay exactly the same
+! KILL TWO IN ONE SECOND AND THEY PAY YOU TWICE THE SAME!
 
 The money a kill drops is generated after reseeding from the wall clock, which only ticks once a
 second. Kill two monsters inside the same second and both hand you the same number of dollars,
@@ -550,6 +594,7 @@ In the code: [rollMoney](source:ts/dotu-mech.js/rollMoney), [drop_money](source:
 and [the money a kill pays](formula:money).
 
 ### The two best items in the game are priced and never sold
+! THE TWO FINEST ITEMS IN THE GAME HAVE PRICES AND NO SHELF!
 
 The store tables carry a price for the Great Sword, 9,900, and for the Titanium suit, 60,000.
 Neither is on any menu: the shop's keys stop at 6, one short of both. They were meant to be
@@ -558,6 +603,7 @@ bought, and in the game that shipped they can only be found.
 In the code: [what drops when you kill something](formula:drop-odds).
 
 ### Helping children is the only discount in town
+! HELP THE CHILDREN AND THE MERCHANTS REMEMBER YOU KINDLY!
 
 Each needy child you have helped at the temple, at 100 rubles a time, gives one per cent back on
 culture stock and magic crystals, and the refund stops at half the price. Fifty children is the
@@ -571,6 +617,7 @@ In the code: [the discount for helping children](formula:store-refund),
 [a night at the inn](formula:inn-cost) and [what the temple charges](formula:temple).
 
 ### Nobody starts with anything in the bank
+! YOUR SECOND FORTUNE IS NOT MONEY! IT IS CRYSTALS AND STOCK!
 
 Every class but the fighter gets a second roll of starting wealth at the end of character
 creation, twice your luck plus a roll on five times it. It is not money. It goes into the magic
@@ -588,6 +635,7 @@ In the code: [rollChar](source:ts/character.ts/rollChar),
 [what a night at the inn does to you](formula:inn-night).
 
 ### Five inns, and the sign is the only difference
+! A NIGHT IN OUR HORRIBLE HOTEL MIGHT NOT KILL YOU!
 
 Every module has its own inn. Module I has the HELL HOLE INN, whose tin sign explains that A
 NIGHT IN OUR HORRIBLE HOTEL MIGHT NOT KILL YOU. PLEASE KEEP VALUABLES IN BED WITH YOU. After it
@@ -606,6 +654,7 @@ In the code: [innSignHint](source:ts/hints.ts/innSignHint),
 ## Bugs the game has
 
 ### The lucky charm nothing gives you
+! THE LUCKY CHARM IS READY AND WAITING! NOBODY WILL GIVE YOU ONE!
 
 A lucky charm is read on every swing you make and every attack made on you, and adds its count
 straight to the roll. Nothing in the game hands one out. The field sits in the save file being
@@ -614,6 +663,7 @@ read, for ever, at zero.
 In the code: [strike](source:ts/combat.ts/strike) and [defend](source:ts/combat.ts/defend).
 
 ### The monster cache forgets which dungeon you are in
+! THE MONSTERS FOLLOW YOU BETWEEN MODULES! WE CALL IT ATMOSPHERE!
 
 The game keeps three floors' worth of monsters in memory at a time, filed by floor number alone
 with no note of which module they came from. Walk floor 5 of Module I and then floor 5 of Module
@@ -623,6 +673,7 @@ That includes the boss. A floor whose monsters came from somewhere else has no b
 the square the save file says the boss is on.
 
 ### GO EAST, for ever
+! GO EAST! GO EAST! GO EAST! KEEP GOING EAST!!
 
 The homing message points at the square the save file remembers the section's boss on. If the
 boss is not actually there, and the cache above is one way to arrange that, the message keeps
@@ -630,6 +681,7 @@ pointing at an empty square and never changes. The manual's advice for this is r
 deletes every `.MAP` file and runs `f_bug.exe`, which puts the special monster back.
 
 ### Go Away can drop a monster inside solid rock
+! GO AWAY PUTS THEM SOMEWHERE ELSE! SOMETIMES INSIDE A WALL!
 
 Go Away rolls a new square for the monster and then checks whether it is solid before accepting
 it. It checks the wrong square: it asks about the square **you** are standing on, not the one the
@@ -639,6 +691,7 @@ roll, and the monster can end up sealed inside a wall where nothing can ever rea
 In the code: [goAway](source:ts/magic.ts/goAway) and [go_away](source:c/go_away).
 
 ### Priest Protection is Minor Protection again
+! THE PRIEST'S PROTECTION IS EVERY BIT AS GOOD AS THE CHEAP ONE!
 
 The priest's level 5 Protection asks for protection level 1, which is what the level 1 Minor
 Protection asks for. Both take 2 off a monster's attack roll. The wizard's Protection, on the
@@ -652,6 +705,7 @@ In the code: [priestBattle](source:ts/magic.ts/priestBattle),
 [what protection is worth](formula:protection).
 
 ### The anti-magic ring does nothing
+! THE ANTI-MAGIC RING IS ON YOUR SHEET FOR ALL TO ADMIRE!
 
 The Anti-Magic Ring is bought with four permanent spells, stored in the save file, shown on your
 character sheet, and refused by the spell when you already have a better one. No line anywhere in
@@ -664,6 +718,7 @@ In the code: [setAntiMagicRing](source:ts/magic.ts/setAntiMagicRing) and
 [permanentList](source:ts/magic.ts/permanentList).
 
 ### An enchanted suit of armour protects no better than a plain one
+! YOUR ENCHANTED ARMOUR LOOKS MAGNIFICENT ON THE CHARACTER SHEET!
 
 The permanent plus on the armour you are wearing appears nowhere in the sum that decides whether
 a monster hits you. It is printed on your sheet, and acid destroys it, and that is the whole of
@@ -674,6 +729,7 @@ In the code: [defend](source:ts/combat.ts/defend) and
 [setTempArmorPlus](source:ts/magic.ts/setTempArmorPlus).
 
 ### Escaping the enchantment menu cancels the spell by accident
+! NEVER PRESS ESCAPE AT THE WEAPON LIST!! YOU HAVE BEEN WARNED!
 
 Pressing escape at the weapon list of Enchant Weapon hands the spell back -1. It subtracts one
 and uses the answer as an index, which lands on an unlabelled byte of the save record instead of
@@ -683,6 +739,7 @@ such weapon and stops. The cancel you expect is a bug that happens to behave.
 In the code: [enchantWeaponPerm](source:ts/magic.ts/enchantWeaponPerm).
 
 ### Monsters are stocked into rows nothing can reach
+! THERE ARE MONSTERS IN ROWS NO ADVENTURER WILL EVER WALK!
 
 The dungeon generator fills a grid 80 columns by 110 rows. The game only ever draws and walks 79
 columns by 104 rows. Column 79 and rows 104 to 109 are real, hold real open squares, and the
@@ -694,6 +751,7 @@ In the code: [MAP_ROWS](source:ts/area.ts/MAP_ROWS),
 [the part of a floor you can reach](formula:map-area).
 
 ### Every character starts at level 0
+! EVERY HERO BEGINS AT LEVEL 0! EVEN THE MIGHTY ONES!
 
 Character creation wipes all 2,695 bytes of the record to zero before it rolls anything, and
 nothing in the roller ever writes the level back. Whatever race and class you pick, you leave the
@@ -711,6 +769,7 @@ In the code: [rollChar](source:ts/character.ts/rollChar),
 [when a level is actually granted](formula:level-for-exp).
 
 ### The easy setting's spell point bonus never happens
+! NORMAL DIFFICULTY PROMISES EXTRA SPELL POINTS! DO NOT COUNT THEM!
 
 Normal difficulty is meant to buy a character two things at the roll that "I can handle anything"
 does not get: 25 extra health points and half again as many spell points. Only the health points
@@ -732,6 +791,7 @@ In the code: [rollChar](source:ts/character.ts/rollChar) and
 [what the next level costs](formula:exp-needed).
 
 ### The design screen asks for a key it does not read
+! THE DESIGN SCREEN LISTS SIX KEYS! ONE OF THEM IS DECORATION!
 
 Designing your own character takes four points off each of the six characteristics and gives you
 twenty-four to put back wherever you like. The screen lists the keys for them: S, I, W, C, D or
@@ -747,6 +807,7 @@ In the code: [designYourOwn](source:ts/character.ts/designYourOwn) and
 [roll_char](source:c/roll_char).
 
 ### The snake greets you by how deep you have been, not by how good you are
+! THE SNAKE JUDGES YOU BY HOW DEEP YOU HAVE BEEN, NOT HOW GOOD!
 
 The greeting for walking into town is picked by the deepest floor you have ever reached, and your
 level does not come into it. Below floor 4 it is `'Hail novice adventurer! You are still a wimp!
@@ -765,6 +826,7 @@ In the code: [townTablet](source:ts/hints.ts/townTablet) and
 ## Trivia and history
 
 ### The file called v
+! THE GAME OPENS A FILE CALLED V BEFORE IT DOES ANYTHING ELSE!
 
 The very first thing the registered game does is open a file called `v`, print it in yellow as
 the note about verifying your registration, and add up every byte in it in five different ways.
@@ -777,6 +839,7 @@ instead, starting at the Borland copyright string, and keeps going until it happ
 `~` byte.
 
 ### intro.txt is a joke at your expense
+! YOU MAY DELETE INTRO.TXT! CHANGING IT IS UNFORGIVABLE!
 
 The whole of `intro.txt` reads: you can remove this file, but modifying it is an "Unforgivable"
 action. It is a wink at the check above, and nothing reads it. The shareware nag screen that
@@ -784,6 +847,7 @@ tells you to delete it is still compiled into the registered game, and nothing c
 either.
 
 ### A message hidden from the hex editor
+! A MESSAGE HIDDEN FROM PRYING EYES, PUT BACK TOGETHER AS YOU QUIT!
 
 The quit screen prints PLEASE DO NOT DISTRIBUTE THIS GAME. That sentence appears nowhere in the
 file. It is stored as three scrambled fragments and put back together at run time by adding 2 to
@@ -793,6 +857,7 @@ does anyone hunting for something to patch. It is a
 the game treated that way.
 
 ### The launcher's secret handshake
+! THE LAUNCHER KNOWS A SECRET WORD! THE GAME WILL NOT START WITHOUT IT!
 
 `UNFORGIV.EXE` is not the game. It is a video mode picker, and it starts the real game with the
 arguments `~ T <mode> <chipset>`. `UNF.EXE` checks that the first argument is `~` and otherwise
@@ -801,6 +866,7 @@ mouse is looked for at all, the digit is the resolution and the last number is t
 for the three highest modes.
 
 ### The walls are painted by a routine of their own
+! THE WALLS HAVE A PAINTER ALL TO THEMSELVES!
 
 Wall textures look as though they go through the monster drawer, and they do not. They have a
 texture mapper to themselves with its own colour rule, and the routine that calls it writes the
@@ -813,6 +879,7 @@ which are the section's own wall colours. That is why the same corridor is green
 section 1 and red brick in section 6.
 
 ### The sign nobody has ever read
+! STEP THROUGH THIS TELEPORTER! NO ONE EVER HAS!
 
 Image 2 of every wall picture file is a sign reading STEP THROUGH THIS TELEPORTER. The
 teleporters are commented out of the recovered source code, which had people wondering whether
@@ -826,6 +893,7 @@ In the code: [where the teleporters are](formula:teleporter-sides) and
 [where a teleporter drops you](formula:teleporter-landing).
 
 ### The .uhp files are the help screens, not the hints
+! THE UHP FILES ARE SMARTY'S HELP SCREENS, NOT HIS HINTS!
 
 `0.uhp` through `29.uhp` in the game folder read like the snake's material, and they are not it.
 They are the F1 help screens, and the game opens one every time you ask for help: the menu the
@@ -842,6 +910,7 @@ In the code: [readHelpScreen](source:ts/hints.ts/readHelpScreen),
 [giveHint](source:ts/hints.ts/giveHint) and [tabletMessage](source:ts/hints.ts/tabletMessage).
 
 ### The help screen with no key to press
+! ONE HELP SCREEN HAS NO KEY! IT IS WAITING THERE STILL!
 
 The F1 menu is twenty-eight lines in two columns, and between them they open twenty-eight of the
 twenty-nine `.uhp` files in the game folder. The one nothing opens is `18.uhp`, and it is the
@@ -855,6 +924,7 @@ In the code: [HELP_TOPICS](source:ts/hints.ts/HELP_TOPICS) and
 [HELP_FILES](source:ts/hints.ts/HELP_FILES).
 
 ### Five messages nobody can be shown
+! FIVE MESSAGES ARE WRITTEN AND NOBODY CAN EVER BE SHOWN THEM!
 
 Every message in `UH.BIN` and `UH2.BIN` is asked for by number from somewhere in the game, except
 five.
@@ -877,11 +947,13 @@ In the code: [allHints](source:ts/hints.ts/allHints),
 [random_events_tick](source:c/random_events_tick).
 
 ### The intro demo has its own dungeon
+! THE WANDERING DEMO HERO HAS A DUNGEON OF HIS VERY OWN!
 
 `010.DUN` and `011.DUN` are explored-map files for the character that wanders around during the
 attract mode. They are deliberately not valid game maps.
 
 ### Room for a game five times the size
+! THERE IS ROOM IN HERE FOR A GAME FIVE TIMES THE SIZE!!
 
 The game is full of tables built for content that never arrived. The spell arrays reserve 15
 levels per book where only 10 exist. The boss position table has room for 8 sections per module
@@ -890,6 +962,7 @@ monster-level formula has a special case for depths no module can reach. The mon
 has a "worth no experience at all" case that no monster uses.
 
 ### Code that ships and never runs
+! THERE IS CODE IN THIS GAME THAT HAS NEVER ONCE RUN!
 
 An older version of the dungeon hash is still in the file, written as a chain of reseeds rather
 than as arithmetic, and nothing calls it. So are three dice helpers: a proper "roll N dice of M"
@@ -899,6 +972,7 @@ an older picture loader, an older map-square drawer and two large drawing routin
 callers.
 
 ### Almost every random number is a reading of the clock
+! ALMOST EVERY ROLL IN THIS GAME IS A GLANCE AT THE CLOCK!
 
 The game has three ways of getting a random number and two of them reseed constantly. `Random`,
 which drives the find-item roll, the spell book and scroll and wand rolls, Sleep, Autokill, Go
@@ -913,6 +987,7 @@ single swing.
 In the code: [Random](source:c/Random) and [the port's own generator](source:ts/rng.ts/random).
 
 ### Your sex is rolled, and nothing ever reads it
+! THE GAME ROLLS YOUR SEX AND THEN NEVER THINKS OF IT AGAIN!
 
 The roller asks six questions and rolls everything else. Sex is one of the rolled things, a coin
 flip taken in the same breath as the age, the height and the weight and printed underneath them.
@@ -928,6 +1003,7 @@ In the code: [rollCharacteristics](source:ts/character.ts/rollCharacteristics) a
 [showRolledCharacter](source:ts/character.ts/showRolledCharacter).
 
 ### The race table you choose from is wrong in two rows
+! THE RACE TABLE IS AVERAGES, NOT PROMISES! TWO ROWS ARE WRONG!
 
 The race screen is a page of `UROLL.TXT` printed as it stands, and its numbers are averages
 rather than the table the game rolls from. The roll starts each characteristic at the race's own
@@ -946,6 +1022,7 @@ In the code: [rollCharacteristics](source:ts/character.ts/rollCharacteristics) a
 [rollChar](source:ts/character.ts/rollChar).
 
 ### The contest the menu will not let you enter
+! ONE HUNDRED DOLLARS TO THE FIRST IN THE WORLD!! THE MENU SAYS NO!
 
 `UROLL.TXT` describes three difficulties. The third is a contest: play Module I from beginning to
 end without ever saving, defeat the Shadow Demon Queen, and the first person in the world to ring
