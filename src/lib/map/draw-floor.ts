@@ -257,9 +257,9 @@ export function drawOutline(ctx: CanvasRenderingContext2D, x: number, y: number,
 }
 
 /**
- * The square you stand on, drawn at whatever opacity the caller is pulsing through.
+ * The square you stand on, drawn in whatever colour the caller is turning over.
  *
- * `gameArrow` is the arrow the game's own map marks the character with, the 7 x 7 bitmap of
+ * `gameArrow` is the arrow the game's own map marks the character with, the bitmap of
  * `facingArrowCells` painted a square of the cell to a pixel, which is what a game that has one
  * is drawn with. Without one it is an arrowhead of the site's own pointing the way the character
  * faces, and where nobody is facing anywhere it is a filled block, which is the map explorer
@@ -270,7 +270,7 @@ export function drawYou(
   x: number,
   y: number,
   view: Viewport,
-  alpha: number,
+  fill: string,
   dir: number | null = null,
   gameArrow = false,
 ): void {
@@ -280,7 +280,7 @@ export function drawYou(
   const top = y0 + 1 + inset;
   const width = Math.max(1, w - 2 * inset);
   const height = Math.max(1, h - 2 * inset);
-  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+  ctx.fillStyle = fill;
   if (dir === null) {
     ctx.fillRect(left, top, width, height);
     return;

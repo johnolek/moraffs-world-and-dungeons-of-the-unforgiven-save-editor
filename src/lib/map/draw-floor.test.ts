@@ -171,17 +171,19 @@ describe('drawYou', () => {
   }
 
   const view = { cell: 20, originX: 0, originY: 0 };
+  /** Any colour: these tests are about the shape drawn, not what it is filled with. */
+  const WHITE = '#ffffff';
 
   it('fills the square when nobody standing there is facing anywhere', () => {
     const { ctx, rects, corners } = recordMarker();
-    drawYou(ctx, 1, 2, view, 0.5);
+    drawYou(ctx, 1, 2, view, WHITE);
     expect(rects).toEqual([[23, 43, 16, 16]]);
     expect(corners).toEqual([]);
   });
 
   it("draws the game's own arrow a square of the cell to a pixel when it is asked for", () => {
     const { ctx, rects, corners } = recordMarker();
-    drawYou(ctx, 1, 2, view, 0.5, 0, true);
+    drawYou(ctx, 1, 2, view, WHITE, 0, true);
     expect(corners).toEqual([]);
     // The 9 x 9 bitmap has 37 pixels lit, and the point of the arrow is the middle of its top row.
     expect(rects).toHaveLength(37);
@@ -190,7 +192,7 @@ describe('drawYou', () => {
 
   it('draws an arrowhead pointing the way the character faces', () => {
     const { ctx, rects, corners } = recordMarker();
-    drawYou(ctx, 1, 2, view, 0.5, 0);
+    drawYou(ctx, 1, 2, view, WHITE, 0);
     expect(rects).toEqual([]);
     // The tip is on the middle of the square's north side, the back corners on its south ones.
     expect(corners[0]).toEqual([31, 43]);

@@ -12,7 +12,7 @@
   import { centerOn, ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
   import { onScreen } from '../ui/on-screen.svelte';
   import { renderWallTexture, wallTexture, wallTilePattern } from './wall-texture';
-  import { youAlpha } from './you';
+  import { youAlpha, youFlash } from './you';
 
   /** The marker's square, and the facing it is drawn pointing along where it has one. */
   export type YouHere = Point & { dir?: number };
@@ -283,8 +283,12 @@
     drawMarks(ctx, marks ?? [], view);
     if (route) drawRoute(ctx, route, view);
     // Dungeons of the Unforgiven is the one of the three whose own map marks the character with
-    // an arrow, so it is the one drawn with that arrow here.
-    if (you) drawYou(ctx, you.x, you.y, view, youAlpha(performance.now()), you.dir ?? null, game.id === 'unforgiven');
+    // an arrow, so it is the one drawn with that arrow, and with the white and black the game
+    // turns that arrow over between. The other two, and the map explorer walking someone about a
+    // floor without a facing, get the site's own white faded in and out.
+    const gameArrow = game.id === 'unforgiven' && you?.dir !== undefined;
+    const marker = gameArrow ? youFlash(performance.now()) : `rgba(255, 255, 255, ${youAlpha(performance.now())})`;
+    if (you) drawYou(ctx, you.x, you.y, view, marker, you.dir ?? null, gameArrow);
     if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
     if (highlight) drawOutline(ctx, highlight.x, highlight.y, view, 2, '#ffffff');
     if (cursor) drawOutline(ctx, cursor.x, cursor.y, view, 1, 'rgba(255, 255, 255, 0.75)');
