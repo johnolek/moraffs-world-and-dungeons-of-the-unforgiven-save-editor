@@ -17,6 +17,7 @@ import { boxesOf } from './boxes';
 import { castFromSpellbook, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { debugMonsterLines } from './debug-screen';
+import { statusNumbers, type StatusNumbers } from './display';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
@@ -145,7 +146,14 @@ export interface KilledOnScreen {
 export interface PlayView {
   place: { x: number; y: number; floor: number; module: number; dir: number };
   /**
-   * The character's hit points and spell points, and what they can hold.
+   * The character as the green block along the bottom was last drawn with, which the block and
+   * the map's own orbs are both drawn from: movecontrol prints that block once a pass, so a
+   * number written in the middle of a pass waits for the next one to show.
+   */
+  status: StatusNumbers;
+  /**
+   * The character's hit points and spell points, and what they can hold, as that same block shows
+   * them.
    *
    * These are on the view rather than read off `session.game.pc` because the character is a
    * plain object the game writes in place: nothing on the page would redraw when a blow lands.
@@ -340,6 +348,19 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    *  constructor takes the first one before anything can be drawn. */
   private screenFloor!: ScreenFloor;
   /**
+   * The numbers the green block along the bottom was last drawn with.
+   *
+   * FUN_3000_caac (exe 3000:caac) prints that block, and movecontrol is the only thing that ever
+   * calls it: once a pass, after the pass has asked whether the character is dead. So the numbers
+   * standing there are the ones from the last pass the loop got that far in, which is why a
+   * killing blow and the -100 the death routine writes never reach the screen — the pass that
+   * finds the character dead hands back to the character select screen instead of printing.
+   *
+   * The tab draws the screen out of the game rather than leaving pixels on it, so the block needs
+   * this copy to draw from. {@link drawStatusBlock} takes it.
+   */
+  private statusDrawn!: StatusNumbers;
+  /**
    * The delays the game holds a drawn message for (exe 1000:2789), which the tab keeps to. The
    * loop runs straight past them; this is what decides which of the screens it drew is showing.
    */
@@ -409,6 +430,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       dungeon: this.game.pc.module,
     }));
     this.drawFloor();
+    this.drawStatusBlock();
   }
 
   protected override get frames(): HeldFrames {
@@ -717,6 +739,14 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     };
   }
 
+  /**
+   * FUN_3000_caac (exe 3000:caac): the green block along the bottom, as movecontrol prints it
+   * once a pass ({@link statusBlock}).
+   */
+  drawStatusBlock(): void {
+    this.statusDrawn = statusNumbers(this.game.pc);
+  }
+
   drawViews(): void {
     const pc = this.game.pc;
     const from = this.drawnFrom;
@@ -745,12 +775,13 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     const printed = this.timed.showing(game.screen);
     return {
       place: { x: pc.x, y: pc.y, floor: pc.level, module: pc.module, dir: pc.dir },
-      hp: pc.hp,
-      maxHp: pc.maxHp,
-      sp: pc.sp,
-      maxSp: pc.maxSp,
-      level: pc.lev,
-      exp: pc.exp,
+      status: this.statusDrawn,
+      hp: this.statusDrawn.hp,
+      maxHp: this.statusDrawn.maxHp,
+      sp: this.statusDrawn.sp,
+      maxSp: this.statusDrawn.maxSp,
+      level: this.statusDrawn.lev,
+      exp: this.statusDrawn.exp,
       rows: this.rows,
       monsters: drawn,
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
@@ -891,6 +922,9 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     game.enemyDir = -1;
     // The views are drawn again below, which is what takes the skull off the last monster killed.
     session.killed = null;
+    // FUN_3000_caac (unf.c:15403) prints the status block here, after the pass has asked whether
+    // the character is dead and before it works anything out about the square they are on.
+    session.drawStatusBlock();
     // movecontrol (unf.c:15405) marks the square under the character's feet before it works
     // anything else out about it.
     session.memory.markStep(pc.x, pc.y);

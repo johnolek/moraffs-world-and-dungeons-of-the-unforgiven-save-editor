@@ -165,6 +165,7 @@
     game={stage.session.game}
     rows={view.screenFloor.rows}
     place={view.place}
+    status={view.status}
     viewsFrom={view.viewsFrom}
     monsters={monstersDrawn(stage.mode, { ...view.screenFloor, engaged: view.engaged })}
     box={view.box}

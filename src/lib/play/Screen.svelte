@@ -36,6 +36,7 @@
     statusLines,
     UNFORGIVEN_ZOOM_MAP,
   } from './display';
+  import type { StatusNumbers } from './display';
   import type { PlaqueState } from './engine';
   import { fadedPalette, fadeSteps, FADE_STEP_MS, type Fade } from './fade';
   import {
@@ -61,6 +62,10 @@
   interface Props {
     /** The game itself, for the numbers the standing screen prints every turn. */
     game: Game;
+    /** The character the green block along the bottom was last drawn with (`engine.ts`
+     *  drawStatusBlock). The fight simulator has no loop to draw it, so it draws the character
+     *  as they stand. */
+    status?: StatusNumbers;
     rows: MapSquare[][];
     /** Where the character stands, and which way. */
     place: { x: number; y: number; floor: number; module: number; dir: number };
@@ -122,6 +127,7 @@
 
   let {
     game,
+    status = undefined,
     rows,
     place,
     monsters,
@@ -288,7 +294,7 @@
       : [
           ...keyMenuLines(),
           ...battleSpellLines(game),
-          ...statusLines(game.pc),
+          ...statusLines(status ?? game.pc),
           ...viewLabels(game.pc.exp, height),
           ...box,
           ...(prompt ?? []),
@@ -515,7 +521,7 @@
     if (revealed > 0) frame.journal = [];
     // FUN_3000_caac prints the status block's lines at the top of the pass when they have
     // changed, before the map window, which is the first thing a slowed machine shows moving.
-    drawDotuScreenText(frame, SCREEN_PIXELS, statusLines(game.pc));
+    drawDotuScreenText(frame, SCREEN_PIXELS, statusLines(status ?? game.pc));
     drawZoomMapWithoutMarker(frame, floor);
     renderFourViews(
       frame,

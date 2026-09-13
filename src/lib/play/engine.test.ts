@@ -11,6 +11,7 @@ import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
 import { facingAMonster, inTheTown, startPlaying } from './battle.test-support';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
+import { statusLines } from './display';
 import { KEY } from './keys';
 import { PLAQUE_DELAY_MS } from './plaque';
 import { VIEW_DEPTH, viewedSquares } from './memory';
@@ -473,6 +474,33 @@ describe('dying', () => {
     expect(session.box[0]).toBe('EVERYTHING GOES BLACK...');
   });
 
+
+  it('leaves the green block showing the health it had before the killing blow', async () => {
+    // FUN_3000_caac prints that block once a pass, after the pass has asked whether the character
+    // is dead, so the pass that finds them dead never gets to it: the numbers standing there are
+    // the ones from before the blow. That is why John's screenshot of the original reads 4 OF 274
+    // with the death messages already up, on a character killed by an eleven point hit.
+    const start = townWalk();
+    const session = playing(characterFile({ level: 0, dir: 0, hp: 4, maxHp: 274, ...start }));
+    await settle();
+    const fatalBlow = 0x62;
+    KEY_HANDLERS[fatalBlow] = {
+      c: 'a handler that exists only in this test',
+      run(turn) {
+        turn.game.pc.hp -= 11;
+      },
+    };
+    try {
+      await press(session, fatalBlow);
+    } finally {
+      delete KEY_HANDLERS[fatalBlow];
+    }
+    expect(session.box[0]).toBe('EVERYTHING GOES BLACK...');
+    // The death routine writes -100 into the character, the way the original does.
+    expect(session.game.pc.hp).toBe(-100);
+    expect(session.view().hp).toBe(4);
+    expect(statusLines(session.view().status).map((line) => line.text)).toContain('HEALTH POINTS:4 OF 274');
+  });
 
   it('marks the character dead and leaves the file alone', async () => {
     const start = townWalk();

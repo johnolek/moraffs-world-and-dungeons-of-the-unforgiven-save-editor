@@ -185,7 +185,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `go_up_level` | 3000:bd9a | `game/port/levels.ts` |  |
 | `go_down_level` | 3000:c093 | `game/port/combat.ts` |  |
 | `monster_manual` | 3000:c39d |  | `game/dotu-pic.js`, `play/Screen.svelte`, `play/manual.ts`, `play/section-screen.ts`, `play/tablet.ts` |
-| `FUN_3000_caac` | 3000:caac | `play/display.ts` | `character/record.ts`, `play/Screen.svelte` |
+| `FUN_3000_caac` | 3000:caac | `play/display.ts` | `character/record.ts`, `play/Screen.svelte`, `play/engine.ts` |
 | `msg_no_monster` | 3000:d0c1 | `game/port/magic.ts` |  |
 | `msg_already_in_effect` | 3000:d0ee | `game/port/magic.ts` |  |
 | `msg_already_cast_this_spell` | 3000:d11b | `game/port/magic.ts` |  |
