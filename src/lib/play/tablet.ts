@@ -17,6 +17,15 @@ import type { PicRowImage } from './view3d/texture';
 export const TABLET_LINES = 4;
 
 /**
+ * The tablet while the fade is bringing it up: the slab, with nothing written on it yet.
+ *
+ * `FUN_3000_9026` draws the slab on a blacked screen, fades the palette up (exe 3000:9124) and
+ * only then cuts the four lines into the stone, so the words are never part of what comes out of
+ * black. {@link drawTabletLines} draws nothing for a line with nothing on it.
+ */
+export const TABLET_WITHOUT_ITS_WORDS: string[] = [];
+
+/**
  * How wide a line is by the time `tablet_message` (exe 3000:931c) hands it over: it writes spaces
  * from character 37 back to the end of the string and puts the terminator at 37, so every line is
  * exactly that long whatever it holds.

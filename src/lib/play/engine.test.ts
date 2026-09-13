@@ -327,7 +327,9 @@ describe('changing floors', () => {
     expect(session.view().tunnel).toBeNull();
     expect(session.view().place.module).toBe(1);
     expect(session.view().place.floor).toBe(0);
-    expect(session.view().tablet?.[0]).toContain('As you reach the town');
+    // The slab is coming up out of black with nothing written on it yet; the words are cut in
+    // when the fade is over.
+    expect(session.view().tablet).toEqual([]);
   });
 
   it('digs through the floor to whatever is under it', async () => {
@@ -667,12 +669,14 @@ describe("the stone tablet the snake's words are read on", () => {
     const start = townWalk();
     const session = startGame(characterFile({ level: 0, dir: 0, ...start }), new BorlandRng(3));
     void runMoveControl(session);
-    expect(session.view().tablet?.[0]).toContain('As you reach the town');
+    // FUN_3000_9026 draws the slab on a blanked screen and brings the palette up under it, with
+    // nothing written on the stone until the fade is over.
+    expect(session.view().fade).toBe('in');
+    expect(session.view().tablet).toEqual([]);
+    expect(session.tablet?.[0]).toContain('As you reach the town');
     // The words are on the tablet and not in the eight-line message box.
     expect(session.box).toEqual([]);
     expect(session.view().viewsDrawn).toBe(0);
-    // FUN_3000_9026 draws the slab on a blanked screen and brings the palette up under it.
-    expect(session.view().fade).toBe('in');
 
     await press(session, KEY.escape);
     // The game has put the tablet away, and FUN_4000_5c25 is fading it off the screen, so the
@@ -693,8 +697,8 @@ describe("the stone tablet the snake's words are read on", () => {
     );
     void runMoveControl(session);
     // Deeper than level 20, which is a different one of the ten greetings.
-    expect(session.view().tablet?.[0]).toContain("You're in town");
-    expect(session.view().tablet?.join(' ')).toContain('amateur explorer');
+    expect(session.tablet?.[0]).toContain("You're in town");
+    expect(session.tablet?.join(' ')).toContain('amateur explorer');
     await press(session, KEY.escape);
     expect(session.tablet).toBeNull();
   });

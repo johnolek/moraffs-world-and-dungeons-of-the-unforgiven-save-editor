@@ -232,9 +232,11 @@ describe('the inn', () => {
     expect(session.game.pc.crystals).toBe(5);
     expect(session.game.pc.money).toBe(89);
     // level_up_screen (exe 3000:955f) congratulates the new level on the snake's stone tablet
-    // rather than in the message box.
-    expect(session.view().tablet?.[0]).toBe('A little snake says:');
-    expect(session.view().tablet?.join(' ')).toContain('Congratulat');
+    // rather than in the message box. The slab is still coming up out of black, so the words are
+    // on the game's tablet rather than on the one being drawn.
+    expect(session.view().tablet).toEqual([]);
+    expect(session.tablet?.[0]).toBe('A little snake says:');
+    expect(session.tablet?.join(' ')).toContain('Congratulat');
     expect(session.box).toEqual([]);
   });
 

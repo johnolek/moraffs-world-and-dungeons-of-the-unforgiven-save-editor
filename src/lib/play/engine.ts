@@ -18,6 +18,7 @@ import { castFromSpellbook, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { debugMonsterLines } from './debug-screen';
 import { statusNumbers, type StatusNumbers } from './display';
+import { TABLET_WITHOUT_ITS_WORDS } from './tablet';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
@@ -411,9 +412,10 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     this.game.tablet = (...lines: string[]) => {
       this.tablet = lines;
       said(...lines);
-      // FUN_3000_9026 draws the slab and its lines on a screen it has already blanked and then
-      // brings the palette up (exe 3000:9124), so the tablet arrives out of black.
-      this.fadeScreen('in');
+      // FUN_3000_9026 draws the slab on a screen it has already blanked, brings the palette up
+      // (exe 3000:9124) and cuts the four lines in afterwards, so the stone comes out of black
+      // bare and the words appear on it once it has arrived.
+      this.fadeScreen('in', TABLET_WITHOUT_ITS_WORDS);
       this.waitOwed = true;
     };
     // movecontrol puts the map cursor in the middle of the view before its first pass. newGame
@@ -602,8 +604,8 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * does, so this is a held frame like every other delay: the screen as it stands is kept for as
    * long as the fade lasts, the loop runs straight past, and a key gives up the rest of it.
    */
-  fadeScreen(fade: Fade): void {
-    this.timed.hold(this.game.screen, fadeMs(fade), { fade, tablet: this.tablet });
+  fadeScreen(fade: Fade, tablet: string[] | null = this.tablet): void {
+    this.timed.hold(this.game.screen, fadeMs(fade), { fade, tablet });
   }
 
   /**
