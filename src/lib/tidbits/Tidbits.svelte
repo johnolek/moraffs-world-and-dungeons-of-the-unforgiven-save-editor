@@ -3,10 +3,17 @@
   import { goToTab } from '../history';
   import { sourceFiles, type SourceFile } from '../source/ports';
   import PixelText from '../ui/PixelText.svelte';
+  import { bannerColour } from './banner';
   import { TIDBITS_FILES } from './files';
   import { parseTidbits, searchTidbits, type Inline, type LinkTarget } from './markdown';
 
   const all = $derived(parseTidbits(TIDBITS_FILES[app.game] ?? ''));
+
+  /** Each entry's banner colour, worked out from where it sits in the whole document rather than
+   *  in what the search has left, so the colours do not shuffle as the box is typed in. */
+  const colours = $derived(
+    new Map(all.flatMap((section) => section.entries).map((entry, index) => [entry.id, bannerColour(index)])),
+  );
 
   let search = $state('');
 
@@ -79,7 +86,10 @@
         <h2 id={section.id}><PixelText text={section.title} scale={2} /></h2>
         {#each section.entries as entry}
           <article id={entry.id}>
-            <h3><PixelText text={entry.title} /></h3>
+            {#if entry.banner}
+              <p class="banner" style:color={colours.get(entry.id)}>{entry.banner}</p>
+            {/if}
+            <h3>{entry.title}</h3>
             {#each entry.blocks as block}
               {#if block.kind === 'paragraph'}
                 <p>{@render run(block.content)}</p>
@@ -200,10 +210,17 @@
     border-radius: 6px;
     scroll-margin-top: 50px;
   }
+  .banner {
+    margin: 0 0 6px;
+    font-family: var(--font-game);
+    font-size: 20px;
+    line-height: 1.3;
+  }
   article h3 {
     margin: 0 0 8px;
-    line-height: 0;
-    color: var(--accent-dim);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
   }
   article p {
     margin: 0 0 10px;
