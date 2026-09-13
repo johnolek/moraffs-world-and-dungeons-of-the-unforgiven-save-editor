@@ -29,7 +29,14 @@ FONTS = {
 }
 
 # Glyph order, which is the same in all three files and is what DS:4d7d maps a character to.
-ORDER = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.?!()'&:"
+#
+# The second to last glyph is a dollar sign, not the ampersand this once said: drawn out it is
+# the font's own capital S with column 4 lit on all ten rows, and a full-height vertical stroke
+# is what a dollar sign is. Which character the game's table sends to that slot is a separate
+# question and an open one, because unf.exe on disk is packed and the table's bytes are not in
+# the file. It makes no difference to what the glyph looks like, and no string anywhere in the
+# game or its text files holds either character, so the game never draws this one at all.
+ORDER = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.?!()'$:"
 GLYPHS = len(ORDER)
 
 

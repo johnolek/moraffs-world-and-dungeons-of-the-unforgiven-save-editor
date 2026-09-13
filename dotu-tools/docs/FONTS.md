@@ -25,7 +25,14 @@ glyphs use more than 8 bits. The three sizes' lengths add up to the file exactly
 how the layout was confirmed: 46 × (6 + 8 + 14) × 2 = 2576 bytes for `320x200.fnt`.
 
 Glyph order is the same in all three files and in all three sizes, and is what the table at
-DS:4d7d maps a character to: `-` first, then `A`..`Z`, `0`..`9`, then `, . ? ! ( ) ' & :`.
+DS:4d7d maps a character to: `-` first, then `A`..`Z`, `0`..`9`, then `, . ? ! ( ) ' $ :`.
+
+That second to last glyph is a dollar sign, though it takes drawing out to see: it is the
+font's own capital `S` with column 4 lit on all ten rows, and a full-height vertical stroke
+through an S is what a dollar sign is. Which character the table at DS:4d7d actually sends
+there is still unknown — `unf.exe` on disk is packed, so the table's bytes are not in the file
+and a scan for them finds nothing — but no string in the decompilation or in the game's own
+text files holds either a dollar sign or an ampersand, so the game never draws this glyph.
 There are no lowercase letters and nothing past the colon; `pfont` uppercases what it is
 given. A character with no glyph maps to index 0 and comes out as `-`.
 
