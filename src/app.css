@@ -13,6 +13,20 @@
   --good: #5cff7a;
   --warn: #ffd040;
   --font-dos: 'VT323', 'Courier New', monospace;
+  --font-game: 'Moraff Bold', monospace;
+}
+
+/*
+  The bold face of the game's own 320x200.fnt, turned into a real font by `pnpm build:font`.
+
+  Set it at a multiple of ten pixels. The em box is exactly the ten-row glyph box the game draws
+  from, so `font-size: 30px` puts three screen pixels on each game pixel and every edge lands on a
+  whole one; a size between multiples blurs them.
+*/
+@font-face {
+  font-family: 'Moraff Bold';
+  src: url('./lib/ui/moraff-bold.otf') format('opentype');
+  font-display: block;
 }
 
 * {
