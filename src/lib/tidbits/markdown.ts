@@ -31,6 +31,9 @@ export interface Entry {
   /** The element id the table of contents scrolls to; unique across the whole document. */
   id: string;
   title: string;
+  /** The line above the title, written in the voice the games' own help screens are written in.
+   *  Drawn in the game's font; empty for an entry that has not been given one. */
+  banner: string;
   blocks: Block[];
   /** The title and every word of the entry, folded to lower case, for the search box. */
   search: string;
@@ -113,11 +116,16 @@ function slug(title: string, taken: Set<string>): string {
 
 const HEADING = /^(#{1,3})\s+(.*)$/;
 const BULLET = /^-\s+(.*)$/;
+const BANNER = /^!\s+(.*)$/;
 
 /**
  * The sections and entries of a Tidbits document. Anything written before the first `###` of a
  * section, and anything at all before the first `##`, is dropped: every paragraph belongs to an
  * entry.
+ *
+ * A line starting `! ` straight under a `###`, with no blank line between them, is that entry's
+ * banner. Anywhere else it is ordinary text, so a paragraph is free to begin with an exclamation
+ * mark without disappearing into the heading.
  */
 export function parseTidbits(source: string): Section[] {
   const sections: Section[] = [];
@@ -127,6 +135,8 @@ export function parseTidbits(source: string): Section[] {
   let paragraph: string[] = [];
   let items: string[] = [];
   let inComment = false;
+  /** True only while the line being read is the one straight after an entry's heading. */
+  let underHeading = false;
 
   const endBlocks = () => {
     if (entry && paragraph.length > 0) entry.blocks.push({ kind: 'paragraph', content: parseInline(paragraph.join(' ')) });
@@ -137,12 +147,14 @@ export function parseTidbits(source: string): Section[] {
 
   const endEntry = () => {
     endBlocks();
-    if (entry) entry.search = `${entry.title} ${plainText(entry.blocks)}`.toLowerCase();
+    if (entry) entry.search = `${entry.title} ${entry.banner} ${plainText(entry.blocks)}`.toLowerCase();
     entry = null;
   };
 
   for (const raw of source.split('\n')) {
     const line = raw.trim();
+    const afterHeading = underHeading;
+    underHeading = false;
     if (inComment) {
       if (line.includes('-->')) inComment = false;
       continue;
@@ -164,9 +176,15 @@ export function parseTidbits(source: string): Section[] {
         section = { id: slug(title, ids), title, entries: [] };
         sections.push(section);
       } else if (hashes === '###' && section) {
-        entry = { id: slug(title, ids), title, blocks: [], search: '' };
+        entry = { id: slug(title, ids), title, banner: '', blocks: [], search: '' };
         section.entries.push(entry);
+        underHeading = true;
       }
+      continue;
+    }
+    const banner = afterHeading ? BANNER.exec(line) : null;
+    if (banner && entry) {
+      entry.banner = banner[1];
       continue;
     }
     const bullet = BULLET.exec(line);

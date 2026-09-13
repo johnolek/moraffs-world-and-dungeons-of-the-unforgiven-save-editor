@@ -9,6 +9,7 @@ const DOCUMENT = [
   '## Exploits and shortcuts',
   '',
   '### The wand gate',
+  '! YOUR PRIEST CAN WRITE WIZARD SCROLLS!!',
   '',
   'A priest can write a **wizard** scroll, because `get_choice` takes the key anyway.',
   'The menu only looks shut.',
@@ -70,6 +71,27 @@ describe('parseTidbits', () => {
   it('collects the words of an entry for the search box', () => {
     expect(sections[0].entries[0].search).toContain('the wand gate');
     expect(sections[0].entries[0].search).toContain('five charges');
+  });
+});
+
+describe('the banner over an entry', () => {
+  it('is the line under the heading that starts with an exclamation mark', () => {
+    expect(sections[0].entries[0].banner).toBe('YOUR PRIEST CAN WRITE WIZARD SCROLLS!!');
+  });
+
+  it('is empty for an entry that has not been given one', () => {
+    expect(sections[0].entries[1].banner).toBe('');
+  });
+
+  it('is not taken from a paragraph that happens to begin with one', () => {
+    const [section] = parseTidbits(['## S', '', '### E', '', '! NOT A BANNER, A PARAGRAPH', '', '! NOR THIS'].join('\n'));
+    const entry = section.entries[0];
+    expect(entry.banner).toBe('');
+    expect(plainText(entry.blocks)).toBe('! NOT A BANNER, A PARAGRAPH ! NOR THIS');
+  });
+
+  it('is matched by the search box along with the title and the body', () => {
+    expect(searchTidbits(sections, 'wizard scrolls')[0].entries[0].title).toBe('The wand gate');
   });
 });
 
