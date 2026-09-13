@@ -1052,3 +1052,19 @@ in `dotu-tools/docs/CONTEST.md`.
 
 In the code: [rollChar](source:ts/character.ts/rollChar), [roll_char](source:c/roll_char) and
 [movecontrol](source:c/movecontrol).
+
+### The hit points nobody is allowed to see
+! YOUR HEALTH GOES TO MINUS ONE HUNDRED! NOBODY IS ALLOWED TO LOOK!
+
+Dying writes -100 into your hit points, and you never see it. The green block along the bottom of
+the screen is printed by one routine, and the play loop is the only thing that ever calls it: once
+a pass, straight after the pass has asked whether you are dead. The pass that finds you dead hands
+back to the character select screen instead, so that block is never printed again.
+
+Which means the health standing there while the snake says its piece is older than it looks. It is
+not your health after the blow that killed you — that was never printed either — but your health
+as it stood when the loop last came round. A character on 4 hit points of 274 who takes an eleven
+point hit reads 4 OF 274 for as long as the parting shots are on the screen.
+
+In the code: [FUN_2000_9232](source:c/FUN_2000_9232), the death routine, and
+[FUN_3000_caac](source:c/FUN_3000_caac), which prints the block.
