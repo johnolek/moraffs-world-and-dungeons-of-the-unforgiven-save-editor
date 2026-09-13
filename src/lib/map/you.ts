@@ -45,6 +45,26 @@ export function youAlpha(timeMs: number): number {
 }
 
 /**
+ * How long Dungeons of the Unforgiven holds each colour of the arrow on its map.
+ *
+ * `movecontrol` redraws the arrow every pass round the loop it waits for a key in (exe 2000:c748)
+ * and turns its colour over each time `biostime() / 6` comes back a different number, which is
+ * once every six BIOS ticks.
+ */
+export const ARROW_FLASH_MS = 330;
+
+/**
+ * Which of the arrow's two colours it stands in at a moment in time.
+ *
+ * They are white and black. Black is `FUN_2000_9d17` plotting the same bitmap in colour 0, so the
+ * arrow disappears into its square rather than changing colour, and that is what keeps it visible
+ * on a town building square, where the square's own colour is bright.
+ */
+export function youFlash(timeMs: number): string {
+  return Math.floor(timeMs / ARROW_FLASH_MS) % 2 === 0 ? '#ffffff' : '#000000';
+}
+
+/**
  * `FUN_2000_9d17` (exe 2000:9d17, unf.c "FUN_2000_9d17"): the arrow Dungeons of the Unforgiven
  * marks the character's square with on its own map. Its point is at the top before the facing
  * turns it.

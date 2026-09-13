@@ -123,7 +123,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `change_module` | 2000:c0a5 |  | `play/modules.ts`, `play/tunnel.ts` |
 | `retdwall2` | 2000:c22d |  | `formulas/formulas.ts`, `play/engine.ts`, `play/move.ts` |
 | `FUN_2000_c28b` | 2000:c28b |  | `play/engine.ts` |
-| `movecontrol` | 2000:c308 | `game/port/combat.ts`, `game/port/kills.ts`, `play/cast.ts`, `play/engine.ts`, `play/fight.ts`, `play/items.ts`, `play/kill.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/character.ts`, `game/port/state.ts`, `game/unfmap.js`, `play/Screen.svelte`, `play/arrival.ts`, `play/display.ts`, `play/gear.ts`, `play/help.ts`, `play/keys.ts`, `play/memory.ts`, `play/misc.ts`, `play/move.ts`, `play/panel.ts`, `play/plaque.ts`, `play/session.ts`, `play/spellScreens.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts`, `play/zoom-map.ts` |
+| `movecontrol` | 2000:c308 | `game/port/combat.ts`, `game/port/kills.ts`, `play/cast.ts`, `play/engine.ts`, `play/fight.ts`, `play/items.ts`, `play/kill.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/character.ts`, `game/port/state.ts`, `game/unfmap.js`, `map/you.ts`, `play/Screen.svelte`, `play/arrival.ts`, `play/display.ts`, `play/gear.ts`, `play/help.ts`, `play/keys.ts`, `play/memory.ts`, `play/misc.ts`, `play/move.ts`, `play/panel.ts`, `play/plaque.ts`, `play/session.ts`, `play/spellScreens.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts`, `play/zoom-map.ts` |
 | `FUN_2000_df0e` | 2000:df0e |  | `game/port/inventory.ts` |
 | `print_spell_line` | 2000:df3e | `game/port/inventory.ts` |  |
 | `cast_a_spell` | 2000:e017 | `game/port/inventory.ts`, `play/cast.ts` | `formulas/formulas.ts`, `game/port/magic.ts`, `play/fight-sim.ts` |

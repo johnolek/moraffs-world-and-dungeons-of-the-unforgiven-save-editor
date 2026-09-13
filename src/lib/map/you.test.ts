@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
 import { MAP_COLUMNS, MAP_ROWS, UNFORGIVEN_AREA } from './area';
-import { arrowPixel, FACING_ARROW_SIZE, facingArrowCells, nearestOpenSquare, stepFrom, youAlpha, youArrow } from './you';
+import {
+  arrowPixel,
+  ARROW_FLASH_MS,
+  FACING_ARROW_SIZE,
+  facingArrowCells,
+  nearestOpenSquare,
+  stepFrom,
+  youAlpha,
+  youArrow,
+  youFlash,
+} from './you';
 
 /** A floor from a picture: '#' is rock, '.' is an open square. */
 function floorOf(picture: string[]): Square[][] {
@@ -90,6 +100,20 @@ describe('youAlpha', () => {
     expect(youAlpha(250)).toBeCloseTo(0.85);
     expect(youAlpha(750)).toBeCloseTo(0.3);
     expect(youAlpha(1250)).toBeCloseTo(youAlpha(250));
+  });
+});
+
+describe('youFlash', () => {
+  it('turns white and black over every six BIOS ticks', () => {
+    expect(youFlash(0)).toBe('#ffffff');
+    expect(youFlash(ARROW_FLASH_MS - 1)).toBe('#ffffff');
+    expect(youFlash(ARROW_FLASH_MS)).toBe('#000000');
+    expect(youFlash(2 * ARROW_FLASH_MS)).toBe('#ffffff');
+  });
+
+  it('is never the half-lit white the other two games are marked in', () => {
+    const colours = new Set(Array.from({ length: 40 }, (_, step) => youFlash(step * 50)));
+    expect([...colours].sort()).toEqual(['#000000', '#ffffff']);
   });
 });
 
