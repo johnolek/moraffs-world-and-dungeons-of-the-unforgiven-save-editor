@@ -228,18 +228,24 @@ describe('changing floors', () => {
   });
 
   it('keeps the floor the character fell off on the screen until the fall has its key', async () => {
-    // movecontrol draws the map window and the four views at the top of a pass, so the floor the
-    // chute loaded is not on the screen while the words about the fall are being read: the
-    // character is still standing in the corridor they fell out of.
+    // The original leaves the screen showing the corridor the character fell out of until the
+    // key comes. Here the arrival is what waits for that key, so everything the screen is drawn
+    // from still says floor 3: the floor the map window holds, the floor the palette is worked
+    // out from, and the square the views are drawn from.
     const chute = findSquare(3, (square) => square.chute !== 0 && square.ladder === 0 && square.trapdoor === -1);
     const landing = bundledDungeon.chute(chute.x, chute.y, 3, 0);
     const session = playing(characterFile({ level: 3, ...chute }));
     await settle();
-    expect(session.view().place.floor).toBe(landing);
-    expect(session.view().screenFloor.rows).not.toBe(session.rows);
-    expect(session.view().screenFloor.rows[chute.y][chute.x].chute).toBe(landing);
+    const falling = session.view();
+    expect(falling.place.floor).toBe(3);
+    expect(falling.viewsFrom.floor).toBe(3);
+    expect(falling.screenFloor.rows).toBe(session.rows);
+    expect(falling.screenFloor.rows[chute.y][chute.x].chute).toBe(landing);
     await press(session, KEY.escape);
-    expect(session.view().screenFloor.rows).toBe(session.rows);
+    const landed = session.view();
+    expect(landed.place.floor).toBe(landing);
+    expect(landed.screenFloor.rows).toBe(session.rows);
+    expect(landed.screenFloor.rows[chute.y][chute.x].chute).not.toBe(landing);
   });
 
   it('throws away what was typed while the character was falling down a chute', async () => {
@@ -585,10 +591,11 @@ describe('the map the character discovers', () => {
     expect(session.memory.knownSquares().size).toBeGreaterThan(1);
   });
 
-  it('knows where a chute has dropped the character, behind its own message', async () => {
+  it('knows where a chute has dropped the character once its message has its key', async () => {
     const chute = findSquare(3, (square) => square.chute !== 0 && square.ladder === 0 && square.trapdoor === -1);
     const session = playing(characterFile({ level: 3, ...chute }));
     await settle();
+    await press(session, KEY.escape);
     expect(session.view().place.floor).toBe(bundledDungeon.chute(chute.x, chute.y, 3, 0));
     expect(session.memory.isKnown(chute.x, chute.y)).toBe(true);
     expect(session.memory.knownSquares().size).toBeGreaterThan(1);

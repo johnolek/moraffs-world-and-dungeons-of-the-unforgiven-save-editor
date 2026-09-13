@@ -44,13 +44,20 @@ export function chuteUnder(game: Game): number {
  *
  * "UH OH... A SINKING FEELING..." stands on its own for a second and a half before the other two
  * lines join it, which is the whole of the fall as the player feels it.
+ *
+ * The original loads the floor below before it says a word, and leaves the screen showing the
+ * corridor the character fell out of until the key comes: only after that key does it raise the
+ * two flags that redraw the map window and the views. This port draws the screen out of the
+ * game's own state rather than leaving a picture on it, and two of the things it draws come off
+ * the character rather than off the last drawing — the section palette, which is worked out from
+ * the floor they are standing on, and the discovered map. So the arrival waits for the key here.
+ * Nothing between the message and the key reads the floor or draws a random number, so a run
+ * replays the same either way.
  */
 export async function fallDownChute(turn: Turn, destination: number): Promise<void> {
   const { game, session } = turn;
   if (destination === game.pc.level) return;
   game.events.push({ kind: 'chuteTaken', from: { x: game.pc.x, y: game.pc.y }, to: destination });
-  session.enterFloor(destination);
-  session.save();
   clearMenuBlock(game);
   game.draw(chuteLine('UH OH... A SINKING FEELING...', 0)); // DS:1a9e
   game.delay(game.highSpeed ? SINKING_MS_HIGH_SPEED : SINKING_MS);
@@ -62,5 +69,7 @@ export async function fallDownChute(turn: Turn, destination: number): Promise<vo
   session.flushKeys();
   await session.key();
   session.wipeMessageBlock();
+  session.enterFloor(destination);
+  session.save();
   game.redrawView = true;
 }
