@@ -6,6 +6,7 @@ import {
   MW_SEEING_STONE,
   MW_TELEPORT_STONE,
 } from './items';
+import { mwSpellHelp, mwSpellRecord } from './spells';
 import type { MwGame } from './state';
 import { mwClearMessageLine, mwMessageLine } from './state';
 import { financialStatement } from './town';
@@ -427,7 +428,21 @@ export function spellbookFind(game: MwGame): void {
     '  OF THE SPELL.',
   );
   pc.spellbook[at] = 1;
+  describeTheSpell(game, type, level, slot);
   game.events.push({ kind: 'found', find: { what: 'spellbook', spell: { type, level, slot } } });
+}
+
+/**
+ * load_spell_lines (WORLD.EXE 3000:b7fd, mw.c "load_spell_lines") and the box that shows what it
+ * read, which every one of the four finds ends with: `FUN_3000_c977` at mw.c:c9dc and the three
+ * like it read the spell's own description out of SPELLS.HLP and print it.
+ *
+ * The box before this one says HIT ANY KEY FOR A DESCRIPTION, and this is the description.
+ *
+ * `level` is counted from zero here and `mwSpellRecord` counts it from one.
+ */
+function describeTheSpell(game: MwGame, type: number, level: number, slot: number): void {
+  game.say(...mwSpellHelp(mwSpellRecord(type, level + 1, slot)));
 }
 
 /** The share of kills a scroll, a wand or a spell paper turns up on. */
@@ -459,6 +474,7 @@ export function scrollFind(game: MwGame): void {
     '  OF THE SCROLL.',
   );
   pc.scrolls[spellIndex(type, level, slot)] += 1;
+  describeTheSpell(game, type, level, slot);
   game.events.push({ kind: 'found', find: { what: 'scroll', spell: { type, level, slot } } });
 }
 
@@ -487,6 +503,7 @@ export function wandFind(game: MwGame): void {
     '  OF THE WAND.',
   );
   pc.wands[spellIndex(type, level, slot)] += charges;
+  describeTheSpell(game, type, level, slot);
   game.events.push({ kind: 'found', find: { what: 'wand', spell: { type, level, slot }, charges } });
 }
 
@@ -513,6 +530,7 @@ export function paperFind(game: MwGame): void {
     '  OF THE SPELL ON THE PAPER.',
   );
   pc.paper[spellIndex(type, level, slot)] += 1;
+  describeTheSpell(game, type, level, slot);
   game.events.push({ kind: 'found', find: { what: 'paper', spell: { type, level, slot } } });
 }
 

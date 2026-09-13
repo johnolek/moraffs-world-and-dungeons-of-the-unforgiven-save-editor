@@ -173,7 +173,7 @@ citations rather than make them. What each routine does is in `../decomp/functio
 | `is_solid` | 3000:a854 |  | `game/mw-port/state.ts`, `game/mw-port/stocking.ts`, `game/mwmap.js`, `play/zoom-map.ts` |
 | `draw_map_square` | 3000:a97d |  | `game/mwmap.js`, `play/mw/map.ts`, `play/zoom-map.ts` |
 | `FUN_3000_b066` | 3000:b066 |  | `game/mw-port/sound.ts`, `play/mw/engine.ts`, `play/mw/map.ts`, `play/mw/view3d/screen.ts`, `play/zoom-map.ts` |
-| `load_spell_lines` | 3000:b7fd | `game/mw-port/spells.ts` | `game/mw-port/screens.ts` |
+| `load_spell_lines` | 3000:b7fd | `game/mw-port/spells.ts` | `game/mw-port/drops.ts`, `game/mw-port/screens.ts` |
 | `experience_for_kill` | 3000:b8d4 | `game/mw-port/combat.ts`, `mw-bestiary/monsters.ts` | `play/mw/panel.ts` |
 | `FUN_3000_b99e` | 3000:b99e | `game/mw-port/drops.ts` | `game/mw-port/state.ts` |
 | `FUN_3000_ba27` | 3000:ba27 | `game/mw-port/drops.ts` |  |

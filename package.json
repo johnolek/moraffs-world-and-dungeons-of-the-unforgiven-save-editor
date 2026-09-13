@@ -29,6 +29,7 @@
     "build:engine": "vite build --config vite.engine.config.ts --logLevel warn",
     "build:ported": "node scripts/build-ported-from.mts",
     "routine": "node scripts/show-routine.mts",
+    "check:port": "node scripts/check-port.mts",
     "publish:engine": "vite build --config vite.publish-engine.config.ts --logLevel warn && node dist-server/publish-engine.mjs",
     "start:server": "node dist-server/main.mjs",
     "test": "vitest run",

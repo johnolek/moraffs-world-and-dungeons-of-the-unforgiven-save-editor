@@ -13,6 +13,7 @@ import {
   wandFind,
   weaponFind,
 } from './drops';
+import { mwSpellHelp, mwSpellRecord } from './spells';
 import type { MwGameOverrides } from './state';
 import { newMwGame } from './state';
 import type { MwStockedMonster } from './stocking';
@@ -214,6 +215,17 @@ describe('spellbookFind', () => {
     expect(game.pc.spellbook[2 * 45 + 4 * 3 + 1]).toBe(1);
     expect(game.messages).toContain('  THE SPELL IS A LEVEL 5');
     expect(game.messages).toContain('  WIZARD SPELL.');
+  });
+
+  it("reads the spell's own description out after the box that promises one", () => {
+    // level 4, list 2, slot 1 — the same spell as above, whose record is 2 * 30 + 4 * 3 + 1.
+    const game = newMwGame({ rng: scripted([4, 2, 1]), pc: { cls: 3, floor: 30 } });
+    spellbookFind(game);
+    expect(game.messages).toContain('HIT ANY KEY FOR A DESCRIPTION');
+    // load_spell_lines (WORLD.EXE 3000:b7fd) reads the record and the box after it prints it.
+    for (const line of mwSpellHelp(mwSpellRecord(2, 5, 1))) {
+      if (line !== '') expect(game.messages).toContain(line);
+    }
   });
 
   it('rolls the level again over ten when the first roll runs too deep', () => {

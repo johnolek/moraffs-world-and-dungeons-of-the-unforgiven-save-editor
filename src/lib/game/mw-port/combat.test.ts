@@ -29,9 +29,16 @@ function scripted(rolls: number[]): Rng {
   return { random: () => (at < rolls.length ? rolls[at++] : 0) };
 }
 
-/** An Rng that hands the same number back to every call. */
+/**
+ * An Rng that rolls as near `value` as the call allows.
+ *
+ * `Random(n)` hands back 0 to n-1 and nothing in the game is written to survive more, so a stub
+ * that answers above the range is not a generator the port could ever meet. Clamping keeps
+ * `always(9999)` meaning "the highest this roll can go" without inventing indexes off the end of
+ * the spell tables.
+ */
 function always(value: number): Rng {
-  return { random: () => value };
+  return { random: (n) => Math.max(0, Math.min(value, n - 1)) };
 }
 
 /** A floor with 145 empty slots, `placed` monsters on it and the occupancy grid to match. */
