@@ -6,6 +6,7 @@ import {
   MW_SEEING_STONE,
   MW_TELEPORT_STONE,
 } from './items';
+import { recomputeWeight } from './magic';
 import { mwSpellHelp, mwSpellRecord } from './spells';
 import type { MwGame } from './state';
 import { mwClearMessageLine, mwMessageLine } from './state';
@@ -127,6 +128,7 @@ export function weaponFind(game: MwGame, take: () => boolean): void {
   if (take()) {
     pc.weaponsOwned[row] += 1;
     game.events.push({ kind: 'found', find: { what: 'weapon', item: WEAPONS[row].name } });
+    recomputeWeight(game);
     game.events.push({ kind: 'weightRecomputed' });
   }
 }
@@ -162,6 +164,7 @@ export function armorFind(game: MwGame, take: () => boolean): void {
   if (take()) {
     pc.armorOwned[row] += 1;
     game.events.push({ kind: 'found', find: { what: 'armour', item: ARMOUR[row].name } });
+    recomputeWeight(game);
     game.events.push({ kind: 'weightRecomputed' });
   }
 }
@@ -324,6 +327,7 @@ export function moneyFind(game: MwGame, take: () => string): void {
     jewel: found.jewel,
   });
   game.events.push({ kind: 'found', find: { what: 'money', amount: kept } });
+  recomputeWeight(game);
   game.events.push({ kind: 'weightRecomputed' });
   financialStatement(game);
 }

@@ -13,7 +13,9 @@ import {
   wandFind,
   weaponFind,
 } from './drops';
+import { recomputeWeight } from './magic';
 import { mwSpellHelp, mwSpellRecord } from './spells';
+import { bank } from './town';
 import type { MwGameOverrides } from './state';
 import { newMwGame } from './state';
 import type { MwStockedMonster } from './stocking';
@@ -204,6 +206,29 @@ describe('ballOfThought', () => {
     const game = newMwGame({ rng: scripted([0]), pc: { cls: 0, sp: 0, maxSp: 0 } });
     ballOfThought(game);
     expect(game.messages).toEqual([]);
+  });
+});
+
+describe('the carried weight', () => {
+  it('is worked out again when a weapon is taken, since the load has changed', () => {
+    const game = lootGame(40, { rng: scripted([0, 49]), pc: { cls: 3, weight: 150 } });
+    game.pc.loadedWeight = 0;
+    weaponFind(game, () => true);
+
+    expect(game.pc.weaponsOwned.some((owned) => owned > 0)).toBe(true);
+    expect(game.pc.loadedWeight).toBeGreaterThan(0);
+  });
+
+  it('is worked out again when the bank turns the stones into jewels', () => {
+    const game = newMwGame({ pc: { cls: 3, floor: 0, weight: 150 } });
+    game.pc.stones = [1600, 0, 0, 0, 0, 0];
+    recomputeWeight(game);
+    const carryingStones = game.pc.loadedWeight;
+
+    bank(game, 1, 0);
+
+    expect(game.pc.stones[0]).toBe(0);
+    expect(game.pc.loadedWeight).toBeLessThan(carryingStones);
   });
 });
 

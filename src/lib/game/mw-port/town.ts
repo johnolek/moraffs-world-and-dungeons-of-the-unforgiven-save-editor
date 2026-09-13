@@ -1,4 +1,5 @@
 import { moveMoney } from '../port/town';
+import { recomputeWeight } from './magic';
 import { HINT, loadHBin } from './hints';
 import { canLevelUp, levelFromExperience } from './levels';
 import type { MwGame } from './state';
@@ -309,6 +310,7 @@ export function innClearPreparationSpells(game: MwGame): void {
   // The permanent versions of all three write 100, which these tests leave standing.
   if (pc.feather === 1) {
     pc.feather = 0;
+    recomputeWeight(game);
     game.events.push({ kind: 'weightRecomputed' });
   }
   if (pc.invisibility === 1) pc.invisibility = 0;
@@ -437,6 +439,7 @@ export function bank(game: MwGame, choice: number, amount = 0): void {
     pc.money += jewels;
     for (let kind = 0; kind < pc.stones.length; kind++) pc.stones[kind] = 0;
     financialStatement(game);
+    recomputeWeight(game);
     game.events.push({ kind: 'stonesConverted', jewels });
     game.events.push({ kind: 'weightRecomputed' });
     return;
