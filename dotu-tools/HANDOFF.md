@@ -412,7 +412,7 @@ dotu-tools/
                                  endings dropped the way the game's own text-mode read
                                  does: every screen roll_char shows while rolling up a
                                  character, one line of the file to a line on screen
-  pics/monsters/                 122 monsters as PNG + per-section sheets + Shadow-boss variants
+  pics/monsters/                 122 monsters as PNG + per-section sheets
   pics/buildings/                the six town buildings composited (320x200) + sheet
   pics/walls/                    ufwall1-4 textures (10 each) + sheets, each file in the
                                  colours of the first section that loads it
