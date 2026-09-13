@@ -55,10 +55,14 @@
    */
   interface GameRoller {
     name: string;
-    slots: number[];
+    /**
+     * The character number every roll here is written as, which is the first of the ten the game
+     * keeps. The roster calls a character by its name and never looks at the number, so the roll
+     * does not ask for one; the Save Editor is where it is chosen, when the file is downloaded.
+     */
+    slot: number;
     races: string[];
     classes: string[];
-    numbers: string;
     folder: string;
     /** What the game calls the file it writes the character to. */
     fileName(slot: number): string;
@@ -86,10 +90,9 @@
   const GAMES: Record<GameId, GameRoller> = {
     unforgiven: {
       name: 'Dungeons of the Unforgiven',
-      slots: SLOTS,
+      slot: SLOTS[0],
       races: RACES.map((race) => race.name),
       classes: CLASS_NAMES,
-      numbers: 'The game keeps ten characters, in files named 20 to 29. Pick the one you want to write over — the game picks it before it rolls, and so does this.',
       folder: 'Back up the file you are replacing first. Drop the download into your game folder next to UNF.EXE, keeping the name, and the character is waiting on the select screen.',
       fileName: slotFileName,
       newSession: (slot) => new RollerSession(ROLLER_PORT, slot),
@@ -102,10 +105,9 @@
     },
     moraffsWorld: {
       name: "Moraff's World",
-      slots: MW_SLOTS,
+      slot: MW_SLOTS[0],
       races: MW_RACES.map((race) => race.name),
       classes: MW_CLASS_NAMES,
-      numbers: 'The game keeps ten characters, in files named 0 to 9. Pick the one you want to write over — the game picks it before it rolls, and so does this.',
       folder: 'Back up the file you are replacing first. Drop the download into your game folder next to WORLD.EXE, keeping the name, and the character is waiting on the select screen.',
       fileName: mwSlotFileName,
       newSession: (slot) => new RollerSession(MW_ROLLER_PORT, slot),
@@ -118,10 +120,9 @@
     },
     revenge: {
       name: "Moraff's Revenge",
-      slots: REV_SLOTS,
+      slot: REV_SLOTS[0],
       races: REV_RACE_NAMES,
       classes: REV_CLASS_NAMES,
-      numbers: 'The game has room for ten characters, in files named 1.EXE to 10.EXE. CHCHAR.EXE gives a new one the next free number; pick the one you want it to be.',
       folder: 'Back up the files you are replacing first. A character is two files — the record and the explored map — and both go in your game folder next to DUNSMALL.EXE, keeping their names. The name goes in F5.COM, which holds one quoted name to a line with "END" on the last: put this character’s name on the line its number says, so character 3 is the third name in the file.',
       fileName: revRecordFileName,
       newSession: (slot) => new RollerSession(REV_ROLLER_PORT, slot),
@@ -138,7 +139,6 @@
   type Session = RollerSession<Game, RollerView> | RollerSession<MwGame, MwRollerView> | RollerSession<RevGame, RevRollerView>;
   type View = RollerView | MwRollerView | RevRollerView;
 
-  let slot = $state(SLOTS[0]);
   let session = $state.raw<Session | null>(null);
   let view = $state.raw<View | null>(null);
   let typed = $state('');
@@ -151,12 +151,13 @@
   /** Which game is being rolled for. All three have a roller, so it is whichever the switch is on. */
   const rolling = $derived<GameId>(app.game);
   const chosen = $derived(GAMES[rolling]);
-  /** The screen a key would answer: the game's own, or the character number asked for first. */
-  const screen = $derived<RollerScreen | null>(session && view ? view.question : 'number');
+  /** The screen a key would answer: the game's own, or the page the tab opens on. */
+  const screen = $derived<RollerScreen | null>(session && view ? view.question : 'start');
   /** Whether a character is part-way through being rolled: the roller has a session and it is
    *  still asking questions. Before the first question and after the last it is not. */
-  const midRoll = $derived(screen !== null && screen !== 'number');
-  const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length, numbers: chosen.slots.length });
+  const midRoll = $derived(screen !== null && screen !== 'start');
+  const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length });
+  const slot = $derived(chosen.slot);
   const fileName = $derived(chosen.fileName(slot));
   const showing = $derived(
     view === null ? [] : view.question === 'name' ? [...(view.screen as ScreenLine[]), nameBeingTyped()] : (view.screen as ScreenLine[]),
@@ -182,7 +183,7 @@
 
   // A roll is one game's questions and one game's dice, so the switch in the header starts over.
   $effect(() => {
-    slot = GAMES[rolling].slots[0];
+    void rolling;
     session = null;
     view = null;
     note = '';
@@ -280,7 +281,6 @@
     event.preventDefault();
     if (action.kind === 'answer') answer(action.value);
     else if (action.kind === 'typing') typed = action.typed;
-    else if (action.kind === 'pick') slot = chosen.slots[action.index];
     else if (action.kind === 'move') moveRace(action.step);
     else if (screen === 'name') enterName();
     else if (screen === 'revRace') takeRace();
@@ -325,17 +325,6 @@
       </p>
 
       <section>
-        <h3><PixelText text="Character Number" /></h3>
-        <p class="hint">{chosen.numbers}</p>
-        <p class="hint">The keyboard picks them too: 0 to 9 for the ten numbers, then Enter to roll.</p>
-        <div class="row">
-          {#each chosen.slots as number}
-            <button type="button" class:picked={slot === number} onclick={() => (slot = number)}>{number}</button>
-          {/each}
-        </div>
-      </section>
-
-      <section>
         <h3><PixelText text="Leaderboard" /></h3>
         <p class="hint">
           A character rolled for a leaderboard is locked to that board's mode for its whole life, so that every run of it can be
@@ -358,9 +347,8 @@
     {:else}
       <div class="toolbar">
         <span class="badge">{chosen.name}</span>
-        <span class="badge">Character {slot}</span>
         <button type="button" class="ghost" onclick={restart}>Start again</button>
-        <button type="button" class="ghost" onclick={leave}>Pick another number</button>
+        <button type="button" class="ghost" onclick={leave}>Start over</button>
       </div>
 
       <!-- CHCHAR.EXE clears the screen before it writes the character out and then chains back to

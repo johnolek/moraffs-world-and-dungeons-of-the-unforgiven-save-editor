@@ -1,9 +1,9 @@
 import { typedName } from '../game/port/character';
 import type { Question } from './session';
 
-/** A screen the roller waits at: one of the game's own, or the character number the tab asks
- *  for before a roll starts. */
-export type RollerScreen = Question | 'number';
+/** A screen the roller waits at: one of the game's own, or the page the tab opens on, where
+ *  nothing has been rolled yet. */
+export type RollerScreen = Question | 'start';
 
 /** What a key does at the screen showing. */
 export type RollerAction =
@@ -11,10 +11,8 @@ export type RollerAction =
   | { kind: 'answer'; value: number }
   /** What the name being typed now reads. */
   | { kind: 'typing'; typed: string }
-  /** Enter: take the name that is typed, or roll the character number that is picked. */
+  /** Enter: take the name that is typed, or start the roll. */
   | { kind: 'accept' }
-  /** Which of the character numbers to write over. */
-  | { kind: 'pick'; index: number }
   /** Move a menu's pointer, which is what the arrow keys do in Moraff's Revenge. */
   | { kind: 'move'; step: number };
 
@@ -22,7 +20,6 @@ export type RollerAction =
 export interface RollerMenus {
   races: number;
   classes: number;
-  numbers: number;
 }
 
 /**
@@ -50,9 +47,8 @@ export function rollerKey(screen: RollerScreen, key: string, typed: string, menu
   switch (screen) {
     case 'continue':
       return isKey(key) ? { kind: 'answer', value: 0 } : null;
-    case 'number':
-      if (key === 'Enter') return { kind: 'accept' };
-      return pick(key, menus.numbers);
+    case 'start':
+      return key === 'Enter' ? { kind: 'accept' } : null;
     case 'difficulty':
       return menuLine(key, 2);
     case 'race':
@@ -91,11 +87,6 @@ function numbered(key: string, lines: number): RollerAction | null {
 function menuLine(key: string, lines: number): RollerAction | null {
   const line = digit(key);
   return line !== null && line >= 1 && line <= lines ? { kind: 'answer', value: line - 1 } : null;
-}
-
-function pick(key: string, numbers: number): RollerAction | null {
-  const index = digit(key);
-  return index !== null && index < numbers ? { kind: 'pick', index } : null;
 }
 
 function letter(key: string, keys: string[]): RollerAction | null {

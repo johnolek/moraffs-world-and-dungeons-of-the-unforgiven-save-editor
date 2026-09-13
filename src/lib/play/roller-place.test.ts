@@ -36,7 +36,7 @@ describe('the roller on the Play tab', () => {
   it('shuts on Escape, but not while a character is part-way through being rolled', () => {
     // There Escape belongs to the roller: the screen a character is designed on reads it, and a
     // roll half answered is not worth losing to a stray key.
-    expect(roller).toContain("const midRoll = $derived(screen !== null && screen !== 'number');");
+    expect(roller).toContain("const midRoll = $derived(screen !== null && screen !== 'start');");
     expect(roller).toContain("if (event.key === 'Escape' && onclose && !midRoll) {");
   });
 });

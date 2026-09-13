@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DESIGN_STAT_KEYS, rollerKey, type RollerMenus } from './keys';
 
-const MENUS: RollerMenus = { races: 8, classes: 7, numbers: 10 };
+const MENUS: RollerMenus = { races: 8, classes: 7 };
 
 const key = (screen: Parameters<typeof rollerKey>[0], pressed: string, typed = '') =>
   rollerKey(screen, pressed, typed, MENUS);
@@ -90,16 +90,15 @@ describe('the name', () => {
   });
 });
 
-describe('the character number', () => {
-  it('picks the number a digit names and rolls on Enter', () => {
-    expect(key('number', '0')).toEqual({ kind: 'pick', index: 0 });
-    expect(key('number', '9')).toEqual({ kind: 'pick', index: 9 });
-    expect(key('number', 'Enter')).toEqual({ kind: 'accept' });
+describe('the page the tab opens on', () => {
+  it('rolls on Enter', () => {
+    expect(key('start', 'Enter')).toEqual({ kind: 'accept' });
   });
 
   it('ignores anything else', () => {
-    expect(key('number', 'a')).toBeNull();
-    expect(key('number', 'Escape')).toBeNull();
+    expect(key('start', '0')).toBeNull();
+    expect(key('start', 'a')).toBeNull();
+    expect(key('start', 'Escape')).toBeNull();
   });
 });
 
