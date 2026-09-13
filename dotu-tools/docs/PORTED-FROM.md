@@ -171,18 +171,18 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `show_spell_help` | 3000:a023 |  | `game/port/inventory.ts` |
 | `exp_value` | 3000:a0fa | `game/port/combat.ts` | `formulas/formulas.ts` |
 | `FUN_3000_a1c4` | 3000:a1c4 |  | `game/port/drops.ts`, `game/port/screens.ts`, `play/screens.ts` |
-| `drop_weapon` | 3000:a1fc | `game/port/drops.ts` | `formulas/formulas.ts` |
-| `drop_armor` | 3000:a3d7 | `game/port/drops.ts` | `formulas/formulas.ts`, `map/game.ts` |
+| `drop_weapon` | 3000:a1fc | `game/port/drops.ts` | `formulas/formulas.ts`, `play/drop-odds.ts` |
+| `drop_armor` | 3000:a3d7 | `game/port/drops.ts` | `formulas/formulas.ts`, `map/game.ts`, `play/drop-odds.ts` |
 | `spell_name_to_menu` | 3000:a5cc | `game/port/drops.ts` |  |
 | `drop_spellbook` | 3000:a65d | `game/port/drops.ts` | `formulas/formulas.ts` |
 | `drop_scroll` | 3000:a870 | `game/port/drops.ts` | `formulas/formulas.ts`, `map/game.ts` |
 | `drop_wand` | 3000:aa37 | `game/port/drops.ts` | `formulas/formulas.ts` |
 | `drop_paper` | 3000:ac6f | `game/port/drops.ts` | `formulas/formulas.ts` |
-| `find_item` | 3000:ae27 | `game/port/drops.ts` | `formulas/formulas.ts` |
+| `find_item` | 3000:ae27 | `game/port/drops.ts` | `formulas/formulas.ts`, `play/drop-odds.ts` |
 | `post_kill_heal` | 3000:afc5 | `game/port/drops.ts` |  |
 | `post_kill_sp` | 3000:b063 | `game/port/drops.ts` | `play/zoom-map.ts` |
 | `FUN_3000_b0ea` | 3000:b0ea | `game/port/sound.ts` |  |
-| `kill_monster` | 3000:b12d | `game/port/kills.ts` | `formulas/formulas.ts`, `game/port/drops.ts`, `game/port/screens.ts`, `game/port/state.ts`, `map/stocking.ts`, `play/boxes.ts` |
+| `kill_monster` | 3000:b12d | `game/port/kills.ts` | `formulas/formulas.ts`, `game/port/drops.ts`, `game/port/screens.ts`, `game/port/state.ts`, `map/stocking.ts`, `play/boxes.ts`, `play/drop-odds.ts` |
 | `go_up_level` | 3000:bd9a | `game/port/levels.ts` |  |
 | `go_down_level` | 3000:c093 | `game/port/combat.ts` |  |
 | `monster_manual` | 3000:c39d |  | `game/dotu-pic.js`, `play/Screen.svelte`, `play/manual.ts`, `play/section-screen.ts`, `play/tablet.ts` |

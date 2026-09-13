@@ -1,4 +1,5 @@
 import type { Game, ScreenLine } from '../game/port/state';
+import { dropOdds } from './drop-odds';
 import { engagedMonster } from './panel';
 import { AHEAD_VIEW } from './view3d/geometry';
 import { strokeAdvance } from './view3d/stroke-font';
@@ -11,9 +12,10 @@ import { strokeAdvance } from './view3d/stroke-font';
  * beside the screen always say the same thing. Moraff's World prints its own monster's level and
  * hit points over the view it stands in, and these are placed to match.
  *
- * Under the numbers go the things the record says the monster does beyond an ordinary hit — the
- * drains, the breath, the poison, the disease — in the words the Monsters tab uses for the same
- * monster, so that the two pages never describe one monster two ways.
+ * Under the numbers go what the kill is likely to be worth ({@link dropOdds}), and then the
+ * things the record says the monster does beyond an ordinary hit — the drains, the breath, the
+ * poison, the disease — in the words the Monsters tab uses for the same monster, so that the two
+ * pages never describe one monster two ways.
  */
 
 /** Where they go: inside the top left corner of the forward view, clear of the yellow label the
@@ -62,16 +64,20 @@ export function wrapToWidth(sentences: string[], characters: number): string[] {
 /**
  * The lines over the monster: its level and hit points on the first, the chance the character's
  * next swing lands on the second, the chance the monster's own next attack takes hit points off
- * them on the third, and what it does beyond an ordinary hit under those. Nothing is printed when
- * nothing is being faced.
+ * them on the third, what killing it is likely to leave behind on the three after those, and what
+ * it does beyond an ordinary hit under the lot. Nothing is printed when nothing is being faced.
  */
 export function debugMonsterLines(game: Game): ScreenLine[] {
   const engaged = engagedMonster(game);
   if (engaged === null) return [];
+  const drops = dropOdds(game, engaged.level);
   const texts = [
     `LEVEL:${engaged.level} HP:${engaged.hp}`,
     `HIT:${hitPercent(engaged.hitChance)}`,
     `IT HITS:${hitPercent(engaged.hitsYouChance)}`,
+    `DROPS WEAPON:${hitPercent(drops.weapon)}`,
+    `DROPS ARMOR:${hitPercent(drops.armor)}`,
+    `DROPS SPECIAL:${hitPercent(drops.special)}`,
     ...wrapToWidth(engaged.effects, LINE_CHARACTERS),
   ];
   return texts.map((text, at) => ({
