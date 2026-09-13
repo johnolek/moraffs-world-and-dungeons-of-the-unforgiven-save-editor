@@ -151,12 +151,23 @@ export const CHECKED = new Map<string, Map<string, string>>([
     ['trapdoor', 'the same'],
   ])],
   ['FUN_3000_caac', new Map([['view_battle_spells', 'the battle-spell panel is drawn by Screen.svelte beside the status lines, not from within them']])],
+  // Moraff's World.
+  ['teleport_direction', new Map([['FUN_2000_8b3f', 'the views are redrawn by the play layer after the move, not from inside the spell']])],
+  ['FUN_3000_2796', new Map([
+    ['ladder_delta', 'mwProjectSquare is the geometry only; what is on a square comes from the map data'],
+    ['surface_feature', 'the same'],
+  ])],
   ['movecontrol', new Map([
     ['compute_weight', 'weight is worked out in gear.ts, which is not one of the files citing movecontrol'],
     ['FUN_2000_31bc', 'the arrival hint is reached from ladders.ts and trapdoor.ts, not from the loop itself'],
     ['FUN_2000_bf91', 'the boss signpost is drawn from misc.ts'],
     ['g_store', 'the town buildings are reached through building.ts'],
     ['flea_inn', 'the same'],
+    // Moraff's World's loop, whose keys reach their handlers the same way.
+    ['FUN_2000_248e', 'the arrival hint is reached from the ladder and chute paths'],
+    ['take_pill', 'the pill menu is reached from items.ts'],
+    ['FUN_2000_a64b', 'arriving on a square is done by move.ts'],
+    ['FUN_2000_a8d7', 'the boss signpost is drawn from the expanded map'],
   ])],
 ]);
 
@@ -209,8 +220,9 @@ export function compare(
     // movecontrol's keys reach their handlers through a table rather than by being called, and
     // several ported functions hand work to a helper beside them that cites nothing.
     const pooled = new Set<string>();
+    for (const fn of plays) for (const call of fn.calls) pooled.add(cameFrom.get(call) ?? call);
     for (const file of new Set(plays.map((fn) => fn.file))) {
-      for (const call of byFile.get(file) ?? []) pooled.add(cameFrom.get(call) ?? call);
+      for (const name of byFile.get(file) ?? []) pooled.add(cameFrom.get(name) ?? name);
     }
     for (const call of callsIn(section.body)) {
       if (call === routine || !playedBy.has(call) || pooled.has(call)) continue;

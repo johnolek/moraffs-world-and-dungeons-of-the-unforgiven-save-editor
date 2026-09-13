@@ -36,6 +36,7 @@ pnpm dev
 pnpm build:server  # dist-server/main.mjs, the run server
 pnpm build:ported  # the two PORTED-FROM.md pages, from the port's citations
 pnpm routine <name>  # what a routine of the original does, and where the port plays it
+pnpm check:port    # every ported routine read against the routine it came from
 pnpm start:server  # run it
 pnpm dev:all       # the site and the server together on the local Postgres
 ```
