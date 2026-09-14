@@ -23,12 +23,18 @@
   const progress = $derived(levelProgress(character, whole(target, 1)));
   const kills = $derived(killRows(module, floor, progress));
   const drain = $derived(drainCost(character, stats));
-  /** The character's own values, as the calculator holds them, kept up with its edits. */
-  const seed = $derived.by(() => {
-    void watchingCharacterOn('calculators');
+  /** The character's own values, or null when no Dungeons of the Unforgiven character is current. */
+  function theirs() {
     const record = currentCharacter();
     return record ? plannerFrom(record) : null;
-  });
+  }
+
+  /**
+   * The character's own values, as the calculator holds them, kept up with its edits while the
+   * Calculators tab is the one on screen. A game writes the record back to the roster after every
+   * key, and reading it for each of those behind a tab nobody is looking at is work for nobody.
+   */
+  const seed = $derived(watchingCharacterOn('calculators') ? theirs() : null);
   const differs = $derived(changedFields({ level, exp, hard, target, module, floor, ...stats }, seed));
 
   // Picking a different character starts the calculator from it. Editing the one in hand does
@@ -55,14 +61,15 @@
   }
 
   function useCharacter() {
-    if (!seed) return;
-    level = seed.level;
-    exp = seed.exp;
-    hard = seed.hard;
-    target = seed.target;
-    module = seed.module;
-    floor = seed.floor;
-    stats = { cls: seed.cls, con: seed.con, luck: seed.luck, wis: seed.wis, iq: seed.iq };
+    const own = theirs();
+    if (!own) return;
+    level = own.level;
+    exp = own.exp;
+    hard = own.hard;
+    target = own.target;
+    module = own.module;
+    floor = own.floor;
+    stats = { cls: own.cls, con: own.con, luck: own.luck, wis: own.wis, iq: own.iq };
   }
 
   /** An empty number input reads as NaN, which would spread through every table. */
