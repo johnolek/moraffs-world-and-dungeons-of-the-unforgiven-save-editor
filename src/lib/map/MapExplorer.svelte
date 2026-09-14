@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import { app, currentEntry, type GameId } from '../app-state.svelte';
+  import { app, characterVersionOn, currentEntry, type GameId } from '../app-state.svelte';
   import { characterStatus } from '../character/record';
   import { readStored, writeStored } from '../character/storage';
   import { floorBounds, summarizeMapFloor } from '../game/floor-summary';
@@ -228,7 +228,7 @@
   // A played character who walks into another dungeon (the gate on the Play tab, saved with S)
   // takes the map with them, the way a loaded save opens the map on its own dungeon.
   $effect(() => {
-    void app.characterVersion;
+    void characterVersionOn('map');
     const entry = currentEntry();
     if (!entry || entry.game !== game.id) return;
     const place = characterStatus(entry)?.place;
