@@ -36,9 +36,18 @@ text files holds either a dollar sign or an ampersand, so the game never draws t
 There are no lowercase letters and nothing past the colon; `pfont` uppercases what it is
 given. A character with no glyph maps to index 0 and comes out as `-`.
 
-`dotu-fonts.json`: `{ small | tall | bold | menu: { source, height, advance, glyphs: { char: [row words] } } }`,
-where `advance` is the pixel step between characters that reproduces the game's spacing.
-`small`, `tall` and `bold` are the first size of each file with the box's last row dropped;
-they are what the site's headings are drawn in. `menu` is `320x200.fnt`'s **third** size, all
-14 rows of it, and it is the one face the game itself still draws at 1024 × 768 — see
-SCREEN.md on the key menu.
+`dotu-fonts.json`: `{ small | tall | bold | small_spells | menu: { source, height, advance,
+glyphs: { char: [row words] } } }`, where `advance` is the pixel step between characters that
+reproduces the game's spacing. `small`, `tall` and `bold` are the first size of each file with
+the box's last row dropped; they are what the site's headings are drawn in.
+
+`small_spells` and `menu` are `320x200.fnt`'s **second** and **third** sizes, whole rather than
+trimmed, and they are the two faces the game itself still draws at 1024 × 768. Which one a line
+gets is the font index `pfont` and `psfont` are handed, since `FUN_4000_095b` fills all three
+indices from one row of the tables above and row 0 is this file's three sizes.
+
+Only two places clear DS:4dec, and between them they ask for both. `FUN_4000_667b` draws the key
+menu down the left of the play screen in font 2 — SCREEN.md has that one. `cast_a_spell`'s
+condensed spell menu draws its heading and its ten rows of spell names in font 1, which is
+`small_spells` and is drawn nowhere else, and the thirty key letters over them in font 2. No
+line anywhere is drawn as a glyph in font 0.

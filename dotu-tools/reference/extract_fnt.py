@@ -23,8 +23,13 @@ FONTS = {
     "small": ("320x200.fnt", 0, 5, 4),
     "tall": ("360x480.fnt", 0, 13, 6),
     "bold": ("ehout.fnt", 0, 10, 8),
-    # The size the key menu is drawn in above 730 pixels across, where every other line is
-    # drawn with the vector font instead.
+    # The two sizes the game still draws as glyphs above 730 pixels across, where every other
+    # line goes to the vector font.  DS:4dec is cleared in exactly two places, and between them
+    # they ask for these: cast_a_spell's condensed spell menu passes font 1 for its heading and
+    # its rows of spell names, and font 2 for the thirty key letters over them; FUN_4000_667b,
+    # the key menu down the left of the play screen, passes font 2 for its thirteen lines.  No
+    # line anywhere is drawn as a glyph in font 0.
+    "small_spells": ("320x200.fnt", 1, 8, 6),
     "menu": ("320x200.fnt", 2, 14, 10),
 }
 

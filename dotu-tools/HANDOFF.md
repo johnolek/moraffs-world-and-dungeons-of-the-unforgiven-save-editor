@@ -407,7 +407,7 @@ dotu-tools/
   data/unfdung.bin               the raw wall tile set (same bytes as unfdung.b64.js)
   docs/FONTS.md                  the .FNT bitmap font format
   reference/extract_fnt.py       decodes the three .FNT files into data/dotu-fonts.json
-  data/dotu-fonts.json           the small, tall and bold game fonts as row bitmaps
+  data/dotu-fonts.json           the game's .FNT fonts as row bitmaps, five sizes of them
   data/uroll.txt                 UROLL.TXT out of the game folder, with the DOS line
                                  endings dropped the way the game's own text-mode read
                                  does: every screen roll_char shows while rolling up a
