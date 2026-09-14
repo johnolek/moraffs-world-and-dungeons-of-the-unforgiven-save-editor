@@ -351,27 +351,32 @@ function drawLargeSpellList(game: Game, source: number, type: number): void {
  *
  * This one is drawn on black as well: the fill at exe 2000:e26e takes the whole message column,
  * the bar over the box included, and the list goes where the box was.
+ *
+ * Every line of it is .FNT glyphs rather than strokes. Clearing DS:4dec is the third thing the
+ * branch does and setting it again is the last, so the two fonts plot glyphs at their own size
+ * for everything between, which is what `bitmapFace` asks the screen renderer for. Which of the
+ * screen's two glyph boxes a line lands in is the font index beside it.
  */
 function drawMiniSpellList(game: Game, source: number, type: number): void {
-  clearToBlack(game, 0x398, 0x2ff, 0x640, 0x4b0);
-  game.draw({ text: castHeading(source, type), x: 0x39c, y: 0x301, font: 1, colour: 4 });
+  clearToBlack(game, 0x398, 0x2ff, 0x640, 0x4af);
+  game.draw({ text: castHeading(source, type), x: 0x39c, y: 0x301, font: 1, colour: 4, bitmapFace: true });
   // DS:2176
-  game.draw({ text: 'ESCAPE', x: 0x5e6, y: 0x301, spreadTo: 0x63f, font: 1, colour: 3 });
+  game.draw({ text: 'ESCAPE', x: 0x5e6, y: 0x301, spreadTo: 0x63f, font: 1, colour: 3, bitmapFace: true });
   const names = spellRows(type % 4);
   const owned = ownedRows(game, source, type % 4);
   names.forEach((row, index) => {
     const text = printSpellLine(MINI_PREFIXES, row, owned[index]);
-    game.draw({ text, x: MENU_X, y: index * 0x25 + 0x326, spreadTo: 0x640, font: 1, colour: 15 });
+    game.draw({ text, x: MENU_X, y: index * 0x25 + 0x326, spreadTo: 0x640, font: 1, colour: 15, bitmapFace: true });
   });
   names.forEach((unused, row) => {
     MINI_LETTER_X.forEach((x, column) => {
       const text = SPELL_MENU_KEYS[row * 3 + column];
-      game.draw({ text, x, y: row * 0x25 + 0x323, font: 2, colour: 8 });
+      game.draw({ text, x, y: row * 0x25 + 0x323, font: 2, colour: 8, bitmapFace: true });
     });
   });
   // DS:21db
   const switchTo = '5) SWITCH TO LARGE, SLOW, CAST SPELL MENU';
-  game.draw({ text: switchTo, x: 0x39c, y: 0x48c, spreadTo: 0x63b, font: 2, colour: 6 });
+  game.draw({ text: switchTo, x: 0x39c, y: 0x48c, spreadTo: 0x63b, font: 2, colour: 6, bitmapFace: true });
 }
 
 /** The line over the spell table, which says what the list is for (exe DS:2110 2145 20ed). */

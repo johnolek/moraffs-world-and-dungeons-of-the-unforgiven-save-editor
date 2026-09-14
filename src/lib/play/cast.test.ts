@@ -223,9 +223,10 @@ describe('casting from the spellbook', () => {
 
 describe('the screen the spell table is drawn on', () => {
   /** cast_a_spell's own two fills: the top of the screen for the big table (exe 2000:ee34) and
-   *  the whole message column for the miniature one (exe 2000:e26e). */
+   *  the whole message column for the miniature one (exe 2000:e26e). The miniature one stops a
+   *  unit short of the bottom of the grid, where the big one stops on a round number. */
   const LARGE = { x: 0, y: 0, right: 0x640, bottom: 0x21c };
-  const MINI = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b0 };
+  const MINI = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4af };
 
   it('blacks the top of the screen out under the big table and nothing else', async () => {
     const session = playing(wizard([MINOR_PROTECTION]));

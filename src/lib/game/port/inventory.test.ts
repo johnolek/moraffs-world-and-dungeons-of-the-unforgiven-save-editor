@@ -219,8 +219,29 @@ describe('the spell table on the screen', () => {
     expect(names[0].y).toBe(0x326);
     const letters = game.screen.filter((line) => line.font === 2 && line.text.length === 1);
     expect(letters.length).toBe(30);
-    expect(letters[0]).toEqual({ text: 'A', x: 0x39c, y: 0x323, font: 2, colour: 8 });
-    expect(letters[29]).toEqual({ text: '4', x: 0x564, y: 0x323 + 9 * 0x25, font: 2, colour: 8 });
+    expect(letters[0]).toEqual({ text: 'A', x: 0x39c, y: 0x323, font: 2, colour: 8, bitmapFace: true });
+    expect(letters[29]).toEqual({ text: '4', x: 0x564, y: 0x323 + 9 * 0x25, font: 2, colour: 8, bitmapFace: true });
+  });
+
+  /**
+   * cast_a_spell clears DS:4dec as the third statement of its condensed branch and sets it again
+   * as the last, so every line between comes out as .FNT glyphs rather than as strokes. Drawing
+   * them as strokes is what made the names huge enough to run across each other.
+   */
+  it('asks for the glyph face on every line of the miniature layout', () => {
+    const game = newGame({ pc: { cls: 3 } });
+    drawSpellList(game, CAST_SPELLBOOK, 2, true);
+    expect(game.screen.length).toBe(43);
+    expect(game.screen.every((line) => line.bitmapFace)).toBe(true);
+    // The two glyph boxes the screen has, and nothing else: no line of this menu is drawn in the
+    // 4 by 6 the game never puts on a screen this wide.
+    expect(new Set(game.screen.map((line) => line.font))).toEqual(new Set([1, 2]));
+  });
+
+  it('leaves the large layout in the vector font', () => {
+    const game = newGame({ pc: { cls: 3 } });
+    drawSpellList(game, CAST_SPELLBOOK, 2, false);
+    expect(game.screen.some((line) => line.bitmapFace)).toBe(false);
   });
 });
 

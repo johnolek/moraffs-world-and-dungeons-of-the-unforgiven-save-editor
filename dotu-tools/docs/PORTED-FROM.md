@@ -13,7 +13,7 @@ column or the other, not both.
 Tests, test helpers, fixtures and the Source tab's own files are left out, since they quote
 citations rather than make them. What each routine does is in `FUNCTION-CATALOG.md`.
 
-235 of the 647 routines are pointed at. Files are named from
+236 of the 647 routines are pointed at. Files are named from
 `src/lib/`.
 
 | routine | address | named in | mentioned in |
@@ -298,5 +298,5 @@ does is in `FUNCTION-CATALOG.md`.
 | `mouse_detect` | 4000:39c0 | `main`, `FUN_2000_c200`, `movecontrol` |
 | `num_to_string` | 4000:5a87 | `store_refund`, `show_money`, `g_store`, `temple`, `view_prep_spells`, `view_battle_spells`, `engagement_timing`, `FUN_3000_7545`, `view_stats`, `FUN_3000_caac` |
 
-Also uncited: 363 routines Ghidra could not name, and 29 named routines of
+Also uncited: 362 routines Ghidra could not name, and 29 named routines of
 the Borland runtime in segment 1000.
