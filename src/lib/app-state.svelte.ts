@@ -146,6 +146,35 @@ export const app = $state<AppState>({
   rosterKept: true,
 });
 
+/**
+ * {@link AppState.characterVersion} for the tab that is on screen, and a fixed number for every
+ * other tab.
+ *
+ * Every tab of the site is built into the page from the moment it loads, so a tab nobody is
+ * looking at is still live and still reacting. The game writes the character's record back to
+ * the roster after every key, which bumps the version, and that used to set the save editor, the
+ * five calculators, the monster page and the map explorer all recalculating on every keypress —
+ * about three megabytes of rubbish per key, which the browser stopped to collect every few steps.
+ *
+ * A `$derived` or an `$effect` that reads this instead follows the character only while its own
+ * tab is up. While another tab is showing it depends on {@link AppState.tab} alone, so nothing
+ * the character does reaches it; when the player comes back, the tab changing is itself a change
+ * and the derived runs again on the character as it now stands.
+ *
+ * The version is read inside the branch on purpose. Svelte follows what a reader actually reads,
+ * so reading it above the branch and choosing afterwards would put every tab back to following
+ * the character, and the numbers this hands out would be exactly the same.
+ *
+ * The character bar along the bottom of the page belongs to no tab and is not to use this: it is
+ * the game's own status block and follows every key.
+ *
+ * @param tab the tab the caller is part of
+ */
+export function characterVersionOn(tab: Tab): number {
+  if (app.tab !== tab) return -1;
+  return app.characterVersion;
+}
+
 /** The character on the roster with that id, or null when the roster has none: an id of null
  *  never finds one. */
 export function entryById(id: string | null): RosterEntry | null {
