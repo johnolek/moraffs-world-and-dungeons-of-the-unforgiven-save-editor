@@ -1,6 +1,6 @@
 import type { ScreenLine } from '../../game/port/state';
 import type { Frame } from './frame';
-import { drawMenuLine } from './menu-font';
+import { bitmapBox, drawBitmapLine } from './menu-font';
 import { drawStrokeScreenLine } from './stroke-font';
 
 /**
@@ -10,9 +10,10 @@ import { drawStrokeScreenLine } from './stroke-font';
  * `pfont` (exe 4000:0bb3, unf.c "pfont") and `psfont` (exe 4000:0db8) place a line in the 1600 by
  * 1200 grid the game draws everything in, and above 730 pixels across they hand it to the vector
  * font of `stroke-font.ts` rather than to the .FNT glyphs a smaller screen reads. The game is
- * played here at 1024 by 768, so that is every line but the key menu's own words: `FUN_4000_667b`
- * (exe 4000:667b) clears DS:4dec around those thirteen, which keeps them .FNT glyphs at their own
- * size, and `bitmapFace` on a line is where the port records the ask. `menu-font.ts` is that face.
+ * played here at 1024 by 768, so that is every line but the two blocks that clear DS:4dec around
+ * themselves: the key menu's thirteen words (`FUN_4000_667b`, exe 4000:667b) and the whole of the
+ * condensed spell menu (`cast_a_spell`, exe 2000:e017). Those keep their .FNT glyphs at their own
+ * size, `bitmapFace` on a line is where the port records the ask, and `menu-font.ts` draws them.
  *
  * What this declines to draw is the .FNT path for the eleven video modes narrower than 730 pixels,
  * where every line is a glyph stretched to the step its font is drawn at. The game is played in
@@ -27,9 +28,10 @@ export interface TextScreen {
 
 /** One line of the game's screen, in whichever of the two faces the line asks for. */
 export function drawDotuScreenLine(frame: Frame, screen: TextScreen, line: ScreenLine): void {
-  // Only psfont draws with DS:4dec cleared, and psfont is always given the x it spreads to.
-  if (line.bitmapFace && line.spreadTo !== undefined) {
-    drawMenuLine(frame, screen, { ...line, spreadTo: line.spreadTo });
+  // Both fonts draw with DS:4dec cleared, so a bitmap line may or may not carry the x psfont
+  // spreads to; what it must carry is a font index the game has a glyph box for.
+  if (line.bitmapFace && bitmapBox(line.font)) {
+    drawBitmapLine(frame, screen, line);
     return;
   }
   drawStrokeScreenLine(frame, screen, 'dotu', line);

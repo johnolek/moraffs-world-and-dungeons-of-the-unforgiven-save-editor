@@ -52,10 +52,11 @@ export interface ScreenLine {
   /** The x that second string is drawn at. */
   valueX?: number;
   /**
-   * Set on the lines psfont draws with DS:4dec cleared, which are the key menu's thirteen and
-   * nothing else. Those come out as .FNT glyphs at their own size even at 1024 by 768, where
-   * every other line is drawn with the vector font. Only the renderers that draw real pixels
-   * look at this; the site sets all of these screens in a web font.
+   * Set on the lines drawn with DS:4dec cleared: the key menu's thirteen, and every line of the
+   * condensed spell menu. Those come out as .FNT glyphs at their own size even at 1024 by 768,
+   * where every other line is drawn with the vector font, and `font` picks which of the two
+   * glyph boxes. Only the renderers that draw real pixels look at this; the site sets all of
+   * these screens in a web font.
    */
   bitmapFace?: true;
 }

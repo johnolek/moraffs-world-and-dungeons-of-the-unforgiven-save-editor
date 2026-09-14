@@ -3,7 +3,7 @@ import type { ScreenLine } from '../../game/port/state';
 import { SCREEN_PIXELS } from '../display';
 import { newFrame, type Frame } from './frame';
 import { pixelDifference } from './frame.test-support';
-import { drawMenuLine } from './menu-font';
+import { drawBitmapLine } from './menu-font';
 import { drawStrokeScreenLine } from './stroke-font';
 import { drawDotuScreenText } from './text';
 
@@ -34,8 +34,8 @@ describe('the game screen text', () => {
 
   it('draws a key menu line in the .FNT face the menu asks for', () => {
     const spreadTo = 0x126;
-    const line: ScreenLine = { text: ' AST SPELL    ', x: 9, y: 0x07d, font: 0, colour: 8, spreadTo, bitmapFace: true };
-    const menu = only((frame) => drawMenuLine(frame, screen, { ...line, spreadTo }));
+    const line: ScreenLine = { text: ' AST SPELL    ', x: 9, y: 0x07d, font: 2, colour: 8, spreadTo, bitmapFace: true };
+    const menu = only((frame) => drawBitmapLine(frame, screen, line));
     expect(pixelDifference(drawn([line]).pixels, menu.pixels)).toBeNull();
     // The two faces are nothing alike: the strokes of the same string cover far more of the screen.
     expect(lit(only((frame) => drawStrokeScreenLine(frame, screen, 'dotu', line)))).toBeGreaterThan(lit(menu));

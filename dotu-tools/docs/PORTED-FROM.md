@@ -126,7 +126,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `movecontrol` | 2000:c308 | `game/port/combat.ts`, `game/port/kills.ts`, `play/cast.ts`, `play/engine.ts`, `play/fight.ts`, `play/items.ts`, `play/kill.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/character.ts`, `game/port/state.ts`, `game/unfmap.js`, `map/you.ts`, `play/Screen.svelte`, `play/arrival.ts`, `play/display.ts`, `play/gear.ts`, `play/help.ts`, `play/keys.ts`, `play/memory.ts`, `play/misc.ts`, `play/move.ts`, `play/panel.ts`, `play/plaque.ts`, `play/session.ts`, `play/spellScreens.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts`, `play/zoom-map.ts` |
 | `FUN_2000_df0e` | 2000:df0e |  | `game/port/inventory.ts` |
 | `print_spell_line` | 2000:df3e | `game/port/inventory.ts` |  |
-| `cast_a_spell` | 2000:e017 | `game/port/inventory.ts`, `play/cast.ts` | `formulas/formulas.ts`, `game/port/magic.ts`, `play/fight-sim.ts` |
+| `cast_a_spell` | 2000:e017 | `game/port/inventory.ts`, `play/cast.ts` | `formulas/formulas.ts`, `game/port/magic.ts`, `play/fight-sim.ts`, `play/view3d/menu-font.ts`, `play/view3d/text.ts` |
 | `FUN_3000_003b` | 3000:003b |  | `play/view3d/flood.ts` |
 | `FUN_3000_0067` | 3000:0067 |  | `play/view3d/flood.ts` |
 | `FUN_3000_0081` | 3000:0081 |  | `play/view3d/flood.ts` |
@@ -224,8 +224,9 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_4000_0035` | 4000:0035 |  | `play/view3d/stroke-font.ts` |
 | `FUN_4000_069a` | 4000:069a |  | `game/port/state.ts`, `play/section-screen.ts`, `play/tablet.ts`, `play/tunnel.ts`, `play/view3d/stroke-font.ts` |
 | `FUN_4000_0885` | 4000:0885 |  | `play/building.ts` |
+| `FUN_4000_095b` | 4000:095b |  | `play/view3d/menu-font.ts` |
 | `FUN_4000_09a5` | 4000:09a5 |  | `play/view3d/menu-font.ts` |
-| `pfont` | 4000:0bb3 |  | `game/port/character.ts`, `game/port/state.ts`, `play/screens.ts`, `play/view3d/stroke-font.ts`, `play/view3d/text.ts`, `roller/screen.ts` |
+| `pfont` | 4000:0bb3 |  | `game/port/character.ts`, `game/port/state.ts`, `play/screens.ts`, `play/view3d/menu-font.ts`, `play/view3d/stroke-font.ts`, `play/view3d/text.ts`, `roller/screen.ts` |
 | `psfont` | 4000:0db8 |  | `game/port/character.ts`, `game/port/combat.ts`, `game/port/state.ts`, `play/display.ts`, `play/view3d/menu-font.ts`, `play/view3d/text.ts`, `play/view3d/views.ts`, `roller/screen.ts` |
 | `apply_palette` | 4000:10c2 |  | `map/wall-texture.ts` |
 | `gradient_palette` | 4000:1150 |  | `game/dotu-pic.js` |

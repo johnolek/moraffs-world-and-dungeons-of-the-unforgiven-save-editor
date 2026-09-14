@@ -149,7 +149,10 @@ export const KEY_MENU_BODY_DROP = 4;
 
 /** The thirteen lines and the line under them, as the screen renderer takes them. */
 export function keyMenuLines(): ScreenLine[] {
-  const place = { x: KEY_MENU_X, spreadTo: KEY_MENU_SPREAD_TO, font: 0 };
+  // Font 2 is the index FUN_4000_667b passes on a screen wider than 1000 of its own units, which
+  // is what `KEY_MENU_BODY_DROP` above is twice. Only the .FNT face reads it: the vector font the
+  // key letters are drawn with works its size out from the line's own box.
+  const place = { x: KEY_MENU_X, spreadTo: KEY_MENU_SPREAD_TO, font: 2 };
   const lines = KEY_MENU_LINES.flatMap((line): ScreenLine[] => [
     { ...place, text: line.body, y: line.y + KEY_MENU_BODY_DROP, colour: line.colour, bitmapFace: true },
     {
