@@ -127,6 +127,19 @@ describe('the key menu', () => {
     expect(lines.filter((line) => !line.bitmapFace)).toHaveLength(14);
   });
 
+  /**
+   * FUN_4000_667b makes two passes. The thirteen body lines are given the font index its own
+   * variable holds, which is 2 on a screen this wide, with DS:4dec cleared around them. The
+   * thirteen key letters and the line under them are given a literal 0 after DS:4dec is set
+   * again. Handing the second pass a 2 as well draws it in the vector font's largest size, which
+   * is what the key letters came out as before this was pinned.
+   */
+  it('gives the two passes the font index each of them is handed', () => {
+    for (const line of keyMenuLines()) {
+      expect(line.font).toBe(line.bitmapFace ? 2 : 0);
+    }
+  });
+
   it('draws the key letters in yellow and every line above the section box', () => {
     for (const line of keyMenuLines()) {
       expect(line.y).toBeLessThan(0x20f);

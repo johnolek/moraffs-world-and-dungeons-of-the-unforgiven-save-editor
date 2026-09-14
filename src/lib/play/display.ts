@@ -142,19 +142,26 @@ export const KEY_MENU_LINES: {
 export const SECTION_INFO = { text: 'S) SECTION INFO', y: 0x1ea, colour: 15 };
 
 /**
+ * The font index `FUN_4000_667b` (exe 4000:667b) passes for its thirteen body lines on a screen
+ * wider than 1000 of its own units, which is the glyph box they come out in.
+ *
+ * The thirteen key letters laid over them and the S) SECTION INFO line under them are a separate
+ * pass, drawn after DS:4dec has been set again and given a literal 0, so they are strokes at the
+ * body face's size rather than glyphs at the big one.
+ */
+export const KEY_MENU_BODY_FONT = 2;
+
+/**
  * How far down its own line the game drops the body pass, which is twice the font index it
  * passes for it: 4 at 1024 by 768, where that index is 2.
  */
-export const KEY_MENU_BODY_DROP = 4;
+export const KEY_MENU_BODY_DROP = 2 * KEY_MENU_BODY_FONT;
 
 /** The thirteen lines and the line under them, as the screen renderer takes them. */
 export function keyMenuLines(): ScreenLine[] {
-  // Font 2 is the index FUN_4000_667b passes on a screen wider than 1000 of its own units, which
-  // is what `KEY_MENU_BODY_DROP` above is twice. Only the .FNT face reads it: the vector font the
-  // key letters are drawn with works its size out from the line's own box.
-  const place = { x: KEY_MENU_X, spreadTo: KEY_MENU_SPREAD_TO, font: 2 };
+  const place = { x: KEY_MENU_X, spreadTo: KEY_MENU_SPREAD_TO, font: 0 };
   const lines = KEY_MENU_LINES.flatMap((line): ScreenLine[] => [
-    { ...place, text: line.body, y: line.y + KEY_MENU_BODY_DROP, colour: line.colour, bitmapFace: true },
+    { ...place, font: KEY_MENU_BODY_FONT, text: line.body, y: line.y + KEY_MENU_BODY_DROP, colour: line.colour, bitmapFace: true },
     {
       ...place,
       spreadTo: line.keysSpreadTo ?? KEY_MENU_SPREAD_TO,
