@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { app } from '../app-state.svelte';
+  import { app, characterVersionOn } from '../app-state.svelte';
   import LevelControl from '../bestiary/LevelControl.svelte';
   import { allMonsters, homeFloor, monsterGroups, type Monster } from '../bestiary/monsters';
   import type { SaveRecord } from '../game/dotu-files.js';
@@ -71,7 +71,7 @@
   const report = $derived(combatReport(fighter, { monster, level, module, floor }));
   /** The character's own values, as the calculator holds them, kept up with its edits. */
   const seed = $derived.by(() => {
-    void app.characterVersion;
+    void characterVersionOn('calculators');
     const record = currentCharacter();
     return record ? fighterFrom(record) : null;
   });

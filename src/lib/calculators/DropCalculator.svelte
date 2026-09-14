@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { app } from '../app-state.svelte';
+  import { app, characterVersionOn } from '../app-state.svelte';
   import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
@@ -28,7 +28,7 @@
   const levels = $derived(tables.levels.filter(([, chance]) => chance >= RARE_LEVEL));
   /** The character's own values, as the calculator holds them, kept up with its edits. */
   const seed = $derived.by(() => {
-    void app.characterVersion;
+    void characterVersionOn('calculators');
     const record = currentCharacter();
     return record ? hunterFrom(record) : null;
   });
