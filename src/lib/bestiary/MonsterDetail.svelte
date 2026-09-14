@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { app } from '../app-state.svelte';
+  import { app, characterVersionOn } from '../app-state.svelte';
   import { goToTab } from '../history';
   import { currentCharacter } from '../calculators/character';
   import { weaponById } from '../calculators/combat';
@@ -88,7 +88,7 @@
 
   /** The current character, as the pieces of a swing and its die, or null when there is none. */
   const yours = $derived.by(() => {
-    void app.characterVersion;
+    void characterVersionOn('monsters');
     const record = currentCharacter();
     if (!record) return null;
     const fighter: ToHitFighter = {
