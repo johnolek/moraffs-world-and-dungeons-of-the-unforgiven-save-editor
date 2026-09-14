@@ -147,32 +147,31 @@ export const app = $state<AppState>({
 });
 
 /**
- * {@link AppState.characterVersion} for the tab that is on screen, and a fixed number for every
- * other tab.
+ * Whether `tab` is the one on screen, following the character while it is.
  *
  * Every tab of the site is built into the page from the moment it loads, so a tab nobody is
  * looking at is still live and still reacting. The game writes the character's record back to
- * the roster after every key, which bumps the version, and that used to set the save editor, the
- * five calculators, the monster page and the map explorer all recalculating on every keypress —
- * about three megabytes of rubbish per key, which the browser stopped to collect every few steps.
+ * the roster after every key, which bumps {@link AppState.characterVersion} and hands the entry
+ * a fresh array of bytes, and that used to set the save editor, the five calculators, the
+ * monster pages and the map explorer all recalculating on every keypress — about three megabytes
+ * of rubbish per key, which the browser stopped to collect every few steps.
  *
- * A `$derived` or an `$effect` that reads this instead follows the character only while its own
- * tab is up. While another tab is showing it depends on {@link AppState.tab} alone, so nothing
- * the character does reaches it; when the player comes back, the tab changing is itself a change
- * and the derived runs again on the character as it now stands.
+ * A `$derived` or an `$effect` that leaves as soon as this comes back false never reads the
+ * character at all while another tab is showing, so nothing the character does can reach it.
+ * Coming back to the tab is itself a change, so it then runs on the record as it stands.
  *
- * The version is read inside the branch on purpose. Svelte follows what a reader actually reads,
- * so reading it above the branch and choosing afterwards would put every tab back to following
- * the character, and the numbers this hands out would be exactly the same.
+ * Leaving before the character is read is the whole of it. Reading the version and then reading
+ * the record anyway follows the record, which changes on every key just as the version does.
  *
  * The character bar along the bottom of the page belongs to no tab and is not to use this: it is
  * the game's own status block and follows every key.
  *
  * @param tab the tab the caller is part of
  */
-export function characterVersionOn(tab: Tab): number {
-  if (app.tab !== tab) return -1;
-  return app.characterVersion;
+export function watchingCharacterOn(tab: Tab): boolean {
+  if (app.tab !== tab) return false;
+  void app.characterVersion;
+  return true;
 }
 
 /** The character on the roster with that id, or null when the roster has none: an id of null

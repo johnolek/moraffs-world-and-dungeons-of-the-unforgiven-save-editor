@@ -7,7 +7,7 @@
   prints, and `PlayRoster.svelte` for choosing who fights.
 -->
 <script lang="ts">
-  import { app, characterVersionOn, currentEntry } from '../app-state.svelte';
+  import { app, watchingCharacterOn, currentEntry } from '../app-state.svelte';
   import {
     allowedFloors,
     allowedModules,
@@ -59,7 +59,7 @@
   type FightAction = { kind: 'spell'; spell: FightSpell } | { kind: 'fill' };
 
   const character = $derived.by(() => {
-    void characterVersionOn('fight');
+    void watchingCharacterOn('fight');
     return currentEntry();
   });
   const ours = $derived(character !== null && character.game === 'unforgiven');

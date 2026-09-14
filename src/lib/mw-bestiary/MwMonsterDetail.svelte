@@ -1,7 +1,7 @@
 <!-- One monster of Moraff's World: its numbers, where it turns up and what it takes to hit it. -->
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { characterVersionOn, currentEntry } from '../app-state.svelte';
+  import { watchingCharacterOn, currentEntry } from '../app-state.svelte';
   import MonsterCard from '../bestiary/MonsterCard.svelte';
   import { blockWheel } from '../editor/block-wheel';
   import { MORAFFS_WORLD } from '../editor/games';
@@ -41,7 +41,7 @@
 
   /** The character being worked on, when it is one of this game's. */
   function loadedCharacter(): { name: string; fighter: MwFighter; floor: number; dungeon: number } | null {
-    void characterVersionOn('monsters');
+    void watchingCharacterOn('monsters');
     const character = currentEntry();
     if (!character || character.game !== MORAFFS_WORLD.id) return null;
     const view = new DataView(character.bytes.buffer, character.bytes.byteOffset, character.bytes.byteLength);

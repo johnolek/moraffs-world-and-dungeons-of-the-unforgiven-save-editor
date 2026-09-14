@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { app, characterVersionOn } from '../app-state.svelte';
+  import { app, watchingCharacterOn } from '../app-state.svelte';
   import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { TEMPLE } from '../game/dotu-mech.js';
@@ -37,7 +37,7 @@
   const money = $derived(moneyPerKill(floor, cls, hard));
   /** The character's own values, as the calculator holds them, kept up with its edits. */
   const seed = $derived.by(() => {
-    void characterVersionOn('calculators');
+    void watchingCharacterOn('calculators');
     const record = currentCharacter();
     return record ? spenderFrom(record) : null;
   });

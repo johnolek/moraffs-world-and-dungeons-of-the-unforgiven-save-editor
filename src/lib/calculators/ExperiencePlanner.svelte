@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { app, characterVersionOn } from '../app-state.svelte';
+  import { app, watchingCharacterOn } from '../app-state.svelte';
   import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
@@ -25,7 +25,7 @@
   const drain = $derived(drainCost(character, stats));
   /** The character's own values, as the calculator holds them, kept up with its edits. */
   const seed = $derived.by(() => {
-    void characterVersionOn('calculators');
+    void watchingCharacterOn('calculators');
     const record = currentCharacter();
     return record ? plannerFrom(record) : null;
   });
