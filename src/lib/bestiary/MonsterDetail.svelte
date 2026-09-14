@@ -86,9 +86,13 @@
   const halfTheTime = $derived(totalNeededToBeatDefense(0.5, baseLevel, entry.type.defense, entry.type.speed));
   const nineSwingsInTen = $derived(totalNeededToBeatDefense(0.9, baseLevel, entry.type.defense, entry.type.speed));
 
-  /** The current character, as the pieces of a swing and its die, or null when there is none. */
+  /**
+   * The current character, as the pieces of a swing and its die, or null when there is none —
+   * and null as well while the player is on another tab, since a game writes the record back to
+   * the roster after every key and working a swing out for nobody to see is work for nobody.
+   */
   const yours = $derived.by(() => {
-    void watchingCharacterOn('monsters');
+    if (!watchingCharacterOn('monsters')) return null;
     const record = currentCharacter();
     if (!record) return null;
     const fighter: ToHitFighter = {

@@ -41,7 +41,6 @@
 
   /** The character being worked on, when it is one of this game's. */
   function loadedCharacter(): { name: string; fighter: MwFighter; floor: number; dungeon: number } | null {
-    void watchingCharacterOn('monsters');
     const character = currentEntry();
     if (!character || character.game !== MORAFFS_WORLD.id) return null;
     const view = new DataView(character.bytes.buffer, character.bytes.byteOffset, character.bytes.byteLength);
@@ -69,7 +68,11 @@
     return Math.max(1, entry.minFloor);
   }
 
-  const character = $derived(loadedCharacter());
+  // Only while the Monsters tab is the one on screen: a game writes the record back to the roster
+  // after every key, and reading the character out of it behind another tab is work for nobody.
+  // The starting values above are taken outside this, so a card built while the tab is down still
+  // starts from the character.
+  const character = $derived(watchingCharacterOn('monsters') ? loadedCharacter() : null);
   const boss = $derived(bossFloor(entry));
   const never = $derived(neverStocked(entry));
   const effects = $derived(describeEffects(entry));
