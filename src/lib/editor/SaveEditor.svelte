@@ -131,7 +131,15 @@
 
   // The character can be made current somewhere else — rolled in the New Character tab, chosen
   // in the panel, or brought back from the last visit — and the editor then opens it.
+  //
+  // Only while the editor is the tab on screen. A game writes the character's record back to the
+  // roster after every key, which is a fresh array of bytes each time, and opening the whole
+  // document again for each of them is most of what made walking stutter. Leaving here before
+  // the record is read means nothing the character does reaches this while the player is
+  // somewhere else; the tab changing is itself a change, so opening the editor reads the record
+  // as it then stands.
   $effect(() => {
+    if (app.tab !== 'editor') return;
     const current = currentEntry();
     if (!current) {
       doc = null;
