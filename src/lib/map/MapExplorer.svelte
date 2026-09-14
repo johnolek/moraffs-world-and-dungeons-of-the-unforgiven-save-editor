@@ -226,9 +226,12 @@
   });
 
   // A played character who walks into another dungeon (the gate on the Play tab, saved with S)
-  // takes the map with them, the way a loaded save opens the map on its own dungeon.
+  // takes the map with them, the way a loaded save opens the map on its own dungeon. It happens
+  // when the map is opened, which is the first moment anybody could see it: a game writes the
+  // record back to the roster after every key, and reading the character's whereabouts out of it
+  // behind another tab is work for nobody.
   $effect(() => {
-    void watchingCharacterOn('map');
+    if (!watchingCharacterOn('map')) return;
     const entry = currentEntry();
     if (!entry || entry.game !== game.id) return;
     const place = characterStatus(entry)?.place;
