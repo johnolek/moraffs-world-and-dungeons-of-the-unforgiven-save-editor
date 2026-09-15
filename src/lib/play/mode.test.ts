@@ -18,7 +18,6 @@ import {
   readPlayRedraw,
   redrawWords,
   SLOWEST_REDRAW_MS,
-  sidePicturesVisible,
   writePlayColourblind,
   writePlaySound,
   writePlayDisplay,
@@ -142,16 +141,6 @@ describe("the marks debug mode puts on the game's own screen", () => {
   it('marks none at all in faithful or in speedrun, which no game ever did', () => {
     expect(zoomMapMonsters('faithful', sight)).toEqual([]);
     expect(zoomMapMonsters('speedrun', sight)).toEqual([]);
-  });
-});
-
-describe('the two pictures beside the stage', () => {
-  it("are left out with the game's own screen up, which draws them both", () => {
-    expect(sidePicturesVisible('screen')).toBe(false);
-  });
-
-  it('are shown with the map, which draws neither', () => {
-    expect(sidePicturesVisible('map')).toBe(true);
   });
 });
 

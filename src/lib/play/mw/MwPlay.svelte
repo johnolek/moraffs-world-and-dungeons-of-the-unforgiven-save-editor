@@ -7,7 +7,6 @@
   import FloorCanvas from '../../map/FloorCanvas.svelte';
   import { MORAFFS_WORLD_MAP } from '../../map/game';
   import { FULL_FLOOR } from '../../map/viewport';
-  import WallTexture from '../../map/WallTexture.svelte';
   import GameScreen from '../../ui/GameScreen.svelte';
   import { MW_SCREEN_COLOURS } from '../../roller/screen';
   import MwMonsterDetail from '../../mw-bestiary/MwMonsterDetail.svelte';
@@ -31,7 +30,6 @@
     mapDrawn,
     monstersDrawn,
     panelVisible,
-    sidePicturesVisible,
     zoomMapMonsters,
   } from '../mode';
 
@@ -294,9 +292,6 @@
 {/snippet}
 
 {#snippet sideFoot(stage: Stage)}
-  {#if sidePicturesVisible(stage.display)}
-    <WallTexture game={MORAFFS_WORLD_MAP.id} dungeon={stage.view.place.dungeon} floor={stage.view.place.floor} />
-  {/if}
   {#if panelVisible(stage.mode)}
     <MwPanel game={stage.session.game} view={stage.view} />
   {/if}

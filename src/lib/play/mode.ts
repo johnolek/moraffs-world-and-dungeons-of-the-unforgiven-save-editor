@@ -177,17 +177,6 @@ export function debugDrawn(mode: PlayMode): boolean {
   return mode === 'debug';
 }
 
-/**
- * Whether the wall texture the floor is built from is shown beside the stage.
- *
- * The game's own screen draws it on every wall of all four views already, so it stands beside the
- * map only, whatever the mode. The monster being fought is the map's own heads-up display's
- * (`MapHud.svelte`), not a picture beside it (John, 2026-09-09).
- */
-export function sidePicturesVisible(display: PlayDisplay): boolean {
-  return display === 'map';
-}
-
 /** What a tab knows about the monsters on the floor: every one standing on it, the ones the
  *  3-D views have just drawn, and the one the character is facing. Both games' views have
  *  these. */

@@ -46,7 +46,7 @@ describe('the wall texture of a Dungeons of the Unforgiven floor', () => {
   });
 
   it('gives the four sections of the first module a wall picture each', () => {
-    expect(wallTexture('unforgiven', 0, 0)).toMatchObject({ file: 'ufwall1.pic', caption: 'Section 1 walls, from ufwall1.pic' });
+    expect(wallTexture('unforgiven', 0, 0)).toMatchObject({ file: 'ufwall1.pic' });
     expect(wallTexture('unforgiven', 0, 6)).toMatchObject({ file: 'ufwall2.pic' });
     expect(wallTexture('unforgiven', 0, 11)).toMatchObject({ file: 'ufwall3.pic' });
     expect(wallTexture('unforgiven', 0, 16)).toMatchObject({ file: 'ufwall4.pic' });
@@ -76,10 +76,6 @@ describe("the wall texture of a Moraff's World floor", () => {
   it('recolours it by the floor modulo eleven', () => {
     expect(wallTexture('moraffsWorld', 0, 3)!.key).toBe(wallTexture('moraffsWorld', 0, 3 + WALL_SETS)!.key);
     expect(wallTexture('moraffsWorld', 0, 3)!.palette).not.toEqual(wallTexture('moraffsWorld', 0, 4)!.palette);
-  });
-
-  it('says which floor and which of the eleven colour sets it is', () => {
-    expect(wallTexture('moraffsWorld', 0, 5)!.caption).toBe('Floor 5 walls, colour set 6 of 11');
   });
 });
 

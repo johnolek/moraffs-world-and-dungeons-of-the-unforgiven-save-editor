@@ -26,8 +26,6 @@ export interface WallTexture {
   file: string;
   /** The image of that file the wall faces are drawn from. */
   image: number;
-  /** What the swatch is labelled with. */
-  caption: string;
   /** Everything the drawing depends on, so a texture already drawn can be kept. */
   key: string;
   /** The palette the game draws it in. */
@@ -63,7 +61,6 @@ function unforgivenWallTexture(module: number, floor: number): WallTexture | nul
   return {
     file,
     image: UNFORGIVEN_WALL_IMAGE,
-    caption: `Section ${section.section} walls, from ${file}`,
     key: `unforgiven:${file}:${module}:${section.part}`,
     palette: sectionPalette(module + 1, section.part),
     pixelIndex: (value) =>
@@ -81,7 +78,6 @@ function moraffsWorldWallTexture(floor: number): WallTexture {
   return {
     file: 'wall.pic',
     image: WALL_STONE,
-    caption: `Floor ${floor} walls, colour set ${set + 1} of ${MORAFFS_WORLD_WALL_SETS}`,
     key: `moraffsWorld:${set}`,
     palette: vgaToRgb(mwPalettes.palettes[set]),
     pixelIndex: (value) =>

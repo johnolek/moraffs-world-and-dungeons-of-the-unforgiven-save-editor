@@ -7,7 +7,6 @@
   import FloorCanvas from '../map/FloorCanvas.svelte';
   import { UNFORGIVEN_MAP } from '../map/game';
   import { FULL_FLOOR } from '../map/viewport';
-  import WallTexture from '../map/WallTexture.svelte';
   import MonsterDetail from '../bestiary/MonsterDetail.svelte';
   import { monsterGroups } from '../bestiary/monsters';
   import { expNeeded } from '../game/port/combat';
@@ -29,7 +28,6 @@
     mapDrawn,
     monstersDrawn,
     panelVisible,
-    sidePicturesVisible,
     zoomMapMonsters,
     type PlayMode,
   } from './mode';
@@ -279,9 +277,6 @@
 {/snippet}
 
 {#snippet sideFoot(stage: Stage)}
-  {#if sidePicturesVisible(stage.display)}
-    <WallTexture game={UNFORGIVEN_MAP.id} dungeon={stage.view.place.module} floor={stage.view.place.floor} />
-  {/if}
   {#if panelVisible(stage.mode)}
     <Panel
       game={stage.session.game}
