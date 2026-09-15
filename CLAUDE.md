@@ -2,6 +2,11 @@
 
 Workflow: work-on-main
 
+The global rule that John approves every new user-facing string before it ships
+does not apply here. Write a plain, literal draft of a label, heading, message or
+error and ship it with the change. John reads the copy in larger passes later and
+rewrites whatever he wants to.
+
 Tracker project: MORF (https://projects.johnoleksowicz.com/projects/MORF). Item
 work is prefixed `MORF-n:` with the item URL at the bottom of the commit message;
 the chunked feature loop applies: one approved chunk per commit series, then
