@@ -90,9 +90,11 @@ something the original does, a comment says so.
   **`PortraitFrame.svelte`** is the box that picture sits in, which Moraff's World shares; each
   game hands its own picture in as a snippet.
 * **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`, `HudMonsterBar.svelte`** —
-  what the map draws over itself: the monster being fought centred at the top, and along the foot
-  a bar of dark stone with a health orb and a spell orb standing in its ends and an experience bar
-  between them. None of it is a port of anything. The map is the site's own view of a game rather
+  what the map draws over itself: the monster being fought centred at the top, the spells the
+  character has running up the right edge, and along the foot a bar of dark stone with a health
+  orb and a spell orb standing in its ends and an experience bar between them. The spell list is
+  `panel.ts`'s own lines, the ones the panel beside the map already reads, so resting on a spell
+  shows the same word about it that the panel prints. None of it is a port of anything. The map is the site's own view of a game rather
   than a screen any game ever drew, so this is the site's own look; it takes no clicks and reads
   the games' numbers without writing any, so the game, the run log and a replay are the same with
   it and without it. `hud.ts` is the arithmetic: how full an
@@ -106,7 +108,8 @@ something the original does, a comment says so.
   takes a click: the map underneath is dragged and hovered through it. The bar measures itself and
   hands the map its height, which `FloorCanvas.svelte` takes as `coveredBottom`: the strip the bar
   hides is not canvas the character can be seen on, so a step towards the foot of the map moves
-  the map while they are still in the open rather than once they are behind the stone.
+  the map while they are still in the open rather than once they are behind the stone. The lists
+  are the one part of the display that takes the pointer back, since a tooltip needs it.
 
   Two more things go with the close-up. `HudMonsterBar.svelte` is a vertical vessel of the same
   glass down its left, filling to the hit points the monster was stocked with and draining on the
