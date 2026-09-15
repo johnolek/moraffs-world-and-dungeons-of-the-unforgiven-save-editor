@@ -221,7 +221,7 @@
     const playing = session;
     if (!playing || playing.over) return;
     done = [...done, { kind: 'spell', spell }];
-    await castFightSpell(playing, spell);
+    await castFightSpell(playing, spell, sent);
     view = playing.view();
   }
 
@@ -417,7 +417,9 @@
           </div>
           <p class="note">
             A button casts its spell through the game's own spell code. The copy is given the
-            spell in its book to cast it, and pays the spell points for it.
+            spell in its book to cast it. Before the monster is sent in the spell costs it no
+            spell points, the way one off a scroll or a wand would not; once the fight is on the
+            copy pays for every spell, and is refused one it cannot afford.
           </p>
           <p class="note">
             The game refuses a preparation spell with a monster already engaged, so cast those

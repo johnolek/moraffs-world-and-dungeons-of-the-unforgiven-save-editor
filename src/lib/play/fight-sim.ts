@@ -1,7 +1,7 @@
 import { levelDistribution } from '../bestiary/distribution';
 import type { Monster } from '../bestiary/monsters';
 import { rollHp } from '../bestiary/roll';
-import { SPELL_MENU_KEYS, SPELL_MENU_NAMES, spellIndex } from '../game/port/inventory';
+import { SPELL_MENU_KEYS, SPELL_MENU_NAMES, spellCost, spellIndex } from '../game/port/inventory';
 import { savePlayer } from '../game/port/record';
 import type { Rng } from '../game/port/rng';
 import { portedSpell } from '../game/port/spell-index';
@@ -386,9 +386,23 @@ export function castKeys(spell: FightSpell): number[] {
  * The copy is given the spell in its book first. The menu ignores the key for a spell the
  * character has none of and goes on waiting for another, so without that the button would leave
  * the spell table standing open.
+ *
+ * @param sent whether the monster has been sent in, which is what decides who pays for the
+ *   spell. Before it is, the spell's own cost is lent to the copy for the length of the cast and
+ *   put back afterwards, so the spell is never refused for want of points and the copy goes into
+ *   the fight with the points the form gave it -- which is what a spell cast off a scroll or a
+ *   wand would have cost it. Once the fight is on, the copy pays out of its own points and the
+ *   game refuses what it cannot afford.
  */
-export async function castFightSpell(session: GameSession, spell: FightSpell): Promise<void> {
-  session.game.pc.spellbook[spellIndex(spell.type, spell.level, spell.slot)] = 1;
+export async function castFightSpell(
+  session: GameSession,
+  spell: FightSpell,
+  sent: boolean,
+): Promise<void> {
+  const pc = session.game.pc;
+  pc.spellbook[spellIndex(spell.type, spell.level, spell.slot)] = 1;
+  const points = pc.sp;
+  if (!sent) pc.sp += spellCost(spell.level);
   // The last spell may have left a message box standing, and a box waits for a key of its own
   // before the loop asks for the next one. Escape is that key, and with no box waiting it is a
   // key movecontrol does nothing with, so it costs the character nothing either way.
@@ -398,6 +412,9 @@ export async function castFightSpell(session: GameSession, spell: FightSpell): P
     session.press(key);
     await settle();
   }
+  // Nothing else moves the spell points while no monster stands there: only a life drainer's
+  // blow does, and the spells themselves never touch them.
+  if (!sent) pc.sp = points;
 }
 
 /** Fill the copy's spell points up, so that a cast is not refused for want of them. */

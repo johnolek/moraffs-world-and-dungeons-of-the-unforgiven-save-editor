@@ -219,7 +219,7 @@ describe('a spell button', () => {
     const session = startFight(setup({ cls: SAGE, sp: 10, maxSp: 10 }), new SeededRng(7));
     // The second spell of the preparation list's first line is ENCHANT WEAPON LEVEL 1, which
     // set_temp_weapon_plus writes a 1 into.
-    await castFightSpell(session, spellAt(0, 0, 1));
+    await castFightSpell(session, spellAt(0, 0, 1), true);
     expect(session.game.pc.tempWeaponPlus).toBe(1);
     expect(session.game.pc.sp).toBe(9);
     session.finish();
@@ -229,7 +229,7 @@ describe('a spell button', () => {
     const session = startFight(setup({ cls: SAGE, sp: 10, maxSp: 10 }), new SeededRng(8));
     // The third spell of the wizard list's first line is MINOR PROTECTION, which is protection
     // level 1 for sixty moves.
-    await castFightSpell(session, spellAt(1, 0, 2));
+    await castFightSpell(session, spellAt(1, 0, 2), true);
     expect(session.game.pc.protection).toBe(1);
     // The spell leaves what it said standing, and the moment the cast costs is only spent once
     // that box has been given the key it waits for.
@@ -246,19 +246,59 @@ describe('a spell button', () => {
     const session = startFight(built, new SeededRng(9));
     const spell = spellAt(0, 0, 1);
     expect(built.character.spellbook[spellIndex(spell.type, spell.level, spell.slot)]).toBe(0);
-    await castFightSpell(session, spell);
+    await castFightSpell(session, spell, true);
     expect(session.game.pc.spellbook[spellIndex(spell.type, spell.level, spell.slot)]).toBe(1);
     session.finish();
   });
 
-  it('refuses the spell when there are no points for it, and casts it once they are filled', async () => {
+  it('refuses the spell once the monster is in and there are no points for it', async () => {
     const session = startFight(setup({ cls: SAGE, sp: 0, maxSp: 10 }), new SeededRng(10));
-    await castFightSpell(session, spellAt(0, 0, 1));
+    await castFightSpell(session, spellAt(0, 0, 1), true);
     expect(session.game.pc.tempWeaponPlus).toBe(0);
     fillSpellPoints(session);
-    await castFightSpell(session, spellAt(0, 0, 1));
+    await castFightSpell(session, spellAt(0, 0, 1), true);
     expect(session.game.pc.tempWeaponPlus).toBe(1);
     session.finish();
+  });
+
+  it('casts a spell there are no points for while the monster is still to come', async () => {
+    const session = startFight(setup({ cls: SAGE, sp: 0, maxSp: 10 }), new SeededRng(14));
+    // ENCHANT WEAPON LEVEL 1 costs a point, and the copy has none.
+    await castFightSpell(session, spellAt(0, 0, 1), false);
+    expect(session.game.pc.tempWeaponPlus).toBe(1);
+    expect(session.game.pc.sp).toBe(0);
+    session.finish();
+  });
+
+  it('leaves the spell points where the form left them, however many spells are cast', async () => {
+    const session = startFight(setup({ cls: SAGE, sp: 4, maxSp: 10 }), new SeededRng(15));
+    await castFightSpell(session, spellAt(0, 0, 1), false);
+    await castFightSpell(session, spellAt(0, 0, 0), false);
+    expect(session.game.pc.sp).toBe(4);
+    session.finish();
+  });
+
+  it('leaves them where they were when the game refuses the spell for the class', async () => {
+    // A Fighter is turned away before the list menu is even drawn, so nothing is cast and the
+    // points lent for the cast have to come back all the same.
+    const session = startFight(setup({ cls: 0, sp: 4, maxSp: 10 }), new SeededRng(16));
+    await castFightSpell(session, spellAt(0, 0, 1), false);
+    expect(session.game.pc.tempWeaponPlus).toBe(0);
+    expect(session.game.pc.sp).toBe(4);
+    session.finish();
+  });
+
+  it('is free again when "Again" casts the same spells into a fresh fight', async () => {
+    const built = setup({ cls: SAGE, sp: 1, maxSp: 10 });
+    const first = startFight(built, new SeededRng(17));
+    await castFightSpell(first, spellAt(0, 1, 0), false);
+    expect(first.game.pc.sp).toBe(1);
+    first.finish();
+    const replayed = startFight(built, new SeededRng(17));
+    await castFightSpell(replayed, spellAt(0, 1, 0), false);
+    expect(replayed.game.pc.sp).toBe(1);
+    expect(replayed.game.pc.prepStrength).toBe(first.game.pc.prepStrength);
+    replayed.finish();
   });
 });
 

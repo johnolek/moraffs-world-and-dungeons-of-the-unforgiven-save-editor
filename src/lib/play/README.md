@@ -631,7 +631,11 @@ Four things about it are decisions rather than arithmetic:
 * **A spell button presses the player's own keys** — C, the list's digit and the spell's letter —
   so the spell is cast_a_spell's and nothing here works out what a spell does. The copy is given
   the spell in its book first, since the menu ignores the key for a spell the character has none
-  of and goes on waiting for another.
+  of and goes on waiting for another. Before the monster is sent in the spell's cost is lent to
+  the copy for the length of the cast and put back afterwards, so setting a fight up costs no
+  spell points — the same spell off a scroll or a wand would have cost none either. Once the
+  fight is on the copy pays, and the game refuses what it cannot afford. The tab holds its screen
+  where it was for the three keys, so the list menu and the spell table do not flash past.
 
 The session carries no `RunRecorder`, so nothing fought here is written down as a run, and its
 `CharacterFile` writes nowhere: `died` does nothing, so a character killed in the simulator is
