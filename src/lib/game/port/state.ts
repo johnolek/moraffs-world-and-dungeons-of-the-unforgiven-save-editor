@@ -419,6 +419,13 @@ export type GameEvent =
   | { kind: 'dollarsChanged'; dollars: number; rubles: number }
   /** Hit points a battle spell took off the monster being fought. */
   | { kind: 'spellDamaged'; monster: MonsterSeen; damage: number }
+  /**
+   * gain_or_drain (exe 2000:8189) has moved one of the six characteristics, which a life
+   * drainer's blow and a puffball both do. `stat` is the game's own name for it, and `by` is 1
+   * for a raise and -1 for a drain, since every value the monster tables hold moves its
+   * characteristic by exactly one point.
+   */
+  | { kind: 'statChanged'; stat: string; by: number }
   /** One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
    *  where the kinds a run counts as actions carry their numbers. */
   | JournalEvent;

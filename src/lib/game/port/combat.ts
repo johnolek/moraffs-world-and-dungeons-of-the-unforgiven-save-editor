@@ -240,6 +240,7 @@ function puffball(game: Game, slot: number): number {
   const monster = game.monsters[slot];
   const amount = game.monsterKinds[monster.type].statDrain;
   const stat = gainOrDrain(game, amount);
+  if (stat !== '') game.events.push({ kind: 'statChanged', stat, by: Math.sign(amount) });
   // FUN_2000_28be (exe 2000:28be): the strip the line is about to go on.
   clearMessageLine(game);
   // DS:1387 / DS:139d, after the stat's own name
@@ -362,6 +363,7 @@ function drainsAndAilments(game: Game, slot: number): void {
     // FUN_2000_28be (exe 2000:28be): the strip the line is about to go on.
     clearMessageLine(game);
     const stat = gainOrDrain(game, kind.statDrain);
+    if (stat !== '') game.events.push({ kind: 'statChanged', stat, by: Math.sign(kind.statDrain) });
     // DS:1536 / DS:1549, after the stat's own name
     const line = stat + (kind.statDrain < 0 ? ' HAS BEEN DRAINED!' : ' HAS BEEN RAISED!');
     game.events.push({ kind: 'playerSaved' });

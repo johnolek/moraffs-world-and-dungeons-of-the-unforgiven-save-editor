@@ -87,7 +87,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `gain_level` | 2000:7d23 | `game/port/levels.ts` | `formulas/formulas.ts` |
 | `FUN_2000_7dec` | 2000:7dec | `game/port/sound.ts` |  |
 | `strike` | 2000:7e36 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/screens.ts`, `play/engine.ts`, `play/fight.ts`, `play/panel.ts`, `play/screens.ts`, `play/session.ts` |
-| `gain_or_drain` | 2000:8189 | `game/port/combat.ts` |  |
+| `gain_or_drain` | 2000:8189 | `game/port/combat.ts` | `game/port/state.ts` |
 | `FUN_2000_826d` | 2000:826d | `game/port/sound.ts` |  |
 | `defend` | 2000:82b7 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/screens.ts`, `game/port/state.ts`, `play/hits-you.ts`, `play/panel.ts` |
 | `FUN_2000_907b` | 2000:907b | `game/port/sound.ts` |  |
