@@ -580,6 +580,34 @@ export interface Game {
    */
   clock: (() => number) | null;
   /**
+   * DS:c609, the running total every `Random` call adds a reading of the clock to and seeds
+   * itself from (exe 2000:4170). It is a word in the original, so it wraps at 0x10000.
+   *
+   * `main` starts it at a roll scaled to 0..1999, off a generator seeded from the wall clock
+   * (exe 2000:63bd, the roll at 2000:63cc). Here the sitting's own seed stands in for that wall
+   * clock: a game given a clock takes its first roll off the generator it was handed and scales
+   * it the same way, which {@link newGame} does. That keeps a run reproducible from its log,
+   * because the log carries the seed.
+   *
+   * It moves only while the game has a clock. A game without one reseeds nothing and never
+   * looks at this.
+   */
+  randomTotal: number;
+  /**
+   * Random (exe 2000:4156, unf.c "Random"): a roll that reseeds the generator before it rolls.
+   *
+   * Every call of the original does three things: seeds the generator from {@link randomTotal}
+   * plus a reading of the clock (2000:4168), adds a second reading of the clock to the total
+   * (2000:4170), and returns `rand() * n / 0x8000` (2000:418c). The two readings are the same
+   * number here, because {@link clock} answers the same tick for everything one input does.
+   *
+   * The rolls the game writes inline go through `rng.random` instead and carry on from whatever
+   * seed was last set; section 8.4 of `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md` is which rolls are
+   * which. A game with no clock has nothing to reseed from, so this is a plain roll and the two
+   * are the same thing.
+   */
+  randomCall(n: number): number;
+  /**
    * solidcheck (exe 3000:86b5, unf.c "solidcheck"): whether the square is rock, meaning all
    * four of its sides are walls. `Dungeon.solid` in `src/lib/game/unfmap.js` is the same test.
    */
@@ -771,9 +799,10 @@ export function setMonsterMap(game: Game, x: number, y: number, value: number): 
 
 /**
  * The overrides {@link newGame} accepts: any field of a {@link Game} except `pc`, which it takes
- * field by field, and the three printing methods, which it always supplies itself.
+ * field by field, and the methods, which it always supplies itself.
  */
-export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say' | 'tablet' | 'draw' | 'eraseScreen'>> {
+export interface GameOverrides
+  extends Partial<Omit<Game, 'pc' | 'say' | 'tablet' | 'draw' | 'eraseScreen' | 'randomCall'>> {
   pc?: Partial<PlayerCharacter>;
 }
 
@@ -940,6 +969,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     menuBox: [],
     rng: new BorlandRng(1),
     clock: null,
+    randomTotal: 0,
     solid: () => false,
     retdwall: () => 3,
     markKnown: () => {},
@@ -991,6 +1021,16 @@ export function newGame(overrides: GameOverrides = {}): Game {
       }
       game.blackedOut = null;
     },
+    randomCall(n: number): number {
+      const clock = game.clock;
+      if (clock === null) return game.rng.random(n);
+      game.rng.reseed?.((game.randomTotal + clock()) & 0xffff);
+      game.randomTotal = (game.randomTotal + clock()) & 0xffff;
+      return game.rng.random(n);
+    },
   };
+  if (game.clock !== null && rest.randomTotal === undefined) {
+    game.randomTotal = game.rng.random(2000);
+  }
   return game;
 }

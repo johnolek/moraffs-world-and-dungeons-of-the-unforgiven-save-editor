@@ -54,7 +54,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_2000_3e73` | 2000:3e73 |  | `game/port/screens.ts`, `play/engine.ts`, `play/plaque.ts`, `play/timed.ts` |
 | `FUN_2000_4054` | 2000:4054 | `play/engine.ts` | `game/port/drops.ts`, `game/port/screens.ts`, `play/Screen.svelte`, `play/boxes.ts`, `play/dig.ts`, `play/plaque.ts` |
 | `FUN_2000_412a` | 2000:412a |  | `play/engine.ts`, `play/plaque.ts` |
-| `Random` | 2000:4156 |  | `game/port/combat.ts`, `game/port/rng.ts`, `play/floor.ts` |
+| `Random` | 2000:4156 |  | `game/port/combat.ts`, `game/port/rng.ts`, `game/port/state.ts`, `play/floor.ts` |
 | `compute_weight` | 2000:41ae | `game/port/magic.ts` | `play/gear.ts` |
 | `end_prep_spells` | 2000:4212 | `game/port/town.ts` | `play/panel.ts` |
 | `store_refund` | 2000:428d | `game/port/town.ts` | `formulas/formulas.ts` |
@@ -68,7 +68,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `select_player` | 2000:5c0d |  | `game/port/state.ts` |
 | `decode_quit_message` | 2000:5f78 |  | `play/quit.ts` |
 | `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/port/rules.ts`, `play/manual.ts` |
-| `main` | 2000:620f |  | `play/view3d/views.ts` |
+| `main` | 2000:620f |  | `game/port/state.ts`, `play/view3d/views.ts` |
 | `which_monster` | 2000:6573 |  | `play/floor.ts` |
 | `monster_at` | 2000:65b0 | `game/port/state.ts` |  |
 | `set_monster_map` | 2000:65dc | `game/port/state.ts` |  |

@@ -249,6 +249,9 @@ describe('strike on the clock', () => {
     const game = newGame({ rng, clock, pc: { lev: 1, str: 1, luck: 0, weapon: 0 } });
     setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
     engage(game, { level: 200 });
+    // A game given a clock draws one roll as it is built, to start the running total Random
+    // calls carry (`Game.randomTotal`). What this is after is the first roll of the swing.
+    asked.length = 0;
     strike(game);
     return asked[0];
   }
