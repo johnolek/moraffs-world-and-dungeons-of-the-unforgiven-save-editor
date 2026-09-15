@@ -133,7 +133,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_3000_00a8` | 3000:00a8 |  | `play/memory.ts`, `play/view3d/flood.ts` |
 | `FUN_3000_080f` | 3000:080f |  | `play/view3d/flood.ts` |
 | `FUN_3000_0837` | 3000:0837 |  | `play/memory.ts`, `play/view3d/flood.ts` |
-| `draw_3d_view` | 3000:0f75 |  | `play/Screen.svelte`, `play/engine.ts`, `play/memory.ts`, `play/view3d/flood.ts`, `play/view3d/geometry.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts` |
+| `draw_3d_view` | 3000:0f75 |  | `play/engine.ts`, `play/memory.ts`, `play/view-scene.ts`, `play/view3d/flood.ts`, `play/view3d/geometry.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts` |
 | `FUN_3000_27fc` | 3000:27fc | `play/view3d/geometry.ts` |  |
 | `FUN_3000_2822` | 3000:2822 | `play/view3d/geometry.ts` |  |
 | `draw_map_square` | 3000:2848 | `play/view3d/geometry.ts` | `game/dotu-pic.js`, `play/memory.ts`, `play/view3d/render.ts` |

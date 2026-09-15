@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { MapSquare } from '../map/game';
-  import { monsterById, type StockedMonster } from '../map/stocking';
+  import type { StockedMonster } from '../map/stocking';
   import type { Rgb } from '../game/dotu-pic.js';
   import { sectionInfo } from '../game/sections';
   import { sectionPalette, townPalette } from '../bestiary/pictures';
@@ -8,7 +8,6 @@
   import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
   import type { Point } from '../map/viewport';
-  import { SeededRng } from '../game/port/rng';
   import { ARROW_FLASH_MS, facingArrowCells } from '../map/you';
   import { debugMonsterLines } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
@@ -55,7 +54,8 @@
   import { buildingPictures, viewPictures } from './view3d/browser';
   import { framePainter } from './view3d/canvas';
   import { clearFrame, newFrame, type Frame } from './view3d/frame';
-  import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
+  import { renderFourViews } from './view3d/render';
+  import { dotuViewScene, killedMonster, viewMonsters } from './view-scene';
   import { drawDotuScreenText } from './view3d/text';
   import { viewLabels } from './view3d/views';
 
@@ -307,33 +307,8 @@
     ...(debug ? debugMonsterLines(game) : []),
   ]);
 
-  const viewMonster = (monster: { x: number; y: number; monsterId: string }): ViewMonster | null => {
-    const entry = monsterById(monster.monsterId);
-    if (!entry) return null;
-    return {
-      x: monster.x,
-      y: monster.y,
-      picnum: entry.picnum,
-      builtin: entry.origin.kind === 'builtin',
-      colour: entry.color,
-      colorSet: entry.colorSet,
-    };
-  };
-
-  const drawn = $derived.by((): ViewMonster[] =>
-    monsters.flatMap((monster) => {
-      const one = viewMonster(monster);
-      return one ? [one] : [];
-    }),
-  );
-
-  const skull = $derived.by((): KilledMonster | null => {
-    if (!killed) return null;
-    // The square it stood on is not read: the skull goes into the rectangle its picture was
-    // drawn in, which the direction alone names.
-    const one = viewMonster({ x: 0, y: 0, monsterId: killed.monsterId });
-    return one ? { dir: killed.dir, monster: one } : null;
-  });
+  const drawn = $derived(viewMonsters(monsters));
+  const skull = $derived(killedMonster(killed));
 
   /**
    * Everything the frame is drawn from that is plain data, as one string.
@@ -495,12 +470,6 @@
       paint();
       return;
     }
-    // The coin flip that mirrors the monster ahead (exe 3000:2323), drawn from the number of the
-    // drawing rather than from the game's own generator: a run has to replay exactly, and the tab
-    // redraws the screen far more often than the loop draws the views. Seeded here, so every
-    // redraw between two drawings gets the same four flips and the monster being fought stands
-    // the way round it was.
-    const flips = new SeededRng(viewsDrawn);
     // A building takes the display over: the views and the boxes around them were wiped on the way
     // in, and every message box the building prints fills its own background again (exe 2000:2820).
     if (buildingScreen) {
@@ -525,23 +494,16 @@
     drawZoomMapWithoutMarker(frame, floor);
     renderFourViews(
       frame,
-      {
+      dotuViewScene({
         rows,
-        at: { x: views.x, y: views.y },
-        floor: views.floor,
-        module: views.module,
-        moduleCarried: views.module,
-        pictures: viewPictures(section?.section ?? 1),
-        detail: 0,
-        screen: SCREEN_PIXELS,
-        videoClass: 2,
-        horizonWeight: height,
-        dir: views.dir,
+        from: views,
+        section: section?.section ?? null,
         monsters: drawn,
-        water: [4, 8, 20].includes(section?.section ?? 0),
         killed: skull,
-        random: () => flips.rand() / 0x8000,
-      },
+        viewsDrawn,
+        height,
+        screen: SCREEN_PIXELS,
+      }),
       views.dir,
     );
     // FUN_2000_9d17 draws the arrow after the four views.
