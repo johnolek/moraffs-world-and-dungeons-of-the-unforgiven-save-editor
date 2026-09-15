@@ -140,6 +140,40 @@ number.
 In the code: [prepStrength](source:ts/magic.ts/prepStrength) and
 [superStrength](source:ts/magic.ts/superStrength).
 
+### Drain yourself to level 0, then shop
+! LET THE DRAINER HAVE YOUR LEVELS!! THE SHOPKEEPER WILL LOVE YOU!
+
+The store prices culture stock and magic crystals off your character level and nothing else, so
+the cheapest customer in town is a level 0 one. Stand in front of a level drainer until it has
+taken everything you have — a drainer that takes one level at a time will not fire again once
+you are at 0 — and walk into the store. Stock is 3 rubles a unit and crystals are 3, or 5 on
+hard. Buy until the money runs out; the store caps neither count, and nothing in the game ever
+takes them off you again.
+
+Then get the levels back. The experience went down with them, because each drain writes it to
+exactly what the level below is worth, so you need to earn it again — and one kill deep in
+Module V is worth millions. Take the kill and go to bed. The inn charges for the room and eats
+the stock before it so much as looks at your experience, so the night costs a level 0 character
+ten rubles and no stock whatsoever, and only then does it hand back every level the experience
+covers. Each level restored fills your spell points to their new maximum, so you do not spend a
+crystal that night either. You wake up where you were, on top of a cellar bought at three rubles
+a unit.
+
+What to watch is the way down. Going down a level takes back a share of your maximum spell
+points worked out from your wisdom and IQ as they stand now, where going up gave you a share
+worked out from what they were then, so a statistic raised in between means the drain takes back
+more than the level ever handed over. And the drain does not stop neatly at 0: the guard only
+asks that your level is above 0 before it fires, and sections 18 to 20 stock drainers that take
+two levels, so a level 1 character hit by one of those comes out at level -1 with the level-down
+run twice. Nothing floors any of this at zero. A maximum spell point total can go negative, the
+current total is clamped down to follow it, and while it is negative every spell in your book
+costs more than you have. Scrolls and wands never check.
+
+In the code: [goDownLevel](source:ts/combat.ts/goDownLevel),
+[the price of a magic crystal](formula:crystal-price),
+[what a night at the inn costs](formula:inn-cost) and
+[when a level is actually granted](formula:level-for-exp).
+
 ## Combat
 
 ### A big swing rolls the damage die several times
@@ -397,10 +431,7 @@ the square x 20, y 101. Every corpse on the floor piles onto that one square.
 
 The game kills whatever you are facing the moment its hit points drop below one, so a can with
 none dies before you swing. It pays 18 experience every time, on every floor, and still rolls all
-seven drops. Two of them scale with the floor, the money and the "you find" item. The weapon and
-the armour do not scale with anything: the slot is emptied before the drops are rolled and both
-of those roll against the level of the monster in the slot, which is now zero, so every kill in
-the game rolls them at the odds of a level-0 monster.
+seven drops, at exactly the odds any other kill in the game is given.
 
 A puffball is the same thing without the fight: it does not hit, it moves one of your statistics
 up or down, and then it runs exactly this code on itself.
@@ -605,6 +636,29 @@ bought, and in the game that shipped they can only be found.
 
 In the code: [what drops when you kill something](formula:drop-odds).
 
+### Crystal and stock prices climb fast with your level
+! THE STORE CHARGES BY YOUR LEVEL!! AND IT CLIMBS FASTER THAN YOU DO!
+
+The store sells two things that are not objects. Culture stock is what stops a night at the inn
+ageing you, and magic crystals are what the inn burns, one crystal for one point, to give your
+spell points back. Neither has a price of its own. Both are priced off your character level and
+nothing else, and the sum is close to your level to the fourth power over three.
+
+At level 0 a unit of stock is 3 rubles and a crystal is 3, or 5 on "I can handle anything", where
+the crystal's sum is divided by two instead of three. At level 5 they are 20 and 28. At level 10,
+136 and 203. At level 20, 936 and 1,470. At level 45, 10,803 and 15,528 — five thousand times
+what the same crystal cost the same character before they earned a level, and 23,292 on hard.
+
+And you need more of both the further you go. A night at the inn eats your level squared in
+stock, so a level 45 character burns 2,025 units a night at 10,803 apiece: nearly twenty-two
+million rubles of stock for one night, before the room and before a single crystal. Helping needy
+children at the temple gives one per cent back each and stops at half the bill, and that is the
+whole of the relief on offer.
+
+In the code: [the price of culture stock](formula:stock-price),
+[the price of a magic crystal](formula:crystal-price) and
+[what a night at the inn does to you](formula:inn-night).
+
 ### Helping children is the only discount in town
 ! HELP THE CHILDREN AND THE MERCHANTS REMEMBER YOU KINDLY!
 
@@ -654,6 +708,28 @@ straight to the roll. Nothing in the game hands one out. The field sits in the s
 read, for ever, at zero.
 
 In the code: [strike](source:ts/combat.ts/strike) and [defend](source:ts/combat.ts/defend).
+
+### Every drop in the game is rolled against a level-0 monster
+! DIVE AS DEEP AS YOU LIKE!! THE LOOT NEVER GETS ANY BETTER!
+
+A kill rolls for a weapon and for a suit of armour, and both rolls read the level of the monster
+in the slot. `kill_monster` empties that slot first. It zeroes all six bytes of the record — the
+position, the hit points, the type and the level — and calls the two drops afterwards, so the
+level both of them read is 0, every time, for every kill in the game.
+
+The roll picks one of the seven weapons past the fist and draws against a hundred times its rank,
+keeping it if the draw comes in under the monster's level plus ten. Against the 0 the slot really
+holds that is 11 chances in 100 for a Stick and 11 in 700 for a Great Sword, which works out at
+about one kill in 445 for the sword and one in 330 for a suit of Titanium. Against a level 100
+monster they would have been one in 45 and one in 33. Those two are exactly the things the shops
+carry a price for and never stock, so a drop is the only way to own either, and the drop is no
+likelier on floor 99 than it is on floor 1.
+
+Two of the seven rolls a kill makes do read the floor, the money and the "you find" item, which
+is why loot feels as though it scales at all. The weapon and the armour never did.
+
+In the code: [kill_monster](source:c/kill_monster), [drop_weapon](source:c/drop_weapon) and
+[what drops when you kill something](formula:drop-odds).
 
 ### The monster cache forgets which dungeon you are in
 ! THE MONSTERS FOLLOW YOU BETWEEN MODULES! WE CALL IT ATMOSPHERE!
