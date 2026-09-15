@@ -21,6 +21,7 @@ import {
   spendAttackTime,
   strike,
 } from './combat';
+import type { Rng } from './rng';
 import { BorlandRng } from './rng';
 import {
   BATTLE_BANNER_Y,
@@ -219,6 +220,55 @@ describe('strike', () => {
     };
     expect(onlyRow(level + 8)).toBeGreaterThan(0);
     expect(onlyRow(level + 7)).toBe(0);
+  });
+});
+
+describe('strike on the clock', () => {
+  /**
+   * Borland's generator worked out by hand: srand (exe 1000:18a5) puts the low sixteen bits of
+   * the seed in the state, rand (exe 1000:18b6) advances it by `state * 0x015A4E35 + 1` and
+   * hands back `(state >> 16) & 0x7fff`, and a roll is that scaled by `n / 0x8000`.
+   */
+  function byHand(tick: number, n: number): number {
+    const state = (Math.imul(tick & 0xffff, 0x015a4e35) + 1) >>> 0;
+    return Math.trunc((((state >>> 16) & 0x7fff) * n) / 0x8000);
+  }
+
+  /** The to-hit roll of one swing, which is the first roll strike asks its generator for. */
+  function toHitRoll(clock: (() => number) | null): number {
+    const borland = new BorlandRng(12345);
+    const asked: number[] = [];
+    const rng: Rng = {
+      random: (n) => {
+        const roll = borland.random(n);
+        asked.push(roll);
+        return roll;
+      },
+      reseed: (seed) => borland.reseed(seed),
+    };
+    const game = newGame({ rng, clock, pc: { lev: 1, str: 1, luck: 0, weapon: 0 } });
+    setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+    engage(game, { level: 200 });
+    strike(game);
+    return asked[0];
+  }
+
+  it('takes its to-hit roll from the tick the clock reads', () => {
+    expect(toHitRoll(() => 1234)).toBe(byHand(1234, 80));
+    expect(toHitRoll(() => 40000)).toBe(byHand(40000, 80));
+  });
+
+  it('walks the roll up from 0 to 79 and starts again every 95 ticks', () => {
+    const rolls = Array.from({ length: 200 }, (_, tick) => toHitRoll(() => tick));
+    expect(rolls.slice(0, 10)).toEqual([0, 0, 1, 2, 3, 4, 5, 5, 6, 7]);
+    expect((rolls[94] - rolls[0]) / 94).toBeCloseTo(0.84, 2);
+    expect(rolls[94]).toBe(79);
+    expect(rolls[95]).toBe(0);
+    expect(rolls.filter((roll, at) => at > 0 && roll < rolls[at - 1])).toHaveLength(2);
+  });
+
+  it('reseeds nothing without a clock, so the roll is the next number the generator had', () => {
+    expect(toHitRoll(null)).toBe(new BorlandRng(12345).random(80));
   });
 });
 

@@ -49,3 +49,45 @@ describe('SeededRng', () => {
     );
   });
 });
+
+/**
+ * Borland's generator worked out by hand: srand (exe 1000:18a5) puts the low sixteen bits of the
+ * seed in the state, rand (exe 1000:18b6) advances it by `state * 0x015A4E35 + 1` and hands back
+ * `(state >> 16) & 0x7fff`, and a roll is that scaled by `n / 0x8000`.
+ */
+function byHand(seed: number, n: number): number {
+  const state = (Math.imul(seed & 0xffff, 0x015a4e35) + 1) >>> 0;
+  return Math.trunc((((state >>> 16) & 0x7fff) * n) / 0x8000);
+}
+
+describe('BorlandRng', () => {
+  it('rolls what the generator rolls, worked out by hand', () => {
+    expect(new BorlandRng(1).random(80)).toBe(byHand(1, 80));
+    expect(new BorlandRng(4321).random(1000)).toBe(byHand(4321, 1000));
+  });
+
+  it('starts again from the seed it is reseeded with', () => {
+    const generator = new BorlandRng(1);
+    for (let roll = 0; roll < 10; roll++) void generator.random(100);
+    generator.reseed(4321);
+    expect(generator.random(1000)).toBe(byHand(4321, 1000));
+  });
+
+  it('keeps only the sixteen bits srand keeps', () => {
+    const wide = new BorlandRng(1);
+    wide.reseed(0x10000 + 4321);
+    expect(wide.random(1000)).toBe(byHand(4321, 1000));
+  });
+
+  it('answers consecutive seeds with numbers that climb, which is the sawtooth', () => {
+    const rolls = Array.from({ length: 200 }, (_, tick) => {
+      const generator = new BorlandRng(0);
+      generator.reseed(tick);
+      return generator.random(80);
+    });
+    expect(rolls.slice(0, 10)).toEqual([0, 0, 1, 2, 3, 4, 5, 5, 6, 7]);
+    expect(rolls[94]).toBe(79);
+    expect(rolls[95]).toBe(0);
+    expect(rolls.filter((roll, at) => at > 0 && roll < rolls[at - 1])).toHaveLength(2);
+  });
+});
