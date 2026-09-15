@@ -21,9 +21,20 @@
     /** The palette the lines' colour numbers are entries of, for a game other than Dungeons of
      *  the Unforgiven. */
     colours?: string[];
+    /** A margin to leave blank all round the window, in the screen's own units, for a panel whose
+     *  border would otherwise sit against the letters. */
+    pad?: number;
   }
 
-  let { lines, window: shown = WHOLE_SCREEN, colours = SCREEN_COLOURS }: Props = $props();
+  let { lines, window: shown = WHOLE_SCREEN, colours = SCREEN_COLOURS, pad = 0 }: Props = $props();
+
+  /** The part of the screen the box really shows: what was asked for, grown by the margin. */
+  const framed = $derived({
+    x: shown.x - pad,
+    y: shown.y - pad,
+    width: shown.width + 2 * pad,
+    height: shown.height + 2 * pad,
+  });
 
   let width = $state(0);
   const spans = $derived(screenSpans(lines, colours));
@@ -33,12 +44,12 @@
 <div
   class="screen"
   bind:clientWidth={width}
-  style:--u="{width / shown.width}px"
-  style:aspect-ratio="{shown.width} / {shown.height}">
+  style:--u="{width / framed.width}px"
+  style:aspect-ratio="{framed.width} / {framed.height}">
   {#each spans as span}
     <span
-      style:left="calc({span.x - shown.x} * var(--u))"
-      style:top="calc({span.y - shown.y} * var(--u))"
+      style:left="calc({span.x - framed.x} * var(--u))"
+      style:top="calc({span.y - framed.y} * var(--u))"
       style:font-size="calc({span.size} * var(--u))"
       style:letter-spacing="calc({span.spacing} * var(--u))"
       style:color={span.colour}>{span.text}</span>

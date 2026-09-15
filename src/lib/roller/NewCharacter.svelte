@@ -139,6 +139,10 @@
   type Session = RollerSession<Game, RollerView> | RollerSession<MwGame, MwRollerView> | RollerSession<RevGame, RevRollerView>;
   type View = RollerView | MwRollerView | RevRollerView;
 
+  /** How much blank screen the roller leaves around the game's own picture, in the screen's own
+   *  units of which it is 1600 across, so the first letters are not against the border. */
+  const SCREEN_PAD = 24;
+
   let session = $state.raw<Session | null>(null);
   let view = $state.raw<View | null>(null);
   let typed = $state('');
@@ -381,7 +385,7 @@
           <RevScreen lines={revShowing} width={view.width ?? 80} />
         {/if}
       {:else}
-        <GameScreen lines={showing} colours={chosen.display.colours} />
+        <GameScreen lines={showing} colours={chosen.display.colours} pad={SCREEN_PAD} />
       {/if}
 
       {#if view.question === 'continue'}
