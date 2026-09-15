@@ -87,6 +87,13 @@
   let built = $state.raw<FightMonster | null>(null);
   /** Whether the last attempt to send the monster in found rock in front of the character. */
   let blocked = $state(false);
+  /**
+   * Whether a spell button is in the middle of its keys, which holds the screen where it was.
+   *
+   * A cast is three keys with the loop let run between them, so without this the tab would draw
+   * the list menu and the spell table on the way past and the player would watch them flash by.
+   */
+  let casting = false;
 
   const entry = $derived(monsterById(monsterId));
   const modules = $derived(allowedModules(entry));
@@ -188,7 +195,9 @@
       { record, character: $state.snapshot(copy) as PlayerCharacter, monster },
       new SeededRng((Math.random() * 0x100000000) >>> 0),
     );
-    started.onChange = () => (view = started.view());
+    started.onChange = () => {
+      if (!casting) view = started.view();
+    };
     session = started;
     view = started.view();
   }
@@ -221,8 +230,13 @@
     const playing = session;
     if (!playing || playing.over) return;
     done = [...done, { kind: 'spell', spell }];
-    await castFightSpell(playing, spell, sent);
-    view = playing.view();
+    casting = true;
+    try {
+      await castFightSpell(playing, spell, sent);
+    } finally {
+      casting = false;
+      view = playing.view();
+    }
   }
 
   function fill() {
