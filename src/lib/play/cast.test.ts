@@ -92,11 +92,14 @@ const DESCEND = spellIndex(1, 3, 2);
 const SPELL_B = 0x62;
 const SPELL_C = 0x63;
 const SPELL_L = 0x6c;
+const SPELL_R = 0x72;
 const SPELL_T = 0x74;
 
 /** ENCHANT WEAPON LEVEL 1 and WRITE SCROLL TO LEVEL 3, the first line of the permanent list. */
 const ENCHANT_WEAPON = spellIndex(0, 0, 0);
 const WRITE_SCROLL = spellIndex(0, 0, 2);
+/** ENCHANT WAND LEVEL 8, the sixth line's third slot of the permanent list. */
+const ENCHANT_WAND = spellIndex(0, 5, 2);
 
 /** The lines of every screen the game has drawn, for asking what is on it. */
 /** Everything the tab draws in the game's own font: the message box, and any screen the game has
@@ -435,6 +438,30 @@ describe('the menus a spell puts up of its own', () => {
     await press(session, 0x32);
     expect(session.game.pc.scrolls[spellIndex(1, 1, 1)]).toBe(1);
     expect(session.box).toContain('THE SCROLL HAS BEEN');
+    const facing = session.view().place.dir;
+    await press(session, KEY.enter);
+    await press(session, KEY.homeTurnLeft);
+    expect(session.view().place.dir).not.toBe(facing);
+  });
+
+  it('takes one key off the Enchant Wand box and then an ordinary command', async () => {
+    const session = playing(wizard([ENCHANT_WAND]));
+    await press(session, KEY.cast, 0x31, SPELL_R);
+    expect(screenText(session)).toContain('PLEASE SELECT A TYPE OF SPELL:');
+    await press(session, 0x31);
+    expect(screenText(session)).toContain('MAXIMUM LEVEL: 8');
+    await press(session, 0x32, 0x32);
+    expect(session.game.pc.wands[spellIndex(1, 1, 1)]).toBe(5);
+    expect(session.box).toContain('YOU NOW HOLD A GLOWING,');
+    const facing = session.view().place.dir;
+    await press(session, KEY.enter);
+    expect(session.box).not.toContain('YOU NOW HOLD A GLOWING,');
+    // A permanent spell out of the book costs its level twice over, and the status block is
+    // drawn again on the pass the box's key hands back to.
+    expect(session.view().sp).toBe(14);
+    expect(session.view().maxSp).toBe(14);
+    await press(session, KEY.homeTurnLeft);
+    expect(session.view().place.dir).not.toBe(facing);
   });
 
   it('goes back a menu from the level menu and from the slot menu', async () => {
