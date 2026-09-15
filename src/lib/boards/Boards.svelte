@@ -19,6 +19,7 @@
   import { app, type Leaderboard } from '../app-state.svelte';
   import { leaderboardLabel } from '../character/leaderboard';
   import SectionHeading from '../ui/SectionHeading.svelte';
+  import Segmented from '../ui/Segmented.svelte';
   import Announcements from './Announcements.svelte';
   import Everyone from './Everyone.svelte';
   import RunPage from './RunPage.svelte';
@@ -46,13 +47,19 @@
    *  boards. */
   type Picked = 'everyone' | BoardName | (typeof LIVING_BOARDS)[number]['name'];
 
-  /** The picker's choices, each with the words that name it. Everyone comes first and is what the
-   *  tab opens on; the rest are the boards, whose words are the server's. */
-  const PICKS: { name: Picked; sorts: string }[] = [
+  /** The picker's choices, in the shape the segmented control takes. Everyone comes first and is
+   *  what the tab opens on; the rest are the boards, whose words are the server's. */
+  const PICKS: { id: Picked; label: string }[] = [
     { name: 'everyone', sorts: EVERYONE.pick },
     ...BOARDS,
     ...LIVING_BOARDS,
-  ];
+  ].map(({ name, sorts }) => ({ id: name as Picked, label: sorts }));
+
+  /** The two leaderboards as the picker offers them. */
+  const LEADERBOARD_CHOICES: { id: Leaderboard; label: string }[] = BOARD_LEADERBOARDS.map((name) => ({
+    id: name,
+    label: leaderboardLabel(name),
+  }));
 
   let leaderboard = $state<Leaderboard>('faithful');
   let picked = $state<Picked>('everyone');
@@ -121,24 +128,18 @@
       <SectionHeading title={BOARDS_PAGE.heading} />
       <div class="picks">
         {#if picked !== 'everyone'}
-          <div class="pick" role="group" aria-label={BOARDS_PAGE.leaderboard}>
+          <div class="pick">
             <span class="label">{BOARDS_PAGE.leaderboard}</span>
-            {#each BOARD_LEADERBOARDS as choice}
-              <label>
-                <input type="radio" value={choice} bind:group={leaderboard} />
-                <span>{leaderboardLabel(choice)}</span>
-              </label>
-            {/each}
+            <Segmented
+              label={BOARDS_PAGE.leaderboard}
+              choices={LEADERBOARD_CHOICES}
+              value={leaderboard}
+              onpick={(id) => (leaderboard = id)} />
           </div>
         {/if}
-        <div class="pick" role="group" aria-label={BOARDS_PAGE.board}>
+        <div class="pick">
           <span class="label">{BOARDS_PAGE.board}</span>
-          {#each PICKS as choice}
-            <label>
-              <input type="radio" value={choice.name} bind:group={picked} />
-              <span>{choice.sorts}</span>
-            </label>
-          {/each}
+          <Segmented label={BOARDS_PAGE.board} choices={PICKS} value={picked} onpick={(id) => (picked = id)} />
         </div>
       </div>
       {#if picked === 'everyone'}
@@ -266,13 +267,6 @@
   .label {
     color: var(--muted);
     font-size: 12px;
-  }
-  .pick label {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    cursor: pointer;
   }
   table {
     border-collapse: collapse;
