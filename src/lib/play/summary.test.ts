@@ -151,21 +151,54 @@ describe('what a run came to', () => {
       { actions: 7, time: 7 },
     );
     expect(summary.monsters).toEqual([
-      { name: 'GHOUL', fights: 1, swings: 2, hits: 1, damageDealt: 31, damageTaken: 16, blows: 1, kills: 1 },
-      { name: 'ORC', fights: 1, swings: 0, hits: 0, damageDealt: 0, damageTaken: 0, blows: 0, kills: 0 },
+      { name: 'GHOUL', fights: 1, passed: 0, swings: 2, hits: 1, damageDealt: 31, damageTaken: 16, blows: 1, kills: 1 },
+      { name: 'ORC', fights: 0, passed: 1, swings: 0, hits: 0, damageDealt: 0, damageTaken: 0, blows: 0, kills: 0 },
     ]);
     expect(summaryLines(summary, NAMES)).toContain(
       'Fought 1 GHOUL: swung 2 times and hit for 31, took 16 from them, killed 1',
     );
   });
 
+  it('counts a monster met and left without a blow as met rather than fought', () => {
+    const summary = summarizeJournal(
+      [
+        wrote({ kind: 'met', monster: GHOUL, slot: 3 }),
+        wrote({ kind: 'met', monster: ORC, slot: 7 }),
+        wrote({ kind: 'met', monster: GHOUL, slot: 3 }),
+        wrote({ kind: 'swung', weapon: 'LONG SWORD', monster: GHOUL, damage: 0 }),
+      ],
+      { actions: 4, time: 4 },
+    );
+    expect(summary.monsters).toMatchObject([
+      { name: 'GHOUL', fights: 1, passed: 1 },
+      { name: 'ORC', fights: 0, passed: 1 },
+    ]);
+    const lines = summaryLines(summary, NAMES);
+    expect(lines).toContain('Met 1 GHOUL and never traded a blow');
+    expect(lines).toContain('Met 1 ORC and never traded a blow');
+    expect(lines.some((line) => line.startsWith('Fought 1 ORC'))).toBe(false);
+  });
+
+  it('counts a fight for a monster that only landed a blow of its own', () => {
+    const summary = summarizeJournal(
+      [
+        wrote({ kind: 'met', monster: GHOUL, slot: 3 }),
+        wrote({ kind: 'hit', monster: GHOUL, damage: 16, breath: null }),
+      ],
+      { actions: 2, time: 2 },
+    );
+    expect(summary.monsters).toMatchObject([{ name: 'GHOUL', fights: 1, passed: 0 }]);
+  });
+
   it('counts one fight for a monster walked away from and come back to', () => {
     const summary = summarizeJournal(
       [
         wrote({ kind: 'met', monster: GHOUL, slot: 3 }),
+        wrote({ kind: 'swung', weapon: 'LONG SWORD', monster: GHOUL, damage: 4 }),
         wrote({ kind: 'met', monster: GHOUL, slot: 3 }),
+        wrote({ kind: 'swung', weapon: 'LONG SWORD', monster: GHOUL, damage: 4 }),
       ],
-      { actions: 2, time: 2 },
+      { actions: 4, time: 4 },
     );
     expect(summary.monsters[0].fights).toBe(1);
   });
@@ -174,10 +207,12 @@ describe('what a run came to', () => {
     const summary = summarizeJournal(
       [
         wrote({ kind: 'met', monster: GHOUL, slot: 3 }),
+        wrote({ kind: 'swung', weapon: 'LONG SWORD', monster: GHOUL, damage: 4 }),
         wrote({ kind: 'met', monster: ORC, slot: 7 }),
         wrote({ kind: 'met', monster: GHOUL, slot: 3 }),
+        wrote({ kind: 'swung', weapon: 'LONG SWORD', monster: GHOUL, damage: 4 }),
       ],
-      { actions: 3, time: 3 },
+      { actions: 5, time: 5 },
     );
     expect(summary.monsters[0].fights).toBe(2);
   });

@@ -17,8 +17,10 @@ import { spellMenuName } from './journal';
 export interface MonsterAccount {
   /** The name every battle message calls it. */
   name: string;
-  /** How many of them the character came face to face with. */
+  /** How many of them the character traded a blow with: swung at, was hit by, or killed. */
   fights: number;
+  /** How many of them the character came face to face with and left without a blow either way. */
+  passed: number;
   /** Swings taken at them, and how many of those landed. */
   swings: number;
   hits: number;
@@ -125,9 +127,7 @@ export function summarizeJournal(
     monsters: [],
     deaths: 0,
   };
-  // Which monster the character was last seen facing. Walking away from one and back to it is
-  // the fight they were already in; turning to another and back is a fight of its own.
-  const fight = { facing: -1 };
+  const fight: Facing = { slot: -1, monster: null, traded: false };
   for (const entry of entries) {
     summary.deepestFloor = Math.max(summary.deepestFloor, entry.floor);
     summary.furthestDungeon = Math.max(summary.furthestDungeon, entry.module);
@@ -136,16 +136,40 @@ export function summarizeJournal(
   return summary;
 }
 
+/**
+ * The monster the character was last seen facing.
+ *
+ * Walking away from one and back to it is the meeting they were already in; turning to another
+ * and back is a meeting of its own. A meeting starts counted as passed and becomes a fight on the
+ * first blow either way, so a meeting nothing came of needs no tidying up at the end of the run.
+ */
+interface Facing {
+  slot: number;
+  monster: MonsterAccount | null;
+  traded: boolean;
+}
+
+/** A blow traded with the monster being faced turns that meeting into a fight. */
+function traded(fight: Facing, monster: MonsterSeen): void {
+  if (fight.traded || fight.monster === null || fight.monster.name !== monster.name) return;
+  fight.traded = true;
+  fight.monster.passed -= 1;
+  fight.monster.fights += 1;
+}
+
 /** One event added to the totals. `fight` carries the monster the character was last facing. */
-function fold(summary: RunSummary, event: JournalEvent, fight: { facing: number }): void {
+function fold(summary: RunSummary, event: JournalEvent, fight: Facing): void {
   switch (event.kind) {
     case 'stepped':
       summary.steps += 1;
       return;
     case 'met': {
-      const fresh = fight.facing !== event.slot;
-      fight.facing = event.slot;
-      if (fresh) account(summary, event.monster).fights += 1;
+      if (fight.slot === event.slot) return;
+      const monster = account(summary, event.monster);
+      monster.passed += 1;
+      fight.slot = event.slot;
+      fight.monster = monster;
+      fight.traded = false;
       return;
     }
     case 'swung': {
@@ -153,17 +177,20 @@ function fold(summary: RunSummary, event: JournalEvent, fight: { facing: number 
       monster.swings += 1;
       if (event.damage > 0) monster.hits += 1;
       monster.damageDealt += event.damage;
+      traded(fight, event.monster);
       return;
     }
     case 'hit': {
       const monster = account(summary, event.monster);
       if (event.damage > 0) monster.blows += 1;
       monster.damageTaken += event.damage;
+      traded(fight, event.monster);
       return;
     }
     case 'killed':
       account(summary, event.monster).kills += 1;
       summary.experience += event.experience;
+      traded(fight, event.monster);
       return;
     case 'experienceDrained':
       summary.experienceLost += event.experience;
@@ -183,6 +210,7 @@ function fold(summary: RunSummary, event: JournalEvent, fight: { facing: number 
     case 'breathed':
       summary.breaths += 1;
       summary.breathDamage += event.damage;
+      traded(fight, event.monster);
       return;
     case 'fountainDrunk':
       summary.fountains += 1;
@@ -222,6 +250,7 @@ function account(summary: RunSummary, monster: MonsterSeen): MonsterAccount {
   const fresh: MonsterAccount = {
     name: monster.name,
     fights: 0,
+    passed: 0,
     swings: 0,
     hits: 0,
     damageDealt: 0,
@@ -315,7 +344,7 @@ export function summaryLines(summary: RunSummary, names: SummaryNames): string[]
   if (summary.fountains > 0) {
     lines.push(`Drank from the fountain of youth ${count(summary.fountains, 'time')}`);
   }
-  for (const monster of summary.monsters) lines.push(monsterWords(monster));
+  for (const monster of summary.monsters) lines.push(...monsterWords(monster));
   if (summary.deaths > 0) lines.push(`Died ${count(summary.deaths, 'time')}`);
   return lines;
 }
@@ -327,9 +356,16 @@ function usedWords(used: UsedCount): string {
   return `Used the ${used.name} ${count(used.count, 'time')}`;
 }
 
-function monsterWords(monster: MonsterAccount): string {
-  return (
-    `Fought ${monster.fights} ${monster.name}: swung ${count(monster.swings, 'time')} and hit ` +
-    `for ${monster.damageDealt}, took ${monster.damageTaken} from them, killed ${monster.kills}`
-  );
+function monsterWords(monster: MonsterAccount): string[] {
+  const lines: string[] = [];
+  if (monster.fights > 0) {
+    lines.push(
+      `Fought ${monster.fights} ${monster.name}: swung ${count(monster.swings, 'time')} and hit ` +
+        `for ${monster.damageDealt}, took ${monster.damageTaken} from them, killed ${monster.kills}`,
+    );
+  }
+  if (monster.passed > 0) {
+    lines.push(`Met ${monster.passed} ${monster.name} and never traded a blow`);
+  }
+  return lines;
 }
