@@ -15,7 +15,7 @@ import type { Leaderboard } from '../app-state.svelte';
 
 /** What a run has to say about itself for the rule below to be applied to it. */
 export interface RunSoFar {
-  /** The board the character was rolled for, and null for one played for its own sake. */
+  /** The board the character's runs go on, and null for one whose runs go on no board. */
   leaderboard: Leaderboard | null;
   /** The mode the newest sitting of the run was played in, and null for a run with no sitting
    *  yet. */

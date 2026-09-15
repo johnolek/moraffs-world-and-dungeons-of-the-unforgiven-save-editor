@@ -53,13 +53,25 @@ export const FREE_PLAY_OFF_A_BOARD =
   'A leaderboard compares runs played the same way, so a leaderboard character is faithful or speedrun.';
 
 /**
- * What the Play tab says where the mode radios would be for a character rolled for a board.
+ * What the Play tab says where the mode radios would be for a character locked to a mode.
  *
- * There are no radios for such a character: the mode is the board's, and showing a control that
- * cannot be moved would be showing a choice that is not there.
+ * There are no radios for such a character: the mode is the one it was rolled as, and showing a
+ * control that cannot be moved would be showing a choice that is not there. A character on a board
+ * is told that its board is why, since that is the thing it can lose.
  */
-export function lockedPlayNote(board: Leaderboard): string {
-  return `Locked: this character was rolled for the ${board} leaderboard, so every run of it is played this way.`;
+export function lockedPlayNote(lock: Leaderboard, onBoard: boolean): string {
+  return onBoard
+    ? `Locked: this character was rolled for the ${lock} leaderboard, so every run of it is played this way.`
+    : `Locked: this character was rolled as a ${lock} character, so every run of it is played this way. Its runs go on no leaderboard.`;
+}
+
+/**
+ * What the roster's column says a character is: the board its runs go on, the mode it is locked
+ * to, or neither.
+ */
+export function characterTypeWords(leaderboard: Leaderboard | null, lock: Leaderboard | null): string {
+  if (leaderboard !== null) return `${leaderboardLabel(leaderboard)} board`;
+  return lock === null ? 'Free play' : leaderboardLabel(lock);
 }
 
 /**

@@ -112,11 +112,14 @@
      that game is read once rather than followed. */
   let chosenMode = $state<PlayMode>(untrack(() => readPlayMode(game.id)));
   /**
-   * The board the character being played was rolled for, taken as play begins and put down when
-   * the game is left. It is taken once rather than read from the roster as the game runs, so that
+   * The mode the character being played is locked to, taken as play begins and put down when the
+   * game is left. It is taken once rather than read from the roster as the game runs, so that
    * picking another character elsewhere on the site cannot change the mode of a game in progress.
    */
   let lock = $state.raw<Leaderboard | null>(null);
+  /** Whether that character's runs go on the leaderboard of its mode, which is what the note
+   *  beside the lock says it would lose. */
+  let lockedToABoard = $state.raw(false);
   /** The mode this game is being played in: the board's for a locked character, and the one the
    *  radios were left on for any other. */
   const mode = $derived<PlayMode>(lock ?? chosenMode);
@@ -204,7 +207,8 @@
     centredFloor = null;
     session = started;
     playingId = entry.id;
-    lock = entry.leaderboard;
+    lock = entry.lock;
+    lockedToABoard = entry.leaderboard !== null;
     view = started.view();
     runMark = null;
     if (started.run) {
@@ -276,6 +280,7 @@
     session = null;
     playingId = null;
     lock = null;
+    lockedToABoard = false;
     view = null;
   }
 
@@ -494,7 +499,7 @@
           {#if lock}
             <div class="locked">
               <span>{leaderboardLabel(lock)}</span>
-              <span class="how">{lockedPlayNote(lock)}</span>
+              <span class="how">{lockedPlayNote(lock, lockedToABoard)}</span>
             </div>
           {:else}
             <div class="styles">
