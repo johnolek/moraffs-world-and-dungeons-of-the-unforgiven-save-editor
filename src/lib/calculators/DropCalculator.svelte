@@ -5,7 +5,6 @@
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import { percent } from '../ui/format';
-  import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { changedFields, currentCharacter } from './character';
@@ -16,8 +15,6 @@
 
   const FIGHTER = 0;
   const MONK = 2;
-  /** Levels rarer than this are left off the chart; the level nudge has a very long tail. */
-  const RARE_LEVEL = 0.0005;
 
   let module = $state(0);
   let floor = $state(1);
@@ -25,7 +22,6 @@
   let ownedWeapons = $state<number[]>([]);
 
   const tables = $derived(dropTables({ module, floor, cls, ownedWeapons }));
-  const levels = $derived(tables.levels.filter(([, chance]) => chance >= RARE_LEVEL));
   /** The character's own values, or null when no Dungeons of the Unforgiven character is current. */
   function theirs() {
     const record = currentCharacter();
@@ -77,13 +73,10 @@
     <div class="fields">
       <FloorPicker bind:module bind:floor changedModule={differs.module} changedFloor={differs.floor} />
     </div>
-    <BarChart
-      labels={levels.map(([level]) => String(level))}
-      values={levels.map(([, chance]) => chance * 100)}
-      tooltip={(index) => `Level ${levels[index][0]}: ${percent(levels[index][1])}`}
-      xLabel="Level the floor stocks monsters at"
-    />
-    <p class="note">Only the weapon and armor rolls read the monster's level; everything else reads the floor.</p>
+    <p class="note">
+      kill_monster wipes the killed monster's record before it rolls for a weapon or for armor, so every roll on this page reads the
+      floor you are standing on and nothing about the monster you killed.
+    </p>
   </section>
 
   <section>

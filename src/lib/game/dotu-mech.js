@@ -105,12 +105,16 @@ export function levelGain(cls, con, luck, wis, iq) {
 }
 
 // ---------------------------------------------------------------- loot ([LOOT])
-/** Per-kill drop probabilities.  ml = monster level, depth = floor, cls = class id. */
-export function dropOdds(depth, ml, cls) {
+/** Per-kill drop probabilities.  depth = floor, cls = class id. */
+export function dropOdds(depth, cls) {
   const monk = cls === 2, fighter = cls === 0, sage = cls === 5;
   const weapons = {}, armors = {};
   const WN = ["Stick", "Club", "Mace", "Knife", "Short Sword", "Long Sword", "Great Sword"];
   const AN = ["Leather", "Chain", "Scale", "Breast Plate", "Field Plate", "Titanium"];
+  // kill_monster empties the killed monster's record before it calls drop_weapon and drop_armor,
+  // and both of those read the monster's level out of that record, so every kill in the game
+  // rolls for a weapon and for armor against a level of zero.
+  const ml = 0;
   WN.forEach((n, i) => weapons[n] = monk ? 0 : (1 / 7) * Math.min(1, (ml + 11) / (100 * (i + 1))));
   AN.forEach((n, i) => armors[n] = monk ? 0 : (1 / 6) * Math.min(1, (ml + 11) / (100 * (i + 1))));
   const findGate = monk ? 0 : Math.min(1, (depth + 40) / (fighter || sage ? 550 : 950)) * Math.min(1, depth / 20);
@@ -277,7 +281,7 @@ if (typeof process !== "undefined" && process.argv[1] && process.argv[1].endsWit
     ["innCost 10, 0 children", innCost(10, 0) === 10010],
     ["innCost 10, 600 children (floor)", innCost(10, 600) === 5005],
     ["levelGain sage", JSON.stringify(levelGain(5, 20, 10, 15, 15)) === JSON.stringify({ hp: [55, 55 + 86], sp: 2 })],
-    ["ring odds floor 20", near(1 / dropOdds(20, 35, 6).items["Ring of regeneration"], 285, 1)],
+    ["ring odds floor 20", near(1 / dropOdds(20, 6).items["Ring of regeneration"], 285, 1)],
     ["sleep 20", near(sleepChance(20), 0.15, 1e-9)],
     ["monster interval speed 55", monsterAttackInterval(55) === 20],
     ["move seconds giant", moveSeconds(400, 0) === 6],

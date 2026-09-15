@@ -65,8 +65,9 @@ export interface DropOdds {
   healChance: number;
   spChance: number;
 }
-/** Per-kill drop probabilities. Only the weapons and armors depend on the monster's level. */
-export function dropOdds(depth: number, ml: number, cls: number): DropOdds;
+/** Per-kill drop probabilities. Every roll reads the floor: kill_monster wipes the killed
+ *  monster's record before the weapon and armor rolls, so those read a level of zero. */
+export function dropOdds(depth: number, cls: number): DropOdds;
 
 /** Rubles one unit of culture stock costs at this character level. */
 export function stockPrice(lev: number): number;

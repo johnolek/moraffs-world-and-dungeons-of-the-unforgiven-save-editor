@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dropOdds, monsterLevelDistribution } from '../game/dotu-mech.js';
-import { drainerShare, dropTables, expectedKills, floorOdds, type DropRow } from './drops';
+import { dropOdds } from '../game/dotu-mech.js';
+import { drainerShare, dropTables, expectedKills, type DropRow } from './drops';
 
 const FIGHTER = 0;
 const MONK = 2;
@@ -17,23 +17,19 @@ const hunt = (over: Partial<Parameters<typeof dropTables>[0]> = {}) => ({
 
 const chanceOf = (rows: DropRow[], name: string) => rows.find((row) => row.name.startsWith(name))!.chance;
 
-describe('floorOdds', () => {
-  it('averages the weapon chances over the levels the floor stocks', () => {
-    const levels = monsterLevelDistribution(20, 0);
-    const expected = levels.reduce((sum, [ml, p]) => sum + p * dropOdds(20, ml, MAGE).weapons['Great Sword'], 0);
-    expect(floorOdds(0, 20, MAGE).weapons['Great Sword']).toBeCloseTo(expected, 12);
-  });
-
-  it('leaves the rolls that only read the floor alone', () => {
-    const plain = dropOdds(20, 35, MAGE);
-    const averaged = floorOdds(0, 20, MAGE);
-    expect(averaged.items).toEqual(plain.items);
-    expect(averaged.drainerPotion).toBe(plain.drainerPotion);
-    expect(averaged.maxBookLevel).toBe(plain.maxBookLevel);
-  });
-});
-
 describe('dropTables', () => {
+  it('offers the same weapons and armor on every floor, since the roll never sees the monster', () => {
+    const shallow = dropTables(hunt({ floor: 2 }));
+    const deep = dropTables(hunt({ floor: 100 }));
+    expect(deep.weapons).toEqual(shallow.weapons);
+    expect(deep.armors).toEqual(shallow.armors);
+  });
+
+  it('rolls the weapons against a level of zero', () => {
+    const greatSword = chanceOf(dropTables(hunt()).weapons, 'Great Sword');
+    expect(greatSword).toBeCloseTo((1 / 7) * (11 / 700), 12);
+  });
+
   it('leaves out the weapons the character already owns', () => {
     const tables = dropTables(hunt({ ownedWeapons: [1, 7] }));
     expect(tables.weapons.map((row) => row.name)).toEqual(['Club', 'Mace', 'Knife', 'Short Sword', 'Long Sword']);
@@ -87,7 +83,7 @@ describe('dropTables', () => {
 
   it('counts the drainer rewards against every kill, not just the drainer ones', () => {
     const tables = dropTables(hunt({ floor: 20 }));
-    expect(chanceOf(tables.drainer, 'Stat potion')).toBeCloseTo(tables.drainerShare * dropOdds(20, 20, MAGE).drainerPotion, 12);
+    expect(chanceOf(tables.drainer, 'Stat potion')).toBeCloseTo(tables.drainerShare * dropOdds(20, MAGE).drainerPotion, 12);
   });
 
   it('pays nothing for a section whose drainer only takes experience', () => {
@@ -95,10 +91,6 @@ describe('dropTables', () => {
     const tables = dropTables(hunt({ floor: 4 }));
     expect(tables.drainerShare).toBe(0);
     expect(tables.drainer.every((row) => row.chance === 0)).toBe(true);
-  });
-
-  it('reports the levels the floor stocks', () => {
-    expect(dropTables(hunt({ module: 1, floor: 20 })).levels).toEqual(monsterLevelDistribution(20, 1));
   });
 });
 

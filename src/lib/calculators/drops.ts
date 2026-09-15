@@ -1,5 +1,5 @@
 import { allMonsters, appearsOn, stockingOdds } from '../bestiary/monsters';
-import { dropOdds, monsterLevelDistribution, type DropOdds } from '../game/dotu-mech.js';
+import { dropOdds } from '../game/dotu-mech.js';
 
 export interface DropRow {
   name: string;
@@ -16,8 +16,6 @@ export interface Hunt {
 }
 
 export interface DropTables {
-  /** The levels this floor stocks its monsters at, as [level, chance] pairs. */
-  levels: [number, number][];
   /** How often the "YOU FIND" check passes; one pass in three still finds nothing. */
   findGate: number;
   /** How much of a floor's monsters are the level drainer whose kill pays a reward. */
@@ -34,7 +32,7 @@ const DRAINER_SLOT = 26;
 
 /** The seven weapons a kill can drop, in the order the game rolls them; the index plus one is
  *  the weapon id the save file stores. Read out of dropOdds so the names cannot drift apart. */
-export const WEAPON_NAMES = Object.keys(dropOdds(1, 1, 0).weapons);
+export const WEAPON_NAMES = Object.keys(dropOdds(1, 0).weapons);
 
 /** Keys start dropping on floor 4. The game also stops them below floor 179, which is deeper
  *  than the deepest floor in the game. */
@@ -53,29 +51,11 @@ export function drainerShare(module: number, floor: number): number {
   return stockingOdds(drainer) ?? 0;
 }
 
-/**
- * The floor's drop odds. Only the weapon and armor rolls read the monster's level, so those
- * are averaged over the levels the floor stocks; every other roll reads the floor itself.
- */
-export function floorOdds(module: number, floor: number, cls: number): DropOdds {
-  const levels = monsterLevelDistribution(floor, module);
-  const rolls = levels.map(([ml, p]) => ({ odds: dropOdds(floor, ml, cls), p }));
-  const average = (which: 'weapons' | 'armors') => {
-    const out: Record<string, number> = {};
-    for (const { odds, p } of rolls) {
-      for (const [name, chance] of Object.entries(odds[which])) out[name] = (out[name] ?? 0) + p * chance;
-    }
-    return out;
-  };
-  return { ...rolls[0].odds, weapons: average('weapons'), armors: average('armors') };
-}
-
 export function dropTables(hunt: Hunt): DropTables {
-  const odds = floorOdds(hunt.module, hunt.floor, hunt.cls);
+  const odds = dropOdds(hunt.floor, hunt.cls);
   const keyDrops = hunt.floor >= FIRST_KEY_FLOOR;
   const drainers = drainerShare(hunt.module, hunt.floor);
   return {
-    levels: monsterLevelDistribution(hunt.floor, hunt.module),
     // dropOdds reports the chance of ending up with an item, which is two passes in three.
     findGate: (odds.anyItem * 3) / 2,
     drainerShare: drainers,
