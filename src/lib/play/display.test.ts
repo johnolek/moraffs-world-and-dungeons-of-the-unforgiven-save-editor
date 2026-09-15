@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../game/port/state';
 import { DUNGEON_YMAX } from '../game/unfmap.js';
-import type { MapSquare } from '../map/game';
+import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
 import { facingArrowCells } from '../map/you';
 import { zoomMapMonsters } from './mode';
@@ -383,6 +383,97 @@ describe('what the zoom map draws on one square', () => {
 
   it('leaves a square with a ladder on it uncoloured, the way the game asks in that order', () => {
     expect(differences(drawn({ ladder: -1, town: 1 }), drawn({ ladder: -1 }))).toEqual([]);
+  });
+});
+
+describe('the wall sides of a floor of the game itself, drawn beside the views', () => {
+  /** The town, the one floor that has buildings standing on it, and a floor deep enough to carry
+   *  ladders, trap doors and chutes. */
+  const FLOORS = [0, 7];
+
+  /** Every square of one of module I's floors, which is what the map is handed. */
+  function floorRows(level: number): MapSquare[][] {
+    return Array.from({ length: EXPANDED_ROWS }, (_, y) =>
+      Array.from({ length: EXPANDED_COLUMNS }, (_, x) => UNFORGIVEN_MAP.squareOn(x, y, level, 0)),
+    );
+  }
+
+  /** What a square carries of its own, which `drawsquare` marks after it has drawn the sides:
+   *  the two diagonals and, for a chute, the plus sign through them. */
+  const carriesAMark = (square: MapSquare): boolean =>
+    square.ladder !== 0 || square.trapdoor !== -1 || square.chute !== 0;
+
+  /**
+   * The colours the pixels of one side of a cell were left in, corner dots excluded: the dots are
+   * the neighbouring sides' business and are drawn in red over both ends of every side.
+   */
+  function sidePixels(frame: Frame, x: number, y: number, horizontal: boolean): number[] {
+    const pixels: number[] = [];
+    for (let along = 1; along < ZOOM_CELL; along += 1) {
+      pixels.push(horizontal ? pixelAt(frame, x + along, y) : pixelAt(frame, x, y + along));
+    }
+    return pixels;
+  }
+
+  /** Each side of a cell that is not open, as the pixels it was left in. */
+  function wallSides(frame: Frame, square: MapSquare, x: number, y: number): number[][] {
+    const sides: number[][] = [];
+    if (square.n !== 3) sides.push(sidePixels(frame, x, y, true));
+    if (square.s !== 3) sides.push(sidePixels(frame, x, y + ZOOM_CELL, true));
+    if (square.w !== 3) sides.push(sidePixels(frame, x, y, false));
+    if (square.e !== 3) sides.push(sidePixels(frame, x + ZOOM_CELL, y, false));
+    return sides;
+  }
+
+  /**
+   * Every wall side of every square the map draws, as the colours its pixels were left in, for a
+   * floor the character knows whole.
+   *
+   * `pick` chooses which squares to look at, since the only thing that ever paints over a side is
+   * the square's own ladder, trap door or chute mark.
+   */
+  function sidesDrawn(level: number, pick: (square: MapSquare) => boolean): number[][] {
+    const rows = floorRows(level);
+    const at = { x: 40, y: 55, dir: 0 };
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawScreenFurniture(frame, { rows, at, map: REVEALED });
+    const window = zoomMapWindow(frame.width);
+    const found: number[][] = [];
+    for (let row = 0; row < ZOOM_ROWS; row += 1) {
+      for (let column = 0; column < ZOOM_COLUMNS; column += 1) {
+        const square = rows[at.y + row - (ZOOM_ROWS >> 1)][at.x + column - (ZOOM_COLUMNS >> 1)];
+        if (square.solid || !pick(square)) continue;
+        const x = window.left + column * ZOOM_CELL;
+        const y = window.top + row * ZOOM_CELL;
+        // The map's last column runs to the screen's own last pixel, so its east sides are drawn
+        // one pixel off the frame and read back as nothing.
+        if (x + ZOOM_CELL >= frame.width) continue;
+        found.push(...wallSides(frame, square, x, y));
+      }
+    }
+    return found;
+  }
+
+  it('leaves every one of them white, horizontal and vertical alike', () => {
+    for (const level of FLOORS) {
+      const sides = sidesDrawn(level, (square) => !carriesAMark(square));
+      expect(sides.length).toBeGreaterThan(100);
+      const white = Array.from({ length: ZOOM_CELL - 1 }, () => ZOOM_SIDE_COLOUR);
+      for (const side of sides) expect(side).toEqual(white);
+    }
+  });
+
+  it('lets a square mark its own ladder, trap door or chute over them, as drawsquare does', () => {
+    const sides = sidesDrawn(7, carriesAMark);
+    const crossed = sides.filter((side) => side.some((colour) => colour !== ZOOM_SIDE_COLOUR));
+    expect(crossed.length).toBeGreaterThan(0);
+    // The marks are the only thing that ever paints over a side, and they are drawn in the two
+    // colours drawsquare marks a square with rather than in the black of its fill.
+    for (const side of crossed) {
+      for (const colour of side) {
+        expect([ZOOM_SIDE_COLOUR, ZOOM_MARK_COLOUR, ZOOM_CHUTE_COLOUR]).toContain(colour);
+      }
+    }
   });
 });
 
