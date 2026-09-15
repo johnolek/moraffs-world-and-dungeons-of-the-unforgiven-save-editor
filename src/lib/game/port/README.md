@@ -89,8 +89,10 @@ The switch is `Game.clock`, the tick counter the session hands in, or null. Null
 game built here uses today: the port then reseeds nothing, says so in a comment where the
 original reseeds, and a run draws its numbers from one generator seeded once, which is what lets
 it be played again from that seed alone. Given a clock, `strike` reseeds from it exactly as the
-original does and the sawtooth comes back, which is what the faithful and speedrun modes want; a
-replay will take the tick of each key press out of the run log (MORF-502).
+original does and the sawtooth comes back, which is what the faithful and speedrun modes want.
+The clock a session hands in reads the machine's tick counter, and what it read is written into
+the run log in front of the input it was read for, so a replay rolls what the player rolled;
+`src/lib/play/README.md` is that half of it.
 
 `strike` is the only reseed the port plays, and the other three tick-counter reseeds each have a
 reason. `defend`'s never reaches a die even in the original: the roll under it is a `Random`

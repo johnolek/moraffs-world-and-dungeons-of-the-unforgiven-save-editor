@@ -235,9 +235,10 @@ keeps its actions, its milestones and its verdict. The grace is there because
 the last batch of a run goes the moment the character dies, right behind the one
 before it.
 
-Only presses are counted, not inputs: a held Ctrl-F swings on its own and
-Moraff's Revenge's clock ticks are inputs of the log too, and nobody pressed
-either of those.
+Only presses are counted, not inputs: a held Ctrl-F swings on its own, Moraff's
+Revenge's clock ticks are inputs of the log too, and a run played on the clock
+writes a reading of the machine's tick counter in front of every input it makes.
+Nobody pressed any of those.
 
 ### The verdict
 
@@ -263,6 +264,17 @@ happened. A run any sitting of which names an engine not kept
 here is unverifiable rather than failed. `eligible` is whether the run may go on
 a board at all: verified, and with no record ever written into the character
 from outside the game.
+
+A run of Dungeons of the Unforgiven may be played on the clock, and its keys then
+arrive with readings of the machine's tick counter among them. The game reseeds
+its generator from that counter before a swing, the way the original does, so
+what the swing rolled is the reading rather than the next number of any sequence,
+and no replay could reach it from the seed and the keys alone. A reading rides in
+a stretch of keys as an input of its own — one at or below -0x1000, with the tick
+as the distance below it, counted in 1/18.2 of a second from the moment the
+sitting began — so nothing here handles it specially: it is kept, put back into
+the log and handed to the engine with every other input. A run whose readings
+were altered on the way fails its replay exactly as one with an altered key does.
 
 ### The journal
 

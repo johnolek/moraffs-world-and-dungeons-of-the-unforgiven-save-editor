@@ -172,6 +172,21 @@ played, so that a claimed ending can be checked by playing it again rather than 
   game's, is an input of its own. Those two are `unpressed` rather than `input`, because nobody
   pressed them: `RunRecorder.presses` is the count of the keys a person really did press, which
   is what the run server holds a run to a human speed by, and it is no part of the log.
+* **The clock** — Dungeons of the Unforgiven reseeds its generator from the machine's tick
+  counter before a swing, the way the original does (section 8 of
+  `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md`), so what a swing rolls is that reading rather than the
+  next number of any sequence. A run played that way is started with a tick counter —
+  `sittingClock`, which counts 1/18.2 of a second from the moment the sitting began, off
+  `performance.now()` — and reads it before every input it writes down, putting the reading in the
+  log ahead of that input, the way Moraff's Revenge keeps the ticks its monsters move on: an input
+  at or below `CLOCK_TICK_INPUT` is a reading and the tick is how far below it sits, which no key
+  and no turn input comes near. The game is handed that reading as its `Game.clock` for the whole
+  of the input it is handling, and is rolled with `BorlandRng`, since what the original gets out
+  of a reseed is Borland's generator answering the counter. A replay is played on a counter made
+  of the log's own readings, handed back in the order they were taken, so it rolls what the player
+  rolled. Whether a sitting is played on the clock is the `tickCounter` its `RunRecorder` is
+  started with; nothing hands one over yet, so every run played here today is played off the
+  clock and its log holds nothing but keys.
 * **The actions** — the things that happened to the character or to the world, which is the
   number a leaderboard orders runs by. What counts is what the game did rather than what the
   player typed: opening the spell menu and backing out is nothing and the spell cast through it
