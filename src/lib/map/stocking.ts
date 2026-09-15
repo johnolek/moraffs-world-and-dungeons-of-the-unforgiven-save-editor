@@ -115,6 +115,21 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  */
 export type SquareReseed = (slot: number, attempt: number) => void;
 
+/**
+ * What a floor stocked on the clock is handed beyond its rolls.
+ *
+ * Two of `stock_level`'s rolls are not the plain `rand() * n / 0x8000` the rest of the floor is
+ * drawn with: the generator is started again before every try at a monster's square, and the
+ * type roll opens with a `Random` call, which reseeds from the clock of its own accord. The map
+ * explorer and a game played off the clock hand neither in and draw everything from `rnd`.
+ */
+export interface ClockedStocking {
+  /** Random (exe 2000:4156, unf.c "Random"): the call get_mtype opens with, at 2000:6601. */
+  randomCall(n: number): number;
+  /** {@link SquareReseed}: the srand at 2000:6979. */
+  reseed: SquareReseed;
+}
+
 /** stock_level starts its count of tries at 10 (exe 2000:6726) and raises it before each try, so
  *  the first try of the first slot is the eleventh. */
 const TRIES_BEFORE_THE_FIRST = 10;
@@ -131,8 +146,9 @@ const TRIES_BEFORE_THE_FIRST = 10;
  * his own. Both halves spend the generator, which is why they are both here.
  *
  * The game seeds its generator afresh for every square it draws, which makes the monsters land in
- * diagonal stripes. `reseed` is that, and a caller without one — the map explorer, and a game
- * played off the clock — draws from `rnd` plainly and spreads its monsters out evenly instead.
+ * diagonal stripes, and its type roll reseeds too. `clocked` is both, and a caller without it —
+ * the map explorer, and a game played off the clock — draws from `rnd` plainly and spreads its
+ * monsters out evenly instead.
  *
  * `occupied` is the squares the occupancy grid already holds, as `y * 80 + x`. The game puts the
  * player on that grid before it rolls, so nothing is ever stocked on top of them; the map
@@ -146,7 +162,7 @@ const TRIES_BEFORE_THE_FIRST = 10;
  *   killed off his floor for good.
  * @param bossLastSeen the square this section's Shadow boss was last put down on, which he is
  *   put back within seven squares of.
- * @param reseed {@link SquareReseed}, or null to leave the generator alone.
+ * @param clocked {@link ClockedStocking}, or null to leave the generator alone.
  */
 export function stockFloor(
   rules: GameRules,
@@ -157,7 +173,7 @@ export function stockFloor(
   occupied: Iterable<number> = [],
   bossesBeaten: number = NO_BOSS_BEATEN,
   bossLastSeen: BossSquare = BOSS_NEVER_PLACED,
-  reseed: SquareReseed | null = null,
+  clocked: ClockedStocking | null = null,
 ): StockedMonster[] {
   const section = stockingSection(rules, moduleIndex, floor);
   if (!section) return [];
@@ -166,10 +182,10 @@ export function stockFloor(
   const monsters: StockedMonster[] = [];
   let tries = TRIES_BEFORE_THE_FIRST;
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) {
-    const beforeTry = reseed === null ? null : () => reseed(slot, (tries += 1));
+    const beforeTry = clocked === null ? null : () => clocked.reseed(slot, (tries += 1));
     let { x, y } = freeSquare(rows, taken, rnd, beforeTry);
     taken.add(y * WIDTH + x);
-    let entry = rollKind(section.section, rnd);
+    let entry = rollKind(section.section, rnd, clocked);
     if (slot === 0 && bossStandsOn(section, floor, bossesBeaten)) {
       entry = sectionMonster(section.section, BOSS_SLOT);
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
@@ -243,12 +259,15 @@ export function groupedMonsterCounts(monsters: StockedMonster[]): MonsterCountGr
 }
 
 /**
- * The type roll: 1 in 20 a puffball, else 1 in 7 a garbage can or ball, else 1 in 15 the
- * section's level drainer, else 1 in 12 a poison or disease monster, else one of the
- * section's three regulars.
+ * get_mtype (exe 2000:65f8, unf.c "get_mtype"): the type roll. 1 in 20 a puffball, else 1 in 7 a
+ * garbage can or ball, else 1 in 15 the section's level drainer, else 1 in 12 a poison or disease
+ * monster, else one of the section's three regulars.
+ *
+ * Only the first roll is a `Random` call (2000:6601); the six under it are written inline.
  */
-function rollKind(section: number, rnd: () => number): Monster {
-  if (random(rnd, 20) === 0) return builtinMonster(random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
+function rollKind(section: number, rnd: () => number, clocked: ClockedStocking | null): Monster {
+  const puffballs = clocked === null ? random(rnd, 20) : clocked.randomCall(20);
+  if (puffballs === 0) return builtinMonster(random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
   if (random(rnd, 7) === 0) return builtinMonster(random(rnd, BLOCKER_COUNT));
   if (random(rnd, 15) === 0) return sectionMonster(section, LEVEL_DRAINER_SLOT);
   if (random(rnd, 12) === 0) return builtinMonster(random(rnd, POISON_COUNT) + FIRST_POISON);

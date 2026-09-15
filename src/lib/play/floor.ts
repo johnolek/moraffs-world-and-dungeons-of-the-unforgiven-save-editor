@@ -4,7 +4,7 @@ import type { Game, Monster } from '../game/port/state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from '../game/port/state';
 import { WIDTH } from '../game/unfmap.js';
 import type { MapSquare } from '../map/game';
-import { MONSTER_SLOTS, stockFloor, type SquareReseed, type StockedMonster } from '../map/stocking';
+import { MONSTER_SLOTS, stockFloor, type ClockedStocking, type StockedMonster } from '../map/stocking';
 
 /**
  * Arriving on a floor: what the game loads, stocks and remembers.
@@ -150,7 +150,7 @@ export class FloorMonsters {
           [squareIndex(game.pc.x, game.pc.y)],
           game.pc.objective[game.pc.module],
           { x: game.pc.bossX[index], y: game.pc.bossY[index] },
-          squareReseed(game, rng),
+          clockedStocking(game, rng),
         );
         fill(table.monsters, stocked);
         for (const monster of stocked) table.fullHp[monster.slot] = monster.hp;
@@ -192,27 +192,33 @@ function fill(slots: Monster[], stocked: StockedMonster[]): void {
 }
 
 /**
- * The uniform fraction the stocking draws its rolls out of, taken from the port's generator.
+ * The uniform fraction the stocking draws its inline rolls out of, taken from the port's
+ * generator.
  *
- * `Random(n)` (exe 2000:4156) is `rand() * n / 0x8000` over a generator whose numbers run from 0
- * to 0x7fff, so a fraction of those same fifteen bits is exactly what the game divides up.
+ * A roll the game writes inline is `rand() * n / 0x8000` over a generator whose numbers run from
+ * 0 to 0x7fff, so a fraction of those same fifteen bits is exactly what it divides up. The one
+ * roll of the stocking that is a `Random` call goes through {@link clockedStocking} instead.
  */
 function fractions(rng: Rng): () => number {
   return () => rng.random(0x8000) / 0x8000;
 }
 
 /**
- * stock_level (exe 2000:671e, unf.c "stock_level"): the srand at 2000:6979, which starts the
- * generator again from the tick counter plus the slot and the number of tries the floor has
- * taken, before every try at a monster's square.
+ * stock_level (exe 2000:671e, unf.c "stock_level") as a game with a clock plays it: the srand at
+ * 2000:6979, which starts the generator again from the tick counter plus the slot and the number
+ * of tries the floor has taken before every try at a monster's square, and the `Random` call
+ * get_mtype opens with, which reseeds itself.
  *
  * Null for a game with no clock, which reseeds nothing and lays its monsters out evenly: the
  * third departure in `src/lib/game/port/README.md`.
  */
-function squareReseed(game: Game, rng: Rng): SquareReseed | null {
+function clockedStocking(game: Game, rng: Rng): ClockedStocking | null {
   const clock = game.clock;
   if (clock === null) return null;
-  return (slot, attempt) => rng.reseed?.(clock() + slot + attempt);
+  return {
+    randomCall: (n) => game.randomCall(n),
+    reseed: (slot, attempt) => rng.reseed?.(clock() + slot + attempt),
+  };
 }
 
 /**
