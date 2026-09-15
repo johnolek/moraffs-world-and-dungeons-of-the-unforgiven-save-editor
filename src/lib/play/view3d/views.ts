@@ -57,8 +57,13 @@ export const FOUR_VIEWS: FourView[] = [
 
 /**
  * The two sets of labels, at DS:0483 and DS:048b, in the order the four psfont calls read them:
- * ahead, left, behind, right. DS:c9ee picks the set, and is 0 in a game that has not been asked
- * for the other one.
+ * ahead, left, behind, right.
+ *
+ * DS:c9ee picks the set, and DS:c9ee is whether the game is being played with a mouse: `main`
+ * sets it to 1 when `mouse_detect` (exe 4000:39c0) finds one at start-up (exe 2000:630d), and
+ * Escape turns it off and on again from the top of movecontrol's loop (exe 2000:c845). A player
+ * with a mouse is told what clicking a view does; a player without one is told which arrow key
+ * to press. This port has no mouse, so it draws the arrow set.
  */
 export const VIEW_LABELS: Record<ViewName, string>[] = [
   { ahead: 'UP ARROW', left: 'LEFT ARROW', behind: 'DOWN ARROW', right: 'RIGHT ARROW' },
@@ -70,9 +75,13 @@ export const LABEL_COLOUR = 4;
 
 /**
  * Experience of 40 or more and the labels stop being drawn, so they are help for a character who
- * has not killed anything yet. The test is `fld qword [c024]; fcomp dword [197d]` at exe
- * 2000:ae97, and DS:c024 is the experience field of the character record, which starts at
- * DS:b880 and holds it at offset 0x7a4.
+ * has not killed anything yet. DS:c024 is the experience field of the character record, which
+ * starts at DS:b880 and holds it at offset 0x7a4.
+ *
+ * The test is `fld qword [c024]; fcomp dword [197d]; fnstsw; sahf; jb` at exe 2000:ae97, and
+ * DS:197d holds the single-precision 40. `jb` is taken when the experience is the smaller of the
+ * two, so the four labels are drawn for a character who has earned less than 40 and skipped for
+ * one who has earned 40 or more.
  */
 export const LABEL_EXP_LIMIT = 40;
 

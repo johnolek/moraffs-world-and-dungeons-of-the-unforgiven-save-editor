@@ -31,7 +31,10 @@ The sources are the rectangles in `src/lib/play/display.ts` and
 
 The three small views are the same drawing as the big one at a quarter of the size. The
 labels (`UP ARROW`, `LEFT ARROW`, `RIGHT ARROW`, `DOWN ARROW`) are yellow, in the big font,
-drawn over the view.
+drawn over the view. `FUN_2000_ac9e` draws them only while the character has earned less
+than 40 experience, which is why this screenshot of a new character has them; a game that
+found a mouse gets `MOVE FORWARD`, `TURN LEFT`, `TURN AROUND` and `TURN RIGHT` in their
+place, because with a mouse the four views are clicked rather than keyed.
 
 ## The key menu
 

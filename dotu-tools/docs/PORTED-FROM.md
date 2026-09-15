@@ -13,7 +13,7 @@ column or the other, not both.
 Tests, test helpers, fixtures and the Source tab's own files are left out, since they quote
 citations rather than make them. What each routine does is in `FUNCTION-CATALOG.md`.
 
-236 of the 647 routines are pointed at. Files are named from
+238 of the 647 routines are pointed at. Files are named from
 `src/lib/`.
 
 | routine | address | named in | mentioned in |
@@ -66,6 +66,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `select_player` | 2000:5c0d |  | `game/port/state.ts` |
 | `decode_quit_message` | 2000:5f78 |  | `play/quit.ts` |
 | `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/port/state.ts`, `play/manual.ts` |
+| `main` | 2000:620f |  | `play/view3d/views.ts` |
 | `which_monster` | 2000:6573 |  | `play/floor.ts` |
 | `monster_at` | 2000:65b0 | `game/port/state.ts` |  |
 | `set_monster_map` | 2000:65dc | `game/port/state.ts` |  |
@@ -123,7 +124,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `change_module` | 2000:c0a5 |  | `play/modules.ts`, `play/tunnel.ts` |
 | `retdwall2` | 2000:c22d |  | `formulas/formulas.ts`, `play/engine.ts`, `play/move.ts` |
 | `FUN_2000_c28b` | 2000:c28b |  | `play/engine.ts` |
-| `movecontrol` | 2000:c308 | `game/port/combat.ts`, `game/port/kills.ts`, `play/cast.ts`, `play/engine.ts`, `play/fight.ts`, `play/items.ts`, `play/kill.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/character.ts`, `game/port/state.ts`, `game/unfmap.js`, `map/you.ts`, `play/Screen.svelte`, `play/arrival.ts`, `play/display.ts`, `play/gear.ts`, `play/help.ts`, `play/keys.ts`, `play/memory.ts`, `play/misc.ts`, `play/move.ts`, `play/panel.ts`, `play/plaque.ts`, `play/session.ts`, `play/spellScreens.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts`, `play/zoom-map.ts` |
+| `movecontrol` | 2000:c308 | `game/port/combat.ts`, `game/port/kills.ts`, `play/cast.ts`, `play/engine.ts`, `play/fight.ts`, `play/items.ts`, `play/kill.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/character.ts`, `game/port/state.ts`, `game/unfmap.js`, `map/you.ts`, `play/Screen.svelte`, `play/arrival.ts`, `play/display.ts`, `play/gear.ts`, `play/help.ts`, `play/keys.ts`, `play/memory.ts`, `play/misc.ts`, `play/move.ts`, `play/panel.ts`, `play/plaque.ts`, `play/session.ts`, `play/spellScreens.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts`, `play/view3d/views.ts`, `play/zoom-map.ts` |
 | `FUN_2000_df0e` | 2000:df0e |  | `game/port/inventory.ts` |
 | `print_spell_line` | 2000:df3e | `game/port/inventory.ts` |  |
 | `cast_a_spell` | 2000:e017 | `game/port/inventory.ts`, `play/cast.ts` | `formulas/formulas.ts`, `game/port/magic.ts`, `play/fight-sim.ts`, `play/view3d/menu-font.ts`, `play/view3d/text.ts` |
@@ -233,6 +234,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `set_palette` | 4000:12c3 | `game/dotu-pic.js` | `bestiary/pictures.ts`, `play/view3d/pictures.ts` |
 | `fill_rect` | 4000:2a36 |  | `game/port/screens.ts`, `game/port/state.ts`, `play/view3d/frame.ts` |
 | `FUN_4000_2d90` | 4000:2d90 |  | `play/plaque.ts` |
+| `mouse_detect` | 4000:39c0 |  | `play/view3d/views.ts` |
 | `FUN_4000_3adc` | 4000:3adc |  | `play/plaque.ts` |
 | `FUN_4000_3b05` | 4000:3b05 |  | `play/plaque.ts` |
 | `FUN_4000_3b44` | 4000:3b44 |  | `play/plaque.ts` |
@@ -257,7 +259,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 
 ## Routines nothing in the port points at
 
-20 routines the reverse engineering named, outside the runtime segment, that no file
+18 routines the reverse engineering named, outside the runtime segment, that no file
 cites or mentions.
 
 **This is not a list of gaps.** A routine lands here when nothing names it, and the port shares one
@@ -272,7 +274,7 @@ Dead in the game as much as in the port. Nothing to do.
 - `load_picture_seq` 3000:968b
 - `shareware_plea_screen` 4000:751b
 
-### Called by something in the original (18)
+### Called by something in the original (16)
 
 Each is either played somewhere without saying so, or something a browser has no use for. What each
 does is in `FUNCTION-CATALOG.md`.
@@ -283,7 +285,6 @@ does is in `FUNCTION-CATALOG.md`.
 | `section_number_p` | 2000:1d12 | `movecontrol` |
 | `section_number2` | 2000:1d35 | `stock_level`, `boss_office_message`, `monster_manual`, `gradient_palette`, `set_palette` |
 | `show_registration_notice` | 2000:60e8 | `main` |
-| `main` | 2000:620f | `entry` |
 | `save_monster_map` | 2000:702e | `quit_game` |
 | `load_monster_map` | 2000:70f4 | `load_level_map` |
 | `load_unfdung_bin` | 2000:787d | `main` |
@@ -295,7 +296,6 @@ does is in `FUNCTION-CATALOG.md`.
 | `load_font` | 4000:0abf | `FUN_2000_1c5b` |
 | `gmode` | 4000:0fc0 | `FUN_2000_04b7`, `FUN_2000_1598`, `load_section_pictures`, `load_player`, `load_level_screen`, `quit_game` |
 | `set_ega_colour` | 4000:102d | `FUN_2000_1b61`, `set_palette` |
-| `mouse_detect` | 4000:39c0 | `main`, `FUN_2000_c200`, `movecontrol` |
 | `num_to_string` | 4000:5a87 | `store_refund`, `show_money`, `g_store`, `temple`, `view_prep_spells`, `view_battle_spells`, `engagement_timing`, `FUN_3000_7545`, `view_stats`, `FUN_3000_caac` |
 
 Also uncited: 362 routines Ghidra could not name, and 29 named routines of
