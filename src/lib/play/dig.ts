@@ -8,7 +8,6 @@ import {
   messageLine,
 } from '../game/port/screens';
 import type { Game } from '../game/port/state';
-import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import type { Turn } from './engine';
 
 /**
@@ -68,7 +67,7 @@ export function digging(game: Game, lineMs: number): void {
 export async function digHole(turn: Turn): Promise<void> {
   const { game, session } = turn;
   const pc = game.pc;
-  const bottom = BOTTOM_LEVEL[pc.module];
+  const bottom = game.rules.bottomLevel(pc.module);
   if (Math.trunc((bottom * 3) / 4) < pc.level) {
     if (pc.cls === 0) {
       showHint(game, FIGHTER_MOVED);

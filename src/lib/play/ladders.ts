@@ -1,7 +1,6 @@
 import { bundledDungeon } from '../game/dungeon';
 import { showHint } from '../game/port/drops';
 import type { Game, ScreenLine } from '../game/port/state';
-import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { hintOnFloor } from './arrival';
 import type { Turn } from './engine';
 import { changeModule } from './modules';
@@ -92,7 +91,7 @@ export async function goDown(turn: Turn): Promise<void> {
     game.pressAnyKey();
     return;
   }
-  if (BOTTOM_LEVEL[game.pc.module] < game.pc.level + turn.ladder) {
+  if (game.rules.bottomLevel(game.pc.module) < game.pc.level + turn.ladder) {
     // The module teleporter stands at the bottom of a module and lands the character in the next
     // module's town, which is floor 0 of it.
     await changeModule(turn, { kind: 'ladderTaken', to: 0 });

@@ -485,8 +485,6 @@ export interface Game {
    * the tables in the executable answer.
    */
   rules: GameRules;
-  /** The deepest floor of each of the five modules (exe DS:0493): 25, 45, 65, 85, 105. */
-  bottomLevel: number[];
   /**
    * DS:c4d1: one byte per square of the whole 80 x 110 grid, indexed `y * 80 + x`. Holds
    * {@link MAP_EMPTY}, {@link MAP_PLAYER}, or the slot number of the monster standing there.
@@ -909,7 +907,6 @@ export function newGame(overrides: GameOverrides = {}): Game {
     weaponTime: data.weapons.map((weapon) => weapon.speed),
     armorWeights: data.armor.map((armor) => armor.weight),
     armorHitChance: data.armor.map((armor) => armor.armor),
-    bottomLevel: data.constants.bottomLevel,
     monsterMap: new Uint8Array(WIDTH * HEIGHT).fill(MAP_EMPTY),
     monsterTimers: new Int16Array(145),
     slot: 20,

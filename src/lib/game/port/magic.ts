@@ -878,7 +878,7 @@ function changeFloorTo(game: Game, level: number): void {
  * the character record holds.
  */
 function bottomOfModule(game: Game): number {
-  return game.bottomLevel[game.pc.module];
+  return game.rules.bottomLevel(game.pc.module);
 }
 
 /**

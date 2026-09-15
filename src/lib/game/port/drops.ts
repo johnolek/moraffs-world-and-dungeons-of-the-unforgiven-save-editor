@@ -697,7 +697,7 @@ export async function useMagicItem(game: Game): Promise<void> {
   if (choice === 1) {
     if (pc.slosher === 0) {
       notCarried = true;
-    } else if (pc.level < Math.trunc((game.bottomLevel[pc.module] * 2) / 3)) {
+    } else if (pc.level < Math.trunc((game.rules.bottomLevel(pc.module) * 2) / 3)) {
       // DS:19e0 19fd
       game.say('YOU ARE SLIPPING THROUGH THE', '  FLOOR. HIT ANY KEY...');
       const from = pc.level;
