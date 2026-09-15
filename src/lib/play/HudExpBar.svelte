@@ -8,6 +8,7 @@
 <script lang="ts">
   import { cubicOut } from 'svelte/easing';
   import { Tween } from 'svelte/motion';
+  import { grouped } from '../ui/format';
   import { expBar, HUD_TWEEN_MS } from './hud';
 
   interface Props {
@@ -30,7 +31,7 @@
 <div class="exp">
   <div class="heading">
     <span>{HEADING}</span>
-    <span>{Math.round(exp)} / {Math.round(bar.to)}</span>
+    <span>{grouped(Math.round(exp))} / {grouped(Math.round(bar.to))}</span>
   </div>
   <div class="track">
     <div class="fill" style:width="{fill.current * 100}%"></div>

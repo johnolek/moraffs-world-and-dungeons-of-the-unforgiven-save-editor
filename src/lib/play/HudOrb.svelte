@@ -8,6 +8,7 @@
 <script lang="ts">
   import { cubicOut } from 'svelte/easing';
   import { Tween } from 'svelte/motion';
+  import { grouped } from '../ui/format';
   import { HUD_TWEEN_MS, orbFill } from './hud';
 
   interface Props {
@@ -30,7 +31,7 @@
   <div class="liquid" style:height="{fill.current * 100}%"></div>
   <div class="glass"></div>
   <div class="numbers">
-    <span class="count">{Math.trunc(value)} / {Math.trunc(max)}</span>
+    <span class="count">{grouped(Math.trunc(value))} / {grouped(Math.trunc(max))}</span>
     <span class="what">{LABEL[kind]}</span>
   </div>
 </div>

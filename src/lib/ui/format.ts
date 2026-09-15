@@ -7,6 +7,17 @@ export function percent(share: number): string {
 }
 
 /**
+ * A whole number with its thousands grouped, so a five or six digit one can be read without
+ * counting digits: 12345 is `12,345`.
+ *
+ * The grouping is American whatever the reader's own machine is set to, because the site is
+ * written in English and the game's own numbers are printed the way the game printed them.
+ */
+export function grouped(value: number): string {
+  return value.toLocaleString('en-US');
+}
+
+/**
  * Words as a name that is safe in a URL and in a file name on every system: lower case, with
  * every run of anything else turned into a dash and the dashes trimmed off the ends.
  *
