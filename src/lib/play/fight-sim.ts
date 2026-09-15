@@ -133,6 +133,31 @@ export const FIGHT_FIELDS: FightFieldGroup[] = [
   },
 ];
 
+/** The fields of {@link FIGHT_COLUMNS}: the level, the vitals and the six characteristics. */
+const COMPARED_FIELDS = new Set<FightFieldKey>([
+  'lev',
+  'hp',
+  'maxHp',
+  'sp',
+  'maxSp',
+  'str',
+  'iq',
+  'wis',
+  'con',
+  'dex',
+  'luck',
+]);
+
+/**
+ * The character's numbers a kept fight is compared by, in the setup form's own order and words.
+ *
+ * The rings, the worn items and the grenades are left out: a row has only so much room, and
+ * these are the numbers a fight turns on.
+ */
+export const FIGHT_COLUMNS = FIGHT_FIELDS.flatMap((group) => group.fields).filter((field) =>
+  COMPARED_FIELDS.has(field.key),
+);
+
 /**
  * The levels stock_level (exe 2000:671e) could store a monster with on a floor of this base
  * level.
@@ -295,6 +320,14 @@ export function fightMonster(session: GameSession) {
 /** How a fight stands. */
 export type FightOutcome = 'waiting' | 'fighting' | 'monsterDead' | 'characterDead';
 
+/** How a fight stands, in words, which is what a kept fight's row says it came to. */
+export const FIGHT_OUTCOMES: Record<FightOutcome, string> = {
+  waiting: 'Not started',
+  fighting: 'Left unfinished',
+  monsterDead: 'Monster dead',
+  characterDead: 'Character dead',
+};
+
 /**
  * Whether either of the two is dead yet. A monster is dead the moment its hit points run out,
  * which is where movecontrol kills it (`kill.ts`).
@@ -362,7 +395,7 @@ export function fightSummary(events: readonly GameEvent[], reached: FightReached
     levelsDrained: 0,
     experienceDrained: 0,
     statsDrained: 0,
-    spells: [],
+    spells: spellsCast(events),
     moves: 0,
     seconds: reached.seconds,
     outcome: reached.outcome,
@@ -392,12 +425,18 @@ export function fightSummary(events: readonly GameEvent[], reached: FightReached
       case 'statChanged':
         summary.statsDrained -= event.by;
         break;
-      case 'cast':
-        if (event.spell.game === 'unforgiven') summary.spells.push(event.spell.name);
-        break;
     }
   }
   return summary;
+}
+
+/** The spells cast so far, by the name the game's own menu prints, in the order they were cast. */
+export function spellsCast(events: readonly GameEvent[]): string[] {
+  const names: string[] = [];
+  for (const event of events) {
+    if (event.kind === 'cast' && event.spell.game === 'unforgiven') names.push(event.spell.name);
+  }
+  return names;
 }
 
 /** What a fight came to in words, a line at a time, leaving out whatever came to nothing. */

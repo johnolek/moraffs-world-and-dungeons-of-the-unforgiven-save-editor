@@ -651,6 +651,16 @@ screen as soon as either of the two is dead. A run's summary (`summary.ts`) does
 it is folded per kind of monster over a whole run and counts the walking and the shopping a
 fight has none of.
 
+**Every finished fight is kept** in `fight-history.svelte.ts`, a module-level list that lives for
+as long as the page does and is written nowhere else — not to the roster, not to the browser's
+storage, not to the run server. A fight is kept with the character as the form had typed them,
+the monster it was fought against, the spells cast before the monster came in, and the summary,
+so that changing one number and fighting again leaves the two side by side. The tab shows a table
+of every fight kept against the monster the form has picked, the most recent first, with a Delete
+on each row and a Clear for the lot; the character's columns are `FIGHT_COLUMNS`, which is the
+setup form's own fields, so the table and the form say the same words for the same number. A
+fight left before the monster was ever sent in is not a fight and is not kept.
+
 ## The moment
 
 `passMoment` (exe 2000:a53c) is in `src/lib/game/port/moment.ts` with the two halves of a step it

@@ -44,7 +44,11 @@
     type FightOutcome,
     type FightSpell,
     type FightSummary,
+    spellsCast,
+    FIGHT_COLUMNS,
+    FIGHT_OUTCOMES,
   } from './fight-sim';
+  import { forgetFight, forgetFights, keepFight, keptFights } from './fight-history.svelte';
   import { gameKey } from './keys';
   import Panel from './Panel.svelte';
   import PlayRoster from './PlayRoster.svelte';
@@ -88,6 +92,13 @@
   /** The monster this session was set up for, which is the one sent in however the form has been
    *  changed since. */
   let built = $state.raw<FightMonster | null>(null);
+  /** The character this session was set up with, for the same reason. */
+  let fought = $state.raw<PlayerCharacter | null>(null);
+  /** The spells that had been cast when the monster was sent in, by name. */
+  let prepared = $state.raw<string[]>([]);
+  /** Whether this fight has been kept already, so that it is kept once however often the tab
+   *  draws it. */
+  let recorded = false;
   /** Whether the last attempt to send the monster in found rock in front of the character. */
   let blocked = $state(false);
   /**
@@ -118,13 +129,19 @@
    * fight -- the spells cast while setting it up included.
    */
   const finished: FightSummary | null = $derived.by(() => {
-    const playing = session;
-    if (playing === null || view === null) return null;
+    if (view === null) return null;
     if (outcome !== 'monsterDead' && outcome !== 'characterDead') return null;
-    return fightSummary(playing.game.events, {
-      seconds: playing.game.secondsElapsed,
-      outcome,
-    });
+    return summarise();
+  });
+
+  /** The fights already kept against the monster the form has picked, the most recent first. */
+  const compared = $derived(keptFights(monsterId));
+
+  // A fight that has ended is kept the moment it ends, so that changing a number and fighting
+  // again leaves the two side by side.
+  $effect(() => {
+    if (finished === null) return;
+    keep(finished);
   });
 
   /** The copy is taken when a character is picked, so the numbers in the form start as theirs
@@ -197,7 +214,28 @@
     const arrived = await sendInTheMonster(playing, monster);
     blocked = !arrived;
     sent = arrived;
+    if (arrived) prepared = spellsCast(playing.game.events);
     view = playing.view();
+  }
+
+  /** What the fight came to as it stands, or null while there is no fight to sum up. A fight the
+   *  monster was never sent into is not one. */
+  function summarise(): FightSummary | null {
+    const playing = session;
+    if (playing === null || !sent) return null;
+    return fightSummary(playing.game.events, {
+      seconds: playing.game.secondsElapsed,
+      outcome: fightOutcome(playing, sent),
+    });
+  }
+
+  /** Keep a fight that is over, with the character and the monster it was fought with. */
+  function keep(summary: FightSummary | null) {
+    const character = fought;
+    const monster = built;
+    if (recorded || summary === null || character === null || monster === null) return;
+    recorded = true;
+    keepFight({ at: new Date(), character, monster, prepared, summary, entries: [] });
   }
 
   /** A session for the setup as it stands. The old one is finished first so that nothing of it
@@ -208,10 +246,14 @@
     session?.finish();
     sent = false;
     blocked = false;
+    recorded = false;
+    prepared = [];
     const monster: FightMonster = { monsterId, module, floor, level, hp };
+    const fighting = $state.snapshot(copy) as PlayerCharacter;
     built = monster;
+    fought = fighting;
     const started = startFight(
-      { record, character: $state.snapshot(copy) as PlayerCharacter, monster },
+      { record, character: fighting, monster },
       new SeededRng((Math.random() * 0x100000000) >>> 0),
     );
     started.onChange = () => {
@@ -236,12 +278,15 @@
   }
 
   function leave() {
+    keep(summarise());
     session?.finish();
     session = null;
     view = null;
     done = [];
     sent = false;
     built = null;
+    fought = null;
+    prepared = [];
     blocked = false;
   }
 
@@ -264,6 +309,12 @@
     done = [...done, { kind: 'fill' }];
     fillSpellPoints(playing);
     view = playing.view();
+  }
+
+  /** "SWORD +3", which is the two fields of the form read as one. */
+  function gearWords(names: string[], which: number, plus: number[]): string {
+    const bonus = plus[which] ?? 0;
+    return bonus === 0 ? names[which] : `${names[which]} ${bonus > 0 ? '+' : ''}${bonus}`;
   }
 
   function onKeyDown(event: KeyboardEvent) {
@@ -480,6 +531,60 @@
       </aside>
     </div>
   {/if}
+
+  {#if compared.length > 0}
+    <section class="kept">
+      <h3>Fights kept against {entry.name}</h3>
+      <p class="note">
+        Every fight finished against this monster since the page was opened, the most recent
+        first. Pick another monster above and its own fights are here instead. Nothing is saved:
+        reloading the page forgets them all.
+      </p>
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr>
+              <th>Fought</th>
+              <th>Class</th>
+              {#each FIGHT_COLUMNS as column}<th>{column.label}</th>{/each}
+              <th>Weapon</th>
+              <th>Armor</th>
+              <th>Its level</th>
+              <th>Its hit points</th>
+              <th>Cast first</th>
+              <th>Outcome</th>
+              <th>What it came to</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each compared as fight (fight.id)}
+              <tr>
+                <td>{fight.at.toLocaleTimeString()}</td>
+                <td>{CLASS_NAMES[fight.character.cls]}</td>
+                {#each FIGHT_COLUMNS as column}<td class="number">{fight.character[column.key]}</td>{/each}
+                <td>{gearWords(WEAPON_NAMES, fight.character.weapon, fight.character.weaponPlus)}</td>
+                <td>{gearWords(ARMOR_NAMES, fight.character.armor, fight.character.armorPlus)}</td>
+                <td class="number">{fight.monster.level}</td>
+                <td class="number">{fight.monster.hp}</td>
+                <td>{fight.prepared.length === 0 ? '--' : fight.prepared.join(', ')}</td>
+                <td>{FIGHT_OUTCOMES[fight.summary.outcome]}</td>
+                <td>
+                  <ul class="summary">
+                    {#each fightSummaryLines(fight.summary) as line, at (at)}<li>{line}</li>{/each}
+                  </ul>
+                </td>
+                <td><button type="button" onclick={() => forgetFight(fight.id)}>Delete</button></td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <div class="row">
+        <button type="button" onclick={() => forgetFights(monsterId)}>Clear</button>
+      </div>
+    </section>
+  {/if}
 </div>
 
 <style>
@@ -629,6 +734,44 @@
   .buttons button {
     padding: 3px 7px;
     font-size: 11px;
+  }
+  .kept {
+    padding: 0 12px 20px;
+  }
+  .kept h3 {
+    margin: 12px 0 0;
+  }
+  /* A row is twenty numbers wide and the tab is not, so the table scrolls sideways inside its
+     own box rather than making the page do it. */
+  .scroller {
+    margin-top: 8px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  table {
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  th,
+  td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+  th {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  td.number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .kept .summary {
+    white-space: normal;
+    min-width: 32ch;
   }
   /* Narrow enough that a column beside the screen would leave the screen the smaller of the
      two, which is the width the Play tab drops its own side column at. */
