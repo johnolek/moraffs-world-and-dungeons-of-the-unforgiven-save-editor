@@ -13,6 +13,7 @@ import { revCharacterFile, revRecord } from './rev/test-engine';
 import { REV_KEY } from './rev/keys';
 import { ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
 import { RUN_LOG_VERSION } from './run';
+import { firstSwingsReading, unforgivenClockedRun } from './test-clocked-run';
 import { readRunLog, verifyRun, verifySession, whatToSayAboutTheEngine } from './verify';
 
 /**
@@ -284,6 +285,44 @@ async function moraffsRevengeRun(): Promise<RunSession> {
   return run.log();
 }
 
+describe('verifying a run played on the clock', () => {
+  it('replays a run to the same journal and the same ending from its log alone', async () => {
+    const log = await unforgivenClockedRun();
+    const verdict = await verifyRun(runLogOf([log]));
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+    expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
+    // The swings are what the readings decide, so a replay reaching the same damage is a replay
+    // that rolled off the same readings.
+    expect(verdict.journal.map((entry) => entry.text)).toContain('Swung the FIST at a Level 3 GARGALON and hit for 21');
+  });
+
+  it('fails a run one of whose readings has been moved', async () => {
+    const log = await unforgivenClockedRun();
+    const at = firstSwingsReading(log);
+    // Seven ticks later is another moment of the sawtooth Borland's generator answers, so the
+    // swing under it rolls something else and the run goes somewhere the log does not claim.
+    const moved = log.inputs.map((input, index) => (index === at ? input - 7 : input));
+
+    const verdict = await verifyRun(runLogOf([{ ...log, inputs: moved }]));
+
+    expect(verdict.status).toBe('failed');
+    expect(verdict.reason).toBe(`The replay spent ${log.actions - 1} actions and the log claims ${log.actions} actions.`);
+  });
+
+  it('cannot check a run with a reading taken out of it', async () => {
+    const log = await unforgivenClockedRun();
+    const at = firstSwingsReading(log);
+    const short = log.inputs.filter((_, index) => index !== at);
+
+    const verdict = await verifyRun(runLogOf([{ ...log, inputs: short }]));
+
+    expect(verdict.status).toBe('unverifiable');
+    expect(verdict.reason).toContain('The log holds fewer readings of the tick counter than inputs.');
+  });
+});
+
 describe('verifying a run played in more than one sitting', () => {
   it('verifies the chain and says what the whole run came to', async () => {
     const log = await unforgivenChain();
@@ -374,6 +413,12 @@ describe('reading a run log out of a file', () => {
   it('reads back a log this build wrote', async () => {
     const log = runLogOf([await unforgivenRun()]);
     expect(readRunLog(JSON.stringify(log))).toEqual(log);
+  });
+
+  it("reads back a log with the tick counter's readings in it", async () => {
+    const log = runLogOf([await unforgivenClockedRun()]);
+    expect(readRunLog(JSON.stringify(log))).toEqual(log);
+    expect((await verifyRun(readRunLog(JSON.stringify(log))!)).status).toBe('verified');
   });
 
   it('refuses anything that is not a log this build reads', async () => {

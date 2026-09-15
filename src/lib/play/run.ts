@@ -708,8 +708,30 @@ export async function replayRun(recorded: RunSession, before?: RunTotals): Promi
     sound: recorded.sound,
     before,
     replaying: true,
+    tickCounter: countedTicks(recorded),
   });
   return RUN_GAMES[recorded.game].replay(recorded, run);
+}
+
+/**
+ * The tick counter a replay is played on: the readings the log holds, handed back in the order
+ * they were taken.
+ *
+ * The run reads the counter before every input it writes down, whoever is making the inputs, so
+ * a replay making the inputs the sitting made asks for the readings the sitting took, one for
+ * one. Null for a log with no readings in it, which is a run played off the clock and replays
+ * with no clock at all.
+ */
+function countedTicks(recorded: RunSession): (() => number) | null {
+  const ticks = recorded.inputs.map(tickRead).filter((tick) => tick >= 0);
+  if (ticks.length === 0) return null;
+  let at = 0;
+  return () => {
+    // The replay has made more inputs than the log holds readings for, which is a log missing
+    // some of its own: there is no number to hand back and nothing to be learned from carrying on.
+    if (at >= ticks.length) throw new Error('The log holds fewer readings of the tick counter than inputs.');
+    return ticks[at++];
+  };
 }
 
 /** Let the loop take what it has been given and come back to waiting for the next key. */
@@ -741,6 +763,9 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
   await loopRuns();
   for (const input of recorded.inputs) {
     if (session.over) break;
+    // A reading of the tick counter is no key: the run takes it back off the log as it writes
+    // the log again, and hands it to the game as the clock of the key it stands in front of.
+    if (tickRead(input) >= 0) continue;
     session.press(input);
     await loopRuns();
   }
