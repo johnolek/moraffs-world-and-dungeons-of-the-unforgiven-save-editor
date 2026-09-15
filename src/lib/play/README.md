@@ -726,13 +726,21 @@ leaves it off until the map is chosen. The monster in front of the character is 
 heads-up display's (`MapHud.svelte`), centred at the top of the map, since the map is the
 site's view and the game's screen is the game's (John, 2026-09-09).
 
-A screen the game takes the whole display over with is the game's own either way. The map has
-nowhere to put the S key's screen, the module teleporter's tunnel, the tablet, the boss's office,
-the X key's map or a page drawn on a screen the game has cleared, so for as long as one is up
-`Screen.svelte` covers the map with it, letterboxed at 4:3, and the map is back the moment the
-game takes it down. Both displays draw that screen from the one snippet in `Play.svelte`, so they
-cannot come to show it differently; Moraff's World does the same with `MwScreen.svelte`. The
-message box in the column beside the map goes on showing the box's own lines throughout.
+A screen of pictures is the game's own either way. The map has nowhere to put the S key's screen,
+the module teleporter's tunnel, the tablet, the boss's office or the X key's map, so for as long
+as one is up `Screen.svelte` covers the map with it, letterboxed at 4:3, and the map is back the
+moment the game takes it down. Both displays draw that screen from the one snippet in
+`Play.svelte`, so they cannot come to show it differently; Moraff's World does the same with
+`MwScreen.svelte` for every screen of its own.
+
+A page that is only lines on a display the game has cleared — the character sheet, the help pages,
+the spell tables — is laid over the map rather than covering it (John, 2026-09-15). `Play.svelte`
+prints `view.screen` through `ui/GameScreen.svelte` in the same 4:3 window, over a wash that dims
+the map without hiding it, and blacks out the rectangle `view.screenCleared` names so that a
+partial fill like the spell table's is as black here as it is on the game's own screen. A screen
+whose rectangle the port does not know fills the whole display in the game, and here the wash
+stands in for it. The message box in the column beside the map goes on showing the box's own lines
+throughout one of these; a screen of pictures carries the box itself, so the column leaves it off.
 
 The mode belongs to the tab, and each session carries the one it is being played in as
 `session.mode`, so that anything keeping a record of a run can say which mode it was played in.

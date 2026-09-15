@@ -10,6 +10,9 @@
   import MonsterDetail from '../bestiary/MonsterDetail.svelte';
   import { monsterGroups } from '../bestiary/monsters';
   import { expNeeded } from '../game/port/combat';
+  import GameScreen from '../ui/GameScreen.svelte';
+  import type { ScreenRect } from '../game/port/state';
+  import { SCREEN_WINDOW } from './display';
   import MapHud from './MapHud.svelte';
   import MessageBox from './MessageBox.svelte';
   import MonsterCard from './MonsterCard.svelte';
@@ -117,16 +120,12 @@
   }
 
   /**
-   * Whether the game has taken the display over with a screen of its own, which is when the map
-   * gives way to the game's own drawing of that screen.
-   *
-   * The screens the port draws for itself are named one by one; everything else the game covers
-   * the display with — the help, the V screen, the pages behind the P key — is lines drawn on a
-   * screen it has cleared, which is what `view.screen` holds.
+   * Whether the game has taken the display over with a screen of pictures — the X key's map, the
+   * tablet, a town building, the boss's office, the module tunnel, the S key's monsters. The map
+   * has nowhere to draw any of them, so the game's own screen covers it for as long as one is up.
    */
-  function screenTakesOver(view: PlayView): boolean {
+  function pictureScreen(view: PlayView): boolean {
     return (
-      view.screen.length > 0 ||
       view.expandedMap ||
       view.tablet !== null ||
       view.sectionScreen !== null ||
@@ -134,6 +133,26 @@
       view.bossOffice !== null ||
       view.tunnel !== null
     );
+  }
+
+  /**
+   * Whether what the game has put up is only lines on a display it has cleared: the character
+   * sheet, the help pages, the spell tables and the rest of what `view.screen` holds. Those are
+   * laid over the map rather than covering it, so the floor stays in sight while they are read.
+   */
+  function textScreen(view: PlayView): boolean {
+    return view.screen.length > 0 && !pictureScreen(view);
+  }
+
+  /** Where on the game's 4:3 screen the rectangle it blacked out stands, as shares of it, for the
+   *  patch of black the text is read on. */
+  function clearedPatch(rect: ScreenRect) {
+    return {
+      left: `${(rect.x / SCREEN_WINDOW.width) * 100}%`,
+      top: `${(rect.y / SCREEN_WINDOW.height) * 100}%`,
+      width: `${((rect.right - rect.x) / SCREEN_WINDOW.width) * 100}%`,
+      height: `${((rect.bottom - rect.y) / SCREEN_WINDOW.height) * 100}%`,
+    };
   }
 
   /** Every spell the character has running, the ones counting down first, for the list the map's
@@ -252,8 +271,26 @@
     <!-- The game draws these across the four views; with the map in their place there is nowhere
          on it to put them, so the game's own screen covers the map for as long as one of them is
          up, letterboxed the way the screen display shows it. -->
-    {#if screenTakesOver(view)}
+    {#if pictureScreen(view)}
       <div class="overlay">{@render gameScreen(stage)}</div>
+    {:else if textScreen(view)}
+      <!-- Lines on a cleared display instead: they are printed where the game prints them, on a
+           4:3 window over the map, and the map is dimmed rather than covered. -->
+      <div class="text-screen">
+        <div class="window">
+          {#if view.screenCleared}
+            {@const patch = clearedPatch(view.screenCleared)}
+            <div
+              class="cleared"
+              style:left={patch.left}
+              style:top={patch.top}
+              style:width={patch.width}
+              style:height={patch.height}>
+            </div>
+          {/if}
+          <GameScreen lines={view.screen} window={SCREEN_WINDOW} />
+        </div>
+      </div>
     {/if}
   {/if}
   {#if openMonster}
@@ -278,7 +315,7 @@
      office, the module tunnel — that screen carries the box already, so the side column would be
      saying the same lines a second time. -->
 {#snippet afterRun(stage: Stage)}
-  {#if stage.display === 'map' && !screenTakesOver(stage.view)}
+  {#if stage.display === 'map' && !pictureScreen(stage.view)}
     <MessageBox lines={stage.view.box} />
   {/if}
 {/snippet}
@@ -330,6 +367,40 @@
      the stage's own height less what the overlay puts around it. */
   .overlay :global(.screen) {
     width: min(100%, calc((100cqh - 2 * var(--inset)) * 4 / 3));
+  }
+  /* The wash the map is read through while a screen of lines stands over it. It takes no clicks,
+     so the map can still be dragged and hovered underneath. */
+  .text-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    padding: var(--inset);
+    pointer-events: none;
+  }
+  /* The same 4:3 window the game's own screen keeps, so every line lands where the game put it. */
+  .text-screen .window {
+    position: relative;
+    width: min(100%, calc((100cqh - 2 * var(--inset)) * 4 / 3));
+  }
+  /* The rectangle the game filled with black before it printed. A screen whose rectangle the port
+     does not know fills the whole display in the game, and there the wash stands in for it so
+     that the map still shows. */
+  .text-screen .cleared {
+    position: absolute;
+    background: #000;
+  }
+  /* The lines lie over the map and the black patch, so they bring no ground of their own. The
+     window is the screen's own 1600 by 1200, which leaves no room under the lowest line for the
+     tails of its letters; they hang over the map rather than being cut off. */
+  .text-screen :global(.screen) {
+    position: relative;
+    background: none;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
   }
   .prompt {
     position: absolute;
