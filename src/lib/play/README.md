@@ -641,6 +641,16 @@ The session carries no `RunRecorder`, so nothing fought here is written down as 
 `CharacterFile` writes nowhere: `died` does nothing, so a character killed in the simulator is
 not marked dead on the roster.
 
+**What a fight came to** is `fightSummary`, which adds up the events the game pushed: the swings
+and what they landed, the blows and breaths the monster answered with, the levels, experience and
+characteristics a drainer took, the spells cast, and the moves and seconds spent. It reads the
+session's whole event list rather than a slice of it, because a fresh fight starts with an empty
+list and a clock at nought, so everything on it belongs to this fight — the spells cast while
+setting it up included. `fightSummaryLines` is the words, and the tab prints them beside the
+screen as soon as either of the two is dead. A run's summary (`summary.ts`) does not serve here:
+it is folded per kind of monster over a whole run and counts the walking and the shopping a
+fight has none of.
+
 ## The moment
 
 `passMoment` (exe 2000:a53c) is in `src/lib/game/port/moment.ts` with the two halves of a step it

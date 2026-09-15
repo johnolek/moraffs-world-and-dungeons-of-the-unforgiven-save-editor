@@ -30,6 +30,8 @@
   import {
     castFightSpell,
     fightOutcome,
+    fightSummary,
+    fightSummaryLines,
     fillSpellPoints,
     monsterLevelRange,
     rollFightHp,
@@ -41,6 +43,7 @@
     type FightMonster,
     type FightOutcome,
     type FightSpell,
+    type FightSummary,
   } from './fight-sim';
   import { gameKey } from './keys';
   import Panel from './Panel.svelte';
@@ -106,6 +109,22 @@
     const playing = session;
     if (playing === null || view === null) return 'waiting';
     return fightOutcome(playing, sent);
+  });
+
+  /**
+   * What the fight came to, once it has come to something.
+   *
+   * A fresh session's event list is empty and its clock is at nought, so the whole of it is the
+   * fight -- the spells cast while setting it up included.
+   */
+  const finished: FightSummary | null = $derived.by(() => {
+    const playing = session;
+    if (playing === null || view === null) return null;
+    if (outcome !== 'monsterDead' && outcome !== 'characterDead') return null;
+    return fightSummary(playing.game.events, {
+      seconds: playing.game.secondsElapsed,
+      outcome,
+    });
   });
 
   /** The copy is taken when a character is picked, so the numbers in the form start as theirs
@@ -423,6 +442,12 @@
             <button type="button" onclick={again}>Again</button>
             <button type="button" onclick={leave}>Leave the fight</button>
           </div>
+          {#if finished}
+            <h3 class="summed">What the fight came to</h3>
+            <ul class="summary">
+              {#each fightSummaryLines(finished) as line, at (at)}<li>{line}</li>{/each}
+            </ul>
+          {/if}
         </div>
 
         <section class="spells">
@@ -584,6 +609,17 @@
     font-size: 18px;
     line-height: 1.3;
     color: var(--accent);
+  }
+  .summed {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .summary {
+    margin: 4px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    line-height: 1.6;
   }
   .buttons {
     display: flex;

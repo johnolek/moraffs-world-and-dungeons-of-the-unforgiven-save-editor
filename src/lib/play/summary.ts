@@ -302,7 +302,7 @@ export interface SummaryNames {
 }
 
 /** "1 step", "12 steps". */
-function count(many: number, one: string, several = `${one}s`): string {
+export function count(many: number, one: string, several = `${one}s`): string {
   return `${many} ${many === 1 ? one : several}`;
 }
 

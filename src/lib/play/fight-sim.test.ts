@@ -11,6 +11,8 @@ import {
   fightMonster,
   fightOutcome,
   fightSquare,
+  fightSummary,
+  fightSummaryLines,
   fillSpellPoints,
   monsterLevelRange,
   rollFightHp,
@@ -22,6 +24,7 @@ import {
   type FightSetup,
 } from './fight-sim';
 import { monsterById } from '../map/stocking';
+import type { GameEvent } from '../game/port/state';
 import { KEY } from './keys';
 
 /** The class byte of a Sage, who is the one class allowed both lists of battle spells out of
@@ -337,5 +340,70 @@ describe('the spells a fight has buttons for', () => {
     expect(battle).toContain('RESIST LEVEL DRAIN');
     expect(battle).toContain('RESIST POISON');
     expect(battle).toContain('RESIST DISEASE');
+  });
+});
+
+/** The monster of a scripted fight, as every event that names one names it. */
+const GHOUL = { type: 3, level: 12, name: 'GHOUL' };
+
+/** A fight the game could have pushed: two swings, a blow, a breath, a drainer and a puffball,
+ *  and the spell that finished it. */
+const SCRIPTED: GameEvent[] = [
+  { kind: 'met', monster: GHOUL, slot: 0 },
+  { kind: 'cast', spell: { game: 'unforgiven', type: 1, level: 0, slot: 1, source: 'spellPoints', name: 'ENCHANT WEAPON LEVEL 1' } },
+  { kind: 'swung', weapon: 'SWORD', monster: GHOUL, damage: 14 },
+  { kind: 'swung', weapon: 'SWORD', monster: GHOUL, damage: 0 },
+  { kind: 'hit', monster: GHOUL, damage: 9, breath: null },
+  { kind: 'hit', monster: GHOUL, damage: 0, breath: null },
+  { kind: 'hit', monster: GHOUL, damage: 21, breath: 1 },
+  { kind: 'levelLost', levels: 2, level: 10, monster: GHOUL },
+  { kind: 'experienceDrained', experience: 400, monster: GHOUL },
+  { kind: 'statChanged', stat: 'STRENGTH', by: -1 },
+  { kind: 'statChanged', stat: 'LUCK', by: 1 },
+  { kind: 'cast', spell: { game: 'unforgiven', type: 2, level: 9, slot: 2, source: 'spellPoints', name: 'AUTOKILL' } },
+  { kind: 'spellDamaged', monster: GHOUL, damage: 300 },
+  { kind: 'killed', monster: GHOUL, experience: 1200 },
+];
+
+describe('what a fight came to', () => {
+  it('is added up from the events the game pushed', () => {
+    expect(fightSummary(SCRIPTED, { seconds: 140, outcome: 'monsterDead' })).toEqual({
+      swings: 2,
+      hits: 1,
+      damageDealt: 14,
+      // The blow that missed is no blow, and the breath is a blow like any other.
+      blows: 2,
+      damageTaken: 30,
+      breaths: 1,
+      breathDamage: 21,
+      levelsDrained: 2,
+      experienceDrained: 400,
+      // A point taken and a point handed back.
+      statsDrained: 0,
+      spells: ['ENCHANT WEAPON LEVEL 1', 'AUTOKILL'],
+      // The two swings and the two casts; nothing else on the list is one of a run's actions.
+      moves: 4,
+      seconds: 140,
+      outcome: 'monsterDead',
+    });
+  });
+
+  it('says what it came to in words, and leaves out whatever came to nothing', () => {
+    expect(fightSummaryLines(fightSummary(SCRIPTED, { seconds: 140, outcome: 'monsterDead' }))).toEqual([
+      'Swung 2 times, hit 1 and missed 1',
+      'Took 14 hit points off the monster',
+      'Was hit 2 times for 30',
+      'Was breathed on 1 time for 21',
+      'Lost 2 levels',
+      'Lost 400 experience to a drainer',
+      'Cast 2 spells: ENCHANT WEAPON LEVEL 1, AUTOKILL',
+      'Spent 4 moves and 140 seconds',
+    ]);
+  });
+
+  it('says how long a fight nobody landed a blow in took, and nothing else', () => {
+    expect(fightSummaryLines(fightSummary([], { seconds: 0, outcome: 'characterDead' }))).toEqual([
+      'Spent 0 moves and 0 seconds',
+    ]);
   });
 });

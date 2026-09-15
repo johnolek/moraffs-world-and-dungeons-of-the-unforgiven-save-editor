@@ -1,3 +1,4 @@
+import { isActionKind } from '../game/action';
 import { levelDistribution } from '../bestiary/distribution';
 import type { Monster } from '../bestiary/monsters';
 import { rollHp } from '../bestiary/roll';
@@ -6,13 +7,20 @@ import { savePlayer } from '../game/port/record';
 import type { Rng } from '../game/port/rng';
 import { portedSpell } from '../game/port/spell-index';
 import { cureDisease, curePoison } from '../game/port/magic';
-import { MAP_EMPTY, MAP_PLAYER, setMonsterMap, type PlayerCharacter } from '../game/port/state';
+import {
+  MAP_EMPTY,
+  MAP_PLAYER,
+  setMonsterMap,
+  type GameEvent,
+  type PlayerCharacter,
+} from '../game/port/state';
 import { endBattleSpells, endPrepSpells } from '../game/port/town';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
 import { monsterTypeOf } from './floor';
 import { KEY } from './keys';
 import { runPlayLoop } from './loop';
+import { count } from './summary';
 
 /**
  * The Fight tab: one monster, a copy of a character, and the game's own loop between them.
@@ -298,6 +306,128 @@ export function fightOutcome(session: GameSession, sent: boolean): FightOutcome 
   if (session.dead) return 'characterDead';
   if (!sent) return 'waiting';
   return fightMonster(session).hp < 1 ? 'monsterDead' : 'fighting';
+}
+
+/**
+ * What a fight came to, in the numbers the game itself pushed while it was fought.
+ *
+ * A run's summary (`summary.ts`) is not this: it is folded per kind of monster over a whole run,
+ * and counts the walking, the shopping and the finding a fight has none of. This counts one
+ * character against one monster from the moment the fight was set up.
+ */
+export interface FightSummary {
+  /** Swings taken at the monster, and how many of them landed. */
+  swings: number;
+  hits: number;
+  /** Hit points the swings took off the monster. */
+  damageDealt: number;
+  /** Blows the monster landed on the character, and what they came to. A blow that missed is not
+   *  counted, and a breath is a blow like any other. */
+  blows: number;
+  damageTaken: number;
+  /** Breaths of fire or cold the monster spent, and what those came to. Both numbers are part of
+   *  the blows and the damage above as well. */
+  breaths: number;
+  breathDamage: number;
+  /** Levels and experience a life drainer took. */
+  levelsDrained: number;
+  experienceDrained: number;
+  /** Points of a characteristic a drainer or a puffball took, less any it handed back. */
+  statsDrained: number;
+  /** The spells cast, by the name the game's own menu prints, in the order they were cast. */
+  spells: string[];
+  /** Moments of the game the fight spent, which is what a run counts as its actions. */
+  moves: number;
+  /** The game's own clock, in seconds. */
+  seconds: number;
+  outcome: FightOutcome;
+}
+
+/** How the fight stood when it was summed up, which the events do not carry. */
+export interface FightReached {
+  seconds: number;
+  outcome: FightOutcome;
+}
+
+/** Everything a fight came to, added up from the events the game pushed while it was fought. */
+export function fightSummary(events: readonly GameEvent[], reached: FightReached): FightSummary {
+  const summary: FightSummary = {
+    swings: 0,
+    hits: 0,
+    damageDealt: 0,
+    blows: 0,
+    damageTaken: 0,
+    breaths: 0,
+    breathDamage: 0,
+    levelsDrained: 0,
+    experienceDrained: 0,
+    statsDrained: 0,
+    spells: [],
+    moves: 0,
+    seconds: reached.seconds,
+    outcome: reached.outcome,
+  };
+  for (const event of events) {
+    if (isActionKind(event.kind)) summary.moves += 1;
+    switch (event.kind) {
+      case 'swung':
+        summary.swings += 1;
+        if (event.damage > 0) summary.hits += 1;
+        summary.damageDealt += event.damage;
+        break;
+      case 'hit':
+        if (event.damage > 0) summary.blows += 1;
+        summary.damageTaken += event.damage;
+        if (event.breath !== null) {
+          summary.breaths += 1;
+          summary.breathDamage += event.damage;
+        }
+        break;
+      case 'levelLost':
+        summary.levelsDrained += event.levels;
+        break;
+      case 'experienceDrained':
+        summary.experienceDrained += event.experience;
+        break;
+      case 'statChanged':
+        summary.statsDrained -= event.by;
+        break;
+      case 'cast':
+        if (event.spell.game === 'unforgiven') summary.spells.push(event.spell.name);
+        break;
+    }
+  }
+  return summary;
+}
+
+/** What a fight came to in words, a line at a time, leaving out whatever came to nothing. */
+export function fightSummaryLines(summary: FightSummary): string[] {
+  const lines: string[] = [];
+  if (summary.swings > 0) {
+    lines.push(
+      `Swung ${count(summary.swings, 'time')}, hit ${summary.hits} and missed ` +
+        `${summary.swings - summary.hits}`,
+    );
+  }
+  if (summary.damageDealt > 0) lines.push(`Took ${summary.damageDealt} hit points off the monster`);
+  if (summary.blows > 0) {
+    lines.push(`Was hit ${count(summary.blows, 'time')} for ${summary.damageTaken}`);
+  }
+  if (summary.breaths > 0) {
+    lines.push(`Was breathed on ${count(summary.breaths, 'time')} for ${summary.breathDamage}`);
+  }
+  if (summary.levelsDrained > 0) lines.push(`Lost ${count(summary.levelsDrained, 'level')}`);
+  if (summary.experienceDrained > 0) {
+    lines.push(`Lost ${summary.experienceDrained} experience to a drainer`);
+  }
+  if (summary.statsDrained > 0) {
+    lines.push(`Lost ${count(summary.statsDrained, 'point')} of the six characteristics`);
+  }
+  if (summary.spells.length > 0) {
+    lines.push(`Cast ${count(summary.spells.length, 'spell')}: ${summary.spells.join(', ')}`);
+  }
+  lines.push(`Spent ${count(summary.moves, 'move')} and ${count(summary.seconds, 'second')}`);
+  return lines;
 }
 
 /** One spell the Fight tab has a button for. */
