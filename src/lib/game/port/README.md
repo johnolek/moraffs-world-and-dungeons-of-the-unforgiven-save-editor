@@ -95,23 +95,23 @@ the to-hit roll follows. The clock a session hands in reads the machine's tick c
 it read is written into the run log in front of the input it was read for, so a replay rolls what
 the player rolled; `src/lib/play/README.md` is that half of it.
 
-Given a clock the port plays both of the tick-counter reseeds that reach a die: `strike`'s, and
-`Random`'s own. `Game.randomCall(n)` is the `Random` call and `Game.rng.random(n)` is the roll the
-game writes inline, and every roll site in the port is one or the other, checked against the
-instruction stream; `Game.randomTotal` is the running total `Random` keeps, `DS:c609`, which a
-sitting starts the way `main` does except that the seed the sitting was started from stands in for
-the wall clock `main` reads, so a replay off the log alone starts it at the same number.
+Given a clock the port plays all three of the tick-counter reseeds that reach a die: `strike`'s,
+`Random`'s own, and the one `stock_level` (exe 2000:671e) does at 2000:6979 before every try at a
+monster's square, which is why a freshly stocked floor holds its monsters in diagonal stripes.
+`Game.randomCall(n)` is the `Random` call and `Game.rng.random(n)` is the roll the game writes
+inline, and every roll site in the port is one or the other, checked against the instruction
+stream; `Game.randomTotal` is the running total `Random` keeps, `DS:c609`, which a sitting starts
+the way `main` does except that the seed the sitting was started from stands in for the wall clock
+`main` reads, so a replay off the log alone starts it at the same number.
 
-The two tick-counter reseeds left over each have a reason. `defend`'s never reaches a die even in
-the original: the roll under it is a `Random` call, and `Random` reseeds from the clock again
-before it rolls, so playing the `srand` above it alone would hand out numbers the game never had.
-`stock_level`'s is one per monster it places, and the port does not stock a floor the way the
-original does. The reseeds left after that are not from the tick counter at all: `roll_char` and
-`drop_money` seed from `time()`, the second the roller was started in and the second a kill
-happened in, which is a clock no session supplies, and `trapdoor_dest` counts up from 10 and needs
-no clock. `roll_char`, `drop_money` and `stock_level` are what MORF-518 and MORF-519 still owe;
-everything else the game reseeds, a game here reseeds too. The arithmetic on either side of a
-reseed is ported exactly, reseed or no reseed.
+The tick-counter reseed left over is `defend`'s, which never reaches a die even in the original:
+the roll under it is a `Random` call, and `Random` reseeds from the clock again before it rolls,
+so playing the `srand` above it alone would hand out numbers the game never had. The reseeds after
+that are not from the tick counter at all: `roll_char` and `drop_money` seed from `time()`, the
+second the roller was started in and the second a kill happened in, which is a clock no session
+supplies, and `trapdoor_dest` counts up from 10 and needs no clock. `roll_char` and `drop_money`
+are what MORF-519 still owes; everything else the game reseeds, a game here reseeds too. The
+arithmetic on either side of a reseed is ported exactly, reseed or no reseed.
 
 ## Naming and citations
 

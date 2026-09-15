@@ -899,7 +899,8 @@ landings, so eleven of `spell_effect`'s sixteen calls are played by seven sites.
 ported twice over, once in `moment.ts` and once in `magic.ts`, so two calls of the game have four
 sites.  And `play/floor.ts`'s `fractions` is not one roll but the whole of `stock_level`: the
 stocking in `src/lib/map/stocking.ts` draws fractions rather than rolls, so its twelve calls have
-no site of their own here.
+no site of their own here.  `play/floor.ts`'s `squareReseed` is the srand at 2000:6979 that stands
+over two of those twelve, the slot's x and y, and a game with a clock hands it in.
 
 What the port has no site for: `get_mtype` and `stock_level` (a floor is stocked through
 `fractions` above), `random_events_tick` and `title_screen`, `set_palette`'s palette fade,

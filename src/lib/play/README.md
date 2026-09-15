@@ -173,7 +173,8 @@ played, so that a claimed ending can be checked by playing it again rather than 
   pressed them: `RunRecorder.presses` is the count of the keys a person really did press, which
   is what the run server holds a run to a human speed by, and it is no part of the log.
 * **The clock** — Dungeons of the Unforgiven reseeds its generator from the machine's tick
-  counter before a swing, the way the original does (section 8 of
+  counter before a swing, before every `Random` call and before every monster it puts down on a
+  fresh floor, the way the original does (section 8 of
   `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md`), so what a swing rolls is that reading rather than the
   next number of any sequence. A run played that way is started with a tick counter —
   `sittingClock`, which counts 1/18.2 of a second from the moment the sitting began, off
@@ -710,6 +711,13 @@ map the tab draws behind an arrival's box would otherwise be blank.
 Stocking is `src/lib/map/stocking.ts`, which is already a port of `stock_level` and is the only
 one — the game's three-floor memory around it lives in `FloorMonsters`, so coming back up a
 ladder finds the monsters where they were left.
+
+A game played on the clock stocks the way the original does as well. `stock_level` starts its
+generator again before every try at a monster's square, from the tick counter plus the slot and
+the number of tries the floor has taken (exe 2000:6979), and seeds that close together answer with
+numbers that climb in a straight line, so such a floor holds its monsters in diagonal stripes
+rather than scattered about. `floor.ts` hands that reseed to the stocking; the map explorer and a
+game with no clock hand none and get the even spread.
 
 The monsters the map draws are worked out from the occupancy grid (`drawnMonsters`), so a monster
 that has been killed and taken off the grid stops being drawn without anything else being told.
