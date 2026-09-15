@@ -1,7 +1,8 @@
 <!--
   The heads-up display over the top-down map: the monster being fought at the top with a bar of
-  its hit points beside it, and along the bottom a bar of dark stone with the health and spell
-  orbs standing in its ends and the experience bar between them.
+  its hit points beside it, the spells the character has running down the right edge, and along
+  the bottom a bar of dark stone with the health and spell orbs standing in its ends and the
+  experience bar between them.
 
   The map is the site's own view of a game rather than anything the game ever drew, so this is the
   site's own look (John, 2026-09-09). It takes no clicks and changes nothing: the game, the run
@@ -10,6 +11,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { HUD_ORB_PX } from './hud';
+  import type { PanelLine } from './panel';
   import HudExpBar from './HudExpBar.svelte';
   import HudMonsterBar from './HudMonsterBar.svelte';
   import HudOrb from './HudOrb.svelte';
@@ -30,6 +32,11 @@
      * the picture here too. The caller leaves them out in the modes that print none.
      */
     closeUpLines?: string[];
+    /**
+     * The spells the character has running, each with the moves it has left or what it is
+     * standing at, and a note for its tooltip. Left out for a game with no such list.
+     */
+    spells?: PanelLine[];
     /** The character's hit points and what they can hold. */
     hp: number;
     maxHp: number;
@@ -49,8 +56,20 @@
     barHeight?: number;
   }
 
-  let { closeUp, closeUpHp, closeUpLines, hp, maxHp, sp, maxSp, level, exp, needed, barHeight = $bindable(0) }: Props =
-    $props();
+  let {
+    closeUp,
+    closeUpHp,
+    closeUpLines,
+    spells = [],
+    hp,
+    maxHp,
+    sp,
+    maxSp,
+    level,
+    exp,
+    needed,
+    barHeight = $bindable(0),
+  }: Props = $props();
 
   let stone = $state.raw<HTMLDivElement | null>(null);
 
@@ -78,6 +97,16 @@
         {/if}
       </div>
     </div>
+  {/if}
+  {#if spells.length > 0}
+    <ul class="spells">
+      {#each spells as spell}
+        <li title={spell.note}>
+          <span class="what">{spell.label}</span>
+          <span class="left">{spell.value}</span>
+        </li>
+      {/each}
+    </ul>
   {/if}
   <div class="foot">
     <div class="stone" bind:this={stone}></div>
@@ -139,6 +168,34 @@
     text-shadow:
       0 0 4px #000,
       0 1px 2px #000;
+  }
+  /* What the character has running, up the right edge and clear of both the picture at the top
+     and the orb below. The rest of the display takes no clicks; this list takes its own back, so
+     that resting on a spell shows what it does. */
+  .spells {
+    position: absolute;
+    right: var(--inset);
+    bottom: calc(var(--orb-size) * 1.15);
+    max-width: 40%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    pointer-events: auto;
+    font-size: calc(var(--orb-size) * 0.09);
+    line-height: 1.35;
+    color: #fff;
+    text-shadow:
+      0 0 4px #000,
+      0 1px 2px #000;
+  }
+  .spells li {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6em;
+    cursor: help;
+  }
+  .spells .left {
+    opacity: 0.85;
   }
   .foot {
     position: absolute;

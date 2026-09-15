@@ -14,7 +14,7 @@
   import MessageBox from './MessageBox.svelte';
   import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
-  import { monsterKindSquares } from './panel';
+  import { monsterKindSquares, spellTimers, untimedSpells, type PanelLine } from './panel';
   import { pathToNearestTeleporter } from '../map/path';
   import PlayTab from './PlayTab.svelte';
   import Portrait from './Portrait.svelte';
@@ -136,6 +136,13 @@
     );
   }
 
+  /** Every spell the character has running, the ones counting down first, for the list the map's
+   *  heads-up display shows. It is the same reading of the record the panel beside the map makes. */
+  function spellsRunning(stage: Stage): PanelLine[] {
+    const pc = stage.session.game.pc;
+    return [...spellTimers(pc), ...untimedSpells(pc)];
+  }
+
   /** A key on its way to the game. Under Moraff's World's arrows an arrow becomes the turn and
    *  the step that come to the same thing here, and the loop reads them one after the other. */
   function press(session: GameSession, key: number) {
@@ -223,6 +230,7 @@
       closeUp={facing ? closeUp : undefined}
       closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
       closeUpLines={debugDrawn(stage.mode) ? view.engagedDebugLines : []}
+      spells={spellsRunning(stage)}
       hp={view.hp}
       maxHp={view.maxHp}
       sp={view.sp}
