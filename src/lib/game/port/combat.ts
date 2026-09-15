@@ -641,7 +641,7 @@ export function attackTiming(game: Game): number {
 
 /**
  * exp_value (exe 3000:a0fa, unf.c "exp_value"): what killing the monster in slot `slot` is
- * worth. Levels past 130 are all worth the same.
+ * worth. Levels past the game's cap of 130 are all worth the same.
  *
  * Ghidra kept the `pow` base — the double at DS:2f60, which is 1.23 — and dropped the FPU
  * arithmetic around it; the shape is `expValue` in `dotu-mech.js`. A monster whose experience
@@ -651,7 +651,7 @@ export function attackTiming(game: Game): number {
 export function expValue(game: Game, slot: number): number {
   const monster = game.monsters[slot];
   let level = monster.level;
-  if (level > 130) level = 130;
+  if (level > game.rules.experienceCap) level = game.rules.experienceCap;
   const kind = game.monsterKinds[monster.type];
   if (kind.expMult === 0) return 0;
   return kind.expMult * (level + 1 + 5 * Math.pow(1.23, level));
