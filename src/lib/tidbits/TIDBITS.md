@@ -165,20 +165,6 @@ does nothing at all a quarter of the time on shallow floors.
 
 In the code: [defend](source:ts/combat.ts/defend).
 
-### Poison and disease are a clock, not a condition
-! POISON IS A CLOCK, NOT A WOUND! IT TICKS FOR 450 MOVES!
-
-Being poisoned does not take hit points. It sets a counter to 450 moves, and every 450 moves
-after that it takes a point of strength; disease does the same to constitution. Neither can take
-you below 1, so they never kill you, they only grind you down.
-
-Resist Poison and Resist Disease do not cure anything either. They stop the counter running
-while they are up, and it carries on from where it was when they lapse. The temple and the cure
-spells are the only things that clear it.
-
-In the code: [poison and disease](formula:poison-disease) and
-[drainsAndAilments in defend](source:c/defend).
-
 ### A life drainer always takes 30 experience
 ! THE DRAINER NAMES ONE NUMBER AND TAKES ANOTHER! ALWAYS 30!
 
@@ -316,17 +302,6 @@ makes it the cheapest way out of a fight you cannot win.
 
 In the code: [goAway](source:ts/magic.ts/goAway) and [go_away](source:c/go_away).
 
-### Major Descend works on the bottom floor
-! MAJOR DESCEND WILL TAKE YOU OFF THE BOTTOM OF THE WORLD!
-
-Descend refuses to go deeper than the bottom of the module. Major Descend's version of the same
-test is one number out, so on the bottom floor it goes through, and the ten-floor drop is then
-clamped back to the floor you are already on. The spell reports success, spends its points and
-drops you on a random open square of the same floor. It is a Relocate that costs more.
-
-In the code: [majorDescend](source:ts/magic.ts/majorDescend) and
-[descend](source:ts/magic.ts/descend).
-
 ### The resistances are absolute while they last
 ! RESIST POISON IS NOT A CHANCE! IT IS A PROMISE!
 
@@ -441,13 +416,6 @@ park the weaker reward on that. A monk, who owns nothing but skin and a fist, ge
 the +50 skin from Module IV is +25 skin the moment Module I's last boss dies.
 
 In the code: [kill_monster](source:c/kill_monster).
-
-### The garbage cans float
-! THE GARBAGE CANS FLOAT ON THE WATER! WHAT A SIGHT!
-
-In the three water sections the built-in monsters are drawn 140 rows tall instead of 200, and
-the water overlay is drawn over the bottom of the picture. The cans and puffballs are not
-hovering; their feet are underneath the water.
 
 ### The Shadow bosses are holes in the shape of another monster
 ! A SHADOW BOSS WEARS ANOTHER MONSTER'S FACE!!
@@ -616,24 +584,6 @@ with the fourth power of your level and the discount only grows with the level i
 In the code: [the discount for helping children](formula:store-refund),
 [a night at the inn](formula:inn-cost) and [what the temple charges](formula:temple).
 
-### Nobody starts with anything in the bank
-! YOUR SECOND FORTUNE IS NOT MONEY! IT IS CRYSTALS AND STOCK!
-
-Every class but the fighter gets a second roll of starting wealth at the end of character
-creation, twice your luck plus a roll on five times it. It is not money. It goes into the magic
-crystal count, and crystals are what the inn burns to give spell points back, one crystal for one
-point, so a caster whose luck came out in the twenties can start with a hundred-odd spell points'
-worth of refills. A fighter, who has no spell points to buy back, is given neither the roll nor
-the crystals.
-
-The bank balance is a field of its own two places earlier in the same record, at 0x458 where the
-crystals are at 0x46c, and nothing in the roller ever writes it. Every character in the game, on
-either difficulty, walks into town with an empty account.
-
-In the code: [rollChar](source:ts/character.ts/rollChar),
-[the price of a magic crystal](formula:crystal-price) and
-[what a night at the inn does to you](formula:inn-night).
-
 ### Five inns, and the sign is the only difference
 ! A NIGHT IN OUR HORRIBLE HOTEL MIGHT NOT KILL YOU!
 
@@ -749,24 +699,6 @@ can never reach you. The map explorer counts how many of a floor's 145 went ther
 In the code: [MAP_ROWS](source:ts/area.ts/MAP_ROWS),
 [beyondMapCount](source:ts/stocking.ts/beyondMapCount) and
 [the part of a floor you can reach](formula:map-area).
-
-### Every character starts at level 0
-! EVERY HERO BEGINS AT LEVEL 0! EVEN THE MIGHTY ONES!
-
-Character creation wipes all 2,695 bytes of the record to zero before it rolls anything, and
-nothing in the roller ever writes the level back. Whatever race and class you pick, you leave the
-screen at level 0 with no experience. That is not only a number on the sheet: your to-hit total
-counts your level twice, so the first level you earn is worth two points on every swing you will
-ever make.
-
-Levels are handed out at the inn and nowhere else, so you stay at level 0 until you have earned
-99 experience and paid for a room, or 126 experience on "I can handle anything". Until then you
-are the cheapest customer in town, because the room and the culture stock a stay eats are both
-worked out from your level: ten rubles for the night and no stock whatsoever.
-
-In the code: [rollChar](source:ts/character.ts/rollChar),
-[blankPlayerCharacter](source:ts/character.ts/blankPlayerCharacter) and
-[when a level is actually granted](formula:level-for-exp).
 
 ### The easy setting's spell point bonus never happens
 ! NORMAL DIFFICULTY PROMISES EXTRA SPELL POINTS! DO NOT COUNT THEM!
