@@ -64,20 +64,39 @@ In the code: [strike](source:ts/combat.ts/strike), [strike](source:c/strike) and
 [linear congruential generator](https://en.wikipedia.org/wiki/Linear_congruential_generator),
 which is why consecutive seeds give answers that lie on a straight line.
 
-### Keep your best weapon in hand under a Power Weapon
-! NEVER PUT DOWN YOUR BEST WEAPON FOR A SPELL!
+### Fight bare-handed under a Power Weapon
+! PUT THE GREAT SWORD DOWN!! A POWER WEAPON HITS HARDEST FROM AN EMPTY HAND!
 
-A Power Weapon spell replaces the damage die and nothing else. The to-hit bonus, the permanent
-plus and the swing speed all still come from whatever is actually in your hand, so casting Power
-Weapon with a knife out throws away the Great Sword's bonus for no reason at all.
+A Power Weapon spell replaces the damage die and nothing else. What the weapon in your hand still
+decides is its to-hit bonus, its permanent plus and how long a swing takes, and the last of those
+is the one that matters: the seconds a swing spends are the seconds a monster standing beside you
+spends counting down to its own attack.
+
+A swing with the Fist costs 6 seconds and a swing with the Great Sword costs 25. A monster
+attacks every `(85 - its speed) / 3 + 10` seconds, which is 20 seconds for the fastest kind in
+the game and 36 for the slowest, so bare-handed you get three to six swings for every attack you
+take and with the Great Sword out you get between four-fifths of one and one and a half. Four
+swings against one.
+
+What the Great Sword buys for that is +3 on the to-hit total, and since every full 40 points
+above 40 rolls the damage die again, +3 is three extra rolls in forty: one extra die in thirteen
+swings. A poor agility taxes every swing alike and narrows the gap without turning it, because
+the seconds it adds are the same whatever you are holding — at agility 40 it is 15 seconds
+against 34, still better than two to one. The Knife, 8 seconds and no bonus at all, is a slow
+fist and nothing else. The one thing worth keeping hold of is a weapon a Shadow boss has
+enchanted: a Great Sword carrying +101 adds 104 to the roll, two and a half extra dice a swing,
+and that does beat the fist — but only while the rest of your to-hit total is under about 14,
+which is to say only while a bare fist would be missing anyway.
 
 The die you get is also a row better than the spell's name suggests. The game looks it up eight
 rows past the power weapon level it just wrote, and row eight is already POWER WEAPON 1, so
 Power Weapon I swings the 129-point die of Power Weapon 2 and Power Weapon III swings the
 399-point die of Power Weapon 4, which no spell was ever meant to reach.
 
-In the code: [strike](source:ts/combat.ts/strike) and
-[powerWeapon](source:ts/magic.ts/powerWeapon).
+In the code: [strike](source:ts/combat.ts/strike),
+[spendAttackTime](source:ts/combat.ts/spendAttackTime),
+[powerWeapon](source:ts/magic.ts/powerWeapon), [what a swing costs](formula:attack-seconds) and
+[how often a monster attacks](formula:monster-interval).
 
 ### Permanent spells are free off a scroll
 ! PERMANENT MAGIC FOR NOTHING!! JUST READ THE SCROLL!
@@ -165,12 +184,20 @@ does nothing at all a quarter of the time on shallow floors.
 
 In the code: [defend](source:ts/combat.ts/defend).
 
-### A life drainer always takes 30 experience
-! THE DRAINER NAMES ONE NUMBER AND TAKES ANOTHER! ALWAYS 30!
+### One monster in the game drains experience
+! ONE MONSTER IN THE WHOLE WORLD TAKES YOUR EXPERIENCE! THE REST TAKE LEVELS!
 
-When an experience drainer hits you the message names a number out of the monster's own record.
-The subtraction uses a constant of 30 instead. Every experience drainer in the game happens to
-carry -30, so the two agree, by luck rather than by design.
+Every section stocks a life drainer in the fifth of its five slots, and in nineteen of the twenty
+what it takes is levels: one level, and two in sections 18, 19 and 20. Sections 17 to 20 carry a
+second drainer on top of that, the Shadow boss in the first slot, who takes one. Section 1's is
+the odd one out. Sustrontima, the drainer of the very first floors you walk, holds -30 where the
+others hold 1 or 2, and a negative number in that byte means experience rather than levels.
+
+That single monster is the whole of a quirk that reads like a general rule. When an experience
+drainer hits you the message names the number out of the monster's own record, but the
+subtraction uses a constant 30 written into the code, and nothing checks that the two agree.
+They agree here only because Sustrontima's number happens to be 30, and there is no second
+experience drainer anywhere in the game for them to disagree on.
 
 Monsters that drain whole levels are a different matter: they take the levels, write your
 experience back down to exactly what the level below is worth, and take back the hit points and
@@ -179,13 +206,21 @@ spell points that level gave you.
 In the code: [defend](source:ts/combat.ts/defend), [goDownLevel](source:ts/combat.ts/goDownLevel)
 and [what the next level costs](formula:exp-needed).
 
-### Acid breath eats the armour you are wearing
-! ACID EATS YOUR ARMOUR RIGHT OFF YOUR BACK!!
+### Three of the five breath weapons never happen
+! ACID EATS YOUR ARMOUR RIGHT OFF YOUR BACK!! IT NEVER GETS THE CHANCE!
 
-Acid is the only attack in the game that takes something away. It does its damage, sets the
-permanent plus on the suit you have on to zero, removes one of that suit from what you own, and
-leaves you standing in your skin. Anti-Fire and Anti-Cold halve their kinds of breath; there is
-no anti-acid.
+A monster's breath is a byte on its record, 1 to 5: fire, ice, acid, green phlegm, black slime.
+All five are written out in full. Acid is the only attack in the game that takes something away
+— it does its damage, sets the permanent plus on the suit you have on to zero, removes one of
+that suit from what you own and leaves you standing in your skin. Green phlegm gives you a
+disease and black slime a poison, each halved by the matching resistance.
+
+Nothing in the game ever breathes any of the three. Of the hundred section monsters and the
+twenty-two built-in ones, nine carry a breath byte at all, and every one of them holds a 1 or a
+2: seven breathe fire, which is the Hydra of section 8, the Flaming Idiot of section 10 and five
+of the dragon section including the Chimera, and two breathe ice, the Water Dragon and the Shadow
+Evil God. Anti-Fire and Anti-Cold halve exactly the two kinds that exist. There is no anti-acid
+because there was never anything to resist.
 
 In the code: [defend](source:ts/combat.ts/defend) and [breath](formula:breath).
 
@@ -585,7 +620,7 @@ In the code: [the discount for helping children](formula:store-refund),
 [a night at the inn](formula:inn-cost) and [what the temple charges](formula:temple).
 
 ### Five inns, and the sign is the only difference
-! A NIGHT IN OUR HORRIBLE HOTEL MIGHT NOT KILL YOU!
+! FIVE INNS!! ONE BED!! NOTHING CHANGES BUT THE SIGN OVER THE DOOR!
 
 Every module has its own inn. Module I has the HELL HOLE INN, whose tin sign explains that A
 NIGHT IN OUR HORRIBLE HOTEL MIGHT NOT KILL YOU. PLEASE KEEP VALUABLES IN BED WITH YOU. After it
@@ -596,6 +631,14 @@ MAINTAINANCE DIRECTOR WILL BE PUT TO DEATH.
 The sign is the whole of the difference. The price of the room, the year it takes off you and the
 spell points it buys back all come from your level and the children you have helped, and the only
 thing the inn asks the module for is which of the five signs to hang up.
+
+It had not always been that way. Moraff's Revenge, five years earlier, had three inns that really
+were three different inns: a room at the Flea Bag cost 10 jewel pieces and healed one health
+point, a suite at the Yuppydom cost 200 and healed three, and a grand suite at the Kings Inn cost
+6,000 and had a cleric on the staff who healed every wound you had. What the two cheap ones
+charged on top of the money was risk. Each rolled once you were asleep, and one night in ten you
+were told you had been robbed, which emptied your purse and zeroed your knife, your sword, your
+mace and the pluses on the last two. Five years on there are five signs and one bed.
 
 In the code: [innSignHint](source:ts/hints.ts/innSignHint),
 [what a night at the inn costs](formula:inn-cost) and
@@ -615,12 +658,34 @@ In the code: [strike](source:ts/combat.ts/strike) and [defend](source:ts/combat.
 ### The monster cache forgets which dungeon you are in
 ! THE MONSTERS FOLLOW YOU BETWEEN MODULES! WE CALL IT ATMOSPHERE!
 
-The game keeps three floors' worth of monsters in memory at a time, filed by floor number alone
-with no note of which module they came from. Walk floor 5 of Module I and then floor 5 of Module
-II in the same session and it can hand you the first one's monsters.
+The game keeps three floors' worth of monsters in memory and files each table by floor number
+alone, with no note of which module it was rolled for. Arriving on a floor it looks that number
+up among the three. Finding it, it swaps that table back in exactly as you left it — every
+monster where it was standing, with the hit points you left it on and the ones you killed still
+dead. Finding nothing, it wipes the oldest of the three and rolls a fresh floor into it. The town
+is floor 0, and is the one floor that is wiped and never filled.
 
-That includes the boss. A floor whose monsters came from somewhere else has no boss standing on
-the square the save file says the boss is on.
+What the table keeps is where each monster stands, which of the twenty-seven loaded rows it
+belongs to, its level and its hit points. What gets reloaded on arrival is the twenty-seven rows
+themselves, and those come from the section you are in now. So walk Module I's floor 1, cross to
+Module V's town and climb down: floor 1 is still in the cache, and what you meet is Module V's
+monsters standing in Module I's places at Module I's numbers. A monster's level starts at the
+floor plus fifteen times the module, so that is level 1 where it should be level 61, a few dozen
+hit points where it should be thousands, and experience to match.
+
+Which of the two you get is decided by the ladder you take out of the town. Towns are full of
+ladders and they do not all go the same distance: Module V's has 65 that drop you one floor and
+30 that drop you two. Take one of the 65 and you land on floor 1, which is in the cache, and get
+Module I's monsters. Take one of the 30 and you land on floor 2, which is not, so it is rolled
+properly — and floor 1 goes on sitting in the cache above you, waiting to be walked into.
+
+Three floors is the whole of the memory, so a stale one clears itself once you have been on three
+other floor numbers since. Until then it also has no boss. The square the save file remembers the
+boss on belongs to the floor you are standing on, and the monsters standing in for it were rolled
+somewhere else entirely.
+
+In the code: [stock](source:ts/floor.ts/stock), [stock_level](source:c/stock_level) and
+[how a floor is stocked](formula:stocking).
 
 ### GO EAST, for ever
 ! GO EAST! GO EAST! GO EAST! KEEP GOING EAST!!
@@ -810,19 +875,30 @@ writes, so it keeps the 16 it starts at, and a wall is always drawn in palette e
 which are the section's own wall colours. That is why the same corridor is green stone in
 section 1 and red brick in section 6.
 
-### The sign nobody has ever read
-! STEP THROUGH THIS TELEPORTER! NO ONE EVER HAS!
+### The sign is the teleporter's own face
+! STEP THROUGH THIS TELEPORTER!! YOU HAVE BEEN LOOKING STRAIGHT AT IT!
 
-Image 2 of every wall picture file is a sign reading STEP THROUGH THIS TELEPORTER. The
-teleporters are commented out of the recovered source code, which had people wondering whether
-they shipped at all; the sign is proof that they did.
+Image 2 of every wall picture file is a sign reading STEP THROUGH THIS TELEPORTER, and it is not
+hidden anywhere. It is what a teleporter looks like. A teleporter is not a square on the map: the
+wall drawer multiplies the side's column by its row, adds the floor times the module, and paints
+image 2 over any plain wall whose answer is one more than a whole number of 128s. So the sign is
+on the screen whenever you face a teleporter, which on floor 1 of Module I is seventeen squares'
+worth. In the line-drawn display modes there is no picture to paint and the drawer writes the
+word ENTER across the face instead.
+
+What made the sign look like a secret is the recovered source listing, which has the teleporter
+rule commented out. That is the listing, not the game. The rule is live in the shipped
+executable, the wall drawer runs it once per face, and the artwork that announces it was in the
+box all along.
 
 The pictures themselves are a
 [run-length code](https://en.wikipedia.org/wiki/Run-length_encoding) with a 201-entry row table
-and 5-bit colours, and the monster file starts with the two ladder pictures before any monster.
+and 5-bit colours, and the teleporter sign is the only image in a wall file that uses a colour
+above 15.
 
-In the code: [where the teleporters are](formula:teleporter-sides) and
-[where a teleporter drops you](formula:teleporter-landing).
+In the code: [where the teleporters are](formula:teleporter-sides),
+[where a teleporter drops you](formula:teleporter-landing) and
+[retdwall2](source:c/retdwall2).
 
 ### The .uhp files are the help screens, not the hints
 ! THE UHP FILES ARE SMARTY'S HELP SCREENS, NOT HIS HINTS!
@@ -879,10 +955,33 @@ In the code: [allHints](source:ts/hints.ts/allHints),
 [random_events_tick](source:c/random_events_tick).
 
 ### The intro demo has its own dungeon
-! THE WANDERING DEMO HERO HAS A DUNGEON OF HIS VERY OWN!
+! THE TITLE SCREEN WALKS A DUNGEON THAT IS IN NO MODULE AT ALL!
 
-`010.DUN` and `011.DUN` are explored-map files for the character that wanders around during the
-attract mode. They are deliberately not valid game maps.
+Attract mode is what the title screen does while nobody presses a key. It picks a random open
+square on a random floor of Module I or Module II, draws the corridor view from there, holds it
+for a hundred ticks and picks another, over and over until a key is hit. Every other scene is one
+big view; the ones in between are six small views of six different spots side by side.
+
+There is no title picture behind any of that. The banner across the top is a strip of the
+dungeon's own third wall texture, blitted twice at two different palette bases so the left half
+and the right half are tinted differently, and the five lines that take turns over it —
+MoraffWare Presents, Dungeons of the Unforgiven, Copyright 1993 by Steve Moraff, Hit a Key to
+Begin Your Challenge, Artwork by Logan Gilbert — are printed straight onto it, each one drawn
+twice so it carries a shadow.
+
+The dungeon those views walk is nobody's. A floor's walls are a hash of the square, the floor and
+the module number, the five modules are numbered 0 to 4, and the title screen sets the module to
+1000. So the corridors on the title screen are a sixth dungeon that no character can ever be
+standing in.
+
+And because the 3-D view marks every square it draws, the title screen quietly explores that
+sixth dungeon and writes the map out. `010.DUN` and `011.DUN` in the game folder are it: 158
+squares between them, filed under the names of modules I and II because that is what the file
+name is built from. Read against modules I and II, 77 of those squares are solid rock. Read
+against dungeon 1000, not one of them is.
+
+In the code: [title_screen](source:c/title_screen) and
+[how a floor is generated](formula:map-hash).
 
 ### Room for a game five times the size
 ! THERE IS ROOM IN HERE FOR A GAME FIVE TIMES THE SIZE!!
@@ -956,15 +1055,18 @@ In the code: [rollCharacteristics](source:ts/character.ts/rollCharacteristics) a
 ### The contest the menu will not let you enter
 ! ONE HUNDRED DOLLARS TO THE FIRST IN THE WORLD!! THE MENU SAYS NO!
 
-`UROLL.TXT` describes three difficulties. The third is a contest: play Module I from beginning to
-end without ever saving, defeat the Shadow Demon Queen, and the first person in the world to ring
-MoraffWare with the code you are given wins a hundred dollars.
+Nobody has ever seen the contest. The difficulty menu shows two choices and stops after option 2.
+There is a third, and the only two places it exists are a text file and the executable.
 
-The registered game reads the three lines that announce it out of the file and drops them without
-printing them, so the menu on screen simply stops after option 2, and the twelve-line page of
-contest rules behind it is read and dropped in the same way. The menu does translate a 3 into the
-contest answer, and then rejects it for being out of range. Everything behind the menu is
-finished: there is a contest flag, the routine that writes a character to disk returns without
+`UROLL.TXT`, the roller's script, spends its first thirteen lines on the menu you do see and its
+next three on the one you do not: 3) CONTEST DIFFICULTY (WIN 100 DOLLARS!), and behind it a
+twelve-line page saying that the first person in the world to play Module I from beginning to end
+without ever saving and defeat the Shadow Demon Queen wins a hundred dollars for ringing
+MoraffWare with the code they are given. The registered game reads those three lines and throws
+them away without printing them, and reads and throws away the twelve-line page the same way. The
+menu does translate a 3 into the contest answer, and then rejects it for being out of range.
+
+Everything behind the menu is finished: there is a contest flag, the routine that writes a character to disk returns without
 doing anything at all while it is set, so the no-saving rule is enforced rather than trusted, and
 the character sheet has a line calling you a contestant where an ordinary character is told they
 are still alive. And the play loop has a hidden key that sets the flag anyway, right beside one
