@@ -15,6 +15,11 @@
 
   let { entries, currentId, onpicked }: Props = $props();
 
+  /** The roster in two halves, so the list a player picks from is the characters who can still be
+   *  played. A dead character is still listed, and still opens in the Save Editor. */
+  const living = $derived(entries.filter((entry) => !entry.dead));
+  const buried = $derived(entries.filter((entry) => entry.dead));
+
   /** The character whose name is being typed over, if any. */
   let renaming = $state<string | null>(null);
   let typedName = $state('');
@@ -57,38 +62,53 @@
   }
 </script>
 
-<table class="chooser">
-  <thead>
-    <tr><th>Character</th><th>Level</th><th>Number</th><th>From</th><th>Type</th><th>Edited</th><th></th></tr>
-  </thead>
-  <tbody>
-    {#each entries as entry (entry.id)}
-      <tr class:current={entry.id === currentId}>
-        <td>
-          {#if renaming === entry.id}
-            <input class="rename" bind:value={typedName} onkeydown={onRenameKey} onblur={commitRename} use:focusInput />
-          {:else}
-            <button type="button" class="link" onclick={() => choose(entry.id)}>{entry.name}</button>
-          {/if}
-        </td>
-        <td>{levelOf(entry)}{entry.dead ? ' · dead' : ''}</td>
-        <td>{entry.slot ?? '—'}</td>
-        <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
-        <td>{characterTypeWords(entry.leaderboard, entry.lock)}</td>
-        <td>{editedOn(entry.editedAt)}</td>
-        <td class="actions">
-          <button type="button" class="link" onclick={() => startRename(entry)}>Rename</button>
-          {#if entry.importedBytes}
-            <button type="button" class="link" onclick={() => restoreCharacterImport(entry.id)}>Restore the import</button>
-          {/if}
-          <button type="button" class="link" onclick={() => remove(entry)}>Remove</button>
-        </td>
-      </tr>
-    {/each}
-  </tbody>
-</table>
+{#snippet list(rows: RosterEntry[])}
+  <table class="chooser">
+    <thead>
+      <tr><th>Character</th><th>Level</th><th>Number</th><th>From</th><th>Type</th><th>Edited</th><th></th></tr>
+    </thead>
+    <tbody>
+      {#each rows as entry (entry.id)}
+        <tr class:current={entry.id === currentId}>
+          <td>
+            {#if renaming === entry.id}
+              <input class="rename" bind:value={typedName} onkeydown={onRenameKey} onblur={commitRename} use:focusInput />
+            {:else}
+              <button type="button" class="link" onclick={() => choose(entry.id)}>{entry.name}</button>
+            {/if}
+          </td>
+          <td>{levelOf(entry)}</td>
+          <td>{entry.slot ?? '—'}</td>
+          <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
+          <td>{characterTypeWords(entry.leaderboard, entry.lock)}</td>
+          <td>{editedOn(entry.editedAt)}</td>
+          <td class="actions">
+            <button type="button" class="link" onclick={() => startRename(entry)}>Rename</button>
+            {#if entry.importedBytes}
+              <button type="button" class="link" onclick={() => restoreCharacterImport(entry.id)}>Restore the import</button>
+            {/if}
+            <button type="button" class="link" onclick={() => remove(entry)}>Remove</button>
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+{/snippet}
+
+{#if living.length > 0}
+  {@render list(living)}
+{/if}
+{#if buried.length > 0}
+  <h4 class="graveyard">Graveyard</h4>
+  {@render list(buried)}
+{/if}
 
 <style>
+  .graveyard {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
   .chooser {
     margin-bottom: 10px;
     border-collapse: collapse;
