@@ -1,11 +1,12 @@
 import type { Leaderboard } from '../app-state.svelte';
 
 /**
- * The lock a character carries from the roll: which leaderboard it was rolled for, in the words
- * the roller, the roster and the Play tab all use for it.
+ * The two things a roll decides about a character and never decides again: the mode it is locked
+ * to for life, and whether its runs go on that mode's leaderboard. These are the words the roller,
+ * the roster and the Play tab use for them.
  *
- * The lock itself is a field of the roster entry (`RosterEntry.leaderboard`). This is what the
- * pages say about it.
+ * The facts themselves are fields of the roster entry (`RosterEntry.lock` and
+ * `RosterEntry.leaderboard`). This is what the pages say about them.
  */
 
 /** The two boards, in the order they are offered. */
@@ -21,29 +22,35 @@ export function leaderboardLabel(board: Leaderboard): string {
 }
 
 /**
- * What the roller offers before a roll: play the character for its own sake, or roll it for one
- * of the two boards.
+ * What the roller offers under its second question: a character that can be played any way, or one
+ * locked to one of the two modes for good.
  *
- * The choice is made once, because it is the whole point of the lock: a board is a set of runs
- * played the same way, and a character that could change the way it plays is not on one.
+ * The choice is made once, because that is the whole point of a lock: a board is a set of runs
+ * played the same way, and a character that could change the way it plays is not on one. A locked
+ * character need not be on a board — the leaderboard is the roller's other question — but a board
+ * character is always locked.
  */
-export const LEADERBOARD_CHOICES: { id: Leaderboard | null; label: string; how: string }[] = [
+export const CHARACTER_TYPES: { id: Leaderboard | null; label: string; how: string }[] = [
   {
     id: null,
     label: 'Free play',
-    how: 'Not on a leaderboard. Play the character however you like and change the mode whenever you want.',
+    how: 'Play the character however you like and change the mode whenever you want.',
   },
   {
     id: 'faithful',
-    label: 'Leaderboard — faithful',
-    how: 'Locked to faithful for good: only what the game shows. Every run of this character goes on the faithful board.',
+    label: 'Faithful',
+    how: 'Locked to faithful for good: only what the game shows.',
   },
   {
     id: 'speedrun',
-    label: 'Leaderboard — speedrun',
-    how: 'Locked to speedrun for good: the whole floor, so a route can be planned. Every run of this character goes on the speedrun board.',
+    label: 'Speedrun',
+    how: 'Locked to speedrun for good: the whole floor, so a route can be planned.',
   },
 ];
+
+/** Why free play is not on offer while the leaderboard is on. */
+export const FREE_PLAY_OFF_A_BOARD =
+  'A leaderboard compares runs played the same way, so a leaderboard character is faithful or speedrun.';
 
 /**
  * What the Play tab says where the mode radios would be for a character rolled for a board.

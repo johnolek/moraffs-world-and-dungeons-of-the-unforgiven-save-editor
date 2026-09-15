@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app, currentEntry, type GameId, type Leaderboard, type Tab } from '../app-state.svelte';
   import { keepRolledCharacter } from '../character/current';
-  import { LEADERBOARD_CHOICES } from '../character/leaderboard';
+  import { CHARACTER_TYPES, FREE_PLAY_OFF_A_BOARD } from '../character/leaderboard';
   import { downloadBytes } from '../download';
   import { goToTab } from '../history';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
@@ -143,8 +143,11 @@
   let view = $state.raw<View | null>(null);
   let typed = $state('');
   let note = $state('');
-  /** The board this roll is for, which is the lock the finished character carries for life. */
-  let leaderboard = $state<Leaderboard | null>(null);
+  /** The mode this roll locks the finished character to for life, and null for one that can be
+   *  played any way. */
+  let lock = $state<Leaderboard | null>(null);
+  /** Whether the finished character's runs go on the leaderboard of that mode. */
+  let onBoard = $state(false);
   /** Whether the finished character has been put on the roster; a roll keeps it once. */
   let kept = false;
 
@@ -198,11 +201,21 @@
     kept = false;
   }
 
+  /**
+   * Turn the leaderboard on or off. A board character is one of the two locked types, since a
+   * board compares runs played the same way, so turning the board on takes free play off the
+   * table and leaves the faithful character it offers first.
+   */
+  function chooseBoard(wanted: boolean) {
+    onBoard = wanted;
+    if (onBoard && lock === null) lock = 'faithful';
+  }
+
   /** A roll that has reached its sheet goes straight on the roster, current, without a click. */
   function keepWhenDone() {
     if (!view || view.question !== null || kept) return;
     kept = true;
-    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc), leaderboard, leaderboard !== null);
+    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc), lock, onBoard);
   }
 
   function answer(value: number | string) {
@@ -330,12 +343,21 @@
           A character rolled for a leaderboard is locked to that board's mode for its whole life, so that every run of it can be
           compared with the others on the board. Editing it in the Save Editor ends that for good.
         </p>
+        <label class="toggle">
+          <input type="checkbox" checked={onBoard} onchange={(event) => chooseBoard(event.currentTarget.checked)} />
+          <span>Leaderboard</span>
+        </label>
+      </section>
+
+      <section>
+        <h3><PixelText text="Character type" /></h3>
         <div class="boards">
-          {#each LEADERBOARD_CHOICES as choice}
-            <label>
-              <input type="radio" value={choice.id} bind:group={leaderboard} />
+          {#each CHARACTER_TYPES as choice}
+            {@const barred = onBoard && choice.id === null}
+            <label class:barred>
+              <input type="radio" value={choice.id} bind:group={lock} disabled={barred} />
               <span>{choice.label}</span>
-              <span class="how">{choice.how}</span>
+              <span class="how">{barred ? FREE_PLAY_OFF_A_BOARD : choice.how}</span>
             </label>
           {/each}
         </div>
@@ -496,6 +518,21 @@
     grid-row: span 2;
     margin: 0;
     accent-color: var(--accent);
+  }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .toggle input {
+    margin: 0;
+    accent-color: var(--accent);
+  }
+  .boards label.barred {
+    color: var(--muted);
+    cursor: not-allowed;
   }
   .boards .how {
     grid-column: 2;
