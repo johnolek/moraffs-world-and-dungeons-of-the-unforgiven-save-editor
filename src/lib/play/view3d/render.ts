@@ -156,12 +156,22 @@ export function renderFourViews(frame: Frame, scene: ViewScene, facing: number):
 function drawSkull(frame: Frame, scene: ViewScene, facing: number): void {
   const killed = scene.killed;
   if (!killed) return;
-  const skull = scene.pictures.overlay?.[OVERLAY_SKULL];
-  if (!skull) return;
   const view = FOUR_VIEWS.find((each) => viewFacing(each.name, facing) === killed.dir);
   if (!view) return;
+  drawKilledSkull(frame, scene, view.rect);
+}
 
-  const { left, top, right, bottom } = engagedMonsterRect(view.rect);
+/**
+ * The skull in a view drawn on its own rather than as one of the four, for a caller that has
+ * worked out for itself that the monster died in the direction its view looks.
+ */
+export function drawKilledSkull(frame: Frame, scene: ViewScene, rect: ViewRect): void {
+  const killed = scene.killed;
+  if (!killed) return;
+  const skull = scene.pictures.overlay?.[OVERLAY_SKULL];
+  if (!skull) return;
+
+  const { left, top, right, bottom } = engagedMonsterRect(rect);
   const picture = scene.pictures.monster(killed.monster.picnum, killed.monster.builtin);
   if (picture) {
     scaleImage(frame, left, top, right, bottom, picture, 0, 255, monsterPaint(scene, killed.monster));
