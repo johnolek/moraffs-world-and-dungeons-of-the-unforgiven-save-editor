@@ -263,14 +263,16 @@ export function groupedMonsterCounts(monsters: StockedMonster[]): MonsterCountGr
  * garbage can or ball, else 1 in 15 the section's level drainer, else 1 in 12 a poison or disease
  * monster, else one of the section's three regulars.
  *
- * Only the first roll is a `Random` call (2000:6601); the six under it are written inline.
+ * Each of the four tests asks whether the roll came up 1 rather than 0, which is the same one
+ * chance in twenty over an even generator and a different monster over a reseeded one. Only the
+ * first roll is a `Random` call (2000:6601); the six under it are written inline.
  */
 function rollKind(section: number, rnd: () => number, clocked: ClockedStocking | null): Monster {
   const puffballs = clocked === null ? random(rnd, 20) : clocked.randomCall(20);
-  if (puffballs === 0) return builtinMonster(random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
-  if (random(rnd, 7) === 0) return builtinMonster(random(rnd, BLOCKER_COUNT));
-  if (random(rnd, 15) === 0) return sectionMonster(section, LEVEL_DRAINER_SLOT);
-  if (random(rnd, 12) === 0) return builtinMonster(random(rnd, POISON_COUNT) + FIRST_POISON);
+  if (puffballs === 1) return builtinMonster(random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
+  if (random(rnd, 7) === 1) return builtinMonster(random(rnd, BLOCKER_COUNT));
+  if (random(rnd, 15) === 1) return sectionMonster(section, LEVEL_DRAINER_SLOT);
+  if (random(rnd, 12) === 1) return builtinMonster(random(rnd, POISON_COUNT) + FIRST_POISON);
   return sectionMonster(section, random(rnd, 3) + FIRST_REGULAR_SLOT);
 }
 

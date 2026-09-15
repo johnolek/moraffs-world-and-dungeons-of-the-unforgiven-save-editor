@@ -76,7 +76,7 @@ describe('the pauses a mode sits through', () => {
    *  and the key that answers the box the game prints over them. */
   async function digIn(mode: PlayMode): Promise<GameSession> {
     const start = findSquare(3, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1);
-    const session = startPlaying(characterFile({ level: 3, dir: 0, ...start, cls: 3 }), new BorlandRng(3));
+    const session = startPlaying(characterFile({ level: 3, dir: 0, ...start, cls: 3 }), new BorlandRng(4));
     session.mode = mode;
     await press(session, KEY.dig);
     await press(session, YES);

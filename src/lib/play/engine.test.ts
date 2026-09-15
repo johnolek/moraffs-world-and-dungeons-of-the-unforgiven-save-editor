@@ -170,7 +170,7 @@ describe('the moment after an action', () => {
 
   it('engages the monster the character is facing', async () => {
     const start = findSquare(3, (square) => square.n === 3);
-    const session = playing(characterFile({ level: 3, dir: 0, ...start }));
+    const session = playing(characterFile({ level: 3, dir: 0, ...start }), new BorlandRng(4));
     expect(session.view().engaged).toBeNull();
     const monster = session.game.monsters[0];
     session.game.monsterMap[monster.y * 80 + monster.x] = 0xff;

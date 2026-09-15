@@ -137,6 +137,39 @@ describe('stocking a floor on the clock', () => {
     expect({ x: game.monsters[0].x, y: game.monsters[0].y }).toEqual({ x: 76, y: 3 });
   });
 
+  it("draws each slot's type, level and hit points off the rolls the game draws them off", () => {
+    // Random (exe 2000:4156) seeds itself from the running total at DS:c609 plus a reading of the
+    // clock and adds another reading to the total afterwards, so the type roll of each slot is
+    // seeded one tick further on than the slot before it. newGame starts that total the way main
+    // does, off the sitting's own generator scaled to 0..1999.
+    expect(new BorlandRand(7).random(2000)).toBe(147);
+    const game = stockedOnTheClock();
+
+    // Slot 0 takes the eleventh try, at 76 across and 3 down, and get_mtype's Random(20) then runs
+    // off 147 + 5000. It comes up 7 rather than the 1 a puffball takes, and the inline 7, 15 and
+    // 12 rolls under it come up 0, 8 and 7, none of them 1 either, so the slot is the section
+    // regular rand(3) = 1 names: type 24, ten hit points a level. Its two hit point rolls out of
+    // the 31 values level 3 allows are 12 and 0, averaged as (12 + 0 + 2) / 2, and the first level
+    // test comes up 1, which leaves the floor's own level 3 alone.
+    const regular = new BorlandRand(147 + 5000);
+    expect([regular.random(20), regular.random(7), regular.random(15), regular.random(12), regular.random(3)]).toEqual([
+      7, 0, 8, 7, 1,
+    ]);
+    expect([regular.random(31), regular.random(31), regular.random(3)]).toEqual([12, 0, 1]);
+    expect(game.monsters[0]).toEqual({ x: 76, y: 3, type: 24, level: 3, hp: 7 });
+
+    // Slot 2 takes the twenty-first try, at 6 across and 104 down, and its Random(20) runs off
+    // 147 + 3 * 5000. That one does come up 1, so the type is the puffball rand(12) = 3 names,
+    // type 5, whose two hit points a level leave 7 values for each of its rolls: 1 and 6, averaged
+    // as (1 + 6 + 2) / 2. Then the level test comes up 0, the nudge under it comes up 0 for a step
+    // of -1, and the next test comes up 1 and stops it, so the level is 2 on a level 3 floor.
+    const puffball = new BorlandRand(147 + 3 * 5000);
+    expect([puffball.random(20), puffball.random(12)]).toEqual([1, 3]);
+    expect([puffball.random(7), puffball.random(7)]).toEqual([1, 6]);
+    expect([puffball.random(3), puffball.random(3), puffball.random(3)]).toEqual([0, 0, 1]);
+    expect(game.monsters[2]).toEqual({ x: 6, y: 104, type: 5, level: 2, hp: 4 });
+  });
+
   it('walks the monsters across the floor in diagonal stripes rather than scattering them', () => {
     const striped = stockedOnTheClock().monsters;
     const scattered = stocked(null).monsters;

@@ -849,10 +849,10 @@ square each of the five floor-changing spells drops the character on.
 
 ### 8.5 Where the port rolls them
 
-Every roll site in `src/lib/game/port/` and `src/lib/play/` that plays Dungeons of the Unforgiven,
-against the calls above.  A `Random` roll goes through `Game.randomCall`, which reseeds from the
-clock when the game has one; an inline roll goes through `Game.rng.random`, which reseeds
-nothing.
+Every roll site in `src/lib/game/port/`, `src/lib/play/` and `src/lib/map/` that plays Dungeons of
+the Unforgiven, against the calls above.  A `Random` roll goes through `Game.randomCall`, which
+reseeds from the clock when the game has one; an inline roll goes through `Game.rng.random`, which
+reseeds nothing.
 
 | port | plays | `Random` | inline |
 |---|---|---|---|
@@ -890,24 +890,31 @@ nothing.
 | `moment.ts` `arriveSquare` | `FUN_2000_bce5` | 0 | 1 |
 | `moment.ts` `relocate` | `relocate` | 2 | 0 |
 | `town.ts` `temple` | `temple` | 0 | 5 |
-| `play/floor.ts` `fractions` | `stock_level`'s rolls | 0 | 1 |
+| `map/stocking.ts` `rollKind` | `get_mtype` | 1 (6601) | 7 |
+| `map/stocking.ts` `stockFloor`, `bestiary/roll.ts` | `stock_level`'s slot loop | 0 | 10 |
 | `play/move.ts` `resolveStep` | `movecontrol` | 1 (dd45) | 2 |
 
-Four of those rows are not one port site per call of the game.  `magicZot` is one function for
+Five of those rows are not one port site per call of the game.  `magicZot` is one function for
 both of the game's copies of the spell, and `changeFloorTo` is one pair of rolls for all five
 landings, so eleven of `spell_effect`'s sixteen calls are played by seven sites.  `relocate` is
 ported twice over, once in `moment.ts` and once in `magic.ts`, so two calls of the game have four
-sites.  And `play/floor.ts`'s `fractions` is not one roll but the whole of `stock_level`: the
-stocking in `src/lib/map/stocking.ts` draws fractions rather than rolls, so its twelve calls have
-no site of their own here.  `play/floor.ts`'s `squareReseed` is the srand at 2000:6979 that stands
-over two of those twelve, the slot's x and y, and a game with a clock hands it in.
+sites.  And `stock_level`'s slot loop is `stockFloor` together with `rollHp` and `nudgeLevel` in
+`src/lib/bestiary/roll.ts`, which is where the hit points and the level nudge are rolled;
+`play/floor.ts` is what hands the stocking the clock, as `clockedStocking`, which carries both the
+srand at 2000:6979 and the `Random` call `rollKind` opens with.
 
-What the port has no site for: `get_mtype` and `stock_level` (a floor is stocked through
-`fractions` above), `random_events_tick` and `title_screen`, `set_palette`'s palette fade,
-`FUN_2000_77ae`, `FUN_2000_7800`, `FUN_2000_7832` and the unreachable `FUN_3000_8d7e`.
-`trapdoor_dest`'s two rolls are in `src/lib/game/unfmap.js`, which is a verbatim copy of the
-reference bundle rather than part of the port, and `draw_3d_view`'s three coin flips are the
-mirrored wall faces, which `src/lib/play/view3d/render.ts` draws from a fraction the scene carries.
+`stock_level`'s twelve calls come to eleven here.  The twelfth is the `Random(2)` at 2000:6939 and
+the inline roll at 2000:68ff under it, which are the loop whose number is never read again (§8.2);
+the port leaves the loop out, because what it decides is nothing and a clock reading of zero — which
+is what the floor a character wakes on is stocked under, since no key has been pressed yet — would
+seed the same value every time round and never let it end.
+
+What the port has no site for: that loop, `random_events_tick` and `title_screen`, `set_palette`'s
+palette fade, `FUN_2000_77ae`, `FUN_2000_7800`, `FUN_2000_7832` and the unreachable
+`FUN_3000_8d7e`.  `trapdoor_dest`'s two rolls are in `src/lib/game/unfmap.js`, which is a verbatim
+copy of the reference bundle rather than part of the port, and `draw_3d_view`'s three coin flips are
+the mirrored wall faces, which `src/lib/play/view3d/render.ts` draws from a fraction the scene
+carries.
 
 ---
 
