@@ -257,8 +257,12 @@
   <span>{['North', 'South', 'West', 'East'][stage.view.place.dir]}</span>
 {/snippet}
 
+<!-- The box beside the map stands in for the one the game draws in the corner of its own
+     screen. While a screen of the game's own covers the map — a store, the temple, the boss's
+     office, the module tunnel — that screen carries the box already, so the side column would be
+     saying the same lines a second time. -->
 {#snippet afterRun(stage: Stage)}
-  {#if stage.display === 'map'}
+  {#if stage.display === 'map' && !screenTakesOver(stage.view)}
     <MessageBox lines={stage.view.box} />
   {/if}
 {/snippet}
