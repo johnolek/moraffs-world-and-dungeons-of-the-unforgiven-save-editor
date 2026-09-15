@@ -13,7 +13,7 @@ column or the other, not both.
 Tests, test helpers, fixtures and the Source tab's own files are left out, since they quote
 citations rather than make them. What each routine does is in `../decomp/functions.txt`.
 
-190 of the 580 routines are pointed at. Files are named from
+191 of the 580 routines are pointed at. Files are named from
 `src/lib/`.
 
 | routine | address | named in | mentioned in |
@@ -55,6 +55,7 @@ citations rather than make them. What each routine does is in `../decomp/functio
 | `generate_section` | 2000:46a4 | `game/mw-port/stocking.ts`, `mw-bestiary/monsters.ts` | `game/mw-port/character.ts`, `game/mw-port/state.ts`, `play/mw/floor.ts` |
 | `save_mon_map` | 2000:4fb4 |  | `game/mw-port/stocking.ts` |
 | `load_mon_map` | 2000:507a |  | `game/mw-port/stocking.ts` |
+| `FUN_2000_5196` | 2000:5196 |  | `play/zoom-map.ts` |
 | `mark_explored` | 2000:5263 |  | `game/mw-port/state.ts` |
 | `save_dun` | 2000:5298 |  | `play/mw/engine.ts` |
 | `load_dun` | 2000:542b |  | `play/mw/engine.ts` |
@@ -250,5 +251,5 @@ does is in `../decomp/functions.txt`.
 | `format_two_numbers` | 4000:42d2 | `FUN_2000_f853`, `roll_char` |
 | `write_dac` | 5110:009c | `FUN_4000_2e29` |
 
-Also uncited: 342 routines Ghidra could not name, and 30 named routines of
+Also uncited: 341 routines Ghidra could not name, and 30 named routines of
 the Borland runtime in segment 1000.

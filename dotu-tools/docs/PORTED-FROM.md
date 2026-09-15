@@ -60,7 +60,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_2000_4506` | 2000:4506 |  | `play/building.ts` |
 | `g_store` | 2000:45ab | `game/port/town.ts` | `formulas/formulas.ts`, `play/building.ts`, `play/town.ts` |
 | `temple` | 2000:4d39 | `game/port/town.ts` | `formulas/formulas.ts`, `play/building.ts`, `play/town.ts` |
-| `flea_inn` | 2000:4fe7 | `game/port/hints.ts`, `game/port/town.ts` | `formulas/formulas.ts`, `map/explored.ts`, `map/write-explored.ts`, `play/building.ts`, `play/town.ts` |
+| `flea_inn` | 2000:4fe7 | `game/port/hints.ts`, `game/port/town.ts` | `formulas/formulas.ts`, `map/explored.ts`, `map/write-explored.ts`, `play/building.ts`, `play/town.ts`, `play/zoom-map.ts` |
 | `bank` | 2000:568b | `game/port/town.ts` | `game/port/state.ts`, `play/building.ts`, `play/town.ts` |
 | `FUN_2000_59c0` | 2000:59c0 |  | `map/you.ts`, `play/display.ts` |
 | `select_player` | 2000:5c0d |  | `game/port/state.ts` |
@@ -71,7 +71,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `set_monster_map` | 2000:65dc | `game/port/state.ts` |  |
 | `get_mtype` | 2000:65f8 |  | `formulas/formulas.ts` |
 | `stock_level` | 2000:671e | `bestiary/roll.ts`, `map/stocking.ts` | `formulas/formulas.ts`, `game/port/character.ts`, `play/fight-sim.ts`, `play/floor.ts` |
-| `FUN_2000_7210` | 2000:7210 |  | `play/memory.ts` |
+| `FUN_2000_7210` | 2000:7210 |  | `map/area.ts`, `play/memory.ts`, `play/zoom-map.ts` |
 | `FUN_2000_7277` | 2000:7277 |  | `play/memory.ts` |
 | `FUN_2000_72de` | 2000:72de |  | `game/port/state.ts`, `play/memory.ts` |
 | `save_maps` | 2000:7313 |  | `editor/games.ts`, `map/explored.ts`, `map/write-explored.ts`, `play/engine.ts`, `play/memory.ts` |

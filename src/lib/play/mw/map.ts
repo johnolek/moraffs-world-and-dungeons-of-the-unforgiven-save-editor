@@ -1,3 +1,4 @@
+import { DUNGEON_XMAX as MW_DUNGEON_XMAX, DUNGEON_YMAX as MW_DUNGEON_YMAX } from '../../game/mwmap.js';
 import { fillRect, type Frame } from '../view3d/frame';
 import {
   drawExpandedZoomMap,
@@ -55,6 +56,8 @@ export const MORAFFS_WORLD_ZOOM_MAP: ZoomMapStyle = {
   // pass, so it blinks; one of them has to stand for that here, and the recording's own is yellow.
   marker: { kind: 'cell', colour: MW_COLOURS.menuKey },
   clipDoorTick: false,
+  lastColumn: MW_DUNGEON_XMAX,
+  lastRow: MW_DUNGEON_YMAX,
 };
 
 /**

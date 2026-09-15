@@ -64,6 +64,20 @@ export interface ZoomMapStyle {
    * not, which is the only place the two routines disagree.
    */
   clipDoorTick: boolean;
+  /**
+   * The last column and row of the floor the game's own map will draw, which each game keeps in a
+   * pair of globals: DS:2328 and DS:232a in Dungeons of the Unforgiven, DS:448b and DS:448d in
+   * Moraff's World.
+   *
+   * `FUN_2000_7210` (UNF.EXE 2000:7210) and `FUN_2000_5196` (WORLD.EXE 2000:5196) are the same
+   * test, and each game's loop asks it about every cell of the window before drawing one: a
+   * square past these is answered no however well it is known. It matters because the generator
+   * fills a grid larger than the game shows — Dungeons of the Unforgiven's floors run to row 109
+   * and it draws to row 104 — so without it a map handed over whole shows rows the game never
+   * draws and the character can never stand on.
+   */
+  lastColumn: number;
+  lastRow: number;
 }
 
 /**
@@ -133,6 +147,13 @@ const DOOR_TICK_PAIR_FROM_CELL = 8;
  * drawing serves the map beside the views, centred on the character, and Dungeons of the
  * Unforgiven's X key, centred on the middle of the floor.
  */
+/** `FUN_2000_7210` (UNF.EXE 2000:7210) and `FUN_2000_5196` (WORLD.EXE 2000:5196): whether the
+ *  square is one of the floor's own and the character knows it. */
+function drawnSquare(floor: ZoomMapFloor, style: ZoomMapStyle, x: number, y: number): boolean {
+  if (x < 0 || x > style.lastColumn || y < 0 || y > style.lastRow) return false;
+  return floor.map.known(x, y);
+}
+
 export function drawZoomMap(
   frame: Frame,
   floor: ZoomMapFloor,
@@ -143,7 +164,7 @@ export function drawZoomMap(
   for (let column = 0; column < window.columns; column++) {
     for (let row = 0; row < window.rows; row++) {
       const square = zoomMapSquare(centre, window, column, row);
-      if (!floor.map.known(square.x, square.y)) continue;
+      if (!drawnSquare(floor, style, square.x, square.y)) continue;
       const here = floor.rows[square.y]?.[square.x];
       // Rock is never drawn. solidcheck (UNF.EXE 3000:86b5) and is_solid (WORLD.EXE 3000:a854)
       // both call a square rock when it has a wall on all four sides, and nothing ever stands on

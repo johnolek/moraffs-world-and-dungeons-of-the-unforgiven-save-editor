@@ -1,4 +1,5 @@
 import { expLabel, levelLabel } from '../character/record';
+import { DUNGEON_XMAX, DUNGEON_YMAX } from '../game/unfmap.js';
 import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
 import type { PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
 import { fillRect, type Frame } from './view3d/frame';
@@ -300,6 +301,8 @@ export const UNFORGIVEN_ZOOM_MAP: ZoomMapStyle = {
   buildingColour: zoomBuildingColour,
   marker: { kind: 'arrow' },
   clipDoorTick: true,
+  lastColumn: DUNGEON_XMAX,
+  lastRow: DUNGEON_YMAX,
 };
 
 /**

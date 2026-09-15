@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../game/port/state';
+import { DUNGEON_YMAX } from '../game/unfmap.js';
 import type { MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
 import { facingArrowCells } from '../map/you';
@@ -451,6 +452,18 @@ describe('the map the X key fills the screen with', () => {
     expect(pixelAt(frame, 0, 0)).toBe(ZOOM_CORNER_COLOUR);
     expect(pixelAt(frame, EXPANDED_CELL, 0)).toBe(ZOOM_CORNER_COLOUR);
     expect(pixelAt(frame, 3, 3)).toBe(0);
+  });
+
+  it('draws down to the last row the game draws and no further', () => {
+    const frame = drawn();
+    // FUN_2000_7210 (exe 2000:7210) answers no for a square past DS:232a, so the generator's
+    // rows 105 to 109 are never drawn however well they are known. The cells are filled black
+    // and cornered in red, so a drawn row is black where an undrawn one is the ground.
+    const insideCell = (row: number) => pixelAt(frame, 3, row * EXPANDED_CELL + 3);
+    expect(insideCell(DUNGEON_YMAX)).toBe(0);
+    for (let row = DUNGEON_YMAX + 1; row < EXPANDED_ROWS; row += 1) {
+      expect(insideCell(row)).toBe(EXPANDED_GROUND);
+    }
   });
 
   it('fills the screen the map does not reach with the ground it is drawn on', () => {

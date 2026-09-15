@@ -14,7 +14,11 @@ export interface MapArea {
  * keeps the size in two globals, DS:2328 = 79 columns and DS:232a = 104 rows, and checks a
  * destination square against them in relocate (exe 3000:da2c), pass_wall (exe 3000:e003) and
  * go_away. The generator fills the whole 80 x 110 grid, so column 79 and rows 104 to 109 exist
- * and can hold open squares, but nothing in the game ever draws or reaches them.
+ * and can hold open squares that no step ever reaches.
+ *
+ * The map draws one square further than a step can reach: FUN_2000_7210 (exe 2000:7210) takes
+ * the same two globals as the last column and row rather than as counts, so column 79 and row 104
+ * are drawn when something has marked them known.
  */
 export const MAP_COLUMNS = DUNGEON_XMAX;
 export const MAP_ROWS = DUNGEON_YMAX;
