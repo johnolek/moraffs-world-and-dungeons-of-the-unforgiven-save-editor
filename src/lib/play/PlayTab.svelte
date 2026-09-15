@@ -71,6 +71,8 @@
     takeKey?: (event: KeyboardEvent) => boolean;
     /** The game's own screen or the top-down map, and whatever the game draws over them. */
     screen: Snippet<[Stage]>;
+    /** Under the display switch: a switch only one of the games has to offer. */
+    afterSwitch?: Snippet<[Stage]>;
     /** The spans of the line under the switch saying where the character is standing. */
     place: Snippet<[Stage]>;
     /** Between that line and the run block: Moraff's Revenge's own numbers. */
@@ -90,6 +92,7 @@
     press,
     takeKey,
     screen,
+    afterSwitch,
     place,
     afterPlace,
     afterRun,
@@ -462,6 +465,7 @@
             bind:colourblind
             bind:redraw
             onfullscreen={fullscreenAllowed ? () => void enterFullscreen() : undefined} />
+          {@render afterSwitch?.(stage)}
         </div>
         <div class="place">{@render place(stage)}</div>
         {@render afterPlace?.(stage)}

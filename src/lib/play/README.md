@@ -732,6 +732,15 @@ leaves it off until the map is chosen. The monster in front of the character is 
 heads-up display's (`MapHud.svelte`), centred at the top of the map, since the map is the
 site's view and the game's screen is the game's (John, 2026-09-09).
 
+A switch under the display's own — standing there only while the map is up, and remembered the
+way the other switches are (`mode.ts`) — draws the game's forward-facing 3-D view in that same
+frame instead of the picture (`ForwardView.svelte`). It is `renderView`, the port of
+`draw_3d_view`, on the scene `view-scene.ts` builds for the game's own four views, so the
+corridor, the monster standing one square ahead and the skull over a kill are the game's own
+drawing and not anything of the site's; the bar of that monster's hit points goes on standing
+beside it. The coin flip that mirrors a monster comes from a generator seeded on the number of
+the drawing, so the view spends none of the game's own random numbers and a replay is untouched.
+
 A screen of pictures is the game's own either way. The map has nowhere to put the S key's screen,
 the module teleporter's tunnel, the tablet, the boss's office or the X key's map, so for as long
 as one is up `Screen.svelte` covers the map with it, letterboxed at 4:3, and the map is back the

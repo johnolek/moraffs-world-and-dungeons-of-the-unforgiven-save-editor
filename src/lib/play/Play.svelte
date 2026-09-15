@@ -10,6 +10,7 @@
   import MonsterDetail from '../bestiary/MonsterDetail.svelte';
   import { monsterGroups } from '../bestiary/monsters';
   import { expNeeded } from '../game/port/combat';
+  import ForwardView from './ForwardView.svelte';
   import GameScreen from '../ui/GameScreen.svelte';
   import type { ScreenRect } from '../game/port/state';
   import { SCREEN_WINDOW } from './display';
@@ -31,6 +32,8 @@
     mapDrawn,
     monstersDrawn,
     panelVisible,
+    readPlayForwardView,
+    writePlayForwardView,
     zoomMapMonsters,
     type PlayMode,
   } from './mode';
@@ -44,6 +47,9 @@
    *  keeps the character clear of. */
   let hudBarHeight = $state(0);
   let style = $state<MovementStyle>(readMovementStyle('unforgiven'));
+  /** Whether the map draws the game's forward-facing 3-D view where the picture of the monster
+   *  being fought stands. */
+  let forwardView = $state(readPlayForwardView(game.id));
   /** The kind of monster picked out of the debug panel's list, which both maps ring until it is
    *  clicked again. */
   let highlightedMonsterId = $state.raw<string | null>(null);
@@ -155,6 +161,12 @@
     };
   }
 
+  /** The monsters the game's own 3-D views would draw, which is what both the game's screen and
+   *  the map's forward view show. */
+  function monstersInView(stage: Stage) {
+    return monstersDrawn(stage.mode, { ...stage.view.screenFloor, engaged: stage.view.engaged });
+  }
+
   /** Every spell the character has running, the ones counting down first, for the list the map's
    *  heads-up display shows. It is the same reading of the record the panel beside the map makes. */
   function spellsRunning(stage: Stage): PanelLine[] {
@@ -182,9 +194,15 @@
     writeMovementStyle('unforgiven', style);
     input.blur();
   }
+
+  /** The same for the switch that puts the 3-D view over the map. */
+  function chooseForwardView(input: HTMLInputElement) {
+    writePlayForwardView(game.id, forwardView);
+    input.blur();
+  }
 </script>
 
-<PlayTab {game} {canvas} {press} {takeKey} {screen} {place} {afterRun} {afterModes} {sideFoot} />
+<PlayTab {game} {canvas} {press} {takeKey} {screen} {afterSwitch} {place} {afterRun} {afterModes} {sideFoot} />
 
 <!-- The game's own screen, which both displays draw: the stage in the screen display, and over
      the map while the game has taken the display over with a screen of its own. -->
@@ -198,7 +216,7 @@
     place={view.place}
     status={view.status}
     viewsFrom={view.viewsFrom}
-    monsters={monstersDrawn(stage.mode, { ...view.screenFloor, engaged: view.engaged })}
+    monsters={monstersInView(stage)}
     box={view.box}
     screen={view.screen}
     screenCleared={view.screenCleared}
@@ -251,9 +269,20 @@
     {#snippet closeUp()}
       <Portrait monster={facing} module={view.place.module} floor={view.place.floor} />
     {/snippet}
+    <!-- The game's own forward view in the same frame, which draws the monster ahead itself. -->
+    {#snippet forward()}
+      <ForwardView
+        game={stage.session.game}
+        rows={view.screenFloor.rows}
+        place={view.place}
+        viewsFrom={view.viewsFrom}
+        monsters={monstersInView(stage)}
+        killed={view.killed}
+        viewsDrawn={view.viewsDrawn} />
+    {/snippet}
     <MapHud
       bind:barHeight={hudBarHeight}
-      closeUp={facing ? closeUp : undefined}
+      closeUp={forwardView ? forward : facing ? closeUp : undefined}
       closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
       closeUpLines={debugDrawn(stage.mode) ? view.engagedDebugLines : []}
       spells={spellsRunning(stage)}
@@ -300,6 +329,19 @@
       onclose={() => (openMonsterId = null)}
       detail={monsterDetail}
     />
+  {/if}
+{/snippet}
+
+<!-- The 3-D view is the map's own, so the switch for it only stands there while the map does. -->
+{#snippet afterSwitch(stage: Stage)}
+  {#if stage.display === 'map'}
+    <label class="forward">
+      <input
+        type="checkbox"
+        bind:checked={forwardView}
+        onchange={(event) => chooseForwardView(event.currentTarget)} />
+      <span>3-D view over the map</span>
+    </label>
   {/if}
 {/snippet}
 
@@ -354,6 +396,16 @@
 {/snippet}
 
 <style>
+  /* The same small, quiet control the switch above it draws its own checkbox as. */
+  .forward {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+  }
   .overlay {
     position: absolute;
     inset: 0;
