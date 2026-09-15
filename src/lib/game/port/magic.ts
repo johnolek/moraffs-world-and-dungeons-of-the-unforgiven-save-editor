@@ -267,9 +267,9 @@ export function explosion(game: Game, kind: number): boolean {
   // tests run one after another on a value that may already be the damage. Every roll comes out
   // above 2, so a rolled total never matches a later size.
   let damage = kind;
-  if (damage === 0) damage = game.rng.random(101) + 75;
-  if (damage === 1) damage = game.rng.random(101) + 125;
-  if (damage === 2) damage = game.rng.random(301) + 200;
+  if (damage === 0) damage = game.randomCall(101) + 75;
+  if (damage === 1) damage = game.randomCall(101) + 125;
+  if (damage === 2) damage = game.randomCall(301) + 200;
   damageTheMonster(game, damage);
   // DS:38e6 3900 38cf 3916 258b 2d43, after the headline
   game.say(
@@ -302,7 +302,7 @@ export function sleepMonster(game: Game): boolean {
   }
   // The decompilation shows the rand() call with no argument at all. The monster's level is what
   // the reverse engineering notes and the function catalog record as the argument.
-  if (game.rng.random(game.monsters[game.engaged].level) < 3) {
+  if (game.randomCall(game.monsters[game.engaged].level) < 3) {
     game.pc.sleepTimer = 25;
     // DS:392b, into the monster status line rather than onto the message line
     game.monsterStatusLine = 'MONSTER IS SLEEPING';
@@ -361,8 +361,8 @@ export function relocateSpell(game: Game): boolean {
   setMonsterMap(game, game.pc.x, game.pc.y, MAP_EMPTY);
   do {
     do {
-      game.pc.x = game.rng.random(game.columns);
-      game.pc.y = game.rng.random(game.rows);
+      game.pc.x = game.randomCall(game.columns);
+      game.pc.y = game.randomCall(game.rows);
     } while (game.solid(game.pc.x, game.pc.y, game.pc.level, game.pc.module));
   } while (monsterAt(game, game.pc.x, game.pc.y) !== -1);
   setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
@@ -385,8 +385,8 @@ export function goAway(game: Game): boolean {
   const monster = game.monsters[game.engaged];
   setMonsterMap(game, monster.x, monster.y, MAP_EMPTY);
   do {
-    monster.x = game.rng.random(game.columns);
-    monster.y = game.rng.random(game.rows);
+    monster.x = game.randomCall(game.columns);
+    monster.y = game.randomCall(game.rows);
     // The loop asks whether the square the *player* is standing on is rock, not the square the
     // monster just landed on. The player is never standing in rock, so the loop always stops on
     // the first roll and the monster can be dropped inside solid rock.
@@ -407,9 +407,9 @@ export function autokill(game: Game): boolean {
   if (bossImmuneCheck(game)) return false;
   const monster = game.monsters[game.engaged];
   const stats = game.monsterStats[game.monsterKinds[monster.type].type];
-  const monsterRoll = game.rng.random(monster.level + game.rng.random(stats.speed));
-  const playerRoll = game.rng.random(game.pc.lev + game.rng.random(game.pc.iq + game.pc.wis));
-  if (monsterRoll < playerRoll + game.rng.random(game.pc.level)) {
+  const monsterRoll = game.randomCall(monster.level + game.randomCall(stats.speed));
+  const playerRoll = game.randomCall(game.pc.lev + game.randomCall(game.pc.iq + game.pc.wis));
+  if (monsterRoll < playerRoll + game.randomCall(game.pc.level)) {
     monster.hp = -100;
     // DS:3a08 3a25 3a41 3a5d 258b 2d43
     game.say(
@@ -792,7 +792,7 @@ export function detectLevel(game: Game): boolean {
  */
 export function cure(game: Game): boolean {
   // Ghidra dropped the argument to Random; the instruction at 3000:e60a pushes the wisdom.
-  let healed = game.rng.random(game.pc.wis) * 2 + 20;
+  let healed = game.randomCall(game.pc.wis) * 2 + 20;
   if (healed > 60) healed = 60;
   game.pc.hp += healed;
   if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
@@ -857,6 +857,10 @@ function msgCannotFloatAboveTheTown(game: Game): void {
  * The lines the five floor-changing spells repeat: move to `level` and land on a random square
  * of it that is not rock.
  *
+ * The original writes the two rolls out again in each of the five spells (exe 3000:e721 and
+ * 3000:e730, 3000:e7ff and 3000:e80e, 3000:ea37 and 3000:ea46, 3000:ebb2 and 3000:ebc1,
+ * 3000:ecfa and 3000:ed09), and every one of the ten is a Random call.
+ *
  * Relocate looks at the occupancy map and will not land on a monster; this does not look at it
  * at all, because load_level_map lays the new floor's monsters out afterwards. That read is the
  * one the port records rather than performs — see the README's second departure.
@@ -865,8 +869,8 @@ function changeFloorTo(game: Game, level: number): void {
   const from = game.pc.level;
   game.pc.level = level;
   do {
-    game.pc.x = game.rng.random(game.columns);
-    game.pc.y = game.rng.random(game.rows);
+    game.pc.x = game.randomCall(game.columns);
+    game.pc.y = game.randomCall(game.rows);
   } while (game.solid(game.pc.x, game.pc.y, game.pc.level, game.pc.module));
   game.events.push({ kind: 'levelChanged', from, to: level });
   game.recenterMap = true;
@@ -951,7 +955,7 @@ export function feather(game: Game): boolean {
 export function bigCure(game: Game): boolean {
   // Ghidra dropped the argument to Random; the instructions at 3000:e96e shift the wisdom left
   // twice before pushing it.
-  let healed = game.rng.random(game.pc.wis * 4) + 50;
+  let healed = game.randomCall(game.pc.wis * 4) + 50;
   if (healed > 150) healed = 150;
   game.pc.hp += healed;
   if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
@@ -1281,7 +1285,7 @@ export function magicZot(game: Game): boolean {
   let damage = 0;
   // Ghidra lost the argument to Random here; that it is 5, making each missile 4 to 8, is what
   // the RE notes and dotu-mech.js's magicZot range say.
-  for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 4;
+  for (let i = 0; i < game.pc.lev + 1; i++) damage += game.randomCall(5) + 4;
   damageTheMonster(game, damage);
   // DS:4071 408b 40a9 40c5 405e 3916 258b 2d43
   game.say(
@@ -1332,7 +1336,7 @@ export function magicBolt(game: Game): boolean {
   let damage = 0;
   // The argument to Random is the same 5 the RE notes and dotu-mech.js give Magic Zot, which
   // makes each charge 7 to 11.
-  for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 7;
+  for (let i = 0; i < game.pc.lev + 1; i++) damage += game.randomCall(5) + 7;
   damageTheMonster(game, damage);
   // DS:410b 408b 4124 4142 40f7 3916 258b 2d43
   game.say(
@@ -1480,7 +1484,7 @@ export function fastCure(game: Game): boolean {
 export function fastBigCure(game: Game): boolean {
   // Ghidra lost the argument to Random; four times wisdom is what the RE notes give, which with
   // the 20 the decompilation does show makes this heal 20 to 90.
-  let healed = game.rng.random(4 * game.pc.wis) + 20;
+  let healed = game.randomCall(4 * game.pc.wis) + 20;
   if (healed > 90) healed = 90;
   game.pc.hp += healed;
   if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
