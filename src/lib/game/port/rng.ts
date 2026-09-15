@@ -10,9 +10,10 @@ import { BorlandRand } from '../unfmap.js';
  *
  * The game writes that arithmetic inline at most of its rolls and wraps it in `Random(n)` (exe
  * 2000:4156, unf.c "Random") at the rest. The two differ only in that `Random` reseeds from the
- * PC's tick counter before it rolls, which this port does not model; section 8 of
- * `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md` is every reseed in the game and the README's third
- * departure is where the port stands on them.
+ * PC's tick counter before it rolls, which is `Game.randomCall`: this is the inline roll, the one
+ * that reseeds nothing and carries on from whatever seed was last set. Section 8 of
+ * `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md` is every reseed in the game and which rolls go through
+ * `Random`, and the README's third departure is where the port stands on them.
  */
 export interface Rng {
   /** A roll of `rand() * n / 0x8000`: an integer in 0..n-1. */
@@ -55,13 +56,14 @@ export class BorlandRng implements Rng {
 }
 
 /**
- * A roll of `rand() * n / 0x8000` over mulberry32, which is what a game being played uses.
+ * A roll of `rand() * n / 0x8000` over mulberry32, which is what a game played off the clock uses.
  *
  * The README's third departure: the original reseeds from the clock before nearly every roll,
  * which is why its numbers fall into patterns a player can feel. This is one continuous sequence
  * from a seed drawn once at the start of a run, so the numbers are as good as a small generator
  * gets and the run can be played again from the seed alone. `src/lib/play/run.ts` is what draws
- * the seed and keeps it.
+ * the seed and keeps it. A run played on the clock is rolled with {@link BorlandRng} instead,
+ * because the reseeds only mean what they mean on the generator the original ran.
  *
  * mulberry32 is a well-known 32-bit generator, given here exactly as it is published: one addition
  * to the state and three multiply-and-mix steps, all in 32-bit arithmetic. `rand()` in the game is

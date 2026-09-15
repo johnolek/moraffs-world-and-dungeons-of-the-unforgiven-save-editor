@@ -81,29 +81,37 @@ save parser has it. Fields that parser does not read are named after their label
 a clock.** The original calls `srand(clock() + something)` before nearly every roll: `strike`
 (exe 2000:7e36) does it at 2000:7e63 before the to-hit roll, `defend` (exe 2000:82b7) does it
 with `+ 100` at 2000:84ca, and `Random` (exe 2000:4156) does it on every single call. Section 8
-of `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md` is all ten of them. That reseeding is why the to-hit
-roll follows the BIOS tick counter round a sawtooth instead of being random, which
+of `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md` is all ten of them, and §8.4 there is which of the
+game's 212 rolls go through `Random` and which are written inline. That reseeding is why the
+to-hit roll follows the BIOS tick counter round a sawtooth instead of being random, which
 `dotu-tools/docs/TIDBITS.md` lays out.
 
-The switch is `Game.clock`, the tick counter the session hands in, or null. Null is what every
-game built here uses today: the port then reseeds nothing, says so in a comment where the
-original reseeds, and a run draws its numbers from one generator seeded once, which is what lets
-it be played again from that seed alone. Given a clock, `strike` reseeds from it exactly as the
-original does and the sawtooth comes back, which is what the faithful and speedrun modes want.
-The clock a session hands in reads the machine's tick counter, and what it read is written into
-the run log in front of the input it was read for, so a replay rolls what the player rolled;
-`src/lib/play/README.md` is that half of it.
+The switch is `Game.clock`, the tick counter the session hands in, or null. Null is what a game
+built for a test has, and what a run played off the clock has: the port then reseeds nothing, says
+so in a comment where the original reseeds, and the run draws its numbers from one generator
+seeded once, which is what lets it be played again from that seed alone. Given a clock — which is
+what the faithful and speedrun modes hand in — the reseeds come back and with them the sawtooth
+the to-hit roll follows. The clock a session hands in reads the machine's tick counter, and what
+it read is written into the run log in front of the input it was read for, so a replay rolls what
+the player rolled; `src/lib/play/README.md` is that half of it.
 
-`strike` is the only reseed the port plays, and the other three tick-counter reseeds each have a
-reason. `defend`'s never reaches a die even in the original: the roll under it is a `Random`
-call, and `Random` reseeds from the clock again before it rolls, so playing the `srand` above it
-alone would hand out numbers the game never had. `Random`'s own needs a `Random(n)` call to be
-told apart from the `rand() * n / 0x8000` the game writes inline, which the port does not record
-at its rolls. `stock_level`'s is one per monster it places, and the port does not stock a floor
-at all. The reseeds left over are not from the tick counter: `roll_char` and `drop_money` seed
-from `time()`, the second the roller was started in and the second a kill happened in, which is a
-clock no session supplies, and `trapdoor_dest` counts up from 10 and needs no clock at all. The
-arithmetic on either side of a reseed is ported exactly, reseed or no reseed.
+Given a clock the port plays both of the tick-counter reseeds that reach a die: `strike`'s, and
+`Random`'s own. `Game.randomCall(n)` is the `Random` call and `Game.rng.random(n)` is the roll the
+game writes inline, and every roll site in the port is one or the other, checked against the
+instruction stream; `Game.randomTotal` is the running total `Random` keeps, `DS:c609`, which a
+sitting starts the way `main` does except that the seed the sitting was started from stands in for
+the wall clock `main` reads, so a replay off the log alone starts it at the same number.
+
+The two tick-counter reseeds left over each have a reason. `defend`'s never reaches a die even in
+the original: the roll under it is a `Random` call, and `Random` reseeds from the clock again
+before it rolls, so playing the `srand` above it alone would hand out numbers the game never had.
+`stock_level`'s is one per monster it places, and the port does not stock a floor the way the
+original does. The reseeds left after that are not from the tick counter at all: `roll_char` and
+`drop_money` seed from `time()`, the second the roller was started in and the second a kill
+happened in, which is a clock no session supplies, and `trapdoor_dest` counts up from 10 and needs
+no clock. `roll_char`, `drop_money` and `stock_level` are what MORF-518 and MORF-519 still owe;
+everything else the game reseeds, a game here reseeds too. The arithmetic on either side of a
+reseed is ported exactly, reseed or no reseed.
 
 ## Naming and citations
 

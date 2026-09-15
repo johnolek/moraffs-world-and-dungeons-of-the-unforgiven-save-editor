@@ -850,9 +850,9 @@ square each of the five floor-changing spells drops the character on.
 ### 8.5 Where the port rolls them
 
 Every roll site in `src/lib/game/port/` and `src/lib/play/` that plays Dungeons of the Unforgiven,
-against the calls above.  Which column a site falls in is what decides whether the port reseeds
-before it: a `Random` roll starts a new sequence from the clock, an inline roll carries on from
-the last seed.
+against the calls above.  A `Random` roll goes through `Game.randomCall`, which reseeds from the
+clock when the game has one; an inline roll goes through `Game.rng.random`, which reseeds
+nothing.
 
 | port | plays | `Random` | inline |
 |---|---|---|---|
