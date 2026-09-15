@@ -40,6 +40,9 @@ export interface ServerCharacter {
   slot: number | null;
   dead: boolean;
   leaderboard: string | null;
+  /** The mode the character is locked to for life. A server that has not been told about a
+   *  character's lock names none, and the board it names is that character's lock. */
+  lock: string | null;
   createdAt: string;
   editedAt: string | null;
   /** The newest record any device of this player's sent, base64. */
@@ -158,6 +161,7 @@ function serverCharacter(value: unknown): ServerCharacter | null {
     slot: Number.isInteger(character.slot) ? (character.slot as number) : null,
     dead: character.dead === true,
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
+    lock: isLeaderboard(character.lock) ? character.lock : null,
     createdAt,
     editedAt: typeof character.editedAt === 'string' ? character.editedAt : null,
     record: typeof character.record === 'string' ? character.record : null,
@@ -207,6 +211,7 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
     editedAt: character.editedAt ?? character.createdAt,
     dead: character.dead,
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
+    lock: isLeaderboard(character.lock) ? character.lock : isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     run: character.run.map((session, at) => sittingWithKeys(session, kept?.run[at])),
     journal: kept?.journal ?? [],
   };

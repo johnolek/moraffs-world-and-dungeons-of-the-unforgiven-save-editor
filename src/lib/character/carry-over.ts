@@ -40,6 +40,7 @@ interface StoredEntry {
   editedAt: string;
   dead?: boolean;
   leaderboard?: Leaderboard | null;
+  lock?: Leaderboard | null;
   run?: RunSession[];
 }
 
@@ -100,7 +101,7 @@ function rosterFrom(text: string): { entries: RosterEntry[]; currentId: string |
 
 function entryFrom(value: unknown): RosterEntry | null {
   if (typeof value !== 'object' || value === null) return null;
-  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead, leaderboard, run } = value as Partial<StoredEntry>;
+  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead, leaderboard, lock, run } = value as Partial<StoredEntry>;
   if (typeof id !== 'string' || typeof game !== 'string' || typeof name !== 'string') return null;
   if (typeof createdAt !== 'string' || typeof editedAt !== 'string' || typeof bytes !== 'string') return null;
   if (slot !== null && !Number.isInteger(slot)) return null;
@@ -118,6 +119,9 @@ function entryFrom(value: unknown): RosterEntry | null {
     dead: dead === true,
     // A roster stored before the site had leaderboards names no board, and reads as free play.
     leaderboard: isLeaderboard(leaderboard) ? leaderboard : null,
+    // A roster stored before the board and the lock were two questions names no lock, and the
+    // board it names is the mode that character was locked to.
+    lock: isLeaderboard(lock) ? lock : isLeaderboard(leaderboard) ? leaderboard : null,
     // A roster stored before the site kept runs names no sessions, and reads as a character that
     // has never been played.
     run: Array.isArray(run) ? run.filter(isRunSession) : [],

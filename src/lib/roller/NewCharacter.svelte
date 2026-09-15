@@ -202,7 +202,7 @@
   function keepWhenDone() {
     if (!view || view.question !== null || kept) return;
     kept = true;
-    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc), leaderboard);
+    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc), leaderboard, leaderboard !== null);
   }
 
   function answer(value: number | string) {

@@ -17,7 +17,12 @@ function rolled(id = 'b'): RosterEntry {
 
 function rolledForTheBoard(board: Leaderboard, id = 'c'): RosterEntry {
   const bytes = Uint8Array.from([7]);
-  return newEntry({ game: 'unforgiven', name: 'RACER', slot: 23, bytes, imported: false, leaderboard: board }, ROLLED_AT, id);
+  return newEntry({ game: 'unforgiven', name: 'RACER', slot: 23, bytes, imported: false, lock: board, onBoard: true }, ROLLED_AT, id);
+}
+
+function rolledLockedOffTheBoard(lock: Leaderboard, id = 'd'): RosterEntry {
+  const bytes = Uint8Array.from([7]);
+  return newEntry({ game: 'unforgiven', name: 'PURIST', slot: 24, bytes, imported: false, lock }, ROLLED_AT, id);
 }
 
 describe('a character put on the roster', () => {
@@ -34,18 +39,33 @@ describe('a character put on the roster', () => {
 });
 
 describe('the board a character is rolled for', () => {
-  it('is kept on the character that was rolled for it', () => {
+  it('is kept on the character that was rolled for it, which is locked to that mode', () => {
     expect(rolledForTheBoard('speedrun').leaderboard).toBe('speedrun');
+    expect(rolledForTheBoard('speedrun').lock).toBe('speedrun');
   });
 
   it('is nothing at all for a character rolled to be played for its own sake', () => {
     expect(rolled().leaderboard).toBeNull();
+    expect(rolled().lock).toBeNull();
+  });
+
+  it('is nothing at all for one locked to a mode but asked for no board', () => {
+    expect(rolledLockedOffTheBoard('faithful').leaderboard).toBeNull();
+    expect(rolledLockedOffTheBoard('faithful').lock).toBe('faithful');
+  });
+
+  it('is nothing at all for one asked onto a board with no mode to lock it to', () => {
+    const bytes = Uint8Array.from([7]);
+    const entry = newEntry({ game: 'unforgiven', name: 'RACER', slot: 23, bytes, imported: false, onBoard: true });
+    expect(entry.leaderboard).toBeNull();
+    expect(entry.lock).toBeNull();
   });
 
   it('is never given to an imported file, whatever the caller asks for', () => {
     const bytes = Uint8Array.from([1, 2, 3]);
-    const entry = newEntry({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes, imported: true, leaderboard: 'faithful' });
+    const entry = newEntry({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes, imported: true, lock: 'faithful', onBoard: true });
     expect(entry.leaderboard).toBeNull();
+    expect(entry.lock).toBeNull();
   });
 });
 
@@ -56,10 +76,11 @@ describe("the sessions of a character's run", () => {
 });
 
 describe('a record written from outside the game', () => {
-  it('takes the character off its board and stamps the change', () => {
+  it('takes the character off its board, leaves its lock, and stamps the change', () => {
     const entry = rolledForTheBoard('faithful');
     expect(voidLeaderboard(entry, EDITED_AT)).toBe(true);
     expect(entry.leaderboard).toBeNull();
+    expect(entry.lock).toBe('faithful');
     expect(entry.editedAt).toBe(EDITED_AT.toISOString());
   });
 

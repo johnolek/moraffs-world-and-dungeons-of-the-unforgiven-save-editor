@@ -139,6 +139,48 @@ describe('the schema', () => {
   });
 });
 
+describe('a character written before the board and the lock were two questions', () => {
+  /** The row as such a build left it: every field the store writes now but `lock`. */
+  async function dropTheLockField(id: string): Promise<void> {
+    const opened = indexedDB.open('moraff-tools');
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      opened.onsuccess = () => resolve(opened.result);
+    });
+    const characters = db.transaction('characters', 'readwrite').objectStore('characters');
+    const got = characters.get(id);
+    await new Promise<void>((resolve) => {
+      got.onsuccess = () => {
+        const { lock: _lock, ...older } = got.result as Record<string, unknown>;
+        characters.put(older).onsuccess = () => resolve();
+      };
+    });
+    db.close();
+  }
+
+  it('reads as one locked to the board it was rolled for', async () => {
+    const bytes = Uint8Array.from([1, 2, 3]);
+    const entry = newEntry(
+      { game: 'unforgiven', name: 'RACER', slot: 23, bytes, imported: false, lock: 'faithful', onBoard: true },
+      ROLLED_AT,
+      'a',
+    );
+    await store.keepPlayed([entry], []);
+    await dropTheLockField('a');
+
+    const read = await store.readRoster();
+    expect(read![0].leaderboard).toBe('faithful');
+    expect(read![0].lock).toBe('faithful');
+  });
+
+  it('reads as one locked to nothing when it was on no board', async () => {
+    await store.keepPlayed([character('a', 'SAGEY')], []);
+    await dropTheLockField('a');
+
+    const read = await store.readRoster();
+    expect(read![0].lock).toBeNull();
+  });
+});
+
 describe('the explored maps', () => {
   it('come back for the character they were kept under', async () => {
     await store.keepMaps('a', '{"0:1":"AA"}');

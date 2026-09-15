@@ -142,6 +142,17 @@ describe('what an older stored roster left out', () => {
     expect(read![0].leaderboard).toBeNull();
   });
 
+  it('reads a character stored before the lock was asked for as locked to its board', async () => {
+    // The stored shape has no lock in it at all: it is older than the question.
+    storeRoster([{ ...storedEntry(character('a', 'SAGEY')), leaderboard: 'faithful' }]);
+
+    await carryOver.carryOverStoredRoster();
+
+    const read = await store.readRoster();
+    expect(read![0].leaderboard).toBe('faithful');
+    expect(read![0].lock).toBe('faithful');
+  });
+
   it('reads a board this build does not know as free play', async () => {
     storeRoster([{ ...storedEntry(character('a', 'SAGEY')), leaderboard: 'cheating' }]);
 

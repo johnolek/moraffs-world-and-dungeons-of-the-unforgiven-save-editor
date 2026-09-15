@@ -38,6 +38,9 @@ interface CharacterRow {
   editedAt: string;
   dead: boolean;
   leaderboard: Leaderboard | null;
+  /** Rows written before the board and the lock were two questions have no lock; the board they
+   *  name is the mode that character was locked to. */
+  lock?: Leaderboard | null;
 }
 
 /**
@@ -199,6 +202,7 @@ function characterRow(entry: RosterEntry): CharacterRow {
     editedAt: entry.editedAt,
     dead: entry.dead,
     leaderboard: entry.leaderboard,
+    lock: entry.lock,
   };
 }
 
@@ -293,6 +297,7 @@ function entryOf(row: CharacterRow, run: RunSession[], journal: JournalEntry[][]
     editedAt: row.editedAt,
     dead: row.dead,
     leaderboard: row.leaderboard,
+    lock: row.lock ?? row.leaderboard,
     run,
     journal,
   };

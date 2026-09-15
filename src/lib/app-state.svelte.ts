@@ -31,12 +31,13 @@ export interface CurrentCharacter {
 }
 
 /**
- * Which of the two leaderboards a character was rolled for, and is locked to for the rest of its
- * life, so that every run it plays can be compared with the others on that board.
+ * Which of the two leaderboards a character's runs go on, and which of the two modes a character
+ * can be locked to for the rest of its life. The two are one list of words because a board is a
+ * set of runs played the same way: the board is named after the mode its runs are played in.
  *
- * Both are named after the play mode they are played in: faithful shows only what the game shows,
- * speedrun adds the whole floor. Debug is not here — a run played with the port's own numbers on
- * screen is not a run anybody competes with.
+ * Faithful shows only what the game shows, speedrun adds the whole floor. Debug is not here — a
+ * run played with the port's own numbers on screen is not a run anybody competes with, and it is
+ * not a way a character can be locked to play.
  */
 export type Leaderboard = 'faithful' | 'speedrun';
 
@@ -55,11 +56,23 @@ export interface RosterEntry extends CurrentCharacter {
    */
   dead: boolean;
   /**
-   * The board this character was rolled for, or null for one played for its own sake. It is
+   * The board this character's runs go on, or null for one whose runs go on no board. It is
    * chosen once, in the roller, and the only thing that ever changes it is a record written from
    * outside the game, which ends it for good.
+   *
+   * A character is only ever on the board of the mode it is locked to, so this is either
+   * {@link lock} or null: a board is a set of runs played the same way.
    */
   leaderboard: Leaderboard | null;
+  /**
+   * The mode this character is locked to for the rest of its life, or null for one that can be
+   * played whichever way the Play tab is set to.
+   *
+   * It is the roller's other question and it outlives the board: a record written from outside
+   * the game takes a character off its board, and the character is still the faithful or speedrun
+   * character it was rolled as.
+   */
+  lock: Leaderboard | null;
   /**
    * The character's run: every sitting at the game it has been played in, oldest first.
    *

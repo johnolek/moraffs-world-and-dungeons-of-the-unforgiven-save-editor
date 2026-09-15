@@ -226,25 +226,35 @@ describe('a character rolled here', () => {
   });
 
   it('carries the board the roller was asked to roll it for', () => {
-    keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'speedrun');
+    keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'speedrun', true);
     expect(currentEntry()?.leaderboard).toBe('speedrun');
+    expect(currentEntry()?.lock).toBe('speedrun');
   });
 
-  it('is on no board when the roller was not asked for one', () => {
+  it('carries the lock without a board when the roller was asked for no board', () => {
+    keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'speedrun', false);
+    expect(currentEntry()?.leaderboard).toBeNull();
+    expect(currentEntry()?.lock).toBe('speedrun');
+  });
+
+  it('is on no board and locked to nothing when the roller was asked for neither', () => {
     keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
     expect(currentEntry()?.leaderboard).toBeNull();
+    expect(currentEntry()?.lock).toBeNull();
   });
 });
 
 describe('taking the current character off its board', () => {
-  it('ends the lock and keeps the roster written that way', async () => {
-    keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'faithful');
+  it('takes it off the board, keeps its lock, and keeps the roster written that way', async () => {
+    keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'faithful', true);
     expect(voidCurrentLeaderboard()).toBe(true);
     expect(currentEntry()?.leaderboard).toBeNull();
+    expect(currentEntry()?.lock).toBe('faithful');
 
     await rememberNow();
     await restoreRoster();
     expect(currentEntry()?.leaderboard).toBeNull();
+    expect(currentEntry()?.lock).toBe('faithful');
   });
 
   it('says there was nothing to end for a character on no board', () => {

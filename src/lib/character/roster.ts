@@ -14,12 +14,15 @@ export interface NewCharacter {
   /** Whether the bytes are a file that was imported, rather than a character rolled here. */
   imported: boolean;
   /**
-   * The leaderboard this character is rolled for, or null for one played for its own sake.
+   * The mode this character is locked to for life, or null for one that can be played any way.
    *
    * Only a roll can carry one. An imported file has already been somewhere this site cannot see,
-   * so there is no chain of runs from a roll to compare it by.
+   * so there is no chain of runs from a roll to hold it to a way of playing, or to compare it by.
    */
-  leaderboard?: Leaderboard | null;
+  lock?: Leaderboard | null;
+  /** Whether its runs go on the leaderboard of that mode. A character with no lock goes on no
+   *  board, since a board is a set of runs played the same way. */
+  onBoard?: boolean;
 }
 
 export function newId(): string {
@@ -28,6 +31,7 @@ export function newId(): string {
 
 export function newEntry(character: NewCharacter, now = new Date(), id = newId()): RosterEntry {
   const stamp = now.toISOString();
+  const lock = character.imported ? null : (character.lock ?? null);
   return {
     id,
     game: character.game,
@@ -38,7 +42,8 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     createdAt: stamp,
     editedAt: stamp,
     dead: false,
-    leaderboard: character.imported ? null : (character.leaderboard ?? null),
+    lock,
+    leaderboard: lock !== null && character.onBoard === true ? lock : null,
     run: [],
     journal: [],
   };
@@ -72,7 +77,8 @@ export function markDead(entry: RosterEntry, now = new Date()): void {
  * Take the character off the leaderboard it was rolled for. Says whether it was on one.
  *
  * Nothing puts it back: a board is a chain of runs from the roll, and a record written from
- * outside the game breaks the chain wherever it lands.
+ * outside the game breaks the chain wherever it lands. The mode the character is locked to is
+ * left alone — that is what it was rolled as, and no edit changes it.
  */
 export function voidLeaderboard(entry: RosterEntry, now = new Date()): boolean {
   if (entry.leaderboard === null) return false;

@@ -73,17 +73,19 @@ export function importRevExploredMap(bytes: Uint8Array): RosterEntry | null {
 /**
  * Put a character that has just been rolled on the roster and start working on it.
  *
- * `leaderboard` is the board the roller was asked to roll for, and null for a character to be
- * played for its own sake. It can never be given later: a board is a chain of runs from the roll.
+ * `lock` is the mode the roller was asked to lock the character to, and `onBoard` whether its
+ * runs go on that mode's leaderboard. Neither can be given later: the lock is what the character
+ * was rolled as, and a board is a chain of runs from the roll.
  */
 export function keepRolledCharacter(
   game: string,
   name: string,
   slot: number | null,
   bytes: Uint8Array<ArrayBuffer>,
-  leaderboard: Leaderboard | null = null,
+  lock: Leaderboard | null = null,
+  onBoard = false,
 ): void {
-  const entry = newEntry({ game, name, slot, bytes, imported: false, leaderboard });
+  const entry = newEntry({ game, name, slot, bytes, imported: false, lock, onBoard });
   app.roster = withEntry(app.roster, entry);
   chooseEntry(entry.id);
   keepNow(entry);
