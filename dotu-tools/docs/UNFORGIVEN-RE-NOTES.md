@@ -747,7 +747,7 @@ mix of the two.
 |---|---|---|---|
 | `Random` (2000:4156) | 2000:4168 | `DS:c609 + clock()` | one `rand` (2000:418c), which is the value it returns |
 | `main` (2000:620f) | 2000:63bd | `time()` | one `rand` (2000:63cc), scaled to 0..1999, which starts `DS:c609` |
-| `stock_level` (2000:671e) | 2000:6737 | `time()` | the boss placement: one inline roll (2000:68ff) and one `Random` (2000:6939) |
+| `stock_level` (2000:671e) | 2000:6737 | `time()` | nothing at all — the loop under it is entered at its test, whose `Random(2)` at 2000:6939 reseeds before it rolls, so this seed never reaches a die either; the inline roll at 2000:68ff is the loop's body and the number the loop works out is never read again |
 | `stock_level` (2000:671e) | 2000:6979 | `clock() + slot + attempt` | the slot's x and y, `rand * 80` and `rand * 110` (2000:6988 and 2000:69bc), and then a fresh reseed for the next attempt |
 | `strike` (2000:7e36) | 2000:7e63 | `clock()` | the whole swing: the to-hit roll at 2000:7e89 and seven more inline rolls |
 | `defend` (2000:82b7) | 2000:84ca | `clock() + 100` | nothing at all — the next roll is `Random(80)` at 2000:84ee, which reseeds before it rolls, so this seed never reaches a die |

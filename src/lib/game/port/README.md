@@ -104,14 +104,27 @@ stream; `Game.randomTotal` is the running total `Random` keeps, `DS:c609`, which
 the way `main` does except that the seed the sitting was started from stands in for the wall clock
 `main` reads, so a replay off the log alone starts it at the same number.
 
-The tick-counter reseed left over is `defend`'s, which never reaches a die even in the original:
-the roll under it is a `Random` call, and `Random` reseeds from the clock again before it rolls,
-so playing the `srand` above it alone would hand out numbers the game never had. The reseeds after
-that are not from the tick counter at all: `roll_char` and `drop_money` seed from `time()`, the
-second the roller was started in and the second a kill happened in, which is a clock no session
-supplies, and `trapdoor_dest` counts up from 10 and needs no clock. `roll_char` and `drop_money`
-are what MORF-519 still owes; everything else the game reseeds, a game here reseeds too. The
-arithmetic on either side of a reseed is ported exactly, reseed or no reseed.
+The game's other clock is `time()` (exe 1000:1d12), the DOS date and time in seconds, and
+`Game.seconds` is it. `srand` keeps only its low sixteen bits, so a seed drawn from it changes
+once a second and no faster. A run reads the wall clock once, as its log is opened, and counts on
+from the tick counter — `time()` for an input is that second plus the input's tick divided by
+18.2 — and the second it read is in the log, so a replay answers the same seconds. `drop_money`
+(exe 4000:6b24) seeds from it, which is why two monsters of the same floor killed inside one
+second drop exactly the same money.
+
+`roll_char` (exe 3000:5447) seeds from it too, and the character roller is not a run: it is handed
+a wall clock of its own and keeps the second it read beside the character, since that second is
+the whole of what such a roll is made of. Asked for no clock it draws from Math.random and keeps
+the fractions instead, which is what the New Character tab does today.
+
+Two reseeds are left over and neither reaches a die, in the original or here. `defend`'s is
+followed by a `Random` call, and `Random` reseeds from the clock again before it rolls, so playing
+the `srand` above it alone would hand out numbers the game never had. `stock_level`'s at 2000:6737
+is the same story: the loop under it starts with a `Random(2)` at 2000:6939, which reseeds before
+anything rolls, and the number that loop works out is never read again. `trapdoor_dest` counts its
+seeds up from 10 and wants no clock at all, which `src/lib/game/unfmap.js` already does.
+Everything else the game reseeds, a game here reseeds too, and the arithmetic on either side of a
+reseed is ported exactly, reseed or no reseed.
 
 ## Naming and citations
 
