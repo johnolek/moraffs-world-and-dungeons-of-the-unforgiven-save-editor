@@ -4,6 +4,7 @@ import { spellIndex } from '../game/port/inventory';
 import { savePlayer } from '../game/port/record';
 import { BorlandRng } from '../game/port/rng';
 import { sectionInfo } from '../game/sections';
+import { BorlandRand, HEIGHT, WIDTH } from '../game/unfmap.js';
 import { MAP_PLAYER, monsterAt, newGame, type Game, type PlayerCharacter } from '../game/port/state';
 import { monsterById, MONSTER_SLOTS } from '../map/stocking';
 import { newCharacterFile } from '../roller/save-file';
@@ -15,9 +16,10 @@ import { floorMonsterKinds } from './panel';
 const floorOf = (module: number, level: number) => bundledDungeon.floor(level, module);
 
 /** A game standing on an open square of the floor, the way one arrives on it. */
-function gameOn(level: number, module = 0): Game {
+function gameOn(level: number, module = 0, clock: (() => number) | null = null): Game {
   const game = newGame({
     rng: new BorlandRng(7),
+    clock,
     pc: { level, module, x: 40, y: 50 },
     solid: (x, y, floor, dungeon) => bundledDungeon.solid(x, y, floor, dungeon),
     retdwall: (x, y, hv, floor, dungeon) => bundledDungeon.side(x, y, hv as 0 | 1, floor, dungeon),
@@ -77,6 +79,72 @@ describe('stocking a floor', () => {
     expect(game.monsterKinds[22].name).toBe('SHADOW GARGALON');
     loadLevelMap(game, floors, floorOf(0, 8), 8, game.rng);
     expect(game.monsterKinds[22].name).not.toBe('SHADOW GARGALON');
+  });
+});
+
+describe('stocking a floor on the clock', () => {
+  /** What the tick counter reads all through one stocking, which is what it does in a game: the
+   *  counter moves 18.2 times a second and a floor is stocked in far less than that. */
+  const TICK = 5000;
+
+  /**
+   * The square one seed draws: `rand * 80` across and `rand * 110` down, which are stock_level's
+   * two rolls (exe 2000:6988 and 2000:69bc) off the srand above them.
+   */
+  function squareFromSeed(seed: number): { x: number; y: number } {
+    const rolls = new BorlandRand(seed & 0xffff);
+    return { x: rolls.random(WIDTH), y: rolls.random(HEIGHT) };
+  }
+
+  function stocked(clock: (() => number) | null, level = 3): Game {
+    const game = gameOn(level, 0, clock);
+    loadLevelMap(game, new FloorMonsters(), floorOf(0, level), level, game.rng);
+    return game;
+  }
+
+  const stockedOnTheClock = (level = 3) => stocked(() => TICK, level);
+
+  /** How far apart two squares are, taking the shorter way round each edge. */
+  function apart(from: { x: number; y: number }, to: { x: number; y: number }): number {
+    const across = Math.abs(to.x - from.x);
+    const down = Math.abs(to.y - from.y);
+    return Math.max(Math.min(across, WIDTH - across), Math.min(down, HEIGHT - down));
+  }
+
+  it('puts every slot on the square srand(clock + slot + try) draws', () => {
+    const game = stockedOnTheClock();
+    // stock_level counts the tries the whole floor takes from 10 and raises the count before each
+    // of them, so the first try of slot 0 is the eleventh and every later slot goes on from
+    // wherever the slot before it stopped.
+    let tries = 10;
+    for (let slot = 0; slot < MONSTER_SLOTS; slot++) {
+      const monster = game.monsters[slot];
+      const before = tries;
+      while (tries < before + 60) {
+        tries += 1;
+        const square = squareFromSeed(TICK + slot + tries);
+        if (square.x === monster.x && square.y === monster.y) break;
+      }
+      expect({ slot, ...squareFromSeed(TICK + slot + tries) }).toEqual({ slot, x: monster.x, y: monster.y });
+    }
+  });
+
+  it('lands the first monster where seed 5011 says, worked out by hand', () => {
+    // srand(5011) leaves the generator's state at 5011 * 0x015A4E35 + 1, whose bits 16 to 30 are
+    // 31400, and the next state's are 1016. Scaled to 80 across and 110 down those are 76 and 3.
+    expect(squareFromSeed(TICK + 0 + 11)).toEqual({ x: 76, y: 3 });
+    const game = stockedOnTheClock();
+    expect({ x: game.monsters[0].x, y: game.monsters[0].y }).toEqual({ x: 76, y: 3 });
+  });
+
+  it('walks the monsters across the floor in diagonal stripes rather than scattering them', () => {
+    const striped = stockedOnTheClock().monsters;
+    const scattered = stocked(null).monsters;
+    const shortSteps = (monsters: typeof striped) =>
+      monsters.filter((monster, slot) => slot > 0 && apart(monsters[slot - 1], monster) <= 6).length;
+
+    expect(shortSteps(striped)).toBeGreaterThan(MONSTER_SLOTS - 30);
+    expect(shortSteps(scattered)).toBeLessThan(30);
   });
 });
 

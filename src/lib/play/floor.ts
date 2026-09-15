@@ -4,7 +4,7 @@ import type { Game, Monster } from '../game/port/state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from '../game/port/state';
 import { WIDTH } from '../game/unfmap.js';
 import type { MapSquare } from '../map/game';
-import { MONSTER_SLOTS, stockFloor, type StockedMonster } from '../map/stocking';
+import { MONSTER_SLOTS, stockFloor, type SquareReseed, type StockedMonster } from '../map/stocking';
 
 /**
  * Arriving on a floor: what the game loads, stocks and remembers.
@@ -150,6 +150,7 @@ export class FloorMonsters {
           [squareIndex(game.pc.x, game.pc.y)],
           game.pc.objective[game.pc.module],
           { x: game.pc.bossX[index], y: game.pc.bossY[index] },
+          squareReseed(game, rng),
         );
         fill(table.monsters, stocked);
         for (const monster of stocked) table.fullHp[monster.slot] = monster.hp;
@@ -198,6 +199,20 @@ function fill(slots: Monster[], stocked: StockedMonster[]): void {
  */
 function fractions(rng: Rng): () => number {
   return () => rng.random(0x8000) / 0x8000;
+}
+
+/**
+ * stock_level (exe 2000:671e, unf.c "stock_level"): the srand at 2000:6979, which starts the
+ * generator again from the tick counter plus the slot and the number of tries the floor has
+ * taken, before every try at a monster's square.
+ *
+ * Null for a game with no clock, which reseeds nothing and lays its monsters out evenly: the
+ * third departure in `src/lib/game/port/README.md`.
+ */
+function squareReseed(game: Game, rng: Rng): SquareReseed | null {
+  const clock = game.clock;
+  if (clock === null) return null;
+  return (slot, attempt) => rng.reseed?.(clock() + slot + attempt);
 }
 
 /**

@@ -106,6 +106,20 @@ export function stockingSection(rules: GameRules, moduleIndex: number, floor: nu
 const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
 
 /**
+ * What stock_level does before every try at a monster's square (exe 2000:6979):
+ * `srand(clock() + slot + attempt)`, where `attempt` counts the tries the whole floor has taken
+ * rather than this slot's own.
+ *
+ * Seeds one apart give rolls that climb in a straight line, so consecutive slots land a fixed
+ * distance apart and the floor comes out in diagonal stripes.
+ */
+export type SquareReseed = (slot: number, attempt: number) => void;
+
+/** stock_level starts its count of tries at 10 (exe 2000:6726) and raises it before each try, so
+ *  the first try of the first slot is the eleventh. */
+const TRIES_BEFORE_THE_FIRST = 10;
+
+/**
  * Fills a floor's 145 monster slots the way stock_level (exe 2000:671e, unf.c "stock_level")
  * does: every slot gets a random open square nothing else stands on, hit points rolled from the
  * floor's base level for whichever monster the type roll picked, and a level nudged away from
@@ -116,8 +130,9 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  * type first, and only then does the boss take the slot, hand that square back and draw one of
  * his own. Both halves spend the generator, which is why they are both here.
  *
- * The game seeds its generator afresh for every square it draws, which makes the monsters
- * land in diagonal stripes; `rnd` is used plainly here, so they spread out evenly instead.
+ * The game seeds its generator afresh for every square it draws, which makes the monsters land in
+ * diagonal stripes. `reseed` is that, and a caller without one — the map explorer, and a game
+ * played off the clock — draws from `rnd` plainly and spreads its monsters out evenly instead.
  *
  * `occupied` is the squares the occupancy grid already holds, as `y * 80 + x`. The game puts the
  * player on that grid before it rolls, so nothing is ever stocked on top of them; the map
@@ -131,6 +146,7 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  *   killed off his floor for good.
  * @param bossLastSeen the square this section's Shadow boss was last put down on, which he is
  *   put back within seven squares of.
+ * @param reseed {@link SquareReseed}, or null to leave the generator alone.
  */
 export function stockFloor(
   rules: GameRules,
@@ -141,14 +157,17 @@ export function stockFloor(
   occupied: Iterable<number> = [],
   bossesBeaten: number = NO_BOSS_BEATEN,
   bossLastSeen: BossSquare = BOSS_NEVER_PLACED,
+  reseed: SquareReseed | null = null,
 ): StockedMonster[] {
   const section = stockingSection(rules, moduleIndex, floor);
   if (!section) return [];
   const baseLevel = rules.monsterLevel(moduleIndex, floor);
   const taken = new Set<number>(occupied);
   const monsters: StockedMonster[] = [];
+  let tries = TRIES_BEFORE_THE_FIRST;
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) {
-    let { x, y } = freeSquare(rows, taken, rnd);
+    const beforeTry = reseed === null ? null : () => reseed(slot, (tries += 1));
+    let { x, y } = freeSquare(rows, taken, rnd, beforeTry);
     taken.add(y * WIDTH + x);
     let entry = rollKind(section.section, rnd);
     if (slot === 0 && bossStandsOn(section, floor, bossesBeaten)) {
@@ -244,9 +263,16 @@ function sectionMonster(section: number, slot: number): Monster {
   return monsterById(`section-${section}-${slot}`);
 }
 
-/** A random square, redrawn until it is open and holds no monster yet. */
-function freeSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number): { x: number; y: number } {
+/** A random square, redrawn until it is open and holds no monster yet. `beforeTry` is the
+ *  generator being started again for this try, which a game played on the clock asks for. */
+function freeSquare(
+  rows: MapSquare[][],
+  taken: Set<number>,
+  rnd: () => number,
+  beforeTry: (() => void) | null = null,
+): { x: number; y: number } {
   for (;;) {
+    beforeTry?.();
     const x = random(rnd, WIDTH);
     const y = random(rnd, HEIGHT);
     if (!rows[y][x].solid && !taken.has(y * WIDTH + x)) return { x, y };

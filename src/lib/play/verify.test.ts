@@ -295,7 +295,7 @@ describe('verifying a run played on the clock', () => {
     expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
     // The swings are what the readings decide, so a replay reaching the same damage is a replay
     // that rolled off the same readings.
-    expect(verdict.journal.map((entry) => entry.text)).toContain('Swung the FIST at a Level 3 GARGALON and hit for 21');
+    expect(verdict.journal.map((entry) => entry.text)).toContain('Swung the FIST at a Level 3 LESDIDIAN WARRIOR and hit for 21');
   });
 
   it('fails a run one of whose readings has been moved', async () => {
@@ -307,9 +307,9 @@ describe('verifying a run played on the clock', () => {
 
     const verdict = await verifyRun(runLogOf([{ ...log, inputs: moved }]));
 
-    // Moving the reading changes more than the swing under it now: every Random call of the
-    // fight reseeds from the clock as well, so the monster answers differently too and the run
-    // ends three actions short of what the log claims rather than one.
+    // Moving the reading changes more than the swing under it: every Random call of the fight
+    // reseeds from the clock as well, so the monster answers differently too and the run stops
+    // two actions short of what the log claims.
     expect(verdict.status).toBe('failed');
     expect(verdict.reason).toBe(`The replay spent 3 actions and the log claims ${log.actions} actions.`);
   });

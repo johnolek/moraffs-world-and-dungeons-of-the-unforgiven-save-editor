@@ -1,4 +1,4 @@
-import { characterFile, floorSquare, press, settle } from './battle.test-support';
+import { characterFile, press, settle } from './battle.test-support';
 import { runMoveControl, startGame } from './engine';
 import { KEY } from './keys';
 import { RunRecorder, type RunSession } from './run';
@@ -16,8 +16,11 @@ import { RunRecorder, type RunSession } from './run';
  * importing a test file would declare that file's tests a second time.
  */
 export async function unforgivenClockedRun(): Promise<RunSession> {
-  const start = floorSquare(3);
-  const file = characterFile({ level: 3, dir: 0, ...start, lev: 20, str: 60 });
+  // A floor stocked on the clock lays its monsters in diagonal stripes rather than scattering
+  // them, so most of the floor has nothing within reach and where the character starts decides
+  // whether anything comes. This square has a stripe passing close enough that a monster walks up
+  // to it, and a way north for the character to face down.
+  const file = characterFile({ level: 3, dir: 0, x: 13, y: 2, lev: 20, str: 60 });
   let tick = 1000;
   const run = new RunRecorder({
     game: 'unforgiven',
