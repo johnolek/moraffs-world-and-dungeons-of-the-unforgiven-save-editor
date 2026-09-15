@@ -19,7 +19,7 @@ import {
   useMagicItem,
 } from './drops';
 import { giveHint } from './hints';
-import type { Rng } from './rng';
+import { BorlandRng, type Rng } from './rng';
 import type { Game, PlayerCharacter } from './state';
 import { newGame } from './state';
 
@@ -451,6 +451,52 @@ describe('dropMoney', () => {
     dropMoney(game);
     expect(game.pc.dollars).toBe(500);
     expect(game.messages).toEqual([]);
+  });
+});
+
+describe('dropMoney on the clock', () => {
+  /** A game rolling on Borland's generator with a seconds clock the test moves by hand, which is
+   *  what a run played on the clock hands in. */
+  function killingAtSecond(seconds: () => number): Game {
+    const game = newGame({
+      rng: new BorlandRng(1),
+      pc: { cls: 2, level: 10, hard: 1 },
+      clock: () => 0,
+      seconds,
+      choice: async () => 0x31,
+    });
+    game.monsters[0].level = 40;
+    game.engaged = 0;
+    game.highSpeed = true;
+    return game;
+  }
+
+  /** What one kill pays, with the character's purse emptied again afterwards. */
+  function paid(game: Game): number {
+    dropMoney(game);
+    const amount = game.pc.dollars;
+    game.pc.dollars = 0;
+    return amount;
+  }
+
+  it('pays two kills in the same second exactly the same', () => {
+    let second = 1_757_000_000;
+    const game = killingAtSecond(() => second);
+
+    const first = paid(game);
+    expect(first).toBeGreaterThan(0);
+    expect(paid(game)).toBe(first);
+
+    second += 1;
+    expect(paid(game)).not.toBe(first);
+  });
+
+  it('leaves a game with no seconds clock rolling on from where it was', () => {
+    const game = killingAtSecond(() => 1_757_000_000);
+    game.seconds = null;
+
+    const first = paid(game);
+    expect(paid(game)).not.toBe(first);
   });
 });
 

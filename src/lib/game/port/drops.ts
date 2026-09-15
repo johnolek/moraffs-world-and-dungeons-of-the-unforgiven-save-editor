@@ -568,9 +568,11 @@ export function dropMoney(game: Game): void {
     return;
   }
   game.dollarCapWarned = false;
-  // srand(time(NULL)) at 4000:6b24, over the date and time read at 4000:6b1b, deliberately not
-  // ported: see the README's third departure. The seed is the second the kill happened in, so
-  // in the original two monsters of the same floor killed inside one second drop the same money.
+  // srand(time(NULL)) at 4000:6b24, over the date and time read at 4000:6b1b. The seed is the
+  // second the kill happened in, so two monsters of the same floor killed inside one second drop
+  // exactly the same money. A game with no seconds clock reseeds nothing: see the README's third
+  // departure.
+  if (game.seconds !== null) game.rng.reseed?.(game.seconds());
   const deep = pc.level + 1;
   let amount = 0;
   if (pc.level > 4) {

@@ -308,10 +308,10 @@ describe('verifying a run played on the clock', () => {
     const verdict = await verifyRun(runLogOf([{ ...log, inputs: moved }]));
 
     // Moving the reading changes more than the swing under it: every Random call of the fight
-    // reseeds from the clock as well, so the monster answers differently too and the run stops
-    // two actions short of what the log claims.
+    // reseeds from the clock as well, so the whole fight goes differently and the replay's clock
+    // ends a second short of what the log claims.
     expect(verdict.status).toBe('failed');
-    expect(verdict.reason).toBe(`The replay spent 3 actions and the log claims ${log.actions} actions.`);
+    expect(verdict.reason).toBe(`The replay's clock reached 40 seconds and the log claims ${log.time} seconds.`);
   });
 
   it('cannot check a run with a reading taken out of it', async () => {

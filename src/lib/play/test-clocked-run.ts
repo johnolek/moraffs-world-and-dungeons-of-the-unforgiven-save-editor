@@ -3,11 +3,15 @@ import { runMoveControl, startGame } from './engine';
 import { KEY } from './keys';
 import { RunRecorder, type RunSession } from './run';
 
+/** When the sitting began, which is both the instant the log is stamped with and the second the
+ *  game's `time()` counts on from. */
+const STARTED_AT = '2026-09-07T00:00:00.000Z';
+
 /**
  * A short run of Dungeons of the Unforgiven played on the clock, for the tests that need one.
  *
- * The readings of the tick counter are scripted rather than taken from a real one, so the run is
- * the same every time it is played. Two moments waited on a stocked floor is long enough for one
+ * Both clocks are scripted rather than taken from the machine — the tick counter and the second
+ * the sitting began in — so the run is the same every time it is played. Two moments waited on a stocked floor is long enough for one
  * of the floor's own monsters to come face to face with the character, and each swing after that
  * rolls off the reading in front of its key: what the run did cannot be worked out from the seed
  * and the keys alone, which is why the readings are in the log.
@@ -27,9 +31,10 @@ export async function unforgivenClockedRun(): Promise<RunSession> {
     name: 'BRAWLER',
     record: file.bytes,
     seed: 12345,
-    startedAt: '2026-09-07T00:00:00.000Z',
+    startedAt: STARTED_AT,
     mode: 'faithful',
     tickCounter: () => (tick += 5),
+    startedSecond: Math.floor(Date.parse(STARTED_AT) / 1000),
   });
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
