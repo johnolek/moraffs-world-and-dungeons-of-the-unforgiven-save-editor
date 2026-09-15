@@ -1,6 +1,6 @@
+import { sectionPictures } from '../game/port/pictures';
 import { SeededRng } from '../game/port/rng';
 import type { MapSquare } from '../map/game';
-import { sectionPictures } from '../game/port/pictures';
 import { monsterById, type StockedMonster } from '../map/stocking';
 import type { KilledOnScreen } from './engine';
 import { viewPictures } from './view3d/browser';

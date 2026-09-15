@@ -1,5 +1,5 @@
-import type { MapSquare } from '../map/game';
 import { sectionPictures } from '../game/port/pictures';
+import type { MapSquare } from '../map/game';
 import { viewPictures } from '../play/view3d/browser';
 import { newFrame, toRgba } from '../play/view3d/frame';
 import { WHOLE_SCREEN_VIEW } from '../play/view3d/geometry';
