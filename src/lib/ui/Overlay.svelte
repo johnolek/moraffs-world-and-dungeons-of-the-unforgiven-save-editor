@@ -79,12 +79,17 @@
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
   }
   /* Over the window the panel is anchored to the viewport, so its height is the window's rather
-     than the tab's, which is the whole point of opening it this way. */
+     than the tab's, which is the whole point of opening it this way. The stacking number is
+     above every other one on the site, so nothing further down the page paints over it: the
+     character panel along the foot of the page is positioned and would otherwise. */
   .overlay.over-window {
     position: fixed;
+    z-index: 10;
   }
+  /* A fixed height rather than a ceiling, so the panel does not jump about as a form inside it
+     moves from a short step to a long one. */
   .overlay.over-window .detail {
-    max-height: 90vh;
+    height: 90vh;
   }
   .detail-scroll {
     overflow-y: auto;
