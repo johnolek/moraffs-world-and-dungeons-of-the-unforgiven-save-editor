@@ -4,7 +4,7 @@
   import { rememberNow, restoreGame, restoreRoster, switchGame } from './lib/character/current';
   import { GAME_CHOICES } from './lib/game-choice';
   import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
-  import { tabsFor } from './lib/tabs';
+  import { tabGroupsFor, tabsFor } from './lib/tabs';
   import Monsters from './lib/bestiary/Monsters.svelte';
   import Boards from './lib/boards/Boards.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
@@ -28,6 +28,7 @@
   import Segmented from './lib/ui/Segmented.svelte';
 
   const tabs = $derived(tabsFor(app.game));
+  const tabGroups = $derived(tabGroupsFor(app.game));
 
   onMount(() => {
     // Read the entry first: restoring the game rewrites it to say which tab that game is showing.
@@ -61,8 +62,12 @@
   <header>
     <h1><PixelText text="Moraff Tools" scale={2} /></h1>
     <nav>
-      {#each tabs as entry}
-        <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => goToTab(app, entry.id)}>{entry.label}</button>
+      {#each tabGroups as group}
+        <div class="group">
+          {#each group as entry}
+            <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => goToTab(app, entry.id)}>{entry.label}</button>
+          {/each}
+        </div>
       {/each}
     </nav>
     <div class="games">
@@ -165,6 +170,11 @@
     color: var(--accent);
   }
   nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+  }
+  .group {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
