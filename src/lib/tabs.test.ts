@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { tabFor, tabsFor, TABS } from './tabs';
+import { tabFor, tabGroupsFor, tabsFor, TAB_GROUPS, TABS, type TabGroup } from './tabs';
 
 /** A build given a run server, which is the only kind that has boards to show. */
 function withBoards(): void {
@@ -17,12 +17,12 @@ describe('the tabs a game has', () => {
     expect(tabsFor('unforgiven')).toEqual(TABS);
   });
 
-  it('is the Map, Play, the Save Editor, the Monsters, Spells, Tidbits, New Character and Source for Moraff’s World', () => {
-    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'play', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source']);
+  it('is Play, New Character, the Save Editor, the Map, the Monsters, Spells, Tidbits and Source for Moraff’s World', () => {
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['play', 'roller', 'editor', 'map', 'monsters', 'spells', 'tidbits', 'source']);
   });
 
-  it('is the Map, Play, the Save Editor, the Monsters, Tidbits, New Character and Source for Moraff’s Revenge', () => {
-    expect(tabsFor('revenge').map((tab) => tab.id)).toEqual(['map', 'play', 'editor', 'monsters', 'tidbits', 'roller', 'source']);
+  it('is Play, New Character, the Save Editor, the Map, the Monsters, Tidbits and Source for Moraff’s Revenge', () => {
+    expect(tabsFor('revenge').map((tab) => tab.id)).toEqual(['play', 'roller', 'editor', 'map', 'monsters', 'tidbits', 'source']);
   });
 
   it('gives all three games the Boards tab where the build has a run server', () => {
@@ -59,6 +59,33 @@ describe('the tabs a game has', () => {
     expect(TABS.find((tab) => tab.id === 'map')?.label).toBe('DotU Map');
     expect(tabsFor('moraffsWorld').find((tab) => tab.id === 'map')?.label).toBe('Map');
     expect(tabsFor('revenge').find((tab) => tab.id === 'map')?.label).toBe('Map');
+  });
+});
+
+describe('the groups the tabs are drawn in', () => {
+  it('is the three groups in their order', () => {
+    withBoards();
+
+    expect(tabGroupsFor('unforgiven').map((group) => group.map((tab) => tab.id))).toEqual([
+      ['play', 'boards', 'roller', 'editor'],
+      ['map', 'monsters', 'spells', 'fight', 'calculators', 'formulas'],
+      ['tidbits', 'snake', 'source'],
+    ]);
+  });
+
+  it('finds TABS itself written in that order, so the flat list reads as the nav shows', () => {
+    const runs: TabGroup[] = [];
+    for (const tab of TABS) if (runs[runs.length - 1] !== tab.group) runs.push(tab.group);
+
+    expect(runs).toEqual(TAB_GROUPS);
+  });
+
+  it('leaves out a group the game has no tab in', () => {
+    expect(tabGroupsFor('revenge').map((group) => group.map((tab) => tab.id))).toEqual([
+      ['play', 'roller', 'editor'],
+      ['map', 'monsters'],
+      ['tidbits', 'source'],
+    ]);
   });
 });
 

@@ -1,26 +1,34 @@
 import type { GameId, Tab } from './app-state.svelte';
 import { runServerUrl } from './run-server';
 
+/** Which group of the nav a tab sits in: `play` is the things you do with a character of your own,
+ *  `reference` is what the site can tell you about the games, and `extras` is the rest. */
+export type TabGroup = 'play' | 'reference' | 'extras';
+
 export interface TabEntry {
   id: Tab;
   label: string;
+  group: TabGroup;
 }
+
+/** The groups in the order the nav shows them, which is the order `TABS` is written in. */
+export const TAB_GROUPS: TabGroup[] = ['play', 'reference', 'extras'];
 
 /** Every tab the site has, in the order they show. */
 export const TABS: TabEntry[] = [
-  { id: 'map', label: 'DotU Map' },
-  { id: 'play', label: 'Play' },
-  { id: 'boards', label: 'Boards' },
-  { id: 'fight', label: 'Fight' },
-  { id: 'editor', label: 'Save Editor' },
-  { id: 'monsters', label: 'Monsters' },
-  { id: 'spells', label: 'Spells' },
-  { id: 'calculators', label: 'Calculators' },
-  { id: 'formulas', label: 'Formulas' },
-  { id: 'tidbits', label: 'Tidbits' },
-  { id: 'snake', label: 'Snake' },
-  { id: 'roller', label: 'New Character' },
-  { id: 'source', label: 'Source' },
+  { id: 'play', label: 'Play', group: 'play' },
+  { id: 'boards', label: 'Boards', group: 'play' },
+  { id: 'roller', label: 'New Character', group: 'play' },
+  { id: 'editor', label: 'Save Editor', group: 'play' },
+  { id: 'map', label: 'DotU Map', group: 'reference' },
+  { id: 'monsters', label: 'Monsters', group: 'reference' },
+  { id: 'spells', label: 'Spells', group: 'reference' },
+  { id: 'fight', label: 'Fight', group: 'reference' },
+  { id: 'calculators', label: 'Calculators', group: 'reference' },
+  { id: 'formulas', label: 'Formulas', group: 'reference' },
+  { id: 'tidbits', label: 'Tidbits', group: 'extras' },
+  { id: 'snake', label: 'Snake', group: 'extras' },
+  { id: 'source', label: 'Source', group: 'extras' },
 ];
 
 /** The tabs each game other than Dungeons of the Unforgiven has, which has them all: the fight
@@ -45,6 +53,13 @@ export function tabsFor(game: GameId): TabEntry[] {
   const theirs = GAME_TABS[game];
   if (!theirs) return shown;
   return shown.filter((tab) => theirs.includes(tab.id)).map((tab) => ({ ...tab, label: OTHER_GAME_LABELS[tab.id] ?? tab.label }));
+}
+
+/** The tabs a game has, split into the groups the nav draws with a gap between them. A group the
+ *  game has no tab in is left out rather than showing as an empty gap. */
+export function tabGroupsFor(game: GameId): TabEntry[][] {
+  const theirs = tabsFor(game);
+  return TAB_GROUPS.map((group) => theirs.filter((tab) => tab.group === group)).filter((tabs) => tabs.length > 0);
 }
 
 /** The tab to show under a game, which is the one asked for unless that game has no such tab.
