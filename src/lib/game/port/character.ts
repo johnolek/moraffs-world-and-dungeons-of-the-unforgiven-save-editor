@@ -624,9 +624,11 @@ export function rollChar(game: Game): void {
   drawUrollScreen(game, uroll, ADVICE_SCREEN);
   game.pressAnyKey();
   game.eraseScreen();
-  // srand(time(NULL)) at 3000:5447, over the date and time read at 3000:543e, deliberately not
-  // ported: see the README's third departure. It is the only reseed in the whole roller, and
-  // the seed is the second the roller was started in rather than the tick counter a swing uses.
+  // srand(time(NULL)) at 3000:5447, over the date and time read at 3000:543e. It is the only
+  // reseed in the whole roller, and the seed is the second the roller was started in rather than
+  // the tick counter a swing uses, so two rollers started inside one second make the same
+  // character. A roller with no seconds clock reseeds nothing: see the README's third departure.
+  if (game.seconds !== null) game.rng.reseed?.(game.seconds());
   drawUrollScreen(game, uroll, RACE_SCREEN);
   pc.race = game.askRace();
   game.eraseScreen();

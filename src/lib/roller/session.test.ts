@@ -158,3 +158,32 @@ describe('RollerSession', () => {
     expect(showing(session.view())[0]).toBe('PLEASE SELECT ONE:');
   });
 });
+
+describe('a roll started on the wall clock', () => {
+  /** The six characteristics, the age and the weight: everything roll_char's dice decide. */
+  function rolled(second: number): number[] {
+    const session = new RollerSession(ROLLER_PORT, 20, () => second);
+    for (const answer of [0, 0, 5, 0, 'HERO', 3, 0]) session.answer(answer);
+    const pc = session.view().pc;
+    return [pc.str, pc.iq, pc.wis, pc.con, pc.dex, pc.luck, pc.age, pc.weight];
+  }
+
+  it('makes the same character twice in one second and another the next', () => {
+    expect(rolled(1_757_000_000)).toEqual(rolled(1_757_000_000));
+    expect(rolled(1_757_000_001)).not.toEqual(rolled(1_757_000_000));
+  });
+
+  it('keeps the second beside the character, which is what the roll is made of', () => {
+    const session = new RollerSession(ROLLER_PORT, 20, () => 1_757_000_000);
+    expect(session.rolledAt).toBe(1_757_000_000);
+    expect(new RollerSession(ROLLER_PORT, 20).rolledAt).toBeNull();
+  });
+
+  it('reads the clock again for the character rolled after a restart', () => {
+    let second = 1_757_000_000;
+    const session = new RollerSession(ROLLER_PORT, 20, () => second);
+    second += 1;
+    session.restart();
+    expect(session.rolledAt).toBe(1_757_000_001);
+  });
+});

@@ -1,5 +1,5 @@
 import { rollChar } from '../game/port/character';
-import type { Rng } from '../game/port/rng';
+import { BorlandRng, type Rng } from '../game/port/rng';
 import type { Game, PlayerCharacter, ScreenLine } from '../game/port/state';
 import { newGame } from '../game/port/state';
 
@@ -52,6 +52,14 @@ export interface RollerSetup {
   /** The character number the roll is for, the way the game's own select screen picks one. */
   slot: number;
   rng: Rng;
+  /**
+   * time (exe 1000:1d12) as the roll sees it: the second the roll was started in, which
+   * `roll_char` reseeds from (exe 3000:5447), or null for a roll that reseeds nothing.
+   *
+   * It answers the same second all through a roll, and through the roll being run again from the
+   * top after each answer, which is what makes such a roll reproducible.
+   */
+  seconds: (() => number) | null;
   /** Which race the menu's pointer is on, for the game whose race menu is walked; the other two
    *  never look at it. */
   race: number;
@@ -81,6 +89,9 @@ export interface RollerPort<Game, View> {
  * the fraction is Math.random's rather than the sawtooth a 1993 PC's reseeded generator produced.
  * The fractions are remembered because {@link RollerSession} runs roll_char again from the top
  * after every answer, and the character has to come out the same each time.
+ *
+ * A roll given a wall clock uses `BorlandRng` and the second instead, and needs none of this: the
+ * second is the whole of what the roll is made of.
  */
 export class RecordedRandom implements Rng {
   private position = 0;
@@ -114,14 +125,25 @@ export class RollerSession<Game, View> {
   private question: Question | null = null;
   /** Where the race menu's pointer is, which the arrow keys move and Return takes. */
   private race = 1;
+  /**
+   * The second this roll was started in, which `roll_char` seeds its generator from, and null for
+   * a roll asked for without a wall clock.
+   *
+   * It is the whole of what such a roll is made of, so it is what to keep with the finished
+   * character if the roll is ever to be made again.
+   */
+  rolledAt: number | null;
 
   /** `slot` is the character number the game picks before rolling: 20 to 29 in Dungeons of the
    *  Unforgiven, 0 to 9 in Moraff's World, and in Moraff's Revenge 1 to 10, which names the two
-   *  files the roll writes. */
+   *  files the roll writes. `wallClock` is the second a roll starts in, which the original seeds
+   *  from; a roller asked for without one draws from Math.random instead. */
   constructor(
     private readonly port: RollerPort<Game, View>,
     readonly slot: number,
+    private readonly wallClock: (() => number) | null = null,
   ) {
+    this.rolledAt = this.wallClock?.() ?? null;
     this.game = this.run();
   }
 
@@ -156,6 +178,7 @@ export class RollerSession<Game, View> {
     this.answers = [];
     this.drawn.length = 0;
     this.race = 1;
+    this.rolledAt = this.wallClock?.() ?? null;
     this.game = this.run();
   }
 
@@ -177,7 +200,14 @@ export class RollerSession<Game, View> {
       if (next === this.answers.length) throw new NeedsAnswer(question);
       return this.answers[next++];
     };
-    const game = this.port.newGame({ slot: this.slot, rng: new RecordedRandom(this.drawn), race: this.race, take });
+    const second = this.rolledAt;
+    const game = this.port.newGame({
+      slot: this.slot,
+      rng: second === null ? new RecordedRandom(this.drawn) : new BorlandRng(second),
+      seconds: second === null ? null : () => second,
+      race: this.race,
+      take,
+    });
     this.question = null;
     try {
       this.port.rollChar(game);
@@ -195,6 +225,7 @@ export const ROLLER_PORT: RollerPort<Game, RollerView> = {
     newGame({
       slot: setup.slot,
       rng: setup.rng,
+      seconds: setup.seconds,
       // The map view the game is showing while a character is rolled, which is what it halves to
       // place the map cursor. These are its dimensions in the three biggest video modes.
       areaColumns: 0x13,
