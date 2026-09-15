@@ -102,7 +102,7 @@ from the race table at DS:0130:
 | 7 | SHRIMP | 0 | 11 | 9 | 3 | 0 | 4 | 26 | 100 | 17 |
 
 The FAQ documents starting HP/SP/money; I did not re-derive `roll_char` because the
-decompiler still chokes on that one function (see §9).
+decompiler still chokes on that one function (see §10).
 
 ---
 
@@ -473,7 +473,7 @@ Permanent (type 0):
 
 "Enchant" sets the plus of one weapon/armor you pick to that value (it does not add);
 rings/body armor refuse to cast if you already have that value or better. The
-anti-magic ring does not appear in any combat formula I found (see §9).
+anti-magic ring does not appear in any combat formula I found (see §10).
 
 Preparation (type 1):
 
@@ -699,7 +699,91 @@ WIZARD and SAGE may use fist, stick or knife; only FIGHTERs may use the great sw
 
 ---
 
-## 8. Files in this folder
+## 8. What the clock feeds
+
+`srand` (exe 1000:18a5) takes a 16-bit seed, puts it in the low word of the generator's
+state and zeroes the high word.  `rand` (exe 1000:18b6) advances that state by
+`state = state * 0x015A4E35 + 1` and hands back `(state >> 16) & 0x7fff`.  Nothing in the
+game draws from one long run of that generator: it is reseeded constantly, from two
+different clocks.
+
+* `clock()` (exe 1000:11b4) is the BIOS tick counter read with INT 1Ah — 18.2 ticks a
+  second — less the reading taken at start-up, plus a day's worth of ticks for each
+  midnight crossed.
+* `time()` (exe 1000:1d12) is the DOS date and time turned into seconds.  `srand` keeps
+  only the low 16 bits of it, so a seed taken from it changes once a second.
+
+### 8.1 `Random` reseeds on every call
+
+`Random(n)` (exe 2000:4156) is the game's only wrapper around `rand`, and it is not a
+wrapper that keeps a sequence going.  Every call does this:
+
+```
+clock()                       ; 2000:415c
+srand(DS:c609 + clock())      ; 2000:4168
+DS:c609 += clock()            ; 2000:4170, a second reading of the clock
+return rand() * n / 0x8000    ; 2000:418c
+```
+
+The multiply and the divide are 32-bit and signed and truncate toward zero, so `Random(n)`
+is an integer in 0..n-1.  `Random(0)` is 0, and a negative `n` gives a value between
+`n + 1` and 0, because nothing clamps the multiply.
+
+`DS:c609` is a running total.  `main` starts it at `rand() * 2000 / 0x8000` off a
+`srand(time())` (2000:63bd, the roll at 2000:63cc), and every `Random` call adds another
+clock reading to it.  So the seed a `Random` roll gets is the clock plus a number that
+grows by about the clock again on every roll.
+
+Everywhere else the game writes the same arithmetic inline — `rand() * n / 0x8000`, with
+no reseed of its own — and that is the distinction that matters to anyone modelling the
+clock: an inline roll carries on from whatever the last reseed set, while a `Random` roll
+starts a new sequence from the clock.  `strike` is eight inline rolls and no `Random`
+call; `spell_effect` is sixteen `Random` calls and no inline roll; most routines are a
+mix of the two.
+
+### 8.2 Every reseed in the game
+
+| routine | `srand` at | seed | what rolls before the next reseed |
+|---|---|---|---|
+| `Random` (2000:4156) | 2000:4168 | `DS:c609 + clock()` | one `rand` (2000:418c), which is the value it returns |
+| `main` (2000:620f) | 2000:63bd | `time()` | one `rand` (2000:63cc), scaled to 0..1999, which starts `DS:c609` |
+| `stock_level` (2000:671e) | 2000:6737 | `time()` | the boss placement: one inline roll (2000:68ff) and one `Random` (2000:6939) |
+| `stock_level` (2000:671e) | 2000:6979 | `clock() + slot + attempt` | the slot's x and y, `rand * 80` and `rand * 110` (2000:6988 and 2000:69bc), and then a fresh reseed for the next attempt |
+| `strike` (2000:7e36) | 2000:7e63 | `clock()` | the whole swing: the to-hit roll at 2000:7e89 and seven more inline rolls |
+| `defend` (2000:82b7) | 2000:84ca | `clock() + 100` | nothing at all — the next roll is `Random(80)` at 2000:84ee, which reseeds before it rolls, so this seed never reaches a die |
+| `trapdoor_dest` (2000:bda6) | 2000:bdb2 | 10, then 11, 12, … | the landing square, `rand * 60 + 10` and `rand * 90 + 10`, tried again with the next seed until the square is open |
+| `roll_char` (3000:4c77) | 3000:5447 | `time()` | every roll a character is made of |
+| `drop_money` (4000:6aca) | 4000:6b24 | `time()` | the whole money drop, eleven inline rolls |
+| `FUN_3000_8d7e` (3000:8d7e) | four of them | `param * 5 + 4`, then three from `time()` | nothing in the game calls this function |
+
+### 8.3 What the reseeding does to play
+
+Borland's generator answers consecutive seeds with numbers that climb in a straight line:
+one more on the seed is 346 more out of `rand`, out of the 32768 it can return.  A value
+scaled to 0..79 therefore climbs about 0.85 for every tick of the clock and wraps every 95
+ticks, which is 5.2 seconds.
+
+* `strike`'s to-hit roll is the first `rand` after `srand(clock())`, so it is that
+  sawtooth exactly: there are good moments to swing and bad ones, on a five-second cycle.
+  The seven rolls after it carry on from the same seed and move fast enough to look
+  random.
+* `defend`'s to-hit roll is a `Random` call, so the `clock() + 100` above it is thrown
+  away and what the monster rolls depends on `DS:c609` as well as on the clock.  There is
+  no sawtooth a player could learn.
+* `stock_level` reseeds once per placement attempt with the slot number inside the seed,
+  which is why consecutive slots land a fixed distance apart and a freshly stocked floor
+  holds its monsters in diagonal stripes (§4.1).
+* `roll_char` and `drop_money` take one `time()` seed and roll everything off it, and
+  `time()` only changes once a second.  Two rollers started in the same second make the
+  same character, and two monsters of the same floor killed in the same second drop the
+  same money.
+
+`TIDBITS.md` section "Random numbers that are not random" writes the first and the third of
+these up, and the Tidbits tab has the first as "Swing on the beat".
+
+---
+
+## 9. Files in this folder
 
 * `UNFORGIVEN-RE-NOTES.md` — this document.
 * `tools/unfsave.py` — decode / re-checksum character files.
@@ -717,7 +801,7 @@ WIZARD and SAGE may use fist, stick or knife; only FIGHTERs may use the great sw
   runtime signatures, jump-table overrides, export), plus `unemu87.py` and
   `relayout.py`.
 
-## 9. Not done / open questions
+## 10. Not done / open questions
 
 * `myrand()` and the dungeon generator (walls, doors, ladders, chutes, trap door
   destinations) — the biggest remaining prize; it would give a complete map viewer.
