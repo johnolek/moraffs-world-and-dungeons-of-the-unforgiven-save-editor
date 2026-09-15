@@ -670,7 +670,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     const game = this.game;
     // Which section the character was in before the floor changes, since a section is five
     // floors and arriving on one of another section's is what brings its own monsters.
-    const leaving = sectionNumber(game.pc.module, game.pc.level);
+    const leaving = sectionNumber(game.rules, game.pc.module, game.pc.level);
     game.engaged = -1;
     game.pc.level = level;
     this.rows = UNFORGIVEN_MAP.floor(level, game.pc.module);
@@ -679,7 +679,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     this.memory.markArrival(this.rows, game.pc.x, game.pc.y);
     game.recenterMap = true;
     game.events.push({ kind: 'floorReached', floor: level });
-    const section = sectionNumber(game.pc.module, level);
+    const section = sectionNumber(game.rules, game.pc.module, level);
     if (section !== leaving) game.events.push({ kind: 'sectionReached', section });
     // load_level_map greets a character every time floor 0 is loaded (exe 2000:7687 tests
     // DS:2320, which nothing ever sets), so the snake's tablet is read on every arrival in town.

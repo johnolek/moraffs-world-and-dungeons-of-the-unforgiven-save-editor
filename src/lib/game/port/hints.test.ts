@@ -20,6 +20,7 @@ import {
   townTablet,
 } from './hints';
 import type { Rng } from './rng';
+import { FAITHFUL_RULES } from './rules';
 
 /** An Rng that hands back the numbers it is given, in order, and then zeroes. */
 function rolls(...values: number[]): Rng {
@@ -108,7 +109,7 @@ describe('which hint arriving on a floor gets', () => {
   });
 
   it('names in its warning the boss the section really has', () => {
-    expect(sectionNumber(2, 15)).toBe(8);
+    expect(sectionNumber(FAITHFUL_RULES, 2, 15)).toBe(8);
     expect(giveHint(126)[3]).toContain('SHADOW HEAD');
     expect(giveHint(137)[2]).toContain('OGEROTH');
   });

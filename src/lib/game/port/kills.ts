@@ -364,7 +364,7 @@ export async function killMonster(game: Game): Promise<void> {
     }
   }
   if (kindIndex === 22) {
-    const section = sectionNumber(pc.module, pc.level);
+    const section = sectionNumber(game.rules, pc.module, pc.level);
     if (section < SECTIONS) {
       game.events.push({ kind: 'bossKilled', boss: section });
       if (section === SECTIONS - 1) game.events.push({ kind: 'gameWon' });

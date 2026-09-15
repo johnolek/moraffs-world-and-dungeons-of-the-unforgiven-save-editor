@@ -4,6 +4,7 @@ import { giveHint } from './hints';
 import { sectionNumber } from './hints';
 import { GARBAGE_CAN, bossReward, checkDeath, drainerBonus, killMonster, playerDies } from './kills';
 import type { Rng } from './rng';
+import { FAITHFUL_RULES } from './rules';
 import type { Game, PlayerCharacter } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
 
@@ -128,7 +129,7 @@ describe('killMonster', () => {
 
   it('hands a section boss its reward', async () => {
     const game = killing(always(0), { module: 0, level: 5 }, BOSS);
-    expect(sectionNumber(0, 5)).toBe(0);
+    expect(sectionNumber(FAITHFUL_RULES, 0, 5)).toBe(0);
     const before = game.pc.maxHp;
     await killMonster(game);
     expect(game.pc.maxHp).toBe(before + 30);

@@ -533,7 +533,7 @@ export function stayTheNight(game: Game): void {
 export function bossOfficeTaunt(game: Game): number | null {
   const pc = game.pc;
   if (game.highSpeed) return null;
-  const section = sectionNumber(pc.module, pc.level);
+  const section = sectionNumber(game.rules, pc.module, pc.level);
   if ((pc.objective[pc.module] & (1 << section % 4)) !== 0) return null;
   return bossTablet(section, pc.bossTaunts[section]);
 }
@@ -556,7 +556,7 @@ export const BOSS_OFFICE_TEXT = { x: 400, font: 2, colour: 15, rows: [0x1e, 0xbe
  */
 export function readBossOfficeMessage(game: Game, tablet: number): string[] {
   const pc = game.pc;
-  game.events.push({ kind: 'tabletRead', entry: tablet, section: sectionNumber(pc.module, pc.level) });
+  game.events.push({ kind: 'tabletRead', entry: tablet, section: sectionNumber(game.rules, pc.module, pc.level) });
   const lines = tabletMessage(tablet);
   game.say(...lines);
   const name = game.monsterKinds[22].name;
@@ -566,7 +566,7 @@ export function readBossOfficeMessage(game: Game, tablet: number): string[] {
   [...BOSS_OFFICE_HEADING, `${name}:`].forEach((text, index) => {
     game.draw({ text, x: BOSS_OFFICE_TEXT.x, y: BOSS_OFFICE_TEXT.rows[index], font: BOSS_OFFICE_TEXT.font, colour: BOSS_OFFICE_TEXT.colour });
   });
-  pc.bossTaunts[sectionNumber(pc.module, pc.level)] += 1;
+  pc.bossTaunts[sectionNumber(game.rules, pc.module, pc.level)] += 1;
   return lines;
 }
 

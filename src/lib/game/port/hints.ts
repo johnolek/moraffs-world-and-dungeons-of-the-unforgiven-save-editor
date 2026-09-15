@@ -1,6 +1,6 @@
 import { readUrollLine, type UrollFile } from './character';
-import { sectionOf } from '../dotu-files.js';
 import type { Rng } from './rng';
+import type { GameRules } from './rules';
 import uhText from '../hints/uh.bin?raw';
 import uh2Text from '../hints/uh2.bin?raw';
 
@@ -310,8 +310,8 @@ export function bossTablet(section: number, taunts: number): number | null {
 }
 
 /** section_number (exe 2000:1d23, unf.c "section_number"): the section a floor is in, 0 to 19. */
-export function sectionNumber(module: number, floor: number): number {
-  return sectionOf(module, floor) - 1;
+export function sectionNumber(rules: GameRules, module: number, floor: number): number {
+  return rules.sectionOf(module, floor) - 1;
 }
 
 /**
