@@ -893,6 +893,32 @@ clears the line it has just written; and it never clears the fifth line, so the 
 In the code: [spell_screen](source:c/spell_screen), [cast_spell](source:c/cast_spell) and
 [mwCanCast](source:ts/spells.ts/mwCanCast).
 
+### A level drainer can take your spell points below zero
+! THE RED DRAGON KING CAN LEAVE YOU OWING SPELL POINTS!!
+
+Going down a level takes back one level's worth of maximum spell points, worked out from your
+wisdom and IQ the same way the level-up worked out what to hand over. Two things stop that being
+a clean undo. The subtraction reads the two statistics as they stand now, so anything that has
+raised your wisdom or your IQ since means it takes back more than the level ever gave. And it is
+run once for each level the monster claims, while the only thing guarding it is that your level
+was above 0 when the blow landed: the Specter, the Vampire and the Demon take two levels, the
+Devil and the Red Major Dragon three, and the Red Dragon King four. A level 1 character who meets
+a Red Dragon King comes out at level -3 with four levels' worth of spell points taken back.
+
+Nothing floors any of it at zero. The maximum goes negative, the current total is clamped down to
+follow it, and a negative pool refuses everything: the cast asks whether the spell's cost is more
+than you have, the cost is the spell's level, and the cheapest spell in the game costs 1. Scrolls,
+wands and magic paper never make that check and go on working.
+
+The inn is no help. What it does with your spell points is set them to the maximum, so a night's
+rest on a negative maximum buys back nothing at all and leaves you exactly where you were. The
+levels are the only way out: each one earned back adds its own share on again and fills the pool
+to whatever the maximum has climbed to.
+
+In the code: [the level-down](source:c/FUN_3000_e8ee), [monster_turn](source:c/monster_turn),
+[the cast](source:c/cast_spell), [the inn](source:c/inn) and
+[what a spell costs](source:ts/spells.ts/mwSpellPointCost).
+
 ### The teleport stone always lands on the same square
 ! THE STONE OF TELEPORTATION ALWAYS PUTS YOU ON THE SAME SQUARE!
 
