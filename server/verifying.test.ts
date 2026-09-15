@@ -1,10 +1,20 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { Milestone, RunLog, RunSession } from '../src/lib/play/run';
+import { tickRead, type Milestone, type RunLog, type RunSession } from '../src/lib/play/run';
+import { firstSwingsReading, unforgivenClockedRun } from '../src/lib/play/test-clocked-run';
 import type { JournalEntry } from '../src/lib/play/journal';
-import type { RunVerdict } from '../src/lib/play/verify';
+import { verifyRun, verifySession, type RunVerdict } from '../src/lib/play/verify';
 import { announcementsBefore, type Announcement } from './announcing';
-import { openEngineStore, publishEngine, type EngineStore } from './engines';
-import { endRun, takeBatch, type BatchSender, type BatchSession, type KeptBatch, type RunBatch } from './runs';
+import { openEngineStore, publishEngine, type EngineStore, type KeptEngine } from './engines';
+import {
+  batchesOf,
+  endRun,
+  sessionsOf,
+  takeBatch,
+  type BatchSender,
+  type BatchSession,
+  type KeptBatch,
+  type RunBatch,
+} from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 import {
@@ -661,5 +671,83 @@ describe('replaying the chain of a character still being played', () => {
     await verifier.idle();
 
     expect(await livingSnapshotFor(sql, CHARACTER)).toMatchObject({ status: 'verified', level: 5 });
+  });
+});
+
+describe('a run played on the clock', () => {
+  let sql: Sql;
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  /**
+   * The engine builds the server keeps, answered by the engine these tests were built with.
+   *
+   * A run played on the clock says nothing without a real engine: what its swings rolled is in
+   * the readings of the tick counter the batches carried, and only the engine turns those back
+   * into the swings they were.
+   */
+  function thisBuildsEngine(commit: string): EngineStore {
+    const engine: KeptEngine = { commit, verifyRun, verifySession };
+    return {
+      keptCommits: () => Promise.resolve([commit]),
+      engineFor: (asked) =>
+        Promise.resolve(asked === commit ? { kept: true, engine } : { kept: false, reason: 'not kept' }),
+    };
+  }
+
+  /** The run sent as one batch, and the log the server puts back together out of what it kept. */
+  async function sentAndKept(log: RunSession, inputs: number[]): Promise<RunLog> {
+    const batch: RunBatch = {
+      sessionIndex: 0,
+      sequence: 0,
+      inputs,
+      pressed: inputs.filter((input) => tickRead(input) === -1).length,
+      ending: true,
+      claims: { mode: log.mode, actions: log.actions, time: log.time, edits: log.edits, milestones: log.milestones },
+      session: {
+        seed: log.seed,
+        engine: log.engine,
+        game: log.game,
+        leaderboard: log.leaderboard,
+        sound: log.sound,
+        name: log.name,
+        startedAt: log.startedAt,
+        record: log.record,
+      },
+    };
+    await takeBatch(sql, CHARACTER, ME, batch, 1000);
+    return runLogFrom(await sessionsOf(sql, CHARACTER), await batchesOf(sql, CHARACTER));
+  }
+
+  it('verifies a run whose readings of the tick counter came in with its keys', async () => {
+    const log = await unforgivenClockedRun();
+    const kept = await sentAndKept(log, log.inputs);
+
+    expect(kept.sessions[0].inputs).toEqual(log.inputs);
+    const verdict = await replayChain(thisBuildsEngine(log.engine), kept);
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+    expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
+  });
+
+  it('fails a run one of whose readings was moved on the way here', async () => {
+    const log = await unforgivenClockedRun();
+    const at = firstSwingsReading(log);
+    // Seven ticks later is another moment of the sawtooth Borland's generator answers, so the
+    // swing under it rolls something else and the run no longer reaches what it claims.
+    const moved = log.inputs.map((input, index) => (index === at ? input - 7 : input));
+
+    const verdict = await replayChain(thisBuildsEngine(log.engine), await sentAndKept(log, moved));
+
+    expect(verdict.status).toBe('failed');
+    expect(verdict.reason).toBe(`The replay spent ${log.actions - 1} actions and the log claims ${log.actions} actions.`);
   });
 });
