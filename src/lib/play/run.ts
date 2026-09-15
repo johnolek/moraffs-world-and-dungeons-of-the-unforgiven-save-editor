@@ -24,8 +24,8 @@ import { moraffsRevengeJournal } from './rev/journal';
  * Unforgiven played on the clock, which reseeds from the machine's tick counter the way the
  * original does, answers it the same way again: what the counter read is written into the log
  * ahead of the input it was read for ({@link CLOCK_TICK_INPUT}), and the wall-clock second the
- * sitting began in goes in once at the top ({@link CLOCK_SECOND_INPUT}), since three of the
- * game's reseeds take the second rather than the tick. Running the same engine over the lot again
+ * sitting began in goes in once at the top ({@link CLOCK_SECOND_INPUT}), since some of the game's
+ * reseeds take the second rather than the tick. Running the same engine over the lot again
  * reproduces the whole game, which is what lets a claimed ending be checked rather than believed.
  * `replayRun` is the check.
  *
@@ -102,11 +102,12 @@ export function tickRead(input: number): number {
  * Not a key: the wall-clock second the sitting began, which a run played on the clock writes down
  * once, ahead of everything else in its log.
  *
- * Three of the game's reseeds take `time()` rather than the tick counter — the money a kill drops,
- * the character roller and the stocking of a floor — and `time()` only changes once a second, so
- * two kills in the same second drop the same money. A sitting reads the wall clock once and works
- * the rest out from the tick counter, which is what {@link RunRecorder.gameSeconds} does, and this
- * is the one reading a replay needs to arrive at the same seconds.
+ * The game reseeds from `time()` rather than from the tick counter in three places, and the one
+ * of them a run reaches is the money a kill drops (section 8.2 of
+ * `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md`). `time()` only changes once a second, so two kills in
+ * the same second drop exactly the same money. A sitting reads the wall clock once and works
+ * every later second out from the tick counter, which is what {@link RunRecorder.gameSeconds}
+ * does, so this is the one reading a replay needs to arrive at the same seconds.
  *
  * A reading carries the second above this. Seconds since 1970 are in the billions, and every key
  * of the two games is between -0x100 and 0xff, so an input at or above this is the second the
