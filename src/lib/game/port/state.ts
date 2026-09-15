@@ -569,6 +569,17 @@ export interface Game {
   events: GameEvent[];
   rng: Rng;
   /**
+   * clock (exe 1000:11b4): the PC's BIOS tick counter, 18.2 ticks a second, counted from the
+   * moment the game started. The original reseeds its generator from this before a swing, which
+   * is why a swing's to-hit roll follows the clock round a sawtooth rather than being random.
+   *
+   * Null where the port draws its own random numbers, which is what the README's third departure
+   * describes and what every game built here does today. A game handed a clock is handed a
+   * {@link BorlandRng} to go with it, because the sawtooth is Borland's generator answering
+   * consecutive seeds.
+   */
+  clock: (() => number) | null;
+  /**
    * solidcheck (exe 3000:86b5, unf.c "solidcheck"): whether the square is rock, meaning all
    * four of its sides are walls. `Dungeon.solid` in `src/lib/game/unfmap.js` is the same test.
    */
@@ -928,6 +939,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     monsterStatusLine: '',
     menuBox: [],
     rng: new BorlandRng(1),
+    clock: null,
     solid: () => false,
     retdwall: () => 3,
     markKnown: () => {},

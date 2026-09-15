@@ -562,8 +562,9 @@ export function dropMoney(game: Game): void {
     return;
   }
   game.dollarCapWarned = false;
-  // srand at 4000:6b24, over the date and time read at 4000:6b1b, deliberately not ported: see
-  // the README's third departure.
+  // srand(time(NULL)) at 4000:6b24, over the date and time read at 4000:6b1b, deliberately not
+  // ported: see the README's third departure. The seed is the second the kill happened in, so
+  // in the original two monsters of the same floor killed inside one second drop the same money.
   const deep = pc.level + 1;
   let amount = 0;
   if (pc.level > 4) {

@@ -127,7 +127,11 @@ export function strike(game: Game): number {
   // labelled POWER WEAPON 1, so Power Weapon I swings the 129 die of POWER WEAPON 2 and Power
   // Weapon III swings the 399 die of POWER WEAPON 4, which no spell is supposed to reach.
   if (pc.powerWeapon !== 0) die = pc.powerWeapon + 8;
-  // srand(clock()) at 2000:7e6f, deliberately not ported: see the README's third departure.
+  // srand(clock()) at 2000:7e63, over the tick counter read at 2000:7e5d. Every roll in this
+  // function is a bare rand(), so the whole swing runs off this one seed and the to-hit roll
+  // below is the tick counter turned into a number. A game that draws its own random numbers
+  // supplies no clock and nothing is reseeded: the README's third departure.
+  if (game.clock) game.rng.reseed?.(game.clock());
   const monster = game.monsters[game.engaged];
   const stats = game.monsterStats[game.monsterKinds[monster.type].type];
   let chance = game.rng.random(80) + pc.lev * 2 + pc.str;
@@ -435,9 +439,11 @@ export function defend(game: Game, slot: number): number {
     if (game.rng.random(500) < pc.level) pc.holdMonsterTimer = 0;
     return 0;
   }
-  // srand(clock() + 100) at 2000:8313, deliberately not ported: see the README's third
-  // departure. TIDBITS records that this seed never showed through anyway, because the first
-  // roll below goes through Random, which reseeds again.
+  // srand(clock() + 100) at 2000:84ca, deliberately not ported, and this one never reached a
+  // die in the original either: the roll below it is a Random call (exe 2000:4156, at
+  // 2000:84ee) and Random reseeds from the clock again before it rolls. Porting the reseed
+  // without porting Random's own would give the monster a to-hit sawtooth the game does not
+  // have. See the README's third departure.
   const stats = game.monsterStats[kind.type];
   let chance = game.rng.random(80) + 20 + monster.level * 2;
   if (pc.cls === 2) chance -= game.rng.random(pc.iq);

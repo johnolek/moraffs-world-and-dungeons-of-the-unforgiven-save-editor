@@ -3,27 +3,42 @@ import { BorlandRand } from '../unfmap.js';
 /**
  * Where a ported function gets its random numbers.
  *
- * The game has one source, `Random(n)` (exe 2000:4156, unf.c "Random"), which works out
- * `rand() * n / 0x8000` in 32-bit signed arithmetic and truncates toward zero, so it hands back
- * an integer in 0..n-1. `Random(0)` is 0, and a negative n gives a value between n + 1 and 0
- * rather than 0, because nothing clamps the multiply.
+ * A roll in the game is `rand() * n / 0x8000` — `rand` is exe 1000:18b6 — worked out in 32-bit
+ * signed arithmetic and truncated toward zero, so it hands back an integer in 0..n-1.
+ * `random(0)` is 0, and a negative n gives a value between n + 1 and 0 rather than 0, because
+ * nothing clamps the multiply.
+ *
+ * The game writes that arithmetic inline at most of its rolls and wraps it in `Random(n)` (exe
+ * 2000:4156, unf.c "Random") at the rest. The two differ only in that `Random` reseeds from the
+ * PC's tick counter before it rolls, which this port does not model; section 8 of
+ * `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md` is every reseed in the game and the README's third
+ * departure is where the port stands on them.
  */
 export interface Rng {
-  /** `Random(n)`: an integer in 0..n-1. */
+  /** A roll of `rand() * n / 0x8000`: an integer in 0..n-1. */
   random(n: number): number;
+  /**
+   * srand (exe 1000:18a5, unf.c "srand"): start the generator again from this seed. The
+   * original takes sixteen bits of it, puts them in the low word of the generator's state and
+   * zeroes the high word.
+   *
+   * Optional, because most of the generators a game is handed have no seed to put back — a
+   * scripted one in a test, or the browser's own. Only a game played on the clock reseeds at
+   * all, which is what `Game.clock` decides, and such a game is handed a {@link BorlandRng}.
+   */
+  reseed?(seed: number): void;
 }
 
 /**
- * Random (exe 2000:4156, unf.c "Random") on Borland's generator, seeded once.
+ * Borland's generator, which is the one the original runs.
  *
- * The original reseeds before every single call, with `srand(clock() + a counter it keeps
- * adding the clock to)`, which is why a freshly stocked floor lays its monsters out in diagonal
- * stripes instead of scattering them. Nothing here can read a 1993 PC's clock, so this runs the
- * same generator as one continuous sequence from the seed it is given, which also makes a test
+ * A test that has to match the game's own numbers rolls with this, and so does a game played on
+ * the clock: the tick counter supplies the seeds and this turns them into rolls. Given no seeds
+ * it runs as one continuous sequence from the one it was built with, which is what makes a test
  * repeatable.
  */
 export class BorlandRng implements Rng {
-  private readonly borland: BorlandRand;
+  private borland: BorlandRand;
 
   constructor(seed: number) {
     this.borland = new BorlandRand(seed);
@@ -32,10 +47,15 @@ export class BorlandRng implements Rng {
   random(n: number): number {
     return this.borland.random(n);
   }
+
+  /** A generator built on the low sixteen bits is the state srand leaves behind. */
+  reseed(seed: number): void {
+    this.borland = new BorlandRand(seed & 0xffff);
+  }
 }
 
 /**
- * Random (exe 2000:4156, unf.c "Random") over mulberry32, which is what a game being played uses.
+ * A roll of `rand() * n / 0x8000` over mulberry32, which is what a game being played uses.
  *
  * The README's third departure: the original reseeds from the clock before nearly every roll,
  * which is why its numbers fall into patterns a player can feel. This is one continuous sequence
@@ -54,7 +74,7 @@ export class SeededRng implements Rng {
     this.state = seed >>> 0;
   }
 
-  /** The fifteen bits rand (exe 1000:18b6) hands Random, out of mulberry32's word. */
+  /** The fifteen bits rand (exe 1000:18b6) hands a roll, out of mulberry32's word. */
   rand(): number {
     this.state = (this.state + 0x6d2b79f5) >>> 0;
     let word = Math.imul(this.state ^ (this.state >>> 15), 1 | this.state);
@@ -64,5 +84,9 @@ export class SeededRng implements Rng {
 
   random(n: number): number {
     return Math.trunc((this.rand() * n) / 0x8000);
+  }
+
+  reseed(seed: number): void {
+    this.state = seed >>> 0;
   }
 }

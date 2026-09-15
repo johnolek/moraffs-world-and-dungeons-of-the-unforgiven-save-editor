@@ -624,8 +624,9 @@ export function rollChar(game: Game): void {
   drawUrollScreen(game, uroll, ADVICE_SCREEN);
   game.pressAnyKey();
   game.eraseScreen();
-  // The srand(clock()) between the advice screen and the race screen, deliberately not
-  // ported: see the README's third departure. It is the only reseed in the whole roller.
+  // srand(time(NULL)) at 3000:5447, over the date and time read at 3000:543e, deliberately not
+  // ported: see the README's third departure. It is the only reseed in the whole roller, and
+  // the seed is the second the roller was started in rather than the tick counter a swing uses.
   drawUrollScreen(game, uroll, RACE_SCREEN);
   pc.race = game.askRace();
   game.eraseScreen();

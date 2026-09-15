@@ -13,13 +13,15 @@ column or the other, not both.
 Tests, test helpers, fixtures and the Source tab's own files are left out, since they quote
 citations rather than make them. What each routine does is in `FUNCTION-CATALOG.md`.
 
-238 of the 647 routines are pointed at. Files are named from
+240 of the 647 routines are pointed at. Files are named from
 `src/lib/`.
 
 | routine | address | named in | mentioned in |
 |---|---|---|---|
 | `ftol` | 1000:115b |  | `play/view3d/geometry.ts` |
+| `FUN_1000_11b4` | 1000:11b4 |  | `game/port/state.ts` |
 | `N_LDIV` | 1000:1558 |  | `play/view3d/flood.ts` |
+| `srand` | 1000:18a5 |  | `game/port/rng.ts` |
 | `rand` | 1000:18b6 |  | `game/port/rng.ts` |
 | `FUN_1000_1d8b` | 1000:1d8b | `game/port/screens.ts` |  |
 | `FUN_1000_2789` | 1000:2789 |  | `game/port/sound.ts`, `game/port/state.ts`, `play/engine.ts`, `play/fade.ts`, `play/plaque.ts`, `play/timed.ts` |
@@ -52,7 +54,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_2000_3e73` | 2000:3e73 |  | `game/port/screens.ts`, `play/engine.ts`, `play/plaque.ts`, `play/timed.ts` |
 | `FUN_2000_4054` | 2000:4054 | `play/engine.ts` | `game/port/drops.ts`, `game/port/screens.ts`, `play/Screen.svelte`, `play/boxes.ts`, `play/dig.ts`, `play/plaque.ts` |
 | `FUN_2000_412a` | 2000:412a |  | `play/engine.ts`, `play/plaque.ts` |
-| `Random` | 2000:4156 |  | `game/port/rng.ts`, `play/floor.ts` |
+| `Random` | 2000:4156 |  | `game/port/combat.ts`, `game/port/rng.ts`, `play/floor.ts` |
 | `compute_weight` | 2000:41ae | `game/port/magic.ts` | `play/gear.ts` |
 | `end_prep_spells` | 2000:4212 | `game/port/town.ts` | `play/panel.ts` |
 | `store_refund` | 2000:428d | `game/port/town.ts` | `formulas/formulas.ts` |
@@ -298,5 +300,5 @@ does is in `FUNCTION-CATALOG.md`.
 | `set_ega_colour` | 4000:102d | `FUN_2000_1b61`, `set_palette` |
 | `num_to_string` | 4000:5a87 | `store_refund`, `show_money`, `g_store`, `temple`, `view_prep_spells`, `view_battle_spells`, `engagement_timing`, `FUN_3000_7545`, `view_stats`, `FUN_3000_caac` |
 
-Also uncited: 362 routines Ghidra could not name, and 29 named routines of
+Also uncited: 361 routines Ghidra could not name, and 28 named routines of
 the Borland runtime in segment 1000.
