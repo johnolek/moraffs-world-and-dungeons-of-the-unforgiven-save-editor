@@ -145,9 +145,10 @@
   let note = $state('');
   /** The mode this roll locks the finished character to for life, and null for one that can be
    *  played any way. */
-  let lock = $state<Leaderboard | null>(null);
-  /** Whether the finished character's runs go on the leaderboard of that mode. */
-  let onBoard = $state(false);
+  let lock = $state<Leaderboard | null>('faithful');
+  /** Whether the finished character's runs go on the leaderboard of that mode. A roll is for the
+   *  board unless the player says otherwise. */
+  let onBoard = $state(true);
   /** Whether the finished character has been put on the roster; a roll keeps it once. */
   let kept = false;
 
