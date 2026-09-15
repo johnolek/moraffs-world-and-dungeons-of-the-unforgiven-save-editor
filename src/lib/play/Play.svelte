@@ -14,7 +14,7 @@
   import MessageBox from './MessageBox.svelte';
   import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
-  import { monsterKindSquares, spellTimers, untimedSpells, type PanelLine } from './panel';
+  import { ailments, monsterKindSquares, spellTimers, untimedSpells, type PanelLine } from './panel';
   import { pathToNearestTeleporter } from '../map/path';
   import PlayTab from './PlayTab.svelte';
   import Portrait from './Portrait.svelte';
@@ -143,6 +143,13 @@
     return [...spellTimers(pc), ...untimedSpells(pc)];
   }
 
+  /** The poison and the disease in the character: what colours the health orb, and the lines
+   *  beside it saying what each clock is counting down to. */
+  function afflictions(stage: Stage) {
+    const pc = stage.session.game.pc;
+    return { poisoned: pc.poison > 0, diseased: pc.disease > 0, lines: ailments(pc) };
+  }
+
   /** A key on its way to the game. Under Moraff's World's arrows an arrow becomes the turn and
    *  the step that come to the same thing here, and the loop reads them one after the other. */
   function press(session: GameSession, key: number) {
@@ -231,6 +238,7 @@
       closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
       closeUpLines={debugDrawn(stage.mode) ? view.engagedDebugLines : []}
       spells={spellsRunning(stage)}
+      afflictions={afflictions(stage)}
       hp={view.hp}
       maxHp={view.maxHp}
       sp={view.sp}

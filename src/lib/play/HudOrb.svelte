@@ -18,16 +18,23 @@
     value: number;
     /** What they can hold; an orb with no maximum at all is drawn empty. */
     max: number;
+    /**
+     * A poison and a disease in the character, which the health orb's liquid shows: a duller,
+     * darker red for the poison and a green for the disease, and with both in them the poison's
+     * half and the disease's half side by side.
+     */
+    poisoned?: boolean;
+    diseased?: boolean;
   }
 
-  let { kind, value, max }: Props = $props();
+  let { kind, value, max, poisoned = false, diseased = false }: Props = $props();
 
   const LABEL = { health: 'Health', spell: 'Spell' };
 
   const fill = Tween.of(() => orbFill(value, max), { duration: HUD_TWEEN_MS, easing: cubicOut });
 </script>
 
-<div class="orb {kind}">
+<div class="orb {kind}" class:poisoned class:diseased>
   <div class="liquid" style:height="{fill.current * 100}%"></div>
   <div class="glass"></div>
   <div class="numbers">
@@ -62,12 +69,35 @@
     --liquid-bottom: #0d1f66;
     --meniscus: #b0cdff;
   }
+  .health.poisoned {
+    --liquid-top: #a33b3b;
+    --liquid-bottom: #380606;
+    --meniscus: #c59090;
+  }
+  .health.diseased {
+    --liquid-top: #7fae4a;
+    --liquid-bottom: #223d0b;
+    --meniscus: #c2dca0;
+  }
+  /* Both at once: the poison down the left half and the disease down the right. */
+  .health.poisoned.diseased {
+    --left-top: #a33b3b;
+    --left-bottom: #380606;
+    --right-top: #7fae4a;
+    --right-bottom: #223d0b;
+  }
+  /* Two gradients of half the width apiece, which stand for one whole while nothing has split
+     them: each half falls back to the colours of the orb it is in. */
   .liquid {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(to top, var(--liquid-bottom), var(--liquid-top));
+    background:
+      linear-gradient(to top, var(--left-bottom, var(--liquid-bottom)), var(--left-top, var(--liquid-top))) left /
+        50% 100% no-repeat,
+      linear-gradient(to top, var(--right-bottom, var(--liquid-bottom)), var(--right-top, var(--liquid-top))) right /
+        50% 100% no-repeat;
     /* The lighter line where the liquid meets the air. */
     box-shadow: inset 0 calc(var(--orb-size) * 0.03) 0 var(--meniscus);
   }

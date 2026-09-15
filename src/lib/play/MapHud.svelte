@@ -1,8 +1,8 @@
 <!--
   The heads-up display over the top-down map: the monster being fought at the top with a bar of
-  its hit points beside it, the spells the character has running down the right edge, and along
-  the bottom a bar of dark stone with the health and spell orbs standing in its ends and the
-  experience bar between them.
+  its hit points beside it, the spells the character has running down the right edge, the poison
+  and the disease in them down the left, and along the bottom a bar of dark stone with the health
+  and spell orbs standing in its ends and the experience bar between them.
 
   The map is the site's own view of a game rather than anything the game ever drew, so this is the
   site's own look (John, 2026-09-09). It takes no clicks and changes nothing: the game, the run
@@ -37,6 +37,12 @@
      * standing at, and a note for its tooltip. Left out for a game with no such list.
      */
     spells?: PanelLine[];
+    /**
+     * The poison and the disease in the character: whether each is in them at all, which the
+     * health orb's liquid is coloured by, and the line about what it is counting down to, which
+     * stands beside that orb.
+     */
+    afflictions?: { poisoned: boolean; diseased: boolean; lines: PanelLine[] };
     /** The character's hit points and what they can hold. */
     hp: number;
     maxHp: number;
@@ -61,6 +67,7 @@
     closeUpHp,
     closeUpLines,
     spells = [],
+    afflictions = { poisoned: false, diseased: false, lines: [] },
     hp,
     maxHp,
     sp,
@@ -99,24 +106,30 @@
     </div>
   {/if}
   {#if spells.length > 0}
-    <ul class="spells">
-      {#each spells as spell}
-        <li title={spell.note}>
-          <span class="what">{spell.label}</span>
-          <span class="left">{spell.value}</span>
-        </li>
-      {/each}
-    </ul>
+    <ul class="spells">{@render list(spells)}</ul>
+  {/if}
+  {#if afflictions.lines.length > 0}
+    <ul class="ailments">{@render list(afflictions.lines)}</ul>
   {/if}
   <div class="foot">
     <div class="stone" bind:this={stone}></div>
     <div class="row">
-      <HudOrb kind="health" value={hp} max={maxHp} />
+      <HudOrb kind="health" value={hp} max={maxHp} poisoned={afflictions.poisoned} diseased={afflictions.diseased} />
       <div class="middle"><HudExpBar {level} {exp} {needed} /></div>
       <HudOrb kind="spell" value={sp} max={maxSp} />
     </div>
   </div>
 </div>
+
+<!-- One of the two lists standing over the map, each line with its own word on resting. -->
+{#snippet list(items: PanelLine[])}
+  {#each items as item}
+    <li title={item.note}>
+      <span class="what">{item.label}</span>
+      <span class="count">{item.value}</span>
+    </li>
+  {/each}
+{/snippet}
 
 <style>
   .hud {
@@ -169,12 +182,12 @@
       0 0 4px #000,
       0 1px 2px #000;
   }
-  /* What the character has running, up the right edge and clear of both the picture at the top
-     and the orb below. The rest of the display takes no clicks; this list takes its own back, so
-     that resting on a spell shows what it does. */
-  .spells {
+  /* What the character has running up the right edge, and what is eating them up the left, both
+     clear of the picture at the top and of the orb below. The rest of the display takes no
+     clicks; these lists take their own back, so that resting on a line shows what it means. */
+  .spells,
+  .ailments {
     position: absolute;
-    right: var(--inset);
     bottom: calc(var(--orb-size) * 1.15);
     max-width: 40%;
     margin: 0;
@@ -188,13 +201,23 @@
       0 0 4px #000,
       0 1px 2px #000;
   }
-  .spells li {
+  .spells {
+    right: var(--inset);
+  }
+  .ailments {
+    left: var(--inset);
+  }
+  .spells li,
+  .ailments li {
     display: flex;
-    justify-content: flex-end;
     gap: 0.6em;
     cursor: help;
   }
-  .spells .left {
+  .spells li {
+    justify-content: flex-end;
+  }
+  .spells .count,
+  .ailments .count {
     opacity: 0.85;
   }
   .foot {
