@@ -52,6 +52,7 @@ function sitting(): StreamedSession {
       slot: 21,
       dead: false,
       leaderboard: 'speedrun',
+      lock: 'speedrun',
       createdAt: '2026-09-09T11:00:00.000Z',
       editedAt: '2026-09-09T12:00:00.000Z',
     }),

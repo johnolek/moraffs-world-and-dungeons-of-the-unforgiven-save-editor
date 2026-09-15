@@ -277,8 +277,9 @@ export async function keepCharacterSave(
   await sql.query(
     `UPDATE characters
      SET record = $1, maps = CASE WHEN $2::boolean THEN $3::text ELSE maps END, slot = $4, dead = $5,
-         leaderboard = $6, edited_at = $7, saved_at = to_timestamp($8::double precision / 1000.0)
-     WHERE id = $9`,
+         leaderboard = $6, play_lock = coalesce($7, play_lock), edited_at = $8,
+         saved_at = to_timestamp($9::double precision / 1000.0)
+     WHERE id = $10`,
     [
       Buffer.from(save.record, 'base64'),
       save.maps !== undefined,
@@ -286,6 +287,9 @@ export async function keepCharacterSave(
       save.slot,
       save.dead,
       save.leaderboard,
+      // A save that names no lock leaves the one here: a character's lock is decided at the roll
+      // and never again, and a device on an older build names none.
+      save.lock,
       save.editedAt,
       savedAt,
       characterId,
@@ -632,6 +636,9 @@ export function readCharacterSave(value: unknown): CharacterSave | undefined {
   if (save.slot !== null && !Number.isInteger(save.slot)) return undefined;
   if (typeof save.dead !== 'boolean') return undefined;
   if (save.leaderboard !== null && typeof save.leaderboard !== 'string') return undefined;
+  // A device running a build from before the lock was a question of its own names none, which is
+  // not a reason to turn the batch away.
+  if (save.lock !== undefined && save.lock !== null && typeof save.lock !== 'string') return undefined;
   // The moments are the device's own, and `created_at` is kept as a timestamp rather than as the
   // text it arrived as, so one that is not a moment at all would stop the whole batch.
   if (!isInstant(save.createdAt) || !isInstant(save.editedAt)) return undefined;
@@ -641,6 +648,7 @@ export function readCharacterSave(value: unknown): CharacterSave | undefined {
     slot: save.slot as number | null,
     dead: save.dead,
     leaderboard: save.leaderboard,
+    lock: typeof save.lock === 'string' ? save.lock : null,
     createdAt: save.createdAt,
     editedAt: save.editedAt,
   };

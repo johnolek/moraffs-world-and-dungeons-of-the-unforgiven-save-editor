@@ -36,6 +36,7 @@ const save: CharacterSave = {
   slot: 21,
   dead: false,
   leaderboard: 'speedrun',
+  lock: 'speedrun',
   createdAt: '2026-09-08T09:00:00.000Z',
   editedAt: '2026-09-09T12:00:00.000Z',
 };
@@ -84,6 +85,33 @@ describe("a player's characters", () => {
       maps: '{"0:1":"AA"}',
     });
     expect(character.savedAt).not.toBeNull();
+  });
+
+  it('hands back the lock a device sent, which is not the board', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: { ...save, leaderboard: null, lock: 'faithful' } }), 1000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character).toMatchObject({ leaderboard: null, lock: 'faithful' });
+  });
+
+  it('hands back a character kept before the lock had a column as locked to its board', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await sql.query('UPDATE characters SET play_lock = NULL WHERE id = $1', [CHARACTER]);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character).toMatchObject({ leaderboard: 'speedrun', lock: 'speedrun' });
+  });
+
+  it('keeps the lock it holds when a batch names none, the way an older build sends one', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    const { lock: _lock, ...older } = save;
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, save: older as CharacterSave }), 6000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character.lock).toBe('speedrun');
   });
 
   it('carries the chain without its keys, counting them instead', async () => {

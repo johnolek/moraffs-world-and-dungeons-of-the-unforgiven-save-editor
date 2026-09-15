@@ -716,6 +716,7 @@ describe('the characters the server is keeping for this player', () => {
           slot: entry.slot,
           dead: false,
           leaderboard: null,
+          lock: null,
           createdAt: entry.createdAt,
           editedAt: entry.editedAt,
         }),

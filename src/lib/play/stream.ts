@@ -53,8 +53,11 @@ export interface CharacterSave {
   maps?: string | null;
   slot: number | null;
   dead: boolean;
-  /** The board the character is locked to, or null for one played for its own sake. */
+  /** The board the character's runs go on, or null for one whose runs go on no board. */
   leaderboard: string | null;
+  /** The mode the character is played in for the rest of its life, or null for one that can be
+   *  played any way. A character on a board is always locked to that board's mode. */
+  lock: string | null;
   /** When the character was rolled or imported, as the device stamped it. */
   createdAt: string;
   /** When the character was last changed, as the device stamped it. */

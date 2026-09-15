@@ -45,8 +45,12 @@ export interface RosterCharacter {
   name: string;
   slot: number | null;
   dead: boolean;
-  /** The board it is locked to, or null for one played for its own sake. */
+  /** The board its runs go on, or null for one whose runs go on no board. */
   leaderboard: string | null;
+  /** The mode it is played in for the rest of its life, or null for one that can be played any
+   *  way. A character kept here before this was a question of its own has none, and the board it
+   *  names is what it was locked to. */
+  lock: string | null;
   createdAt: string;
   /** When the device last changed it, and null for a character whose device has sent none. */
   editedAt: string | null;
@@ -72,6 +76,7 @@ interface RosterRow extends LeasedCharacter {
   slot: number | null;
   dead: boolean;
   leaderboard: string | null;
+  play_lock: string | null;
   created_at: Date;
   edited_at: string | null;
   record: Uint8Array | null;
@@ -93,8 +98,8 @@ export async function rosterOf(
   now: number,
 ): Promise<RosterCharacter[]> {
   const rows = await sql.query<RosterRow>(
-    `SELECT id, game, name, slot, dead, leaderboard, created_at, edited_at, record, maps, saved_at,
-            leased_to, leased_until
+    `SELECT id, game, name, slot, dead, leaderboard, play_lock, created_at, edited_at, record, maps,
+            saved_at, leased_to, leased_until
      FROM characters WHERE player_id = $1 ORDER BY created_at, id`,
     [playerId],
   );
@@ -113,6 +118,7 @@ async function characterOf(sql: Queries, row: RosterRow, device: string, now: nu
     slot: row.slot,
     dead: row.dead,
     leaderboard: row.leaderboard,
+    lock: row.play_lock ?? row.leaderboard,
     createdAt: row.created_at.toISOString(),
     editedAt: row.edited_at,
     record: row.record === null ? null : Buffer.from(row.record).toString('base64'),

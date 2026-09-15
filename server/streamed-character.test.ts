@@ -102,6 +102,7 @@ describe('a character streamed to the server and read back off it', () => {
         slot: 7,
         dead: false,
         leaderboard: 'faithful',
+        lock: 'faithful',
         createdAt: '2026-09-08T09:00:00.000Z',
         editedAt: '2026-09-09T12:00:00.000Z',
       }),
