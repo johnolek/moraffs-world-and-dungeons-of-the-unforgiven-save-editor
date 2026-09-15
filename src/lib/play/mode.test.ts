@@ -12,6 +12,7 @@ import {
   PLAY_MODES,
   INSTANT_REDRAW_MS,
   readPlayColourblind,
+  readPlayForwardView,
   readPlaySound,
   readPlayDisplay,
   readPlayMode,
@@ -19,6 +20,7 @@ import {
   redrawWords,
   SLOWEST_REDRAW_MS,
   writePlayColourblind,
+  writePlayForwardView,
   writePlaySound,
   writePlayDisplay,
   writePlayMode,
@@ -199,6 +201,26 @@ describe('the sound a game starts with', () => {
     useStorage(undefined);
     writePlaySound('revenge', true);
     expect(readPlaySound('revenge')).toBe(false);
+  });
+});
+
+describe('the 3-D view over the map', () => {
+  it('is off until it has been asked for', () => {
+    useStorage(fakeStorage());
+    expect(readPlayForwardView('unforgiven')).toBe(false);
+  });
+
+  it('remembers the choice for one game without touching the other', () => {
+    useStorage(fakeStorage());
+    writePlayForwardView('unforgiven', true);
+    expect(readPlayForwardView('unforgiven')).toBe(true);
+    expect(readPlayForwardView('moraffsWorld')).toBe(false);
+  });
+
+  it('is off where there is nowhere to remember anything', () => {
+    useStorage(undefined);
+    writePlayForwardView('unforgiven', true);
+    expect(readPlayForwardView('unforgiven')).toBe(false);
   });
 });
 

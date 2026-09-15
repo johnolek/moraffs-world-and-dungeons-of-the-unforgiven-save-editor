@@ -135,6 +135,24 @@ export function writePlaySound(game: PortedGameId, on: boolean): void {
   writeStored(PREFIX + game + SOUND_SUFFIX, on ? 'on' : 'off');
 }
 
+/** Where the choice is kept, one key per game, beside the mode and the display. */
+const FORWARD_VIEW_SUFFIX = '.forward-view';
+
+/**
+ * Whether the top-down map draws the game's forward-facing 3-D view over itself, in the frame the
+ * picture of the monster being fought stands in.
+ *
+ * Off until the player asks for it: the map is the site's own view of the floor, and the game's
+ * own screen is where the 3-D views live.
+ */
+export function readPlayForwardView(game: PortedGameId): boolean {
+  return readStored(PREFIX + game + FORWARD_VIEW_SUFFIX) === 'on';
+}
+
+export function writePlayForwardView(game: PortedGameId, on: boolean): void {
+  writeStored(PREFIX + game + FORWARD_VIEW_SUFFIX, on ? 'on' : 'off');
+}
+
 /** The inline SVG filter the switch defines and a stage points at. */
 export const COLOURBLIND_FILTER_ID = 'red-green-simulation';
 
