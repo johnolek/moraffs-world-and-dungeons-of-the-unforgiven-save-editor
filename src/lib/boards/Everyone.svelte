@@ -1,14 +1,16 @@
 <!--
-  Everyone of one game: every character the server has verified, living and dead and won and both
-  boards together, in one table the reader filters and sorts.
+  Everyone of one game: every character the server has verified, living and dead and won together,
+  in one table the reader filters and sorts.
 
   The eight ranked boards each answer one question and hold a reader to it. This holds none: what
   the character is now stands beside how far its run got, every column sorts, and the checkboxes
-  above take out what the reader is not looking at. Who is in the table is the server's,
-  `server/everyone.ts`; which of them is on screen and in what order is `everyone.ts` beside this.
+  above take out what the reader is not looking at. Which leaderboards are showing is the page's
+  own picker over this, since that one asks the same question of every board. Who is in the table
+  is the server's, `server/everyone.ts`; which of them is on screen and in what order is
+  `everyone.ts` beside this.
 -->
 <script lang="ts">
-  import type { PortedGameId } from '../app-state.svelte';
+  import type { Leaderboard, PortedGameId } from '../app-state.svelte';
   import { isLeaderboard, leaderboardLabel } from '../character/leaderboard';
   import { statLabels } from '../character/record';
   import {
@@ -32,15 +34,16 @@
     statusWords,
     whenWords,
   } from './words';
-  import { BOARD_LEADERBOARDS } from '../../../server/boards';
   import type { EveryoneStatus } from '../../../server/everyone';
 
   interface Props {
     game: PortedGameId;
+    /** The leaderboards to show characters of, which the page's own picker decides. */
+    leaderboards: readonly Leaderboard[];
     onopen: (characterId: string) => void;
   }
 
-  const { game, onopen }: Props = $props();
+  const { game, leaderboards, onopen }: Props = $props();
 
   /** The three things that can have become of a character, in the order the boxes offer them. */
   const STATUSES: { id: EveryoneStatus; label: string }[] = [
@@ -51,7 +54,6 @@
 
   let table = $state<LoadedEveryone>(NO_EVERYONE);
   let pickedStatuses = $state<EveryoneStatus[]>(STATUSES.map((status) => status.id));
-  let pickedBoards = $state<string[]>([...BOARD_LEADERBOARDS]);
   let pickedClasses = $state<string[]>([]);
   let sort = $state<EveryoneSort>(DEFAULT_SORT);
 
@@ -82,7 +84,7 @@
     sortRows(
       filterRows(table.rows, {
         statuses: new Set(pickedStatuses),
-        boards: new Set(pickedBoards),
+        boards: new Set(leaderboards),
         classes: new Set(pickedClasses),
       }),
       sort,
@@ -112,15 +114,6 @@
         <label>
           <input type="checkbox" value={status.id} bind:group={pickedStatuses} />
           <span>{status.label}</span>
-        </label>
-      {/each}
-    </div>
-    <div class="pick" role="group" aria-label={EVERYONE.onBoard}>
-      <span class="label">{EVERYONE.onBoard}</span>
-      {#each BOARD_LEADERBOARDS as board}
-        <label>
-          <input type="checkbox" value={board} bind:group={pickedBoards} />
-          <span>{leaderboardLabel(board)}</span>
         </label>
       {/each}
     </div>

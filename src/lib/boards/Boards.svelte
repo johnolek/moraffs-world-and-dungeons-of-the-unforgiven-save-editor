@@ -12,8 +12,9 @@
 
   The picker opens on everyone rather than on a board, because a ranked board is an answer to a
   question a reader has to have already: seeing who is playing the game at all comes first, and
-  the eight boards are behind it. Everyone spans both leaderboards, so the leaderboard toggle is
-  not shown while it is picked -- there is nothing for it to pick between.
+  the eight boards are behind it. One leaderboard picker stands over the lot: everyone can be read
+  across both leaderboards at once, while a ranked board is a ranking of runs played the same way
+  and so is one leaderboard or the other.
 -->
 <script lang="ts">
   import { app, type Leaderboard } from '../app-state.svelte';
@@ -55,20 +56,42 @@
     ...LIVING_BOARDS,
   ].map(({ name, sorts }) => ({ id: name as Picked, label: sorts }));
 
-  /** The two leaderboards as the picker offers them. */
-  const LEADERBOARD_CHOICES: { id: Leaderboard; label: string }[] = BOARD_LEADERBOARDS.map((name) => ({
-    id: name,
-    label: leaderboardLabel(name),
-  }));
+  /** Which leaderboard is being read: one of them, or both at once. */
+  type LeaderboardPick = Leaderboard | 'both';
 
-  let leaderboard = $state<Leaderboard>('faithful');
+  /** The two leaderboards and both together, as the picker offers them. */
+  const LEADERBOARD_CHOICES: { id: LeaderboardPick; label: string }[] = [
+    ...BOARD_LEADERBOARDS.map((name) => ({ id: name as LeaderboardPick, label: leaderboardLabel(name) })),
+    { id: 'both', label: BOARDS_PAGE.bothLeaderboards },
+  ];
+
+  let leaderboard = $state<LeaderboardPick>('both');
   let picked = $state<Picked>('everyone');
   let showing = $state<LoadedBoard>(NO_BOARD);
   let alive = $state<LoadedLiving>(NO_BOARD);
   let reading = $state(false);
   let openRun = $state<string | null>(null);
 
-  const asked = $derived({ game: app.game, leaderboard, board: picked });
+  /** The picker as it stands: both is there to pick only over everyone, since a ranked board
+   *  puts runs played the same way in order and two ways of playing do not rank together. */
+  const leaderboardChoices = $derived(
+    LEADERBOARD_CHOICES.map((choice) => ({ ...choice, disabled: choice.id === 'both' && picked !== 'everyone' })),
+  );
+
+  /** The one leaderboard a ranked board is read for. Picking such a board takes the reader off
+   *  both, so this only stands in for a state the page does not stay in. */
+  const ranked = $derived<Leaderboard>(leaderboard === 'both' ? 'faithful' : leaderboard);
+
+  /** The leaderboards the table of everyone is cut down to. */
+  const leaderboards = $derived<Leaderboard[]>(leaderboard === 'both' ? [...BOARD_LEADERBOARDS] : [leaderboard]);
+
+  const asked = $derived({ game: app.game, leaderboard: ranked, board: picked });
+
+  /** Pick a board, off both leaderboards, since a ranked board is of one of them. */
+  function pickBoard(id: Picked): void {
+    picked = id;
+    if (id !== 'everyone' && leaderboard === 'both') leaderboard = 'faithful';
+  }
 
   /** Which order the living are ranked in, and null when a board of finished runs is showing. */
   const livingSort = $derived(LIVING_BOARDS.find((board) => board.name === picked)?.sortedOn ?? null);
@@ -127,23 +150,22 @@
     {:else}
       <SectionHeading title={BOARDS_PAGE.heading} />
       <div class="picks">
-        {#if picked !== 'everyone'}
-          <div class="pick">
-            <span class="label">{BOARDS_PAGE.leaderboard}</span>
-            <Segmented
-              label={BOARDS_PAGE.leaderboard}
-              choices={LEADERBOARD_CHOICES}
-              value={leaderboard}
-              onpick={(id) => (leaderboard = id)} />
-          </div>
-        {/if}
+        <div class="pick">
+          <span class="label">{BOARDS_PAGE.leaderboard}</span>
+          <Segmented
+            label={BOARDS_PAGE.leaderboard}
+            choices={leaderboardChoices}
+            value={leaderboard}
+            onpick={(id) => (leaderboard = id)}
+            wrap />
+        </div>
         <div class="pick">
           <span class="label">{BOARDS_PAGE.board}</span>
-          <Segmented label={BOARDS_PAGE.board} choices={PICKS} value={picked} onpick={(id) => (picked = id)} />
+          <Segmented label={BOARDS_PAGE.board} choices={PICKS} value={picked} onpick={pickBoard} wrap />
         </div>
       </div>
       {#if picked === 'everyone'}
-        <Everyone game={app.game} onopen={(id) => (openRun = id)} />
+        <Everyone game={app.game} {leaderboards} onopen={(id) => (openRun = id)} />
       {:else if livingSort !== null}
         {#if alive.rows.length === 0}
           <p class="empty">{alive.failed ? BOARDS_PAGE.unreachable : BOARDS_PAGE.noneAlive}</p>
@@ -253,10 +275,13 @@
     padding: 16px 24px;
     overflow: auto;
   }
+  /* The board picker takes several lines of its own, so each picker gets a line of the page's
+     whole width rather than the two sharing one. */
   .picks {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px 28px;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 8px;
   }
   .pick {
     display: flex;

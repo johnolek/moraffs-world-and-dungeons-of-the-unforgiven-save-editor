@@ -16,6 +16,7 @@ import type { EveryoneStatus } from '../../../server/everyone';
 export const BOARDS_PAGE = {
   heading: 'Boards',
   leaderboard: 'Leaderboard:',
+  bothLeaderboards: 'Both',
   board: 'Board:',
   rank: '#',
   player: 'Player',
@@ -45,7 +46,6 @@ export const BOARDS_PAGE = {
 export const EVERYONE = {
   pick: 'Everyone',
   showing: 'Show:',
-  onBoard: 'Board:',
   ofClass: 'Class:',
   alive: 'Alive',
   dead: 'Dead',
