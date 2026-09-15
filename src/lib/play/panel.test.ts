@@ -113,11 +113,11 @@ describe('the spells with a timer', () => {
 });
 
 describe('the poison and disease clocks', () => {
-  it('counts the moves until the next bite, which is one fewer than the record holds', () => {
+  it('counts the moves until the next point goes, which is one fewer than the record holds', () => {
     const lines = ailments(character({ poison: 450, disease: 12 }));
     expect(lines.map((line) => [line.label, line.value])).toEqual([
-      ['Poison', 'bites in 449 moves'],
-      ['Disease', 'bites in 11 moves'],
+      ['Poison', '449 moves to −1 Strength'],
+      ['Disease', '11 moves to −1 Constitution'],
     ]);
   });
 

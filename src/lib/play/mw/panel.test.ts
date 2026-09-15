@@ -21,10 +21,15 @@ describe('the spells in force', () => {
   it('keeps the poison and disease clocks to their own section', () => {
     const game = newMwGame({ pc: { poisonTimer: 9, diseaseTimer: 1 } });
     expect(mwSpellsInForce(game)).toEqual([]);
-    expect(mwAilments(game.pc)).toEqual([
-      { label: 'Poison bites in', value: '8 moves', note: 'A point of strength, and then it starts again.' },
-      { label: 'Disease bites in', value: '0 moves', note: 'A point of constitution, and then it starts again.' },
+    expect(mwAilments(game.pc).map((line) => [line.label, line.value])).toEqual([
+      ['Poison', '8 moves to −1 Strength'],
+      ['Disease', '0 moves to −1 Constitution'],
     ]);
+  });
+
+  it('says a resistance spell is holding a clock, which monsters_move stops counting down', () => {
+    const game = newMwGame({ pc: { poisonTimer: 300, resistPoisonTimer: 40 } });
+    expect(mwAilments(game.pc)).toMatchObject([{ label: 'Poison', value: 'held off' }]);
   });
 });
 

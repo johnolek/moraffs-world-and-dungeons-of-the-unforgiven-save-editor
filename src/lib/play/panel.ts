@@ -136,16 +136,17 @@ function lending(label: string, left: number, lent: string): PanelLine {
   return timerLine(label, left, `${lent} while it runs. A cast lasts 60 moves.`);
 }
 
-/** How long a disease or a poison waits between bites, which pass_moment starts it again at. */
+/** How long a disease or a poison waits between the points it takes, which pass_moment starts
+ *  the clock again at. */
 const AILMENT_MOVES = 450;
 
 /**
- * The poison and the disease clocks: the moves until each one bites again.
+ * The poison and the disease clocks: the moves until each one takes its next point.
  *
- * pass_moment (exe 2000:a53c) counts the clock down by one a moment and bites when it reaches 1,
- * so the moves left are one fewer than the number in the record. A bite costs a point of a
- * characteristic for good and starts the clock again at 450. The matching resistance spell stops
- * the clock being counted down at all while it is in effect.
+ * pass_moment (exe 2000:a53c) counts the clock down by one a moment and takes the point when it
+ * reaches 1, so the moves left are one fewer than the number in the record. The point is gone for
+ * good and the clock starts again at 450. The matching resistance spell stops the clock being
+ * counted down at all while it is in effect.
  */
 export function ailments(pc: PlayerCharacter): PanelLine[] {
   const lines: PanelLine[] = [];
@@ -155,9 +156,14 @@ export function ailments(pc: PlayerCharacter): PanelLine[] {
 }
 
 function ailmentLine(label: string, clock: number, resisted: number, costs: string): PanelLine {
-  const bite = `A bite takes a point of ${costs} for good, then the clock starts again at ${AILMENT_MOVES}.`;
-  if (resisted > 0) return { label, value: 'held off', note: `Resist ${label} is stopping the clock.` };
-  return { label, value: `bites in ${moves(Math.max(0, clock - 1))}`, note: bite };
+  if (resisted > 0) {
+    return { label, value: 'held off', note: `Resist ${label} is stopping the clock, so nothing is lost while it runs.` };
+  }
+  return {
+    label,
+    value: `${moves(Math.max(0, clock - 1))} to −1 ${costs}`,
+    note: `That point of ${costs} is gone for good, and the clock then starts again at ${AILMENT_MOVES} moves.`,
+  };
 }
 
 /** What a spell with no timer is waiting for: a permanent one waits for nothing. */

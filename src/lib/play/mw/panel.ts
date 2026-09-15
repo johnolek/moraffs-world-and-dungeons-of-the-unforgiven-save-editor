@@ -75,19 +75,31 @@ function timerValue(label: string, turns: number): string {
   return moves(turns);
 }
 
+/** How long a poison or a disease waits between the points it takes, which monsters_move starts
+ *  the clock again at. */
+const AFFLICTION_MOVES = 450;
+
 /**
  * The two clocks monsters_move (WORLD.EXE 2000:81cd) counts down: a poisoning takes a point of
- * strength when its clock reaches one and starts again, and a disease takes constitution.
+ * strength when its clock reaches one and starts again, and a disease takes constitution. The
+ * matching resistance spell stops the clock being counted down at all while it is in effect.
  */
 export function mwAilments(pc: MwCharacter): MwPanelLine[] {
   const lines: MwPanelLine[] = [];
-  if (pc.poisonTimer > 0) {
-    lines.push({ label: 'Poison bites in', value: moves(pc.poisonTimer - 1), note: 'A point of strength, and then it starts again.' });
-  }
-  if (pc.diseaseTimer > 0) {
-    lines.push({ label: 'Disease bites in', value: moves(pc.diseaseTimer - 1), note: 'A point of constitution, and then it starts again.' });
-  }
+  if (pc.poisonTimer > 0) lines.push(ailmentLine('Poison', pc.poisonTimer, pc.resistPoisonTimer, 'Strength'));
+  if (pc.diseaseTimer > 0) lines.push(ailmentLine('Disease', pc.diseaseTimer, pc.resistDiseaseTimer, 'Constitution'));
   return lines;
+}
+
+function ailmentLine(label: string, clock: number, resisted: number, costs: string): MwPanelLine {
+  if (resisted > 0) {
+    return { label, value: 'held off', note: `Resist ${label} is stopping the clock, so nothing is lost while it runs.` };
+  }
+  return {
+    label,
+    value: `${moves(clock - 1)} to −1 ${costs}`,
+    note: `That point of ${costs} is gone for good, and the clock then starts again at ${AFFLICTION_MOVES} moves.`,
+  };
 }
 
 /** One heading of the charges list, and its lines. */
