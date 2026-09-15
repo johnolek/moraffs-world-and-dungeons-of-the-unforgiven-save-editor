@@ -70,7 +70,7 @@ export function wrapToWidth(sentences: string[], characters: number): string[] {
 export function debugMonsterLines(game: Game): ScreenLine[] {
   const engaged = engagedMonster(game);
   if (engaged === null) return [];
-  const drops = dropOdds(game, engaged.level);
+  const drops = dropOdds(game);
   const texts = [
     `LEVEL:${engaged.level} HP:${engaged.hp}`,
     `HIT:${hitPercent(engaged.hitChance)}`,

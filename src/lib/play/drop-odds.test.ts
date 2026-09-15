@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dropArmor, dropWeapon } from '../game/port/drops';
+import { ARMOR_NAMES, WEAPON_NAMES, dropArmor, dropWeapon } from '../game/port/drops';
+import { killMonster } from '../game/port/kills';
 import { SeededRng, type Rng } from '../game/port/rng';
 import { newGame, type Game, type PlayerCharacter } from '../game/port/state';
 import { armorDropChance, dropOdds, specialDropChance, weaponDropChance } from './drop-odds';
@@ -17,6 +18,12 @@ const LEAVE = 0x32;
 
 /** The line every drop opens with, which is how a simulated kill says it made an offer. */
 const OFFERED = 'GOOD NEWS...';
+
+/** Monster kind 23 is Gargalon, one of section 1's ordinary monsters and not a level drainer. */
+const REGULAR = 23;
+
+/** How many kills a simulated share is counted over. */
+const TRIALS = 20000;
 
 /**
  * An {@link Rng} that hands back the numbers it is given, in order, and 0 once they run out,
@@ -132,7 +139,47 @@ describe('the chance a kill turns up a special item', () => {
   });
 
   it('does not depend on the monster, only on the floor it stands on', () => {
-    const game = killing(rolls(), { cls: WORSHIPPER, level: 30 }, 40);
-    expect(dropOdds(game, 1).special).toBe(dropOdds(game, 900).special);
+    const near = killing(rolls(), { cls: WORSHIPPER, level: 30 }, 1);
+    const far = killing(rolls(), { cls: WORSHIPPER, level: 30 }, 900);
+    expect(dropOdds(near).special).toBe(dropOdds(far).special);
+  });
+});
+
+describe('the odds a kill is really made on', () => {
+  /** The weapon and armor offers made over `trials` kills, run through kill_monster itself,
+   *  which is the only thing that calls drop_weapon and drop_armor. */
+  async function offeredByKills(pc: Partial<PlayerCharacter>, monsterLevel: number, trials: number) {
+    const game = newGame({
+      rng: new SeededRng(7),
+      pc: { hp: 100, maxHp: 100, ...pc },
+      choice: async () => LEAVE,
+      pressAnyKey: () => {},
+      delay: () => {},
+    });
+    let weapons = 0;
+    let armors = 0;
+    for (let trial = 0; trial < trials; trial += 1) {
+      Object.assign(game.monsters[3], { x: 11, y: 12, hp: 0, type: REGULAR, level: monsterLevel });
+      game.engaged = 3;
+      game.messages.length = 0;
+      await killMonster(game);
+      // A spell paper's line opens the same way a weapon's does, so both are matched whole.
+      const said = (offer: string) => game.messages.some((line) => line === offer);
+      if (WEAPON_NAMES.some((name) => said(`YOU FIND A ${name}`))) weapons += 1;
+      if (ARMOR_NAMES.some((name) => said(`YOU FIND ${name} ARMOR.`))) armors += 1;
+    }
+    return { weapon: weapons / trials, armor: armors / trials };
+  }
+
+  it('rolls both offers against the emptied slot, whatever the monster was worth', async () => {
+    const pc = { cls: FIGHTER, level: 10, weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0] };
+    const game = killing(rolls(), pc, 300);
+    const odds = dropOdds(game);
+    const observed = await offeredByKills(pc, 300, TRIALS);
+
+    expect(Math.abs(observed.weapon - odds.weapon)).toBeLessThan(TOLERANCE);
+    expect(Math.abs(observed.armor - odds.armor)).toBeLessThan(TOLERANCE);
+    // A level 300 monster would pass every one of those rolls if its level were still there.
+    expect(odds.weapon).toBeLessThan(weaponDropChance(game, 300));
   });
 });

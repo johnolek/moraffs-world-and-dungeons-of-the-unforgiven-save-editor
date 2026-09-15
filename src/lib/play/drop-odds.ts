@@ -128,11 +128,21 @@ export function specialDropChance(game: Game): number {
   return gates * notNothing * alreadyHasTheSlosher;
 }
 
-/** All three, for the monster being faced. */
-export function dropOdds(game: Game, monsterLevel: number): DropOdds {
+/**
+ * The monster level `drop_weapon` and `drop_armor` roll against, which is always zero.
+ *
+ * `kill_monster` (exe 3000:b12d) empties the killed monster's slot — its level along with the
+ * rest of the record — before it calls either of them, and both read the level out of that slot,
+ * so neither ever sees the level of the monster that was just killed. Every kill in the game
+ * therefore rolls for a weapon and for armor on the same odds, deep or shallow.
+ */
+const LEVEL_A_DROP_ROLLS_AGAINST = 0;
+
+/** All three, for a kill made where the character is standing. */
+export function dropOdds(game: Game): DropOdds {
   return {
-    weapon: weaponDropChance(game, monsterLevel),
-    armor: armorDropChance(game, monsterLevel),
+    weapon: weaponDropChance(game, LEVEL_A_DROP_ROLLS_AGAINST),
+    armor: armorDropChance(game, LEVEL_A_DROP_ROLLS_AGAINST),
     special: specialDropChance(game),
   };
 }

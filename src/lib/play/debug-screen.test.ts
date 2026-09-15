@@ -41,7 +41,7 @@ describe("the monster's numbers over the forward view", () => {
 
   it('prints what killing it is likely to leave behind, to a tenth of a per cent', () => {
     const game = facing();
-    const drops = dropOdds(game, 12);
+    const drops = dropOdds(game);
     expect(drops.weapon).toBeGreaterThan(0);
     expect(debugMonsterLines(game)[3].text).toBe(`DROPS WEAPON:${(drops.weapon * 100).toFixed(1)}%`);
     expect(debugMonsterLines(game)[4].text).toBe(`DROPS ARMOR:${(drops.armor * 100).toFixed(1)}%`);
