@@ -75,13 +75,15 @@ export function characterTypeWords(leaderboard: Leaderboard | null, lock: Leader
 }
 
 /**
- * What the Save Editor asks before it writes into a character rolled for a board.
+ * What the Save Editor asks before it writes into a character whose runs are on a board.
  *
  * The editor's records are not in the run log, so a replay has no way of putting the character
  * back into them: a board's runs stop being comparable the moment one of them is written from
  * outside the game. So the place is given up rather than the edit refused, and the player is told
- * which of the two they are choosing.
+ * which of the two they are choosing. The mode the character is locked to is not one of them —
+ * that is what it was rolled as and an edit does not change it — which the warning says so that
+ * nobody expects an edit to set the character free.
  */
 export function leaderboardEditWarning(board: Leaderboard): string {
-  return `This character was rolled for the ${board} board. Editing it here takes it off that board for good, and its runs will stop counting. Edit it anyway?`;
+  return `This character was rolled for the ${board} board. Editing it here takes it off that board for good, and its runs will stop counting. It stays a ${board} character and is still played that way. Edit it anyway?`;
 }

@@ -101,9 +101,10 @@
   }
 
   /**
-   * Whether the edit may go through to the character. A character rolled for a leaderboard is
-   * asked about first, because writing a record here takes it off that board for good; saying no
-   * leaves the character exactly as it was.
+   * Whether the edit may go through to the character. A character whose runs are on a leaderboard
+   * is asked about first, because writing a record here takes it off that board for good; saying
+   * no leaves the character exactly as it was. A character locked to a mode with no board has
+   * nothing to lose here — an edit does not change what it was rolled as — so it is not asked.
    */
   function mayWrite(): boolean {
     const board = currentEntry()?.leaderboard ?? null;
