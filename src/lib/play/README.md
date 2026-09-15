@@ -661,6 +661,15 @@ on each row and a Clear for the lot; the character's columns are `FIGHT_COLUMNS`
 setup form's own fields, so the table and the form say the same words for the same number. A
 fight left before the monster was ever sent in is not a fight and is not kept.
 
+**The full log** is `fightJournal`, which turns the fight's events into lines with the run
+journal's own `journalEntry` and `unforgivenJournal` (`journal.ts`), so a fight reads in the words
+a run reads in. Each line is stamped with how many moves into the fight it happened rather than
+with a run's action count, since nothing fought here is part of a run. The tab folds the lines
+away behind a "Full log" under the summary and under each kept fight's row.
+`src/lib/journal/RunJournal.svelte` is not reused for it: that component prints a run's own
+summary in a run's words and groups its lines by the floor they happened on, and a fight has one
+summary of its own and one floor.
+
 ## The moment
 
 `passMoment` (exe 2000:a53c) is in `src/lib/game/port/moment.ts` with the two halves of a step it

@@ -19,6 +19,7 @@ import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
 import { monsterTypeOf } from './floor';
 import { KEY } from './keys';
+import { journalEntry, unforgivenJournal, type JournalEntry } from './journal';
 import { runPlayLoop } from './loop';
 import { count } from './summary';
 
@@ -428,6 +429,27 @@ export function fightSummary(events: readonly GameEvent[], reached: FightReached
     }
   }
   return summary;
+}
+
+/**
+ * Every line of a fight, in the words a run's journal uses.
+ *
+ * `journalEntry` and `unforgivenJournal` (`journal.ts`) are the run journal's own, so a fight
+ * reads the way a run reads. The count each line is stamped with is this fight's moves and not a
+ * run's actions, since nothing fought here is part of a run.
+ */
+export function fightJournal(
+  events: readonly GameEvent[],
+  where: { floor: number; module: number },
+): JournalEntry[] {
+  const entries: JournalEntry[] = [];
+  let at = 0;
+  for (const event of events) {
+    if (isActionKind(event.kind)) at += 1;
+    const entry = journalEntry(event, { at, ...where }, unforgivenJournal);
+    if (entry !== null) entries.push(entry);
+  }
+  return entries;
 }
 
 /** The spells cast so far, by the name the game's own menu prints, in the order they were cast. */

@@ -10,6 +10,7 @@ import {
   castFightSpell,
   fightMonster,
   fightOutcome,
+  fightJournal,
   fightSquare,
   fightSummary,
   fightSummaryLines,
@@ -405,5 +406,34 @@ describe('what a fight came to', () => {
     expect(fightSummaryLines(fightSummary([], { seconds: 0, outcome: 'characterDead' }))).toEqual([
       'Spent 0 moves and 0 seconds',
     ]);
+  });
+});
+
+describe('the full log of a fight', () => {
+  it('is every line of it, in the words a run’s journal uses', () => {
+    const lines = fightJournal(SCRIPTED, { floor: 7, module: 0 });
+    expect(lines.map((entry) => entry.text)).toEqual([
+      'Came face to face with a Level 12 GHOUL',
+      'Cast ENCHANT WEAPON LEVEL 1 from spell points',
+      'Swung the SWORD at a Level 12 GHOUL and hit for 14',
+      'Swung the SWORD at a Level 12 GHOUL and missed',
+      'The GHOUL hit you for 9',
+      'The GHOUL missed',
+      'The GHOUL breathed FIRE on you for 21',
+      'The GHOUL drained 2 levels, down to level 10',
+      'The GHOUL drained 400 experience',
+      'Lost a point of STRENGTH',
+      'Gained a point of LUCK',
+      'Cast AUTOKILL from spell points',
+      'The spell hit a Level 12 GHOUL for 300',
+      'Killed a Level 12 GHOUL for 1200 experience',
+    ]);
+  });
+
+  it('counts the moves as it goes, so a line says how far into the fight it happened', () => {
+    const lines = fightJournal(SCRIPTED, { floor: 7, module: 0 });
+    // The first cast is the fight's first move; the two swings are the second and third.
+    expect(lines.map((entry) => entry.at).slice(0, 5)).toEqual([0, 1, 2, 3, 3]);
+    expect(lines.every((entry) => entry.floor === 7 && entry.module === 0)).toBe(true);
   });
 });

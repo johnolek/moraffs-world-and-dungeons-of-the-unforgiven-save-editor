@@ -27,8 +27,10 @@
   import { isTyping } from '../ui/keys';
   import { armSpeaker } from '../speaker';
   import type { GameSession, PlayView } from './engine';
+  import type { JournalEntry } from './journal';
   import {
     castFightSpell,
+    fightJournal,
     fightOutcome,
     fightSummary,
     fightSummaryLines,
@@ -137,6 +139,9 @@
   /** The fights already kept against the monster the form has picked, the most recent first. */
   const compared = $derived(keptFights(monsterId));
 
+  /** Every line of the fight that has just ended. */
+  const finishedLog: JournalEntry[] = $derived(finished === null ? [] : fightLog());
+
   // A fight that has ended is kept the moment it ends, so that changing a number and fighting
   // again leaves the two side by side.
   $effect(() => {
@@ -229,13 +234,21 @@
     });
   }
 
+  /** Every line of the fight as it stands, in the words a run's journal uses. */
+  function fightLog(): JournalEntry[] {
+    const playing = session;
+    const monster = built;
+    if (playing === null || monster === null) return [];
+    return fightJournal(playing.game.events, { floor: monster.floor, module: monster.module });
+  }
+
   /** Keep a fight that is over, with the character and the monster it was fought with. */
   function keep(summary: FightSummary | null) {
     const character = fought;
     const monster = built;
     if (recorded || summary === null || character === null || monster === null) return;
     recorded = true;
-    keepFight({ at: new Date(), character, monster, prepared, summary, entries: [] });
+    keepFight({ at: new Date(), character, monster, prepared, summary, entries: fightLog() });
   }
 
   /** A session for the setup as it stands. The old one is finished first so that nothing of it
@@ -330,6 +343,17 @@
 </script>
 
 <svelte:window onkeydown={onKeyDown} />
+
+{#snippet fullLog(entries: JournalEntry[])}
+  <details class="log">
+    <summary>Full log</summary>
+    <ol>
+      {#each entries as entry, at (at)}
+        <li><span class="at">{entry.at}</span>{entry.text}</li>
+      {/each}
+    </ol>
+  </details>
+{/snippet}
 
 <div class="fight">
   <div class="setup">
@@ -498,6 +522,7 @@
             <ul class="summary">
               {#each fightSummaryLines(finished) as line, at (at)}<li>{line}</li>{/each}
             </ul>
+            {@render fullLog(finishedLog)}
           {/if}
         </div>
 
@@ -573,6 +598,7 @@
                   <ul class="summary">
                     {#each fightSummaryLines(fight.summary) as line, at (at)}<li>{line}</li>{/each}
                   </ul>
+                  {@render fullLog(fight.entries)}
                 </td>
                 <td><button type="button" onclick={() => forgetFight(fight.id)}>Delete</button></td>
               </tr>
@@ -725,6 +751,43 @@
     padding-left: 18px;
     font-size: 12px;
     line-height: 1.6;
+  }
+  .log {
+    margin-top: 6px;
+    max-width: 52ch;
+    white-space: normal;
+  }
+  /* A long fight is hundreds of lines, so the log scrolls inside its own box rather than making
+     the column it sits in as tall as the fight. */
+  .log ol {
+    margin: 4px 0 0;
+    padding: 0;
+    max-height: 260px;
+    overflow-y: auto;
+    list-style: none;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .log li {
+    display: flex;
+    gap: 8px;
+    white-space: normal;
+  }
+  /* How many moves into the fight the line was written. */
+  .log .at {
+    flex: none;
+    min-width: 3ch;
+    text-align: right;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .log summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--accent-dim);
+  }
+  .log summary:hover {
+    color: var(--accent);
   }
   .buttons {
     display: flex;
