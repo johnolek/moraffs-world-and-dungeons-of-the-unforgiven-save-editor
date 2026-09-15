@@ -273,8 +273,10 @@ export function dropSpellbook(game: Game): boolean {
   const pc = game.pc;
   if (pc.cls === 0 || pc.cls === 2) return false;
   if (pc.cls === 5) {
-    if (game.rng.random(300 - pc.level) > 175) return false;
-    if (game.rng.random(400 - pc.level) > 140) return false;
+    // The sage's two extra rolls are Random calls (exe 3000:a68a and 3000:a6a9); every roll
+    // below them is written inline, so they carry on from the seed the second one set.
+    if (game.randomCall(300 - pc.level) > 175) return false;
+    if (game.randomCall(400 - pc.level) > 140) return false;
   }
   let level = game.rng.random(Math.trunc((pc.level * 2) / 3));
   if (level > 9) level = game.rng.random(10);
@@ -307,7 +309,9 @@ export function dropScroll(game: Game): void {
   const pc = game.pc;
   if (pc.cls === 0 || pc.cls === 2) return;
   const sageBonus = pc.cls === 5 ? 30 : 0;
-  if (game.rng.random(350 - pc.level) > sageBonus + 15) return;
+  // The roll that decides whether there is a scroll at all is a Random call (exe 3000:a8a0) and
+  // the four that pick it are written inline.
+  if (game.randomCall(350 - pc.level) > sageBonus + 15) return;
   let level = game.rng.random(Math.trunc((pc.level + 4) / 2));
   if (level > 9) level = game.rng.random(10);
   const type = game.rng.random(4);
@@ -336,7 +340,8 @@ export function dropScroll(game: Game): void {
 export function dropWand(game: Game): void {
   const pc = game.pc;
   if (pc.cls === 0 || pc.cls === 2) return;
-  if (game.rng.random(350 - pc.level) > 15) return;
+  // A Random call (exe 3000:aa5b), with the six that pick the wand written inline.
+  if (game.randomCall(350 - pc.level) > 15) return;
   goodNews(game);
   let level =
     pc.cls === 5
@@ -365,7 +370,8 @@ export function dropWand(game: Game): void {
 export function dropPaper(game: Game): void {
   const pc = game.pc;
   if (pc.cls === 2) return;
-  if (game.rng.random(350 - pc.level) > 15) return;
+  // A Random call (exe 3000:ac8c), with the five that pick the paper written inline.
+  if (game.randomCall(350 - pc.level) > 15) return;
   goodNews(game);
   let level =
     pc.cls === 5 || pc.cls === 0
@@ -704,8 +710,8 @@ export async function useMagicItem(game: Game): Promise<void> {
       const from = pc.level;
       pc.level += 1;
       while (game.solid(pc.x, pc.y, pc.level, pc.module)) {
-        pc.x = game.rng.random(game.columns - 5) + 2;
-        pc.y = game.rng.random(game.rows - 5) + 2;
+        pc.x = game.randomCall(game.columns - 5) + 2;
+        pc.y = game.randomCall(game.rows - 5) + 2;
       }
       game.events.push({ kind: 'levelChanged', from, to: pc.level });
       used = true;

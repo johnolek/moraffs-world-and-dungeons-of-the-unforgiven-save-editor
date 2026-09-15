@@ -334,7 +334,9 @@ export async function killMonster(game: Game): Promise<void> {
   postKillSp(game);
   if (pc.cls !== 2) {
     const easier = pc.cls === 0 || pc.cls === 5 ? 400 : 0;
-    if (game.rng.random(950 - easier) < pc.level + 40) {
+    // The roll that decides whether anything is found is a Random call (exe 3000:b4c2); the
+    // three under it, and the two the drainer's bonus makes above, are written inline.
+    if (game.randomCall(950 - easier) < pc.level + 40) {
       if (game.rng.random(20) < pc.level) {
         game.delay(BEFORE_THE_FIND_MS);
         clearMessageLine(game);
@@ -398,7 +400,8 @@ export function playerDies(game: Game): void {
   game.events.push({ kind: 'died', monster: killer, floor: game.pc.level, dungeon: game.pc.module });
   game.pc.hp = -100;
   showHint(game, 26);
-  showHint(game, 117 + game.rng.random(5));
+  // A Random call (exe 2000:9248), and the only roll this function makes.
+  showHint(game, 117 + game.randomCall(5));
 }
 
 /**

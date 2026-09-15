@@ -214,15 +214,16 @@ export function arriveSquare(game: Game): void {
  * floor they are on that nothing is standing on.
  *
  * The x is drawn over the columns the game shows and the y over its rows, so column 79 and the
- * rows past 103 never come up even though the floor has them.
+ * rows past 103 never come up even though the floor has them. Both are Random calls (exe
+ * 3000:da47 and 3000:da56), so each one reseeds.
  */
 export function relocate(game: Game): void {
   const pc = game.pc;
   setMonsterMap(game, pc.x, pc.y, MAP_EMPTY);
   do {
     do {
-      pc.x = game.rng.random(game.columns);
-      pc.y = game.rng.random(game.rows);
+      pc.x = game.randomCall(game.columns);
+      pc.y = game.randomCall(game.rows);
     } while (game.solid(pc.x, pc.y, pc.level, pc.module));
   } while (monsterAt(game, pc.x, pc.y) !== -1);
   setMonsterMap(game, pc.x, pc.y, MAP_PLAYER);
