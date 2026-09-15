@@ -141,7 +141,7 @@ describe('the chance a kill turns up a special item', () => {
   it('does not depend on the monster, only on the floor it stands on', () => {
     const near = killing(rolls(), { cls: WORSHIPPER, level: 30 }, 1);
     const far = killing(rolls(), { cls: WORSHIPPER, level: 30 }, 900);
-    expect(dropOdds(near).special).toBe(dropOdds(far).special);
+    expect(dropOdds(near).special.chance).toBe(dropOdds(far).special.chance);
   });
 });
 
@@ -177,9 +177,9 @@ describe('the odds a kill is really made on', () => {
     const odds = dropOdds(game);
     const observed = await offeredByKills(pc, 300, TRIALS);
 
-    expect(Math.abs(observed.weapon - odds.weapon)).toBeLessThan(TOLERANCE);
-    expect(Math.abs(observed.armor - odds.armor)).toBeLessThan(TOLERANCE);
+    expect(Math.abs(observed.weapon - odds.weapon.chance)).toBeLessThan(TOLERANCE);
+    expect(Math.abs(observed.armor - odds.armor.chance)).toBeLessThan(TOLERANCE);
     // A level 300 monster would pass every one of those rolls if its level were still there.
-    expect(odds.weapon).toBeLessThan(weaponDropChance(game, 300));
+    expect(odds.weapon.chance).toBeLessThan(weaponDropChance(game, 300));
   });
 });

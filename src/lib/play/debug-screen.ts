@@ -1,5 +1,5 @@
 import type { Game, ScreenLine } from '../game/port/state';
-import { dropOdds } from './drop-odds';
+import { dropOdds, type DropChance } from './drop-odds';
 import { engagedMonster } from './panel';
 import { AHEAD_VIEW } from './view3d/geometry';
 import { strokeAdvance } from './view3d/stroke-font';
@@ -35,6 +35,19 @@ const LINE_CHARACTERS = Math.trunc((AHEAD_VIEW.right - CORNER.x) / strokeAdvance
 /** The share of swings that land, to a tenth of a per cent, as the panel prints it. */
 function hitPercent(chance: number): string {
   return `${(chance * 100).toFixed(1)}%`;
+}
+
+/**
+ * How often a kill leaves something behind, as the kills it takes to see one.
+ *
+ * A per cent reads as nothing at all for the drops, which are rare enough that the weapon and
+ * the armor lines both sit under five in a hundred. The most likely of the three is the special
+ * item, and two kills in three is as often as that one can ever be, so the count never rounds
+ * down to a kill.
+ */
+function killsPer(drop: DropChance): string {
+  if (drop.never !== null) return `NEVER (${drop.never})`;
+  return `1 IN ${Math.round(1 / drop.chance)} KILLS`;
 }
 
 /**
@@ -75,9 +88,9 @@ export function debugMonsterLines(game: Game): ScreenLine[] {
     `LEVEL:${engaged.level} HP:${engaged.hp}`,
     `HIT:${hitPercent(engaged.hitChance)}`,
     `IT HITS:${hitPercent(engaged.hitsYouChance)}`,
-    `DROPS WEAPON:${hitPercent(drops.weapon)}`,
-    `DROPS ARMOR:${hitPercent(drops.armor)}`,
-    `DROPS SPECIAL:${hitPercent(drops.special)}`,
+    `DROPS WEAPON: ${killsPer(drops.weapon)}`,
+    `DROPS ARMOR: ${killsPer(drops.armor)}`,
+    `DROPS SPECIAL: ${killsPer(drops.special)}`,
     ...wrapToWidth(engaged.effects, LINE_CHARACTERS),
   ];
   return texts.map((text, at) => ({

@@ -29,14 +29,23 @@ const PAST_THE_LAST_ROW = 8;
 /** The one thing `find_item` refuses to hand over twice, out of the twelve it rolls between. */
 const FOUND_ITEMS = 12;
 
-/** What a kill may leave behind, each as a share of kills between 0 and 1. */
+/** How often a kill leaves one thing behind. */
+export interface DropChance {
+  /** The share of kills that leave one, between 0 and 1. */
+  chance: number;
+  /** The rule that rules the drop out altogether, in the few words a debug line prints, or null
+   *  when a kill can still leave one. */
+  never: string | null;
+}
+
+/** What a kill may leave behind. */
 export interface DropOdds {
   /** A weapon offered, which is an offer the player can still refuse. */
-  weapon: number;
+  weapon: DropChance;
   /** A suit of armor offered. */
-  armor: number;
+  armor: DropChance;
   /** One of the twelve things `find_item` turns up — a ring of regeneration, a stone, a book. */
-  special: number;
+  special: DropChance;
 }
 
 /**
@@ -138,11 +147,37 @@ export function specialDropChance(game: Game): number {
  */
 const LEVEL_A_DROP_ROLLS_AGAINST = 0;
 
+/** Why a weapon is never offered, or null when one still can be. */
+function weaponNever(game: Game, chance: number): string | null {
+  if (chance > 0) return null;
+  if (game.pc.cls === MONK) return 'MONK';
+  const owned = game.pc.weaponsOwned;
+  const everyRow = owned.slice(1, WEAPON_ROWS + 1).every((count) => count > 0);
+  return everyRow ? 'OWNS THEM ALL' : 'HIGH SPEED';
+}
+
+/** Why armor is never offered. Armor the character owns is offered again, so the high speed
+ *  option finding a better suit is the only thing besides being a monk that can rule it out. */
+function armorNever(game: Game, chance: number): string | null {
+  if (chance > 0) return null;
+  return game.pc.cls === MONK ? 'MONK' : 'HIGH SPEED';
+}
+
+/** Why a special item is never found. The second gate is the floor out of twenty, so the town
+ *  turns up nothing at all. */
+function specialNever(game: Game, chance: number): string | null {
+  if (chance > 0) return null;
+  return game.pc.cls === MONK ? 'MONK' : 'TOWN FLOOR';
+}
+
 /** All three, for a kill made where the character is standing. */
 export function dropOdds(game: Game): DropOdds {
+  const weapon = weaponDropChance(game, LEVEL_A_DROP_ROLLS_AGAINST);
+  const armor = armorDropChance(game, LEVEL_A_DROP_ROLLS_AGAINST);
+  const special = specialDropChance(game);
   return {
-    weapon: weaponDropChance(game, LEVEL_A_DROP_ROLLS_AGAINST),
-    armor: armorDropChance(game, LEVEL_A_DROP_ROLLS_AGAINST),
-    special: specialDropChance(game),
+    weapon: { chance: weapon, never: weaponNever(game, weapon) },
+    armor: { chance: armor, never: armorNever(game, armor) },
+    special: { chance: special, never: specialNever(game, special) },
   };
 }

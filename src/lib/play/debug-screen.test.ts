@@ -39,13 +39,34 @@ describe("the monster's numbers over the forward view", () => {
     expect(debugMonsterLines(game)[2].text).toBe(`IT HITS:${(chance * 100).toFixed(1)}%`);
   });
 
-  it('prints what killing it is likely to leave behind, to a tenth of a per cent', () => {
+  it('prints what killing it is likely to leave behind, as the kills it takes', () => {
     const game = facing();
     const drops = dropOdds(game);
-    expect(drops.weapon).toBeGreaterThan(0);
-    expect(debugMonsterLines(game)[3].text).toBe(`DROPS WEAPON:${(drops.weapon * 100).toFixed(1)}%`);
-    expect(debugMonsterLines(game)[4].text).toBe(`DROPS ARMOR:${(drops.armor * 100).toFixed(1)}%`);
-    expect(debugMonsterLines(game)[5].text).toBe(`DROPS SPECIAL:${(drops.special * 100).toFixed(1)}%`);
+    expect(drops.weapon.chance).toBeGreaterThan(0);
+    expect(debugMonsterLines(game)[3].text).toBe(`DROPS WEAPON: 1 IN ${Math.round(1 / drops.weapon.chance)} KILLS`);
+    expect(debugMonsterLines(game)[4].text).toBe(`DROPS ARMOR: 1 IN ${Math.round(1 / drops.armor.chance)} KILLS`);
+    expect(debugMonsterLines(game)[5].text).toBe(`DROPS SPECIAL: 1 IN ${Math.round(1 / drops.special.chance)} KILLS`);
+  });
+
+  it('says a drop is never coming, and which rule rules it out', () => {
+    const game = facing();
+    game.pc.weaponsOwned = [1, 1, 1, 1, 1, 1, 1, 1];
+    game.highSpeed = true;
+    game.pc.armorOwned = [1, 0, 0, 0, 0, 0, 1];
+    game.pc.level = 0;
+    expect(debugMonsterLines(game)[3].text).toBe('DROPS WEAPON: NEVER (OWNS THEM ALL)');
+    expect(debugMonsterLines(game)[4].text).toBe('DROPS ARMOR: NEVER (HIGH SPEED)');
+    expect(debugMonsterLines(game)[5].text).toBe('DROPS SPECIAL: NEVER (TOWN FLOOR)');
+  });
+
+  it('says a monk is offered nothing at all', () => {
+    const game = facing();
+    game.pc.cls = 2;
+    expect(debugMonsterLines(game).slice(3, 6).map((line) => line.text)).toEqual([
+      'DROPS WEAPON: NEVER (MONK)',
+      'DROPS ARMOR: NEVER (MONK)',
+      'DROPS SPECIAL: NEVER (MONK)',
+    ]);
   });
 
   it('prints what the monster does beyond an ordinary hit, in the bestiary\u2019s words', () => {
@@ -63,8 +84,10 @@ describe("the monster's numbers over the forward view", () => {
     expect(debugMonsterLines(game)).toHaveLength(6);
   });
 
-  it('keeps every line inside the forward view', () => {
-    for (const line of debugMonsterLines(facing())) {
+  it('keeps every line inside the forward view, the longest of the drop lines included', () => {
+    const longest = facing();
+    longest.pc.weaponsOwned = [1, 1, 1, 1, 1, 1, 1, 1];
+    for (const line of [...debugMonsterLines(facing()), ...debugMonsterLines(longest)]) {
       expect(line.x).toBeGreaterThan(AHEAD_VIEW.left);
       expect(line.y).toBeGreaterThan(AHEAD_VIEW.top);
       expect(line.y).toBeLessThan(AHEAD_VIEW.bottom);
