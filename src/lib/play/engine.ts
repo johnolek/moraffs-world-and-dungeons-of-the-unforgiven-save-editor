@@ -1,4 +1,3 @@
-import { sectionOf } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { attackTiming, engagementTiming } from '../game/port/combat';
 import { sectionNumber, tabletMessage, townTablet } from '../game/port/hints';
@@ -7,8 +6,9 @@ import { arriveSquare, leaveSquare } from '../game/port/moment';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import { clearMenuBlock, clearMessageLine } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
+import { FAITHFUL_RULES } from '../game/port/rules';
 import type { Game, PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
-import { MAP_PLAYER, newGame, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
+import { MAP_PLAYER, newGame, setMonsterMap } from '../game/port/state';
 import { UNFORGIVEN_AREA } from '../map/area';
 import type { DiscoveredMap } from '../map/draw-floor';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
@@ -379,14 +379,16 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     super(file, run);
     this.memory = new MapMemory(file.maps ?? null);
     const pc = loadPlayer(file.bytes);
+    const rules = FAITHFUL_RULES;
     this.game = newGame({
       pc,
+      rules,
       rng,
       columns: UNFORGIVEN_AREA.columns,
       rows: UNFORGIVEN_AREA.rows,
       areaColumns: MAP_VIEW_COLUMNS,
       areaRows: MAP_VIEW_ROWS,
-      monsterKinds: sectionMonsterKinds(sectionOf(pc.module, pc.level)),
+      monsterKinds: rules.monsterKinds(rules.sectionOf(pc.module, pc.level)),
       solid: (x, y, level, module) => bundledDungeon.solid(x, y, level, module),
       retdwall: (x, y, hv, level, module) => bundledDungeon.side(x, y, hv as 0 | 1, level, module),
       markKnown: (x, y) => this.memory.markKnown(x, y),

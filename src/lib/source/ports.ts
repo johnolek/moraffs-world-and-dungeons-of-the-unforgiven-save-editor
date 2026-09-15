@@ -24,6 +24,7 @@ import recordSource from '../game/port/record.ts?raw';
 import mechSource from '../game/dotu-mech.js?raw';
 import magicSource from '../game/port/magic.ts?raw';
 import rngSource from '../game/port/rng.ts?raw';
+import rulesSource from '../game/port/rules.ts?raw';
 import spellIndexSource from '../game/port/spell-index.ts?raw';
 import stateSource from '../game/port/state.ts?raw';
 import unfmapSource from '../game/unfmap.js?raw';
@@ -67,6 +68,7 @@ const UNFORGIVEN_SOURCES = {
   'src/lib/game/port/record.ts': recordSource,
   'src/lib/game/port/state.ts': stateSource,
   'src/lib/game/port/rng.ts': rngSource,
+  'src/lib/game/port/rules.ts': rulesSource,
   'src/lib/game/port/spell-index.ts': spellIndexSource,
   'src/lib/play/engine.ts': playEngineSource,
   'src/lib/play/move.ts': playMoveSource,

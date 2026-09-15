@@ -2,6 +2,8 @@ import data from '../dotu-data.json';
 import type { JournalEvent, MonsterSeen } from '../journal-events';
 import { BRIGHT_COLOURS } from '../dotu-pic.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX, HEIGHT, WIDTH } from '../unfmap.js';
+import type { GameRules } from './rules';
+import { FAITHFUL_RULES } from './rules';
 import type { Rng } from './rng';
 import { BorlandRng } from './rng';
 
@@ -476,6 +478,13 @@ export interface Game {
   armorWeights: number[];
   /** The armor-rating column of the seven armors (exe DS:01f6, one every 5 bytes). */
   armorHitChance: number[];
+  /**
+   * The tables this game is played by: the bottom of a module, the section a floor is in, the
+   * monsters and the pictures that section has, the level its monsters are rolled around and
+   * the experience cap. A faithful game is handed `FAITHFUL_RULES`, which answers exactly what
+   * the tables in the executable answer.
+   */
+  rules: GameRules;
   /** The deepest floor of each of the five modules (exe DS:0493): 25, 45, 65, 85, 105. */
   bottomLevel: number[];
   /**
@@ -873,27 +882,6 @@ function defaultPc(): PlayerCharacter {
   };
 }
 
-/**
- * The 27 monster descriptions the game has loaded while the character is in a section: the 22
- * built-in ones, then the five load_md_bin (exe 2000:5fec) reads out of `MD.BIN` for that
- * section, which fill slots 22 to 26. `section` is 1 to 20, the way section_number (exe
- * 2000:1d23) counts them.
- *
- * `dotu-data.json` title-cases the names for the bestiary; the game holds them upper case,
- * which is how a battle message prints them.
- */
-export function sectionMonsterKinds(section = 1): MonsterKind[] {
-  return [...data.builtinMonsters, ...data.sections[section - 1].monsters].map((kind) => ({
-    name: kind.name.toUpperCase(),
-    levelDrain: kind.levelDrain,
-    statDrain: kind.statDrain,
-    breath: kind.breath,
-    special: kind.special,
-    type: kind.type,
-    expMult: kind.expMult,
-  }));
-}
-
 /** The 145 empty slots a floor starts with. */
 function emptySlots(): Monster[] {
   return Array.from({ length: 145 }, () => ({ x: 0, y: 0, hp: 0, type: 0, level: 1 }));
@@ -907,11 +895,13 @@ export function newGame(overrides: GameOverrides = {}): Game {
   const { pc: pcOverrides, ...rest } = overrides;
   const messages = overrides.messages ?? [];
   const screen = overrides.screen ?? [];
+  const rules = overrides.rules ?? FAITHFUL_RULES;
   const game: Game = {
     pc: { ...defaultPc(), ...pcOverrides },
     events: [],
     monsters: emptySlots(),
-    monsterKinds: sectionMonsterKinds(),
+    rules,
+    monsterKinds: rules.monsterKinds(1),
     monsterStats: data.monsterTypes,
     weaponWeights: data.weapons.slice(0, 8).map((weapon) => weapon.weight),
     weaponDamage: data.weapons.map((weapon) => weapon.damageDie),

@@ -10,3 +10,16 @@ export const WALL_FILES = [1, 2, 3, 4, 2, 3, 1, 4, 1, 2, 3, 1, 2, 1, 3, 2, 3, 2,
 export function wallPictureFile(section: number): string {
   return `ufwall${WALL_FILES[section - 1] ?? 1}.pic`;
 }
+
+/** The two `.PIC` files load_section_pictures reads when the character enters a section. */
+export interface SectionPictures {
+  /** The ten images its corridors are drawn from. */
+  wall: string;
+  /** The pictures of its own five monsters. */
+  monsters: string;
+}
+
+/** The pictures a section is drawn from, by section 1..20. */
+export function sectionPictures(section: number): SectionPictures {
+  return { wall: wallPictureFile(section), monsters: `ufmon${section}.pic` };
+}

@@ -33,7 +33,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_2000_1392` | 2000:1392 |  | `play/plaque.ts` |
 | `FUN_2000_1598` | 2000:1598 |  | `play/display.ts` |
 | `section_number3` | 2000:1ccc |  | `formulas/formulas.ts` |
-| `section_number` | 2000:1d23 | `game/port/hints.ts` | `game/port/state.ts` |
+| `section_number` | 2000:1d23 | `game/port/hints.ts` | `game/port/rules.ts` |
 | `FUN_2000_20db` | 2000:20db |  | `play/display.ts` |
 | `FUN_2000_2820` | 2000:2820 |  | `game/port/combat.ts`, `game/port/screens.ts`, `play/Screen.svelte`, `play/cast.ts`, `play/engine.ts`, `play/screens.ts` |
 | `FUN_2000_28be` | 2000:28be |  | `game/port/combat.ts`, `game/port/kills.ts`, `game/port/screens.ts`, `play/cast.ts`, `play/engine.ts`, `play/screens.ts` |
@@ -65,13 +65,13 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_2000_59c0` | 2000:59c0 |  | `map/you.ts`, `play/display.ts` |
 | `select_player` | 2000:5c0d |  | `game/port/state.ts` |
 | `decode_quit_message` | 2000:5f78 |  | `play/quit.ts` |
-| `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/port/state.ts`, `play/manual.ts` |
+| `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/port/rules.ts`, `play/manual.ts` |
 | `main` | 2000:620f |  | `play/view3d/views.ts` |
 | `which_monster` | 2000:6573 |  | `play/floor.ts` |
 | `monster_at` | 2000:65b0 | `game/port/state.ts` |  |
 | `set_monster_map` | 2000:65dc | `game/port/state.ts` |  |
 | `get_mtype` | 2000:65f8 |  | `formulas/formulas.ts` |
-| `stock_level` | 2000:671e | `bestiary/roll.ts`, `map/stocking.ts` | `formulas/formulas.ts`, `game/port/character.ts`, `play/fight-sim.ts`, `play/floor.ts` |
+| `stock_level` | 2000:671e | `bestiary/roll.ts`, `map/stocking.ts` | `formulas/formulas.ts`, `game/port/character.ts`, `game/port/rules.ts`, `play/fight-sim.ts`, `play/floor.ts` |
 | `FUN_2000_7210` | 2000:7210 |  | `map/area.ts`, `play/memory.ts`, `play/zoom-map.ts` |
 | `FUN_2000_7277` | 2000:7277 |  | `play/memory.ts` |
 | `FUN_2000_72de` | 2000:72de |  | `game/port/state.ts`, `play/memory.ts` |
@@ -170,7 +170,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `level_up_screen` | 3000:955f | `game/port/hints.ts`, `game/port/levels.ts` |  |
 | `load_building_picture` | 3000:974d |  | `game/dotu-pic.js`, `play/building.ts` |
 | `show_spell_help` | 3000:a023 |  | `game/port/inventory.ts` |
-| `exp_value` | 3000:a0fa | `game/port/combat.ts` | `formulas/formulas.ts` |
+| `exp_value` | 3000:a0fa | `game/port/combat.ts` | `formulas/formulas.ts`, `game/port/rules.ts` |
 | `FUN_3000_a1c4` | 3000:a1c4 |  | `game/port/drops.ts`, `game/port/screens.ts`, `play/screens.ts` |
 | `drop_weapon` | 3000:a1fc | `game/port/drops.ts` | `formulas/formulas.ts`, `play/drop-odds.ts` |
 | `drop_armor` | 3000:a3d7 | `game/port/drops.ts` | `formulas/formulas.ts`, `map/game.ts`, `play/drop-odds.ts` |

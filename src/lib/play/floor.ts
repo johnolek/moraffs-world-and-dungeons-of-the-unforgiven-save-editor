@@ -1,7 +1,7 @@
 import { bossIndex, sectionOf } from '../game/dotu-files.js';
 import type { Rng } from '../game/port/rng';
 import type { Game, Monster } from '../game/port/state';
-import { MAP_EMPTY, MAP_PLAYER, monsterAt, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
+import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from '../game/port/state';
 import { WIDTH } from '../game/unfmap.js';
 import type { MapSquare } from '../map/game';
 import { MONSTER_SLOTS, stockFloor, type StockedMonster } from '../map/stocking';
@@ -207,7 +207,7 @@ function fractions(rng: Rng): () => number {
  * new one in, and sets the palette.
  */
 export function loadLevelMap(game: Game, floors: FloorMonsters, rows: MapSquare[][], level: number, rng: Rng): void {
-  game.monsterKinds = sectionMonsterKinds(sectionOf(game.pc.module, level));
+  game.monsterKinds = game.rules.monsterKinds(game.rules.sectionOf(game.pc.module, level));
   floors.stock(game, rows, level, rng);
 }
 
