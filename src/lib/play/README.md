@@ -91,8 +91,11 @@ something the original does, a comment says so.
   game hands its own picture in as a snippet.
 * **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`, `HudMonsterBar.svelte`** —
   what the map draws over itself: the monster being fought centred at the top, the spells the
-  character has running up the right edge, and along the foot a bar of dark stone with a health
-  orb and a spell orb standing in its ends and an experience bar between them. The spell list is
+  character has running up the right edge, the poison and the disease in them up the left, and
+  along the foot a bar of dark stone with a health orb and a spell orb standing in its ends and an
+  experience bar between them. The health orb's liquid is a duller, darker red while a poison is
+  in the character and a green while a disease is, and with both in them the poison fills its left
+  half and the disease its right. The spell list is
   `panel.ts`'s own lines, the ones the panel beside the map already reads, so resting on a spell
   shows the same word about it that the panel prints. None of it is a port of anything. The map is the site's own view of a game rather
   than a screen any game ever drew, so this is the site's own look; it takes no clicks and reads
