@@ -38,16 +38,17 @@ type GameData = typeof data;
  * `bottomLevel` is the table at exe DS:0493: 25, 45, 65, 85, 105. `sectionOf` is section_number3
  * (unf.c) and `monsterLevel` the base level stock_level (exe 2000:671e) rolls a floor's monsters
  * around, both of them in the reference bundle already. `experienceCap` is the level exp_value
- * (exe 3000:a0fa) stops counting at.
+ * (exe 3000:a0fa) stops counting at, `monsterKinds` what load_md_bin (exe 2000:5fec) reads for a
+ * section, and `pictureFiles` the two files load_section_pictures (exe 2000:372c) reads for one.
  */
 export function faithfulRules(data: GameData): GameRules {
   return {
     bottomLevel: (module) => data.constants.bottomLevel[module],
-    sectionOf: (module, floor) => sectionOf(module, floor),
+    sectionOf,
     monsterKinds: (section) => sectionMonsterKinds(data, section),
     experienceCap: data.constants.expValueLevelCap,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
-    pictureFiles: (section) => sectionPictures(section),
+    pictureFiles: sectionPictures,
   };
 }
 

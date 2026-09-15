@@ -46,7 +46,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `give_hint` | 2000:313a | `game/port/drops.ts`, `game/port/hints.ts` | `game/port/inventory.ts`, `game/port/magic.ts`, `game/port/state.ts`, `snake/situations.ts` |
 | `FUN_2000_31bc` | 2000:31bc | `game/port/hints.ts`, `play/arrival.ts` | `game/port/state.ts`, `game/port/town.ts`, `play/office.ts`, `snake/situations.ts` |
 | `load_overlay_pic` | 2000:3654 |  | `play/view3d/pictures.ts` |
-| `load_section_pictures` | 2000:372c | `game/port/pictures.ts` | `game/dotu-pic.js`, `play/tablet.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts` |
+| `load_section_pictures` | 2000:372c | `game/port/pictures.ts` | `game/dotu-pic.js`, `game/port/rules.ts`, `play/tablet.ts`, `play/view3d/pictures.ts`, `play/view3d/render.ts` |
 | `allocate_buffers` | 2000:3bc7 |  | `map/explored.ts` |
 | `reset_view_caches` | 2000:3d9b | `game/port/character.ts` | `game/port/magic.ts` |
 | `FUN_2000_3e73` | 2000:3e73 |  | `game/port/screens.ts`, `play/engine.ts`, `play/plaque.ts`, `play/timed.ts` |
