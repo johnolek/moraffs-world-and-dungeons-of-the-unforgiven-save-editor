@@ -49,7 +49,7 @@ reader gets from this code back to the game.
 | `HANDOFF.md` | 30K | The spec. What the tools are for, the game model, the file formats, and a formula sheet. Start here for the game as a whole. |
 | `docs/FUNCTION-CATALOG.md` | 63K | Every one of the 647 routines in `unf.exe`: address, name, size, callers, and what it does where that is known. 199 are named. |
 | `docs/PORTED-FROM.md` | 24K | Where the port plays each routine of `unf.exe`, which routines nothing points at, and which of those the game never calls either. Generated; do not edit. |
-| `docs/UNFORGIVEN-RE-NOTES.md` | 40K | The numbers and formulas recovered from the executable, with each one marked as read from the binary or only from the recovered source. |
+| `docs/UNFORGIVEN-RE-NOTES.md` | 48K | The numbers and formulas recovered from the executable, with each one marked as read from the binary or only from the recovered source. |
 | `docs/SCREEN.md` | 19K | What the game's screen is made of, read off a screenshot and the drawing code. |
 | `docs/PICTURES.md` | 18K | The 33 `.PIC` files, what is in each, and the two different rules the game scales and draws them by. |
 | `docs/MAP-MEMORY.md` | 17K | What the game remembers of a floor, when it writes it down, and which monsters you get to see. |

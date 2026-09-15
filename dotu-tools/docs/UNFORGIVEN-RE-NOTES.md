@@ -781,6 +781,133 @@ ticks, which is 5.2 seconds.
 `TIDBITS.md` section "Random numbers that are not random" writes the first and the third of
 these up, and the Tidbits tab has the first as "Swing on the beat".
 
+### 8.4 Which rolls go through `Random`
+
+Every call to `Random` (2000:4156) and every inline `rand` (1000:18b6) in the game's own code
+segments — 2000 WORLD, 3000 TOWN/MAGICFNC/CAT, 4000 DISP — read out of the instruction stream of
+the unpacked executable rather than out of the decompilation, because Ghidra's C loses a call here
+and there (§METHOD 8 is how the instructions are printed).  Fifty calls go through `Random` and
+162 rolls are written inline.  `Random`'s own `rand` at 2000:418c is left out of both counts: it
+is the value `Random` hands back.  Routines that roll nothing are left out of the table, and
+nothing in segments 5000 and up rolls at all.
+
+| routine | `Random` calls | inline rolls | where the `Random` calls are |
+|---|---|---|---|
+| `FUN_2000_31bc` (2000:31bc) | 0 | 2 | — |
+| `temple` (2000:4d39) | 0 | 5 | — |
+| `main` (2000:620f) | 0 | 1 | — |
+| `get_mtype` (2000:65f8) | 1 | 7 | 6601 |
+| `stock_level` (2000:671e) | 1 | 11 | 6939 |
+| `FUN_2000_77ae` (2000:77ae) | 0 | 1 | — |
+| `FUN_2000_7800` (2000:7800) | 0 | 1 | — |
+| `FUN_2000_7832` (2000:7832) | 0 | 1 | — |
+| `strike` (2000:7e36) | 0 | 8 | — |
+| `defend` (2000:82b7) | 3 | 12 | 84ee 8817 8902 |
+| `FUN_2000_9232` (2000:9232) | 1 | 0 | 9248 |
+| `call_check_eng` (2000:a319) | 0 | 1 | — |
+| `pass_moment` (2000:a53c) | 0 | 4 | — |
+| `use_magic_item` (2000:b202) | 2 | 0 | b2b9 b2cd |
+| `attack_timing` (2000:b8f7) | 1 | 2 | b9a6 |
+| `FUN_2000_bce5` (2000:bce5) | 0 | 1 | — |
+| `trapdoor_dest` (2000:bda6) | 0 | 2 | — |
+| `movecontrol` (2000:c308) | 1 | 2 | dd45 |
+| `draw_3d_view` (3000:0f75) | 0 | 3 | — |
+| `roll_char` (3000:4c77) | 0 | 13 | — |
+| `random_events_tick` (3000:6e85) | 1 | 2 | 6ed2 |
+| `FUN_3000_8d7e` (3000:8d7e) | 0 | 4 | — |
+| `title_screen` (3000:99bf) | 4 | 5 | 9e1e 9e33 9f02 9f17 |
+| `drop_weapon` (3000:a1fc) | 0 | 2 | — |
+| `drop_armor` (3000:a3d7) | 0 | 2 | — |
+| `drop_spellbook` (3000:a65d) | 2 | 4 | a68a a6a9 |
+| `drop_scroll` (3000:a870) | 1 | 4 | a8a0 |
+| `drop_wand` (3000:aa37) | 1 | 6 | aa5b |
+| `drop_paper` (3000:ac6f) | 1 | 5 | ac8c |
+| `find_item` (3000:ae27) | 0 | 1 | — |
+| `post_kill_heal` (3000:afc5) | 0 | 3 | — |
+| `post_kill_sp` (3000:b063) | 0 | 1 | — |
+| `kill_monster` (3000:b12d) | 1 | 5 | b4c2 |
+| `go_up_level` (3000:bd9a) | 0 | 7 | — |
+| `go_down_level` (3000:c093) | 0 | 7 | — |
+| `explosion` (3000:d818) | 3 | 0 | d864 d87a d890 |
+| `sleep_monster` (3000:d904) | 1 | 0 | d93c |
+| `relocate` (3000:da2c) | 2 | 0 | da47 da56 |
+| `go_away` (3000:db1e) | 2 | 0 | db7d db9c |
+| `autokill` (3000:dc18) | 5 | 0 | dc83 dc8f dca0 dcaf dcbc |
+| `spell_effect` (3000:e1b8) | 16 | 0 | e60e e721 e730 e7ff e80e e976 ea37 ea46 ebb2 ebc1 ecfa ed09 f083 f1c8 f4e7 f625 |
+| `set_palette` (4000:12c3) | 0 | 16 | — |
+| `drop_money` (4000:6aca) | 0 | 11 | — |
+| **total** | **50** | **162** | |
+
+`main`'s single inline roll, at 2000:63cc, is the one that starts `DS:c609` rather than a roll of
+play; §8.1 has it.  `FUN_3000_8d7e`'s eight are unreachable, since nothing calls that function.
+
+`spell_effect`'s sixteen are five spells and five landings: `Random(wis)` at e60e and
+`Random(wis * 4)` at e976 and f4e7 are the three cures, `Random(5)` at f083, f1c8 and f625 are the
+missile loops of Magic Zot (twice — it is in both battle lists) and Magic Bolt, and the five pairs
+e721/e730, e7ff/e80e, ea37/ea46, ebb2/ebc1 and ecfa/ed09 are `Random(79)` and `Random(104)`, the
+square each of the five floor-changing spells drops the character on.
+
+### 8.5 Where the port rolls them
+
+Every roll site in `src/lib/game/port/` and `src/lib/play/` that plays Dungeons of the Unforgiven,
+against the calls above.  Which column a site falls in is what decides whether the port reseeds
+before it: a `Random` roll starts a new sequence from the clock, an inline roll carries on from
+the last seed.
+
+| port | plays | `Random` | inline |
+|---|---|---|---|
+| `character.ts` `rollCharacteristics`, `rollChar` | `roll_char` | 0 | 13 |
+| `combat.ts` `strike` | `strike` | 0 | 8 |
+| `combat.ts` `defend` | `defend` | 2 (84ee 8817) | 12 |
+| `combat.ts` `breathe` | `defend`'s breath | 1 (8902) | 0 |
+| `combat.ts` `callCheckEng` | `call_check_eng` | 0 | 1 |
+| `combat.ts` `attackTiming` | `attack_timing` | 1 (b9a6) | 2 |
+| `combat.ts` `goDownLevel` | `go_down_level` | 0 | 7 |
+| `drops.ts` `dropWeapon` | `drop_weapon` | 0 | 2 |
+| `drops.ts` `dropArmor` | `drop_armor` | 0 | 2 |
+| `drops.ts` `dropSpellbook` | `drop_spellbook` | 2 (a68a a6a9) | 4 |
+| `drops.ts` `dropScroll` | `drop_scroll` | 1 (a8a0) | 4 |
+| `drops.ts` `dropWand` | `drop_wand` | 1 (aa5b) | 6 |
+| `drops.ts` `dropPaper` | `drop_paper` | 1 (ac8c) | 5 |
+| `drops.ts` `findItem` | `find_item` | 0 | 1 |
+| `drops.ts` `postKillHeal` | `post_kill_heal` | 0 | 3 |
+| `drops.ts` `postKillSp` | `post_kill_sp` | 0 | 1 |
+| `drops.ts` `dropMoney` | `drop_money` | 0 | 11 |
+| `drops.ts` `useMagicItem` | `use_magic_item` | 2 (b2b9 b2cd) | 0 |
+| `hints.ts` `hintOnArrival` | `FUN_2000_31bc` | 0 | 2 |
+| `kills.ts` `drainerBonus`, `killMonster` | `kill_monster` | 1 (b4c2) | 5 |
+| `kills.ts` `playerDies` | `FUN_2000_9232` | 1 (9248) | 0 |
+| `levels.ts` `goUpLevel` | `go_up_level` | 0 | 7 |
+| `magic.ts` `explosion` | `explosion` | 3 | 0 |
+| `magic.ts` `sleepMonster` | `sleep_monster` | 1 | 0 |
+| `magic.ts` `relocateSpell` | `relocate` | 2 | 0 |
+| `magic.ts` `goAway` | `go_away` | 2 | 0 |
+| `magic.ts` `autokill` | `autokill` | 5 | 0 |
+| `magic.ts` `cure`, `bigCure`, `fastBigCure` | `spell_effect` e60e e976 f4e7 | 3 | 0 |
+| `magic.ts` `magicZot`, `magicBolt` | `spell_effect` f083 f625 f1c8 | 2 | 0 |
+| `magic.ts` `changeFloorTo` | `spell_effect`'s five landings | 2 | 0 |
+| `moment.ts` `passMoment` | `pass_moment` | 0 | 4 |
+| `moment.ts` `arriveSquare` | `FUN_2000_bce5` | 0 | 1 |
+| `moment.ts` `relocate` | `relocate` | 2 | 0 |
+| `town.ts` `temple` | `temple` | 0 | 5 |
+| `play/floor.ts` `fractions` | `stock_level`'s rolls | 0 | 1 |
+| `play/move.ts` `resolveStep` | `movecontrol` | 1 (dd45) | 2 |
+
+Four of those rows are not one port site per call of the game.  `magicZot` is one function for
+both of the game's copies of the spell, and `changeFloorTo` is one pair of rolls for all five
+landings, so eleven of `spell_effect`'s sixteen calls are played by seven sites.  `relocate` is
+ported twice over, once in `moment.ts` and once in `magic.ts`, so two calls of the game have four
+sites.  And `play/floor.ts`'s `fractions` is not one roll but the whole of `stock_level`: the
+stocking in `src/lib/map/stocking.ts` draws fractions rather than rolls, so its twelve calls have
+no site of their own here.
+
+What the port has no site for: `get_mtype` and `stock_level` (a floor is stocked through
+`fractions` above), `random_events_tick` and `title_screen`, `set_palette`'s palette fade,
+`FUN_2000_77ae`, `FUN_2000_7800`, `FUN_2000_7832` and the unreachable `FUN_3000_8d7e`.
+`trapdoor_dest`'s two rolls are in `src/lib/game/unfmap.js`, which is a verbatim copy of the
+reference bundle rather than part of the port, and `draw_3d_view`'s three coin flips are the
+mirrored wall faces, which `src/lib/play/view3d/render.ts` draws from a fraction the scene carries.
+
 ---
 
 ## 9. Files in this folder
