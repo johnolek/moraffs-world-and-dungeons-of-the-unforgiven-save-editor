@@ -19,7 +19,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | routine | address | named in | mentioned in |
 |---|---|---|---|
 | `ftol` | 1000:115b |  | `play/view3d/geometry.ts` |
-| `FUN_1000_11b4` | 1000:11b4 |  | `game/port/state.ts` |
+| `FUN_1000_11b4` | 1000:11b4 |  | `game/port/state.ts`, `play/run.ts` |
 | `N_LDIV` | 1000:1558 |  | `play/view3d/flood.ts` |
 | `srand` | 1000:18a5 |  | `game/port/rng.ts` |
 | `rand` | 1000:18b6 |  | `game/port/rng.ts` |

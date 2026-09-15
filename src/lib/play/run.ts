@@ -20,9 +20,12 @@ import { moraffsRevengeJournal } from './rev/journal';
  * record as play began, the seed the generator was started from, and the keys that were pressed,
  * in order. Moraff's Revenge is not turn based, and the answer is the same shape: the ticks of
  * the clock its monsters move on are written into the log as inputs of their own, so a replay
- * makes the same number of them in the same places and needs no clock. Running the same engine
- * over the three again reproduces the whole game, which is what lets a claimed ending be checked
- * rather than believed. `replayRun` is the check.
+ * makes the same number of them in the same places and needs no clock. A game of Dungeons of the
+ * Unforgiven played on the clock, which reseeds from the machine's tick counter the way the
+ * original does, answers it the same way again: what the counter read is written into the log
+ * ahead of the input it was read for ({@link CLOCK_TICK_INPUT}). Running the same engine over
+ * the lot again reproduces the whole game, which is what lets a claimed ending be checked rather
+ * than believed. `replayRun` is the check.
  *
  * A character is played more than once, and its run is all of those sittings: a chain of
  * sessions, each starting from the record the one before it left behind, with the count of
@@ -60,6 +63,52 @@ export const TURN_INPUTS = [-0x101, -0x102, -0x103, -0x104];
 /** Which facing a turn input asks for, or -1 for an input that is an ordinary key. */
 export function turnedTo(input: number): number {
   return TURN_INPUTS.indexOf(input);
+}
+
+/** How many times a second the PC's tick counter counts (exe 1000:11b4). */
+export const TICKS_A_SECOND = 18.2;
+
+/**
+ * Not a key: what the PC's tick counter read at the moment the input after it was made, which a
+ * run played on the clock writes down ahead of every one of its inputs.
+ *
+ * Dungeons of the Unforgiven reseeds its generator from that counter before a swing, so what the
+ * swing rolls is the reading rather than the next number of any sequence (section 8 of
+ * `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md`). A replay has to roll off the readings the player's
+ * swings rolled off, so the readings are in the log, the way Moraff's Revenge keeps the ticks its
+ * monsters move on ({@link REV_CLOCK_TICK}).
+ *
+ * A reading carries a number, which is how far below this the input sits: the counter is counted
+ * from the start of the sitting, so a reading is never negative and the inputs it writes are
+ * never above this. Keys are well inside -0x100 to 0xff, the turn inputs above are at -0x101 to
+ * -0x104, and the -0x201 a record edit answers a wait with is no input at all, so an input at or
+ * below this is a reading and nothing else.
+ */
+export const CLOCK_TICK_INPUT = -0x1000;
+
+/** One reading of the tick counter, as the log holds it. */
+export function clockTickInput(tick: number): number {
+  return CLOCK_TICK_INPUT - tick;
+}
+
+/** The tick an input is a reading of, or -1 for an input the game was really given. */
+export function tickRead(input: number): number {
+  return input <= CLOCK_TICK_INPUT ? CLOCK_TICK_INPUT - input : -1;
+}
+
+/**
+ * The tick counter of the machine this sitting is being played on: how many 1/18.2 of a second
+ * have gone by since the sitting began, from `performance.now()`.
+ *
+ * The original's counter is the BIOS one, which counts from the machine being switched on, less
+ * the reading the game took as it started. Counting from the start of the sitting is what makes a
+ * reading in a log mean something on its own — the 100th tick is the 100th tick of that sitting,
+ * whenever the sitting was — and a reseed does the same thing to a swing wherever the number was
+ * counted from.
+ */
+export function sittingClock(): () => number {
+  const began = performance.now();
+  return () => Math.floor(((performance.now() - began) * TICKS_A_SECOND) / 1000);
 }
 
 /**
@@ -265,6 +314,16 @@ export interface RunStart {
    * otherwise make up for itself — Ctrl-F's own swings — is taken from the log instead.
    */
   replaying?: boolean;
+  /**
+   * The tick counter the run is played on, read before every input and written into the log
+   * beside it, or null for a run played off the clock.
+   *
+   * A run played on the clock is one where the game reseeds from the counter the way the
+   * original does, which is what `Game.clock` decides for a game
+   * (`src/lib/game/port/state.ts`). {@link sittingClock} is the counter a sitting is played on;
+   * a replay reads the log's own readings back instead, and a test scripts them.
+   */
+  tickCounter?: (() => number) | null;
 }
 
 /** What a run had come to before it had been played at all. */
@@ -361,6 +420,11 @@ export class RunRecorder {
    */
   readonly entries: JournalEntry[] = [];
 
+  /** The tick counter the run is played on, or null for a run played off the clock. */
+  private readonly tickCounter: (() => number) | null;
+  /** What the counter read before the input the game is handling now. */
+  private lastTick = 0;
+
   /** Where the game has got to, which stamps a milestone. Null until the session hands it over. */
   private clock: (() => RunClock) | null = null;
   /** The events the game's ported functions push, and how many of them have been read. */
@@ -383,7 +447,20 @@ export class RunRecorder {
     this.before = start.before ?? nothingYet();
     this.actions = this.before.actions;
     this.replaying = start.replaying ?? false;
+    this.tickCounter = start.tickCounter ?? null;
     this.rng = new SeededRng(this.seed);
+  }
+
+  /**
+   * What `Game.clock` is handed for a run played on the clock, and null for one that is not,
+   * which leaves the game drawing its own numbers.
+   *
+   * It answers the reading taken before the input the game is handling, and answers the same one
+   * for everything that input does. The original reads the counter afresh at every reseed, and a
+   * counter that moves 18.2 times a second has not moved between two reseeds of one key.
+   */
+  gameClock(): (() => number) | null {
+    return this.tickCounter === null ? null : () => this.lastTick;
   }
 
   /**
@@ -401,6 +478,7 @@ export class RunRecorder {
 
   /** A key on its way into the game, pressed by the player. */
   input(key: number): void {
+    this.readTheClock();
     this.inputs.push(key);
     this.presses += 1;
   }
@@ -408,14 +486,30 @@ export class RunRecorder {
   /** An input the game made for itself rather than reading: Ctrl-F's own swings and Moraff's
    *  Revenge's clock ticks, which are in the log so that a replay makes the same ones. */
   unpressed(key: number): void {
+    this.readTheClock();
     this.inputs.push(key);
   }
 
   /** Moraff's World's turn where the character stands, which is no key of the game's. It is an
    *  arrow the player pressed all the same. */
   turned(dir: number): void {
+    this.readTheClock();
     this.inputs.push(TURN_INPUTS[dir]);
     this.presses += 1;
+  }
+
+  /**
+   * The reading the tick counter takes before an input, which goes into the log ahead of that
+   * input ({@link CLOCK_TICK_INPUT}). A run played off the clock takes none and its log holds
+   * only the inputs.
+   *
+   * Nobody pressed a reading, so it is no part of {@link presses}: what that counts is the keys
+   * a person really pressed.
+   */
+  private readTheClock(): void {
+    if (this.tickCounter === null) return;
+    this.lastTick = this.tickCounter();
+    this.inputs.push(clockTickInput(this.lastTick));
   }
 
   /**

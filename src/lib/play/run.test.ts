@@ -17,6 +17,7 @@ import { runFileName } from './export-run';
 import type { StoredMaps } from './memory';
 import {
   actionWords,
+  clockTickInput,
   ENGINE_COMMIT,
   isRunGame,
   lastMilestones,
@@ -29,6 +30,7 @@ import {
   RUN_LOG_VERSION,
   runLogOf,
   runTotals,
+  tickRead,
   TURN_INPUTS,
   type Milestone,
   type RunSession,
@@ -41,6 +43,7 @@ function recordedGame(
   overrides: Parameters<typeof characterFile>[0] = {},
   seed = 12345,
   before?: RunTotals,
+  tickCounter?: () => number,
 ): { run: RunRecorder; session: GameSession; record: Uint8Array; file: CharacterFile } {
   const file = characterFile(overrides);
   const record = file.bytes.slice();
@@ -51,6 +54,7 @@ function recordedGame(
     seed,
     startedAt: '2026-09-07T00:00:00.000Z',
     before,
+    tickCounter,
   });
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
@@ -197,6 +201,31 @@ describe('the run log', () => {
 
     expect(run.log().inputs.filter((input) => input === REV_CLOCK_TICK)).toHaveLength(2);
     expect(run.presses).toBe(1);
+  });
+
+  it('writes down what the tick counter read before every input of a run played on the clock', async () => {
+    let tick = 100;
+    const { run, session } = recordedGame({}, 12345, undefined, () => (tick += 1));
+    await press(session, KEY.arrowUp);
+    await press(session, KEY.arrowLeft);
+    session.finish();
+
+    expect(run.log().inputs).toEqual([
+      clockTickInput(101),
+      KEY.arrowUp,
+      clockTickInput(102),
+      KEY.arrowLeft,
+    ]);
+    // Nobody pressed a reading, so the count of the keys a person pressed is the two keys.
+    expect(run.presses).toBe(2);
+  });
+
+  it('tells a reading of the tick counter from an input the game was really given', () => {
+    expect(tickRead(clockTickInput(0))).toBe(0);
+    expect(tickRead(clockTickInput(65535))).toBe(65535);
+    for (const input of [KEY.arrowUp, KEY.escape, KEY.fight, -0x100, 0xff, ...TURN_INPUTS, REV_CLOCK_TICK]) {
+      expect(tickRead(input)).toBe(-1);
+    }
   });
 
   it("writes down Moraff's World's turn where the character stands", async () => {
