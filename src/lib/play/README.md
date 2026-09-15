@@ -181,7 +181,11 @@ played, so that a claimed ending can be checked by playing it again rather than 
   `performance.now()` — and reads it before every input it writes down, putting the reading in the
   log ahead of that input, the way Moraff's Revenge keeps the ticks its monsters move on: an input
   at or below `CLOCK_TICK_INPUT` is a reading and the tick is how far below it sits, which no key
-  and no turn input comes near. The game is handed that reading as its `Game.clock` for the whole
+  and no turn input comes near. Three of the game's reseeds take the DOS clock in seconds rather
+  than the tick counter, so the log also keeps the wall-clock second the sitting began in, once,
+  ahead of everything else: an input at or above `CLOCK_SECOND_INPUT` is that second, which is in
+  the billions and so cannot be mistaken for a key. `time()` for any input is that second plus the
+  input's tick divided by 18.2. The game is handed that reading as its `Game.clock` for the whole
   of the input it is handling, and is rolled with `BorlandRng`, since what the original gets out
   of a reseed is Borland's generator answering the counter. A replay is played on a counter made
   of the log's own readings, handed back in the order they were taken, so it rolls what the player

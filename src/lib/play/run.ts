@@ -23,9 +23,11 @@ import { moraffsRevengeJournal } from './rev/journal';
  * makes the same number of them in the same places and needs no clock. A game of Dungeons of the
  * Unforgiven played on the clock, which reseeds from the machine's tick counter the way the
  * original does, answers it the same way again: what the counter read is written into the log
- * ahead of the input it was read for ({@link CLOCK_TICK_INPUT}). Running the same engine over
- * the lot again reproduces the whole game, which is what lets a claimed ending be checked rather
- * than believed. `replayRun` is the check.
+ * ahead of the input it was read for ({@link CLOCK_TICK_INPUT}), and the wall-clock second the
+ * sitting began in goes in once at the top ({@link CLOCK_SECOND_INPUT}), since three of the
+ * game's reseeds take the second rather than the tick. Running the same engine over the lot again
+ * reproduces the whole game, which is what lets a claimed ending be checked rather than believed.
+ * `replayRun` is the check.
  *
  * A character is played more than once, and its run is all of those sittings: a chain of
  * sessions, each starting from the record the one before it left behind, with the count of
@@ -97,6 +99,37 @@ export function tickRead(input: number): number {
 }
 
 /**
+ * Not a key: the wall-clock second the sitting began, which a run played on the clock writes down
+ * once, ahead of everything else in its log.
+ *
+ * Three of the game's reseeds take `time()` rather than the tick counter — the money a kill drops,
+ * the character roller and the stocking of a floor — and `time()` only changes once a second, so
+ * two kills in the same second drop the same money. A sitting reads the wall clock once and works
+ * the rest out from the tick counter, which is what {@link RunRecorder.gameSeconds} does, and this
+ * is the one reading a replay needs to arrive at the same seconds.
+ *
+ * A reading carries the second above this. Seconds since 1970 are in the billions, and every key
+ * of the two games is between -0x100 and 0xff, so an input at or above this is the second the
+ * sitting began and nothing else.
+ */
+export const CLOCK_SECOND_INPUT = 0x100;
+
+/** The second a sitting began, as the log holds it. */
+export function clockSecondInput(second: number): number {
+  return CLOCK_SECOND_INPUT + second;
+}
+
+/** The second an input is a reading of, or -1 for an input the game was really given. */
+export function secondRead(input: number): number {
+  return input >= CLOCK_SECOND_INPUT ? input - CLOCK_SECOND_INPUT : -1;
+}
+
+/** Whether an input of a log is a reading of a clock rather than something the game was given. */
+export function isClockReading(input: number): boolean {
+  return tickRead(input) >= 0 || secondRead(input) >= 0;
+}
+
+/**
  * The tick counter of the machine this sitting is being played on: how many 1/18.2 of a second
  * have gone by since the sitting began, from `performance.now()`.
  *
@@ -109,6 +142,11 @@ export function tickRead(input: number): number {
 export function sittingClock(): () => number {
   const began = performance.now();
   return () => Math.floor(((performance.now() - began) * TICKS_A_SECOND) / 1000);
+}
+
+/** The wall-clock second a sitting begins in, which is the one `time()` reading its log keeps. */
+export function sittingSecond(): number {
+  return Math.floor(Date.now() / 1000);
 }
 
 /**
@@ -324,6 +362,12 @@ export interface RunStart {
    * a replay reads the log's own readings back instead, and a test scripts them.
    */
   tickCounter?: (() => number) | null;
+  /**
+   * The wall-clock second the sitting began, which the game's `time()` counts on from. It is only
+   * read for a run played on the clock, and such a run writes it into its log
+   * ({@link CLOCK_SECOND_INPUT}); a replay hands back the one the log holds, and a test scripts it.
+   */
+  startedSecond?: number;
 }
 
 /** What a run had come to before it had been played at all. */
@@ -430,6 +474,8 @@ export class RunRecorder {
   private readonly tickCounter: (() => number) | null;
   /** What the counter read before the input the game is handling now. */
   private lastTick = 0;
+  /** The wall-clock second the sitting began, which the game's `time()` counts on from. */
+  private readonly startedSecond: number;
 
   /** Where the game has got to, which stamps a milestone. Null until the session hands it over. */
   private clock: (() => RunClock) | null = null;
@@ -455,6 +501,10 @@ export class RunRecorder {
     this.replaying = start.replaying ?? false;
     this.tickCounter = start.tickCounter ?? null;
     this.rng = this.tickCounter === null ? new SeededRng(this.seed) : new BorlandRng(this.seed);
+    this.startedSecond = start.startedSecond ?? sittingSecond();
+    // The floor the character wakes on is stocked before a key is ever pressed, so the reading
+    // goes in as the log is opened rather than in front of the first input.
+    if (this.tickCounter !== null) this.inputs.push(clockSecondInput(this.startedSecond));
   }
 
   /**
@@ -467,6 +517,19 @@ export class RunRecorder {
    */
   gameClock(): (() => number) | null {
     return this.tickCounter === null ? null : () => this.lastTick;
+  }
+
+  /**
+   * What `Game.seconds` is handed for a run played on the clock, and null for one that is not.
+   *
+   * The original reads the DOS clock, which is the same clock the BIOS tick counter is driven
+   * by; here the sitting's own counter is what says how far into the sitting an input is, so the
+   * second is the one the sitting began in plus the ticks divided by 18.2. Both numbers are in
+   * the log, so a replay answers the same seconds the sitting did.
+   */
+  gameSeconds(): (() => number) | null {
+    if (this.tickCounter === null) return null;
+    return () => this.startedSecond + Math.trunc(this.lastTick / TICKS_A_SECOND);
   }
 
   /**
@@ -709,6 +772,7 @@ export async function replayRun(recorded: RunSession, before?: RunTotals): Promi
     before,
     replaying: true,
     tickCounter: countedTicks(recorded),
+    startedSecond: recordedSecond(recorded),
   });
   return RUN_GAMES[recorded.game].replay(recorded, run);
 }
@@ -732,6 +796,18 @@ function countedTicks(recorded: RunSession): (() => number) | null {
     if (at >= ticks.length) throw new Error('The log holds fewer readings of the tick counter than inputs.');
     return ticks[at++];
   };
+}
+
+/**
+ * The wall-clock second the sitting the log describes began in, which its `time()` reseeds
+ * counted on from.
+ *
+ * A log with no such reading is a run played off the clock, which reseeds nothing and asks its
+ * replay for no seconds; the number handed back there is never read.
+ */
+function recordedSecond(recorded: RunSession): number {
+  const second = recorded.inputs.map(secondRead).find((reading) => reading >= 0);
+  return second ?? 0;
 }
 
 /** Let the loop take what it has been given and come back to waiting for the next key. */
@@ -763,9 +839,9 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
   await loopRuns();
   for (const input of recorded.inputs) {
     if (session.over) break;
-    // A reading of the tick counter is no key: the run takes it back off the log as it writes
-    // the log again, and hands it to the game as the clock of the key it stands in front of.
-    if (tickRead(input) >= 0) continue;
+    // A reading of either clock is no key: the run takes it back off the log as it writes the log
+    // again, and hands it to the game as the clock of the key it stands in front of.
+    if (isClockReading(input)) continue;
     session.press(input);
     await loopRuns();
   }

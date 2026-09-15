@@ -580,6 +580,19 @@ export interface Game {
    */
   clock: (() => number) | null;
   /**
+   * time (exe 1000:1d12): the DOS date and time turned into seconds. `srand` keeps only the low
+   * sixteen bits of it, so a seed taken from it changes once a second and no faster.
+   *
+   * Three routines seed from this rather than from the tick counter: the money a kill drops
+   * (`drop_money`, exe 4000:6b24), the character roller (`roll_char`, exe 3000:5447) and
+   * `stock_level` (exe 2000:6737). Two kills in the same second therefore pay exactly the same,
+   * and two characters rolled in the same second come out identical.
+   *
+   * Null wherever {@link clock} is null, and a game handed one is handed the other: a sitting
+   * reads both off the same moment, so a replay of its log agrees with what was played.
+   */
+  seconds: (() => number) | null;
+  /**
    * DS:c609, the running total every `Random` call adds a reading of the clock to and seeds
    * itself from (exe 2000:4170). It is a word in the original, so it wraps at 0x10000.
    *
@@ -969,6 +982,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     menuBox: [],
     rng: new BorlandRng(1),
     clock: null,
+    seconds: null,
     randomTotal: 0,
     solid: () => false,
     retdwall: () => 3,

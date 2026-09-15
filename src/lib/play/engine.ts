@@ -393,6 +393,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       // tick counter its log carries; a run played off the clock has none and the game draws its
       // own numbers, which is the README's third departure.
       clock: run?.gameClock() ?? null,
+      seconds: run?.gameSeconds() ?? null,
       solid: (x, y, level, module) => bundledDungeon.solid(x, y, level, module),
       retdwall: (x, y, hv, level, module) => bundledDungeon.side(x, y, hv as 0 | 1, level, module),
       markKnown: (x, y) => this.memory.markKnown(x, y),

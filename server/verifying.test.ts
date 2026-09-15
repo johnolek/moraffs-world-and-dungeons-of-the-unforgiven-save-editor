@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { tickRead, type Milestone, type RunLog, type RunSession } from '../src/lib/play/run';
+import { isClockReading, type Milestone, type RunLog, type RunSession } from '../src/lib/play/run';
 import { firstSwingsReading, unforgivenClockedRun } from '../src/lib/play/test-clocked-run';
 import type { JournalEntry } from '../src/lib/play/journal';
 import { verifyRun, verifySession, type RunVerdict } from '../src/lib/play/verify';
@@ -708,7 +708,7 @@ describe('a run played on the clock', () => {
       sessionIndex: 0,
       sequence: 0,
       inputs,
-      pressed: inputs.filter((input) => tickRead(input) === -1).length,
+      pressed: inputs.filter((input) => !isClockReading(input)).length,
       ending: true,
       claims: { mode: log.mode, actions: log.actions, time: log.time, edits: log.edits, milestones: log.milestones },
       session: {

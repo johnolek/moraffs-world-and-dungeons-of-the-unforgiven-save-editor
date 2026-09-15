@@ -13,7 +13,7 @@ column or the other, not both.
 Tests, test helpers, fixtures and the Source tab's own files are left out, since they quote
 citations rather than make them. What each routine does is in `FUNCTION-CATALOG.md`.
 
-240 of the 647 routines are pointed at. Files are named from
+241 of the 647 routines are pointed at. Files are named from
 `src/lib/`.
 
 | routine | address | named in | mentioned in |
@@ -23,6 +23,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `N_LDIV` | 1000:1558 |  | `play/view3d/flood.ts` |
 | `srand` | 1000:18a5 |  | `game/port/rng.ts` |
 | `rand` | 1000:18b6 |  | `game/port/rng.ts` |
+| `FUN_1000_1d12` | 1000:1d12 |  | `game/port/state.ts` |
 | `FUN_1000_1d8b` | 1000:1d8b | `game/port/screens.ts` |  |
 | `FUN_1000_2789` | 1000:2789 |  | `game/port/sound.ts`, `game/port/state.ts`, `play/engine.ts`, `play/fade.ts`, `play/plaque.ts`, `play/timed.ts` |
 | `FUN_1000_3385` | 1000:3385 |  | `play/session.ts` |
@@ -73,7 +74,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `monster_at` | 2000:65b0 | `game/port/state.ts` |  |
 | `set_monster_map` | 2000:65dc | `game/port/state.ts` |  |
 | `get_mtype` | 2000:65f8 |  | `formulas/formulas.ts` |
-| `stock_level` | 2000:671e | `bestiary/roll.ts`, `map/stocking.ts` | `formulas/formulas.ts`, `game/port/character.ts`, `game/port/rules.ts`, `play/fight-sim.ts`, `play/floor.ts` |
+| `stock_level` | 2000:671e | `bestiary/roll.ts`, `map/stocking.ts` | `formulas/formulas.ts`, `game/port/character.ts`, `game/port/rules.ts`, `game/port/state.ts`, `play/fight-sim.ts`, `play/floor.ts` |
 | `FUN_2000_7210` | 2000:7210 |  | `map/area.ts`, `play/memory.ts`, `play/zoom-map.ts` |
 | `FUN_2000_7277` | 2000:7277 |  | `play/memory.ts` |
 | `FUN_2000_72de` | 2000:72de |  | `game/port/state.ts`, `play/memory.ts` |
@@ -255,7 +256,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_4000_5b91` | 4000:5b91 |  | `play/boss-office.ts`, `play/engine.ts`, `play/fade.ts`, `play/tablet.ts` |
 | `FUN_4000_5c25` | 4000:5c25 |  | `play/engine.ts`, `play/fade.ts` |
 | `FUN_4000_667b` | 4000:667b | `play/display.ts` | `play/view3d/menu-font.ts`, `play/view3d/text.ts` |
-| `drop_money` | 4000:6aca | `game/port/drops.ts` | `formulas/formulas.ts` |
+| `drop_money` | 4000:6aca | `game/port/drops.ts` | `formulas/formulas.ts`, `game/port/state.ts` |
 | `module_transition_screen` | 4000:771b |  | `play/Screen.svelte`, `play/engine.ts`, `play/modules.ts`, `play/tunnel.ts` |
 | `draw_line` | 5000:07eb |  | `play/view3d/frame.ts` |
 
@@ -300,5 +301,5 @@ does is in `FUNCTION-CATALOG.md`.
 | `set_ega_colour` | 4000:102d | `FUN_2000_1b61`, `set_palette` |
 | `num_to_string` | 4000:5a87 | `store_refund`, `show_money`, `g_store`, `temple`, `view_prep_spells`, `view_battle_spells`, `engagement_timing`, `FUN_3000_7545`, `view_stats`, `FUN_3000_caac` |
 
-Also uncited: 361 routines Ghidra could not name, and 28 named routines of
+Also uncited: 360 routines Ghidra could not name, and 28 named routines of
 the Borland runtime in segment 1000.

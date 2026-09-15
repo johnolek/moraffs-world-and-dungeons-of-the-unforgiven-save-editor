@@ -18,6 +18,7 @@ import { runFileName } from './export-run';
 import type { StoredMaps } from './memory';
 import {
   actionWords,
+  clockSecondInput,
   clockTickInput,
   ENGINE_COMMIT,
   isRunGame,
@@ -31,6 +32,7 @@ import {
   RUN_LOG_VERSION,
   runLogOf,
   runTotals,
+  secondRead,
   tickRead,
   TURN_INPUTS,
   type Milestone,
@@ -45,6 +47,7 @@ function recordedGame(
   seed = 12345,
   before?: RunTotals,
   tickCounter?: () => number,
+  startedSecond?: number,
 ): { run: RunRecorder; session: GameSession; record: Uint8Array; file: CharacterFile } {
   const file = characterFile(overrides);
   const record = file.bytes.slice();
@@ -56,6 +59,7 @@ function recordedGame(
     startedAt: '2026-09-07T00:00:00.000Z',
     before,
     tickCounter,
+    startedSecond,
   });
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
@@ -206,12 +210,13 @@ describe('the run log', () => {
 
   it('writes down what the tick counter read before every input of a run played on the clock', async () => {
     let tick = 100;
-    const { run, session } = recordedGame({}, 12345, undefined, () => (tick += 1));
+    const { run, session } = recordedGame({}, 12345, undefined, () => (tick += 1), 1_757_000_000);
     await press(session, KEY.arrowUp);
     await press(session, KEY.arrowLeft);
     session.finish();
 
     expect(run.log().inputs).toEqual([
+      clockSecondInput(1_757_000_000),
       clockTickInput(101),
       KEY.arrowUp,
       clockTickInput(102),
@@ -219,6 +224,26 @@ describe('the run log', () => {
     ]);
     // Nobody pressed a reading, so the count of the keys a person pressed is the two keys.
     expect(run.presses).toBe(2);
+  });
+
+  it('writes the second the sitting began down once, before anything is played', () => {
+    const { run, session } = recordedGame({}, 12345, undefined, () => 3, 1_757_000_000);
+    session.finish();
+
+    expect(run.log().inputs).toEqual([clockSecondInput(1_757_000_000)]);
+    expect(run.presses).toBe(0);
+  });
+
+  it("answers time() with the sitting's second plus the ticks that have gone by", async () => {
+    let tick = 0;
+    const { session } = recordedGame({}, 12345, undefined, () => (tick += 91), 1_757_000_000);
+
+    // 91 ticks is five seconds of the 18.2 a second the counter counts, and 182 is ten.
+    await press(session, KEY.arrowUp);
+    expect(session.game.seconds?.()).toBe(1_757_000_005);
+    await press(session, KEY.arrowLeft);
+    expect(session.game.seconds?.()).toBe(1_757_000_010);
+    session.finish();
   });
 
   it('hands the game the reading taken before the input it is handling', async () => {
@@ -236,7 +261,10 @@ describe('the run log', () => {
     const { session, run } = recordedGame();
 
     expect(session.game.clock).toBeNull();
+    expect(session.game.seconds).toBeNull();
     expect(run.gameClock()).toBeNull();
+    expect(run.gameSeconds()).toBeNull();
+    expect(run.log().inputs.every((input) => secondRead(input) === -1)).toBe(true);
     session.finish();
   });
 
@@ -254,6 +282,15 @@ describe('the run log', () => {
     expect(tickRead(clockTickInput(65535))).toBe(65535);
     for (const input of [KEY.arrowUp, KEY.escape, KEY.fight, -0x100, 0xff, ...TURN_INPUTS, REV_CLOCK_TICK]) {
       expect(tickRead(input)).toBe(-1);
+    }
+  });
+
+  it('tells the second a sitting began from an input the game was really given', () => {
+    expect(secondRead(clockSecondInput(0))).toBe(0);
+    expect(secondRead(clockSecondInput(1_757_000_000))).toBe(1_757_000_000);
+    const keys = [KEY.arrowUp, KEY.escape, KEY.fight, -0x100, 0xff, ...TURN_INPUTS, REV_CLOCK_TICK];
+    for (const input of [...keys, clockTickInput(0), clockTickInput(65535)]) {
+      expect(secondRead(input)).toBe(-1);
     }
   });
 
