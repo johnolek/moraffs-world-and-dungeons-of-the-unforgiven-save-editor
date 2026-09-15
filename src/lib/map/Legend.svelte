@@ -64,6 +64,9 @@
       : [{ label: 'Explored', square: sample({ n: 0, s: 0 }), kind: { kind: 'explored' } as LegendKind, count: exploredCount }]),
   ]);
 
+  const present = $derived(entries.filter(({ count }) => count > 0));
+  const absent = $derived(entries.filter(({ count }) => count === 0));
+
   const trapdoorDestinations = $derived(
     Object.entries(summary.trapdoorDests)
       .map(([floor, count]) => ({ floor: Number(floor), count, label: `to ${floor} (${count})` }))
@@ -78,7 +81,7 @@
     {/if}
   </SectionHeading>
   <ul class="entries">
-    {#each entries as { label, square, kind, count }}
+    {#each present as { label, square, kind, count }}
       <li class:wide={isTrapdoor(kind)}>
         <button
           type="button"
@@ -118,6 +121,19 @@
       </li>
     {/each}
   </ul>
+  {#if absent.length}
+    <h3 class="absent-heading">Not present on this floor</h3>
+    <ul class="entries absent">
+      {#each absent as { label, square, kind }}
+        <li>
+          <span class="entry">
+            <LegendSample {square} {game} explored={kind.kind === 'explored'} />
+            <span class="text">{label}</span>
+          </span>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </section>
 
 <style>
@@ -203,11 +219,24 @@
   .count {
     color: var(--muted);
   }
-  .entry:hover {
+  button.entry:hover {
     background: var(--panel-2);
   }
   .entry.pinned {
     background: var(--panel-2);
     box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .absent-heading {
+    margin: 10px 0 6px;
+    font-size: 11px;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .absent .entry {
+    color: var(--muted);
+    opacity: 0.55;
+    cursor: default;
   }
 </style>
