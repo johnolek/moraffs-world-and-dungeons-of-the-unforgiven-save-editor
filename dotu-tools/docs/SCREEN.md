@@ -303,9 +303,15 @@ strokes of the key letters and the status block. It is also why the menu's first
 `1>` when the string at DS:65dd is ` ) PREP SPELLS`: in that face a parenthesis is two straight
 diagonals meeting at a point. `src/lib/play/view3d/menu-font.ts` is the port of it.
 
-The ground of the 3-D view, but only when the wall pictures could not be loaded. Mode 9 has
-its own path there (exe 3000:13ab, 154d, 1592, 15ee for the floor and 19f5, 1b97, 1bdc, 1c38
-for the ceiling) which replaces the two-colour stone alternation with a walk over a palette
-ramp, the same idea as Moraff's World's mode-9 ground. With the pictures present — which is
-how the port always draws it — the floor and the ceiling are the wall file's own tiles through
-`scale_image2`, and nothing about that depends on the mode.
+The ground of the 3-D view, when the wall pictures are not laid on it. Mode 9 has its own path
+there (exe 3000:13ab, 154d, 1592, 15ee and 19f5, 1b97, 1bdc, 1c38, one run for each half) which
+replaces the two-colour stone alternation with a walk over a palette ramp, the same idea as
+Moraff's World's mode-9 ground. With the pictures present the halves are laid with the wall
+file's own tiles through `scale_image2`, and nothing about that depends on the mode.
+
+`draw_3d_view` draws the two halves one after the other, the half above the horizon first, and
+asks about each separately. The first question carries DS:031d, the flag `load_section_pictures`
+(exe 2000:372c) raises for sections 4, 8 and 20, where the second does not: so in the three water
+sections the ceiling takes the ramp and the floor still takes the tiles. That is why the water is
+underfoot and not overhead, and the port follows it — filling its ceiling flat, since the ramp is
+not ported (`FAITHFUL-GAPS.md`).

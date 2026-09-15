@@ -208,27 +208,37 @@ function sideAhead(scene: ViewScene, facing: number): number {
  * pair of the wall file's four tiles is used turns over with every step, which is what makes the
  * floor change as you walk.
  *
- * Without the wall pictures in the bundle there are no tiles, and the two halves are filled flat.
- * The original's own banded gradient for that case (`draw_3d_view`'s DS:2322 branch) is not
- * ported.
+ * The ceiling is laid with them everywhere but the three water sections. `draw_3d_view` asks
+ * about its two halves separately, and the ceiling's question carries DS:031d — the flag
+ * `load_section_pictures` (exe 2000:372c) raises for sections 4, 8 and 20 — where the floor's
+ * question does not. So a section whose tiles are water has water underfoot and none of it
+ * overhead.
+ *
+ * A half that is not laid with tiles is filled flat here. That covers the water sections, the
+ * bundle without the wall pictures in it, and the two lower settings of the graphics menu's floor
+ * tile type; the original draws its own banded gradient for all three (`draw_3d_view`'s DS:2322
+ * branch), which is not ported and is written down in `dotu-tools/docs/FAITHFUL-GAPS.md`.
  */
 function drawFloorAndCeiling(frame: Frame, scene: ViewScene, view: ViewFrame, rect: ViewRect): void {
   const horizon = horizonRow(view);
   const midX = (rect.left + rect.right) >> 1;
   const wall = scene.pictures.wall;
+  const screen = scene.screen;
+  const toX = (x: number) => Math.trunc(((screen.width - 1) * x) / 1599);
+  const toY = (y: number) => Math.trunc(((screen.height - 1) * y) / 1199);
+  const flat = (edge: number) =>
+    fillRect(frame, toX(rect.left), toY(Math.min(edge, horizon)), toX(rect.right), toY(Math.max(edge, horizon)), 0);
 
-  if (!wall || scene.detail !== DETAIL_TEXTURED) {
-    const screen = scene.screen;
-    const toX = (x: number) => Math.trunc(((screen.width - 1) * x) / 1599);
-    const toY = (y: number) => Math.trunc(((screen.height - 1) * y) / 1199);
-    fillRect(frame, toX(rect.left), toY(rect.top), toX(rect.right), toY(horizon), 0);
-    fillRect(frame, toX(rect.left), toY(horizon), toX(rect.right), toY(rect.bottom), 0);
-    return;
-  }
+  const tiled = wall !== null && scene.detail === DETAIL_TEXTURED;
+  // The ceiling is the half above the horizon and the floor the half below it.
+  const halves = [
+    { edge: rect.top, tiled: tiled && !scene.water },
+    { edge: rect.bottom, tiled },
+  ];
 
   const pair = floorTilePair(scene.at.x, scene.at.y, scene.dir);
-  const distant = wall[FLOOR_TILES[pair + 1]];
-  const underfoot = wall[FLOOR_TILES[pair]];
+  const distant = wall?.[FLOOR_TILES[pair + 1]];
+  const underfoot = wall?.[FLOOR_TILES[pair]];
   // The tiles carry no pixel the tint or the transparent value could stand in for, so the colour
   // the last wall face left in DS:4fbd — which this pass does not set — cannot reach them.
   const options = { screen: scene.screen, colours: { base: 0x50, tint: 0 } };
@@ -237,14 +247,18 @@ function drawFloorAndCeiling(frame: Frame, scene: ViewScene, view: ViewFrame, re
   // The square underfoot fills the two thirds of the band nearest the edge of the view and
   // everything beyond it is crammed into the third by the horizon. Each is drawn twice, mirrored
   // about the middle of the view.
-  for (const edge of [rect.top, rect.bottom]) {
-    const bend = third(horizon, edge);
+  for (const half of halves) {
+    if (!half.tiled) {
+      flat(half.edge);
+      continue;
+    }
+    const bend = third(horizon, half.edge);
     for (const [x1, x2] of [
       [midX, rect.right],
       [midX, rect.left],
     ]) {
       if (distant) scaleImage(frame, x1, horizon, x2, bend, distant, 0, 246, options);
-      if (underfoot) scaleImage(frame, x1, bend, x2, edge, underfoot, 0, 251, options);
+      if (underfoot) scaleImage(frame, x1, bend, x2, half.edge, underfoot, 0, 251, options);
     }
   }
 }

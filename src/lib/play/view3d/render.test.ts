@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { MapSquare } from '../../map/game';
 import { newFrame, type Frame } from './frame';
-import { AHEAD_VIEW } from './geometry';
+import { AHEAD_VIEW, horizonRow } from './geometry';
 import { floorTilePair, NO_PICTURES, OVERLAY_SKULL, OVERLAY_WATER, type ViewPictures } from './pictures';
 import { scaleImage } from './scale';
 import { parsePicRows } from './texture';
@@ -383,6 +383,43 @@ describe('which pair of floor tiles a square is laid with', () => {
 
   it('changes it when they turn from a north-south way to an east-west one', () => {
     expect(floorTilePair(5, 5, 0)).not.toBe(floorTilePair(5, 5, 2));
+  });
+});
+
+describe('the ceiling of the 3-D view', () => {
+  const wallPictures = parsePicRows(readFileSync('src/lib/game/pics/ufwall1.pic'));
+
+  /** A crossroads drawn with the wall file loaded, in a water section or a dry one. */
+  function drawn(water: boolean): Frame {
+    const rows = blankFloor();
+    for (const [x, y] of [[5, 5], [5, 4], [6, 5], [4, 5], [5, 6]]) {
+      rows[y][x] = { ...shut(), n: 3, s: 3, w: 3, e: 3 };
+    }
+    const frame = newFrame(SCREEN.width, SCREEN.height);
+    renderView(frame, scene(rows, { water, pictures: { ...pictures(), wall: wallPictures } }), AHEAD_VIEW, 0);
+    return frame;
+  }
+
+  /** The row of the screen the horizon falls on, which is where the ceiling gives way to the
+   *  floor. */
+  const horizon = Math.trunc(
+    ((SCREEN.height - 1) * horizonRow({ ...AHEAD_VIEW, horizonWeight: 21, facing: 0, at: { x: 5, y: 5 } })) / 1199,
+  );
+
+  /** Where the two drawings differ, as pixels of the frame. */
+  const differences = (left: Frame, right: Frame): number[] =>
+    [...left.pixels].flatMap((colour, at) => (colour === right.pixels[at] ? [] : [at]));
+
+  it('is laid with the wall file\u2019s tiles in a dry section and left flat in a water one', () => {
+    const wet = drawn(true);
+    const differing = differences(drawn(false), wet);
+    expect(differing.length).toBeGreaterThan(1000);
+    for (const at of differing) expect(wet.pixels[at]).toBe(0);
+  });
+
+  it('is the only half that changes: the floor is laid with them either way', () => {
+    const rows = differences(drawn(false), drawn(true)).map((at) => Math.trunc(at / SCREEN.width));
+    expect(Math.max(...rows)).toBeLessThanOrEqual(horizon);
   });
 });
 
