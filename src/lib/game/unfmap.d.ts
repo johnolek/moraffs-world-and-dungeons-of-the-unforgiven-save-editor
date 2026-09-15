@@ -47,14 +47,16 @@ export class Dungeon {
   side2(x: number, y: number, hv: 0 | 1, level: number, dungeon: number): Side;
   sides(x: number, y: number, level: number, dungeon: number, teleporters?: boolean): Sides;
   solid(x: number, y: number, level: number, dungeon: number): boolean;
-  ladder(x: number, y: number, level: number, dungeon: number): number;
+  /** @param bottom the module's deepest floor, which a ladder down stops above; the module's own
+   *    unless a caller moves it. */
+  ladder(x: number, y: number, level: number, dungeon: number, bottom?: number): number;
   townFeature(x: number, y: number, dungeon: number): number;
-  trapdoor(x: number, y: number, level: number, dungeon: number): number;
-  chute(x: number, y: number, level: number, dungeon: number): number;
+  trapdoor(x: number, y: number, level: number, dungeon: number, bottom?: number): number;
+  chute(x: number, y: number, level: number, dungeon: number, bottom?: number): number;
   /** The (x, y) every trap door to `level` lands on. */
   trapdoorDest(level: number, dungeon: number): [number, number];
   /** Whole floor as rows[y][x]. */
-  floor(level: number, dungeon: number, teleporters?: boolean): Square[][];
+  floor(level: number, dungeon: number, teleporters?: boolean, bottom?: number): Square[][];
 }
 
 /** ASCII rendering shared with unfmap.py, for cross-checking ports. */

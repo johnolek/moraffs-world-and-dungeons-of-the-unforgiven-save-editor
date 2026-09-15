@@ -4,7 +4,7 @@ import { bundledDungeon } from './dungeon';
 import { floorBounds, summarizeFloor, type FloorSummary } from './floor-summary';
 import { MAP_ROWS } from '../map/area';
 import { floorsOf, UNFORGIVEN_MAP } from '../map/game';
-import { HEIGHT, WIDTH, render, type Dungeon, type Square } from './unfmap.js';
+import { BOTTOM_LEVEL, HEIGHT, WIDTH, render, type Dungeon, type Square } from './unfmap.js';
 
 // Both fixtures were produced by the verified generator (dotu-tools/reference/make_fixtures.mjs).
 // A single differing character means the port is wrong.
@@ -30,6 +30,25 @@ describe('bundled dungeon', () => {
     const expected = fixtureSummaries.filter((summary) => summary.module === module);
     const actual = floorsOf(UNFORGIVEN_MAP, module - 1).map((floor) => summarizeFloor(bundledDungeon, floor, module - 1, HEIGHT));
     expect(actual).toEqual(expected);
+  });
+});
+
+describe('a module told where its bottom is', () => {
+  const MODULE_I = 0;
+  const DEEPEST_FLOOR = BOTTOM_LEVEL[MODULE_I] - 1;
+
+  it('generates the floor it always did when told the bottom it already has', () => {
+    expect(bundledDungeon.floor(DEEPEST_FLOOR, MODULE_I, true, BOTTOM_LEVEL[MODULE_I])).toEqual(
+      bundledDungeon.floor(DEEPEST_FLOOR, MODULE_I),
+    );
+  });
+
+  it('lets ladders, trap doors and chutes reach past the bottom it had', () => {
+    const asIs = bundledDungeon.floor(DEEPEST_FLOOR, MODULE_I).flat();
+    const deeper = bundledDungeon.floor(DEEPEST_FLOOR, MODULE_I, true, BOTTOM_LEVEL[1]).flat();
+    expect(deeper.some((square, i) => square.ladder > 0 && asIs[i].ladder === 0)).toBe(true);
+    expect(deeper.some((square, i) => square.trapdoor > asIs[i].trapdoor)).toBe(true);
+    expect(deeper.some((square, i) => square.chute > 0 && asIs[i].chute === 0)).toBe(true);
   });
 });
 

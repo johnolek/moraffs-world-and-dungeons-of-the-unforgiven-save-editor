@@ -85,9 +85,9 @@ export class Dungeon {
         && this.side(x + 1, y, 0, level, dungeon) === 0 && this.side(x, y + 1, 1, level, dungeon) === 0;
   }
 
-  /** check_for_ladder: floor offset (>0 down, <0 up, 0 none). */
-  ladder(x, y, level, dungeon) {
-    const bottom = BOTTOM_LEVEL[dungeon];
+  /** check_for_ladder: floor offset (>0 down, <0 up, 0 none). A ladder down stops above `bottom`,
+   *  the deepest floor of the module, which is the module's own unless a caller moves it. */
+  ladder(x, y, level, dungeon, bottom = BOTTOM_LEVEL[dungeon]) {
     for (let i = level - 1; i > level - 4 && i >= 0; i--) {
       if (!this.solid(x, y, i, dungeon) && myrand(x, y, i, dungeon, 27) === 1) {
         let j = i + 1;
@@ -110,21 +110,23 @@ export class Dungeon {
     return n <= 4 ? n : 0;
   }
 
-  /** trapdoor: destination floor (multiple of 5) or -1. Ladder squares are not checked by the game. */
-  trapdoor(x, y, level, dungeon) {
+  /** trapdoor: destination floor (multiple of 5) or -1. Ladder squares are not checked by the game.
+   *  `bottom` is the deepest floor of the module, as in ladder(). */
+  trapdoor(x, y, level, dungeon, bottom = BOTTOM_LEVEL[dungeon]) {
     const a = myrand(x, y, level, dungeon, 2400) * 5;
-    if (a < 5 || a >= Math.trunc(4 * BOTTOM_LEVEL[dungeon] / 5)) return -1;
+    if (a < 5 || a >= Math.trunc(4 * bottom / 5)) return -1;
     if (Math.trunc(a / 5) === Math.trunc(level / 5)) return -1;
     return a;
   }
 
-  /** detect_chute: floor the chute drops to, or `level` if this square has no (working) chute. */
-  chute(x, y, level, dungeon) {
+  /** detect_chute: floor the chute drops to, or `level` if this square has no (working) chute.
+   *  `bottom` is the deepest floor of the module, as in ladder(). */
+  chute(x, y, level, dungeon, bottom = BOTTOM_LEVEL[dungeon]) {
     const rng = Math.max(20, 230 - Math.trunc(level / 3));
     if (myrand(x, y, level, dungeon, rng) < 5) {
       const reach = level > 9 ? 5 : 3;
       for (let i = level + 1; i < level + reach; i++) {
-        if (i > Math.trunc(3 * BOTTOM_LEVEL[dungeon] / 4)) break;
+        if (i > Math.trunc(3 * bottom / 4)) break;
         if (!this.solid(x, y, i, dungeon)) return i;
       }
     }
@@ -141,7 +143,7 @@ export class Dungeon {
   }
 
   /** Whole floor as rows[y][x] of {n,s,w,e,solid,ladder,chute,trapdoor,town}. */
-  floor(level, dungeon, teleporters = true) {
+  floor(level, dungeon, teleporters = true, bottom = BOTTOM_LEVEL[dungeon]) {
     const rows = [];
     for (let y = 0; y < HEIGHT; y++) {
       const row = [];
@@ -150,15 +152,15 @@ export class Dungeon {
         sq.solid = this.solid(x, y, level, dungeon);
         sq.ladder = 0; sq.chute = 0; sq.trapdoor = -1; sq.town = 0;
         if (!sq.solid) {
-          sq.ladder = this.ladder(x, y, level, dungeon);
+          sq.ladder = this.ladder(x, y, level, dungeon, bottom);
           // The game checks the ladder first and only asks about buildings, trap doors and
           // chutes on squares without one (drawsquare 3000:87de, movecontrol 2000:c308).
           if (sq.ladder === 0) {
             if (level === 0) {
               sq.town = this.townFeature(x, y, dungeon);
             } else {
-              sq.trapdoor = this.trapdoor(x, y, level, dungeon);
-              const c = this.chute(x, y, level, dungeon);
+              sq.trapdoor = this.trapdoor(x, y, level, dungeon, bottom);
+              const c = this.chute(x, y, level, dungeon, bottom);
               sq.chute = c !== level ? c : 0;
             }
           }
