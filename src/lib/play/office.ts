@@ -1,4 +1,3 @@
-import { sectionOf } from '../game/dotu-files.js';
 import { showHint } from '../game/port/drops';
 import type { Game } from '../game/port/state';
 import { bossOfficeTaunt, readBossOfficeMessage } from '../game/port/town';
@@ -78,7 +77,7 @@ async function bossOfficeMessage(session: GameSession): Promise<void> {
   const chosen = await session.choice(MESSAGE_MENU);
   if (chosen !== READ_IT) return;
   const lines = readBossOfficeMessage(game, tablet);
-  session.bossOffice = { section: sectionOf(game.pc.module, game.pc.level), lines };
+  session.bossOffice = { section: game.rules.sectionOf(game.pc.module, game.pc.level), lines };
   await game.key();
   session.bossOffice = null;
   game.eraseScreen();

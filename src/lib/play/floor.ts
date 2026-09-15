@@ -1,4 +1,4 @@
-import { bossIndex, sectionOf } from '../game/dotu-files.js';
+import { bossIndex } from '../game/dotu-files.js';
 import type { Rng } from '../game/port/rng';
 import type { Game, Monster } from '../game/port/state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from '../game/port/state';
@@ -52,8 +52,9 @@ export const BOSS_KIND = BUILTIN_KINDS;
  * Where a floor's Shadow boss has his square remembered: `bossIndex` (exe: the module times
  * eight plus section_number2, the section's own place among the module's four).
  */
-function bossSquareIndex(module: number, level: number): number {
-  return bossIndex(module, (sectionOf(module, level) - 1) % 4);
+function bossSquareIndex(game: Game, level: number): number {
+  const module = game.pc.module;
+  return bossIndex(module, (game.rules.sectionOf(module, level) - 1) % 4);
 }
 
 /**
@@ -139,7 +140,7 @@ export class FloorMonsters {
       // The player is on the grid before the roll, so nothing is stocked on top of them.
       setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
       if (level !== 0) {
-        const index = bossSquareIndex(game.pc.module, level);
+        const index = bossSquareIndex(game, level);
         const stocked = stockFloor(
           rows,
           game.pc.module,
@@ -216,7 +217,7 @@ export function loadLevelMap(game: Game, floors: FloorMonsters, rows: MapSquare[
  * at its own square, which is what `which_monster` (exe 2000:6573) reads to draw one.
  */
 export function drawnMonsters(game: Game, level: number): StockedMonster[] {
-  const section = sectionOf(game.pc.module, level);
+  const section = game.rules.sectionOf(game.pc.module, level);
   const drawn: StockedMonster[] = [];
   for (let slot = 0; slot < game.monsters.length; slot++) {
     const monster = game.monsters[slot];

@@ -1,5 +1,4 @@
 import { resetViewCaches } from '../game/port/character';
-import { sectionOf } from '../game/dotu-files.js';
 import data from '../game/dotu-data.json';
 import { toUpperByte } from '../game/port/screens';
 import type { Game } from '../game/port/state';
@@ -60,7 +59,7 @@ export interface ManualHost {
 /** The S key, until the reader leaves it. */
 export async function readTheMonsterManual(turn: Turn): Promise<void> {
   const game = turn.game;
-  const section = data.sections[sectionOf(game.pc.module, game.pc.level) - 1];
+  const section = data.sections[game.rules.sectionOf(game.pc.module, game.pc.level) - 1];
   let shown: string[] = section.intro;
   for (;;) {
     drawManualPage(turn.session, section.section, section.part - 1, shown);

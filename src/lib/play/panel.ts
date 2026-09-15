@@ -1,7 +1,6 @@
 import { describeEffects } from '../bestiary/monsters';
 import { hitChance, toHitTotal, type ToHitFighter } from '../bestiary/to-hit';
 import { NAMED_SLOTS, SLOTS_PER_SUBCATEGORY, SPELL_NAMES, SPELL_SUBCATEGORIES } from '../editor/spell-names';
-import { sectionOf } from '../game/dotu-files.js';
 import { monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import { breathDamageChance, breathResisted, monsterHitsYouChance } from './hits-you';
 import type { Game, PlayerCharacter } from '../game/port/state';
@@ -370,7 +369,7 @@ export function engagedMonster(game: Game): EngagedMonster | null {
   // The hit points were rolled from the floor's base level, before the nudge that gave this
   // monster the level it stands at, so the ceiling is the floor's and not the monster's.
   const baseLevel = monsterLevelBase(pc.level, pc.module);
-  const [, mostHp] = monsterHpRange(stats.hpPerLevel, baseLevel, boss, sectionOf(pc.module, pc.level));
+  const [, mostHp] = monsterHpRange(stats.hpPerLevel, baseLevel, boss, game.rules.sectionOf(pc.module, pc.level));
   return {
     name: kind.name,
     level: monster.level,
