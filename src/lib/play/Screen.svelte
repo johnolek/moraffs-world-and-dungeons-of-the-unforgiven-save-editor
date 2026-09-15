@@ -11,6 +11,7 @@
   import { ARROW_FLASH_MS, facingArrowCells } from '../map/you';
   import { debugMonsterLines } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
+  import { drawnSmaller } from '../ui/drawn-smaller.svelte';
   import { onScreen } from '../ui/on-screen.svelte';
   import { inRect } from './screens';
   import { zoomMapMonsterAt } from './zoom-monsters';
@@ -159,6 +160,9 @@
   /** Whether the tab the screen is on is the one showing, since the tabs all stay mounted and
    *  neither the arrow's timer nor the two animations below is worth running behind one. */
   const visible = onScreen(() => canvas);
+  /** Whether the screen is being shown below its own 1024 by 768, which is when its pixels have
+   *  to be smoothed rather than kept crisp. */
+  const shrunk = drawnSmaller(() => canvas);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
   const painter = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   /**
@@ -691,7 +695,7 @@
 </script>
 
 <!-- The game's screen: the four views, the boxes around them and the game's own lines of text. -->
-<div class="screen" style:aspect-ratio="{SCREEN_PIXELS.width} / {SCREEN_PIXELS.height}">
+<div class="screen" class:smooth={shrunk.smaller} style:aspect-ratio="{SCREEN_PIXELS.width} / {SCREEN_PIXELS.height}">
   <canvas
     class="screen-pixels"
     bind:this={canvas}
@@ -735,6 +739,11 @@
     display: block;
     /* The game's pixels stay pixels however far it is scaled up. */
     image-rendering: pixelated;
+  }
+  /* Shown smaller than it is, the screen is shrunk by dropping whole rows of pixels, and a
+     one-pixel line of the map in the corner can be the row that is dropped. */
+  .screen.smooth canvas {
+    image-rendering: auto;
   }
   canvas.screen-pixels {
     width: 100%;

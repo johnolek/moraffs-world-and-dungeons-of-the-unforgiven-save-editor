@@ -13,6 +13,7 @@
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
   import { drawMwScreenText } from './view3d/text';
   import { drawMwMonsterBars } from './view3d/monster-bar';
+  import { drawnSmaller } from '../../ui/drawn-smaller.svelte';
   import { onScreen } from '../../ui/on-screen.svelte';
   import { zoomMapMonsterAt } from '../zoom-monsters';
   import { MORAFFS_WORLD_ZOOM_MAP, drawMwExpandedMap, drawMwZoomMap, mwExpandedMapWindow } from './map';
@@ -95,6 +96,9 @@
   /** Whether the tab the screen is on is the one showing, since every tab of the site stays
    *  mounted and a wipe behind one would be drawing for nobody. */
   const visible = onScreen(() => canvas);
+  /** Whether the screen is being shown below its own 1024 by 768, which is when its pixels have
+   *  to be smoothed rather than kept crisp. */
+  const shrunk = drawnSmaller(() => canvas);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
   const painter = framePainter(WIDTH, HEIGHT);
   /** How long this screen takes to appear: the player's choice while the tab is showing. */
@@ -209,7 +213,7 @@
 </script>
 
 <!-- The game's screen: the views, the boxes around them and the game's own lines of text. -->
-<div class="screen" style:aspect-ratio="{MW_SCREEN_UNITS_X} / {MW_SCREEN_UNITS_Y}">
+<div class="screen" class:smooth={shrunk.smaller} style:aspect-ratio="{MW_SCREEN_UNITS_X} / {MW_SCREEN_UNITS_Y}">
   <canvas bind:this={canvas} width={WIDTH} height={HEIGHT} {onpointerup}></canvas>
 </div>
 
@@ -224,5 +228,10 @@
     height: 100%;
     /* The game's pixels stay pixels however far it is scaled up. */
     image-rendering: pixelated;
+  }
+  /* Shown smaller than it is, the screen is shrunk by dropping whole rows of pixels, and a
+     one-pixel line of the map in the corner can be the row that is dropped. */
+  .screen.smooth canvas {
+    image-rendering: auto;
   }
 </style>
