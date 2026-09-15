@@ -103,8 +103,10 @@ export async function resolveStep(turn: Turn): Promise<void> {
   // writes is that the two halves of the step differ, and since only one of them is ever
   // anything but zero, that means a step was taken at all.
   if (game.engaged !== -1 && step.dy !== step.dx) {
+    // The first of the three is a Random call (exe 2000:dd45) and the other two are written
+    // inline, so only the first reseeds.
     if (
-      game.rng.random(3) !== 0 ||
+      game.randomCall(3) !== 0 ||
       (pc.invisible !== 0 && game.rng.random(pc.level + Math.trunc(pc.level / 2)) > pc.lev)
     ) {
       game.monsterTimers[game.engaged] = game.rng.random(pc.dex + 20);

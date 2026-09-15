@@ -280,7 +280,8 @@ export const BREATH_NAMES = ['', 'FIRE', 'ICE', 'ACID', 'GREEN PHLEGM', 'BLACK S
 /**
  * The breath half of defend (exe 2000:82b7, unf.c "defend"): half the time, a monster whose
  * description names a breath weapon breathes it instead of swinging, and the damage worked out
- * above is thrown away for `level + Random(level)`, halved by the matching resistance.
+ * above is thrown away for `level + Random(level)` (the Random call at 2000:8902), halved by the
+ * matching resistance.
  *
  * Acid has no resistance and does something worse instead: it destroys the armor being worn,
  * plus and all, and leaves the character in their skin.
@@ -292,7 +293,7 @@ function breathe(game: Game, slot: number): number {
   const lines = ['', '', '', '', '', '', '', ''];
   // DS:13b2, then the five of BREATH_NAMES
   lines[0] = 'THE MONSTER BREATHES ' + (BREATH_NAMES[breath] ?? '');
-  let damage = monster.level + game.rng.random(monster.level);
+  let damage = monster.level + game.randomCall(monster.level);
   if (breath === 1 && pc.antiFireTimer > 0) damage = Math.trunc(damage / 2);
   if (breath === 2 && pc.antiColdTimer > 0) damage = Math.trunc(damage / 2);
   if (breath === 4 && pc.resistDiseaseTimer > 0) damage = Math.trunc(damage / 2);
@@ -439,13 +440,12 @@ export function defend(game: Game, slot: number): number {
     if (game.rng.random(500) < pc.level) pc.holdMonsterTimer = 0;
     return 0;
   }
-  // srand(clock() + 100) at 2000:84ca, deliberately not ported, and this one never reached a
-  // die in the original either: the roll below it is a Random call (exe 2000:4156, at
-  // 2000:84ee) and Random reseeds from the clock again before it rolls. Porting the reseed
-  // without porting Random's own would give the monster a to-hit sawtooth the game does not
-  // have. See the README's third departure.
+  // srand(clock() + 100) at 2000:84ca, deliberately not ported, because it never reached a die
+  // in the original either: the roll below it is a Random call (exe 2000:4156, at 2000:84ee),
+  // and Random seeds the generator from the clock again before it rolls. See the README's third
+  // departure.
   const stats = game.monsterStats[kind.type];
-  let chance = game.rng.random(80) + 20 + monster.level * 2;
+  let chance = game.randomCall(80) + 20 + monster.level * 2;
   if (pc.cls === 2) chance -= game.rng.random(pc.iq);
   chance -= pc.lev * 2;
   chance -= pc.dex + pc.luck;
@@ -485,10 +485,10 @@ export function defend(game: Game, slot: number): number {
   }
   if (pc.lev === 0 && damage > 3) damage = game.rng.random(3) + 1;
   if (pc.lev < 3 && damage > 6) damage = Math.trunc(damage / 2);
-  // Random(2) is only rolled for a monster that has a breath weapon, so a monster without one
-  // costs the sequence nothing here.
+  // The Random call at 2000:8817 is only made for a monster that has a breath weapon, so a
+  // monster without one costs the sequence nothing here.
   let breathed: number | null = null;
-  if (kind.breath !== 0 && game.rng.random(2) !== 0) {
+  if (kind.breath !== 0 && game.randomCall(2) !== 0) {
     breathed = kind.breath;
     damage = breathe(game, slot);
   } else {
@@ -628,8 +628,10 @@ export function attackTiming(game: Game): number {
     if (slot !== -1) game.events.push({ kind: 'met', monster: monsterSeen(game, slot), slot });
     // The original also aims the pointer at DS:c64b at this monster's hit points, which is what
     // strike writes its damage through.
+    // The first of the three is a Random call (exe 2000:b9a6) and the other two are written
+    // inline, so only the first reseeds.
     if (
-      game.rng.random(3) !== 0 ||
+      game.randomCall(3) !== 0 ||
       (pc.invisible !== 0 && game.rng.random(pc.level + Math.trunc(pc.level / 2)) > pc.lev)
     ) {
       const start = game.rng.random(pc.dex);
