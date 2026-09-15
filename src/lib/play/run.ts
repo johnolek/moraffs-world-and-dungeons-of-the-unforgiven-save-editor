@@ -81,8 +81,8 @@ export const TICKS_A_SECOND = 18.2;
  * A reading carries a number, which is how far below this the input sits: the counter is counted
  * from the start of the sitting, so a reading is never negative and the inputs it writes are
  * never above this. Keys are well inside -0x100 to 0xff, the turn inputs above are at -0x101 to
- * -0x104, and the -0x201 a record edit answers a wait with is no input at all, so an input at or
- * below this is a reading and nothing else.
+ * -0x104 and Moraff's Revenge's clock tick is -0x202, so an input at or below this is a reading
+ * and nothing else.
  */
 export const CLOCK_TICK_INPUT = -0x1000;
 
