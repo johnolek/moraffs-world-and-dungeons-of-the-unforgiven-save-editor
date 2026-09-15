@@ -16,11 +16,12 @@ of logic it runs is a cited port of the function it came from, bugs included.
 
 The one deliberate difference in play is the random numbers. The original re-seeds from the clock
 before nearly every roll, so what it hands back falls into patterns a player can feel — see "Your
-to-hit roll is a clock" in `dotu-tools/docs/TIDBITS.md`. A game played here draws its numbers from
-one generator seeded once at the start of the run, which is why `Rng` is something a `Game` is
-handed rather than something a ported function reaches for: `BorlandRng` reproduces the original's
-rolls for a test that has to match them, and the run's own seeded generator goes in to play, which
-is what lets a run be played again from its log.
+to-hit roll is a clock" in `dotu-tools/docs/TIDBITS.md`. Unless the session hands the game a clock
+of its own, a game played here draws its numbers from one generator seeded once at the start of
+the run, which is why `Rng` is something a `Game` is handed rather than something a ported
+function reaches for: `BorlandRng` reproduces the original's rolls for a test that has to match
+them, and the run's own seeded generator goes in to play, which is what lets a run be played again
+from its log.
 
 ## The three deliberate departures
 
@@ -76,14 +77,31 @@ save offsets, so `pc.lev` is the character's level and `pc.level` is the floor, 
 save parser has it. Fields that parser does not read are named after their label in
 `src/lib/editor/games.ts`.
 
-**The third departure is that the port never reseeds the random number generator.** The original
-calls `srand(clock() + something)` before nearly every roll — `strike` (exe 2000:7e36) does it
-before the to-hit roll, `defend` (exe 2000:82b7) does it with `+ 100`, and `Random` (exe
-2000:4156) does it on every single call. That is why the to-hit roll follows the BIOS tick
-counter round a sawtooth instead of being random, which `dotu-tools/docs/TIDBITS.md` lays out.
-The aim of this port is a game that plays the way the original does but whose random numbers are
-genuinely random, so where the original reseeds, the port calls nothing and says so in a comment
-at that line. The arithmetic on either side of the reseed is ported exactly.
+**The third departure is that the port reseeds the random number generator only when it is given
+a clock.** The original calls `srand(clock() + something)` before nearly every roll: `strike`
+(exe 2000:7e36) does it at 2000:7e63 before the to-hit roll, `defend` (exe 2000:82b7) does it
+with `+ 100` at 2000:84ca, and `Random` (exe 2000:4156) does it on every single call. Section 8
+of `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md` is all ten of them. That reseeding is why the to-hit
+roll follows the BIOS tick counter round a sawtooth instead of being random, which
+`dotu-tools/docs/TIDBITS.md` lays out.
+
+The switch is `Game.clock`, the tick counter the session hands in, or null. Null is what every
+game built here uses today: the port then reseeds nothing, says so in a comment where the
+original reseeds, and a run draws its numbers from one generator seeded once, which is what lets
+it be played again from that seed alone. Given a clock, `strike` reseeds from it exactly as the
+original does and the sawtooth comes back, which is what the faithful and speedrun modes want; a
+replay will take the tick of each key press out of the run log (MORF-502).
+
+`strike` is the only reseed the port plays, and the other three tick-counter reseeds each have a
+reason. `defend`'s never reaches a die even in the original: the roll under it is a `Random`
+call, and `Random` reseeds from the clock again before it rolls, so playing the `srand` above it
+alone would hand out numbers the game never had. `Random`'s own needs a `Random(n)` call to be
+told apart from the `rand() * n / 0x8000` the game writes inline, which the port does not record
+at its rolls. `stock_level`'s is one per monster it places, and the port does not stock a floor
+at all. The reseeds left over are not from the tick counter: `roll_char` and `drop_money` seed
+from `time()`, the second the roller was started in and the second a kill happened in, which is a
+clock no session supplies, and `trapdoor_dest` counts up from 10 and needs no clock at all. The
+arithmetic on either side of a reseed is ported exactly, reseed or no reseed.
 
 ## Naming and citations
 
