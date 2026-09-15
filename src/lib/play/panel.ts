@@ -31,7 +31,7 @@ function moves(count: number): string {
 }
 
 /**
- * Every battle spell in effect, with the moves it has left.
+ * Every battle spell in effect, with the moves it has left and what it is doing while it runs.
  *
  * The spells and the order they come in are view_battle_spells' own, which
  * `battleSpellsInEffect` in `src/lib/character/record.ts` already prints for the status block;
@@ -43,29 +43,97 @@ function moves(count: number): string {
  */
 export function spellTimers(pc: PlayerCharacter): PanelLine[] {
   const lines: PanelLine[] = [];
-  if (pc.protection !== 0) lines.push(timerLine(`Protection, level ${pc.protection}`, pc.protectionTime));
+  if (pc.protection !== 0) {
+    lines.push(
+      timerLine(
+        `Protection, level ${pc.protection}`,
+        pc.protectionTime,
+        "Levels 1 to 4 take 2, 8, 18 or 32 off a monster's roll to hit you. A cast lasts 60 moves.",
+      ),
+    );
+  }
   if (pc.strengthTimer > 0) lines.push(lending('Strength', pc.strengthTimer, '+7 Strength'));
-  if (pc.powerWeapon !== 0) lines.push(timerLine(`Power Weapon ${pc.powerWeapon}`, pc.powerWeaponTime));
+  if (pc.powerWeapon !== 0) {
+    lines.push(
+      timerLine(
+        `Power Weapon ${pc.powerWeapon}`,
+        pc.powerWeaponTime,
+        "Levels 1 to 3 swing a damage die of 129, 199 or 399 in place of your weapon's. A cast lasts 60 moves.",
+      ),
+    );
+  }
   if (pc.speedTimer > 0) lines.push(lending('Speed', pc.speedTimer, '+7 Agility'));
-  if (pc.slowEnemiesTimer > 0) lines.push(timerLine('Slow Enemies', pc.slowEnemiesTimer));
-  if (pc.holdMonsterTimer > 0) lines.push(timerLine('Hold Monster', pc.holdMonsterTimer));
-  if (pc.sleepTimer > 0) lines.push(timerLine('Sleep', pc.sleepTimer));
-  if (pc.resistDrainTimer > 0) lines.push(timerLine('Resist Level Drain', pc.resistDrainTimer));
-  if (pc.resistPoisonTimer > 0) lines.push(timerLine('Resist Poison', pc.resistPoisonTimer));
-  if (pc.resistDiseaseTimer > 0) lines.push(timerLine('Resist Disease', pc.resistDiseaseTimer));
-  if (pc.antiColdTimer > 0) lines.push(timerLine('Anti-Cold', pc.antiColdTimer));
-  if (pc.antiFireTimer > 0) lines.push(timerLine('Anti-Fire', pc.antiFireTimer));
+  if (pc.slowEnemiesTimer > 0) {
+    lines.push(
+      timerLine(
+        'Slow Enemies',
+        pc.slowEnemiesTimer,
+        'One moment in four, every monster on the floor waits a third of your Agility longer for its next attack. A cast lasts 60 moves.',
+      ),
+    );
+  }
+  if (pc.holdMonsterTimer > 0) {
+    lines.push(
+      timerLine(
+        'Hold Monster',
+        pc.holdMonsterTimer,
+        'The monster you are fighting cannot attack. A cast lasts 15 moves, and the deeper the floor the likelier it breaks free early.',
+      ),
+    );
+  }
+  if (pc.sleepTimer > 0) {
+    lines.push(
+      timerLine(
+        'Sleep',
+        pc.sleepTimer,
+        'The monster you are fighting cannot attack. A cast lasts 25 moves, and the deeper the floor the likelier it wakes early.',
+      ),
+    );
+  }
+  if (pc.resistDrainTimer > 0) {
+    lines.push(
+      timerLine(
+        'Resist Level Drain',
+        pc.resistDrainTimer,
+        'Nothing a monster does can take a level or your experience off you. A cast lasts 60 moves.',
+      ),
+    );
+  }
+  if (pc.resistPoisonTimer > 0) {
+    lines.push(
+      timerLine(
+        'Resist Poison',
+        pc.resistPoisonTimer,
+        'No monster can poison you, a poison already in you stops counting down, and a poison breath does half damage. A cast lasts 60 moves.',
+      ),
+    );
+  }
+  if (pc.resistDiseaseTimer > 0) {
+    lines.push(
+      timerLine(
+        'Resist Disease',
+        pc.resistDiseaseTimer,
+        'No monster can give you a disease, a disease already in you stops counting down, and a disease breath does half damage. A cast lasts 60 moves.',
+      ),
+    );
+  }
+  if (pc.antiColdTimer > 0) {
+    lines.push(timerLine('Anti-Cold', pc.antiColdTimer, 'An ice breath does half damage. A cast lasts 60 moves.'));
+  }
+  if (pc.antiFireTimer > 0) {
+    lines.push(timerLine('Anti-Fire', pc.antiFireTimer, 'A fire breath does half damage. A cast lasts 60 moves.'));
+  }
   return lines;
 }
 
-function timerLine(label: string, left: number): PanelLine {
-  if (left > 0) return { label, value: moves(left) };
-  return { label, value: 'out of moves', note: 'Only a night at the inn takes it off you.' };
+function timerLine(label: string, left: number, note: string): PanelLine {
+  if (left > 0) return { label, value: moves(left), note };
+  return { label, value: 'out of moves', note: `${note} Only a night at the inn takes it off you.` };
 }
 
 /** A spell that hands a characteristic back the moment its timer runs out. */
 function lending(label: string, left: number, lent: string): PanelLine {
-  return { ...timerLine(label, left), note: `${lent} while it runs.` };
+  return timerLine(label, left, `${lent} while it runs. A cast lasts 60 moves.`);
 }
 
 /** How long a disease or a poison waits between bites, which pass_moment starts it again at. */
@@ -131,7 +199,13 @@ export function untimedSpells(pc: PlayerCharacter): PanelLine[] {
       note: `One moment in four goes by with no poison, no disease and no monster moving. ${UNTIL_THE_INN}`,
     });
   }
-  if (pc.feather !== 0) lines.push({ label: 'Feather', value: 'in effect', note: lasting(pc.feather) });
+  if (pc.feather !== 0) {
+    lines.push({
+      label: 'Feather',
+      value: 'in effect',
+      note: `Your own weight stops counting against what you can carry; your gear still weighs what it weighs. ${lasting(pc.feather)}`,
+    });
+  }
   if (pc.invisible !== 0) {
     lines.push({
       label: 'Invisibility',
@@ -139,9 +213,27 @@ export function untimedSpells(pc: PlayerCharacter): PanelLine[] {
       note: `One moment in four goes by with no monster moving. ${lasting(pc.invisible)}`,
     });
   }
-  if (pc.bodyArmor !== 0) lines.push({ label: 'Body Armor', value: `level ${pc.bodyArmor}`, note: FOR_GOOD });
-  if (pc.protRing !== 0) lines.push({ label: 'Ring of Protection', value: `+${pc.protRing}`, note: FOR_GOOD });
-  if (pc.antiMagicRing !== 0) lines.push({ label: 'Anti-Magic Ring', value: `+${pc.antiMagicRing}`, note: FOR_GOOD });
+  if (pc.bodyArmor !== 0) {
+    lines.push({
+      label: 'Body Armor',
+      value: `level ${pc.bodyArmor}`,
+      note: `Its level comes off a monster's roll to hit you. ${FOR_GOOD}`,
+    });
+  }
+  if (pc.protRing !== 0) {
+    lines.push({
+      label: 'Ring of Protection',
+      value: `+${pc.protRing}`,
+      note: `Its plus comes off a monster's roll to hit you. ${FOR_GOOD}`,
+    });
+  }
+  if (pc.antiMagicRing !== 0) {
+    lines.push({
+      label: 'Anti-Magic Ring',
+      value: `+${pc.antiMagicRing}`,
+      note: `Nothing but the inventory screen ever reads it, so it does nothing at all. ${FOR_GOOD}`,
+    });
+  }
   return lines;
 }
 

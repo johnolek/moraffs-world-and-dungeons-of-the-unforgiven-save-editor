@@ -48,11 +48,12 @@ const labels = (lines: { label: string }[]) => lines.map((line) => line.label);
 describe('the spells with a timer', () => {
   it('gives each one the moves it has left', () => {
     const lines = spellTimers(character({ strengthTimer: 58, antiFireTimer: 1, resistDrainTimer: 240 }));
-    expect(lines).toEqual([
-      { label: 'Strength', value: '58 moves', note: '+7 Strength while it runs.' },
-      { label: 'Resist Level Drain', value: '240 moves' },
-      { label: 'Anti-Fire', value: '1 move' },
+    expect(lines.map((line) => [line.label, line.value])).toEqual([
+      ['Strength', '58 moves'],
+      ['Resist Level Drain', '240 moves'],
+      ['Anti-Fire', '1 move'],
     ]);
+    expect(lines[0].note).toBe('+7 Strength while it runs. A cast lasts 60 moves.');
   });
 
   it('lists nothing for a character with no spell running', () => {
@@ -61,10 +62,11 @@ describe('the spells with a timer', () => {
 
   it('keeps Protection and Power Weapon on the list once their timer has run out', () => {
     const lines = spellTimers(character({ protection: 3, protectionTime: 0, powerWeapon: 2, powerWeaponTime: 0 }));
-    expect(lines).toEqual([
-      { label: 'Protection, level 3', value: 'out of moves', note: 'Only a night at the inn takes it off you.' },
-      { label: 'Power Weapon 2', value: 'out of moves', note: 'Only a night at the inn takes it off you.' },
+    expect(lines.map((line) => [line.label, line.value])).toEqual([
+      ['Protection, level 3', 'out of moves'],
+      ['Power Weapon 2', 'out of moves'],
     ]);
+    for (const line of lines) expect(line.note).toContain('Only a night at the inn takes it off you.');
   });
 
   it('lists the same spells the game\'s own battle-spell box does', () => {
@@ -87,6 +89,26 @@ describe('the spells with a timer', () => {
     expect(spellTimers(pc)).toHaveLength(battleSpellsInEffect(recordView(pc)).length);
     const some = character({ protection: 4, protectionTime: 5, antiColdTimer: 7 });
     expect(spellTimers(some)).toHaveLength(battleSpellsInEffect(recordView(some)).length);
+  });
+
+  it('says what every one of them is doing, for the tooltip the map shows', () => {
+    const pc = character({
+      protection: 2,
+      protectionTime: 30,
+      strengthTimer: 10,
+      powerWeapon: 1,
+      powerWeaponTime: 40,
+      speedTimer: 10,
+      slowEnemiesTimer: 10,
+      holdMonsterTimer: 10,
+      sleepTimer: 10,
+      resistDrainTimer: 10,
+      resistPoisonTimer: 10,
+      resistDiseaseTimer: 10,
+      antiColdTimer: 10,
+      antiFireTimer: 10,
+    });
+    expect(spellTimers(pc).filter((line) => !line.note)).toEqual([]);
   });
 });
 
@@ -122,8 +144,26 @@ describe('the spells with no timer', () => {
   it('tells the preparation spell from the permanent one by the 1 and the 100', () => {
     const [preparation] = untimedSpells(character({ feather: 1 }));
     const [permanent] = untimedSpells(character({ feather: 100 }));
-    expect(preparation.note).toBe('Lasts until a night at the inn.');
-    expect(permanent.note).toBe('Lasts for good.');
+    expect(preparation.note).toContain('Lasts until a night at the inn.');
+    expect(permanent.note).toContain('Lasts for good.');
+  });
+
+  it('says what every one of them is doing, for the tooltip the map shows', () => {
+    const pc = character({
+      tempWeaponPlus: 3,
+      tempArmorPlus: 2,
+      prepStrength: 4,
+      prepAgility: 4,
+      superStrength: 10,
+      superAgility: 10,
+      fastMove: 1,
+      feather: 1,
+      invisible: 1,
+      bodyArmor: 3,
+      protRing: 2,
+      antiMagicRing: 2,
+    });
+    expect(untimedSpells(pc).filter((line) => !line.note)).toEqual([]);
   });
 });
 
