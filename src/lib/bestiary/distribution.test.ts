@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { monsterLevelDistribution } from '../game/dotu-mech.js';
 import { binHp, hpDistribution, levelDistribution, type HpChance } from './distribution';
 import { allMonsters, type Monster } from './monsters';
+import { FAITHFUL_RULES } from '../game/port/rules';
 import { hpSpan, nudgeLevel, rollHp } from './roll';
 
 /** A repeatable stand-in for Math.random, so a failing run can be reproduced. */
@@ -79,7 +80,7 @@ describe('hpDistribution', () => {
       // The nudge is rolled and thrown away, so that this walks the generator the way a floor
       // being stocked does.
       const hp = rollHp(entry, baseLevel, rnd);
-      nudgeLevel(baseLevel, rnd);
+      nudgeLevel(baseLevel, rnd, FAITHFUL_RULES.monsterLevelMax);
       seen.set(hp, (seen.get(hp) ?? 0) + 1);
     }
     for (const { hp, p } of hpDistribution(entry, baseLevel)) {

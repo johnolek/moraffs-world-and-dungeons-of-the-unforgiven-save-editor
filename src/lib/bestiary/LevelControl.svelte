@@ -3,7 +3,7 @@
   import { blockWheel } from '../editor/block-wheel';
   import { MODULE_NUMERALS } from '../map/labels';
   import { allowedFloors, allowedModules, type Monster } from './monsters';
-  import { MAX_LEVEL } from './roll';
+  import { FAITHFUL_RULES } from '../game/port/rules';
 
   interface Props {
     entry: Monster;
@@ -41,7 +41,7 @@
 
   function typeLevel(event: Event) {
     const typed = Number((event.currentTarget as HTMLInputElement).value);
-    if (typed >= 1 && typed <= MAX_LEVEL) baseLevel = typed;
+    if (typed >= 1 && typed <= FAITHFUL_RULES.monsterLevelMax) baseLevel = typed;
   }
 </script>
 
@@ -73,7 +73,7 @@
   <label>
     Level
     {#if levelIsFree}
-      <input type="number" min="1" max={MAX_LEVEL} value={baseLevel} oninput={typeLevel} use:blockWheel />
+      <input type="number" min="1" max={FAITHFUL_RULES.monsterLevelMax} value={baseLevel} oninput={typeLevel} use:blockWheel />
     {:else}
       <span class="fixed">{baseLevel}</span>
     {/if}

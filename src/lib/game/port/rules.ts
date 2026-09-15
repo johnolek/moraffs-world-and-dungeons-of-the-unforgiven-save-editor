@@ -27,6 +27,8 @@ export interface GameRules {
   readonly experienceCap: number;
   /** The level the monsters of a floor are rolled around. */
   monsterLevel(module: number, floor: number): number;
+  /** The highest level a stocked monster may be nudged to; one nudged past it is put back to 1. */
+  readonly monsterLevelMax: number;
   /** The two picture files a section's corridors and monsters are drawn from. */
   pictureFiles(section: number): SectionPictures;
 }
@@ -53,7 +55,8 @@ type GameData = typeof data;
  * (exe 3000:a0fa) stops counting at, `monsterKinds` what load_md_bin (exe 2000:5fec) reads for a
  * section, and `pictureFiles` the two files load_section_pictures (exe 2000:372c) reads for one.
  * `sectionPlace` is the twenty-row section table of `dotu-data.json`, which counts four sections
- * to a module and puts each section's Shadow boss on the last of its floors.
+ * to a module and puts each section's Shadow boss on the last of its floors, and
+ * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005).
  */
 export function faithfulRules(data: GameData): GameRules {
   return {
@@ -63,6 +66,7 @@ export function faithfulRules(data: GameData): GameRules {
     monsterKinds: (section) => sectionMonsterKinds(data, section),
     experienceCap: data.constants.expValueLevelCap,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
+    monsterLevelMax: data.constants.monsterLevelMax,
     pictureFiles: sectionPictures,
   };
 }

@@ -1,6 +1,5 @@
 import type { Monster } from './monsters';
 
-export const MAX_LEVEL = 210;
 const MAX_HP = 32000;
 
 /** The game's random(n): an integer 0..n-1. */
@@ -12,14 +11,17 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  *
  * The level lives in one byte of the monster's six, which is why the jitter is done in a byte
  * here too. Once it is over, stock_level puts the byte back to 1 if it is 0 (exe 2000:6fdf) and
- * again if it is over 210 read unsigned (exe 2000:7005), so a level nudged past 210 comes out as
- * 1 rather than stopping at the top. Nothing in the game can reach it: Module V's deepest base
- * level is 165, and the jitter would have to survive dozens of one-in-three rolls in a row.
+ * again if it is over the top level read unsigned (exe 2000:7005), so a level nudged past the top
+ * comes out as 1 rather than stopping there. Nothing in the game can reach its own top of 210:
+ * Module V's deepest base level is 165, and the jitter would have to survive dozens of
+ * one-in-three rolls in a row.
+ *
+ * @param maxLevel the top level the rules of the game allow, which the game's own rules put at 210.
  */
-export function nudgeLevel(base: number, rnd: () => number): number {
+export function nudgeLevel(base: number, rnd: () => number, maxLevel: number): number {
   let level = base;
   while (random(rnd, 3) === 0) level = (level + random(rnd, 3) - 1) & 0xff;
-  return level === 0 || level > MAX_LEVEL ? 1 : level;
+  return level === 0 || level > maxLevel ? 1 : level;
 }
 
 /** The number of values each of the two hit point rolls can take on a floor of this base level. */

@@ -75,6 +75,10 @@ describe('the faithful rules', () => {
     expect(rules.experienceCap).toBe(130);
   });
 
+  it('tops a nudged monster level off where stock_level tops it off', () => {
+    expect(rules.monsterLevelMax).toBe(210);
+  });
+
   it("rolls every floor's monsters around the level dotu-mech works out", () => {
     for (const module of MODULES) {
       for (const floor of floorsOf(module)) {
