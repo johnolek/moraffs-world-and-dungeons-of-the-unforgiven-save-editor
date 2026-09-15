@@ -25,6 +25,7 @@
   import SpellReference from './lib/spells/SpellReference.svelte';
   import Tidbits from './lib/tidbits/Tidbits.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
+  import Segmented from './lib/ui/Segmented.svelte';
 
   const tabs = $derived(tabsFor(app.game));
 
@@ -64,15 +65,8 @@
         <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => goToTab(app, entry.id)}>{entry.label}</button>
       {/each}
     </nav>
-    <div class="games" role="group" aria-label="Game">
-      {#each GAME_CHOICES as choice}
-        <button
-          type="button"
-          class="game"
-          class:active={app.game === choice.id}
-          aria-pressed={app.game === choice.id}
-          onclick={() => switchGame(choice.id)}>{choice.label}</button>
-      {/each}
+    <div class="games">
+      <Segmented label="Game" choices={GAME_CHOICES} value={app.game} onpick={switchGame} />
     </div>
   </header>
   {#if app.game === 'moraffsWorld'}
@@ -193,31 +187,10 @@
     color: var(--ink);
     background: var(--panel-2);
   }
+  /* The switch itself is `Segmented.svelte`; this only puts it at the far end of the header. */
   .games {
-    display: flex;
     flex-shrink: 0;
     margin-left: auto;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .game {
-    padding: 6px 14px;
-    white-space: nowrap;
-    border: none;
-    background: none;
-    font: inherit;
-    font-size: 13px;
-    color: var(--muted);
-    cursor: pointer;
-  }
-  .game:hover {
-    color: var(--ink);
-  }
-  .game.active {
-    background: var(--accent-dim);
-    color: #1a1822;
-    font-weight: 600;
   }
   .game-note {
     margin: 0;
