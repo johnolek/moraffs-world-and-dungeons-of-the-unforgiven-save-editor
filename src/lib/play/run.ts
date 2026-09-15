@@ -1,7 +1,7 @@
 import type { Leaderboard, PortedGameId } from '../app-state.svelte';
 import { base64FromBytes, bytesFromBase64 } from '../bytes';
 import { isActionKind } from '../game/action';
-import { SeededRng, type Rng } from '../game/port/rng';
+import { BorlandRng, SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { journalEntry, unforgivenJournal, type JournalEntry, type JournalWords } from './journal';
@@ -383,7 +383,13 @@ export class RunRecorder {
   readonly record: Uint8Array;
   /** What the run had come to before this session, which is what it goes on counting from. */
   readonly before: RunTotals;
-  /** The generator the game is played through, which is the seed and nothing else. */
+  /**
+   * The generator the game is played through, which is the seed and nothing else.
+   *
+   * A run played on the clock is rolled with Borland's own generator instead, because what the
+   * original gets out of a reseed is that generator answering the tick counter: the same seed
+   * put through anything else is another number.
+   */
   readonly rng: Rng;
   readonly inputs: number[] = [];
   /**
@@ -448,7 +454,7 @@ export class RunRecorder {
     this.actions = this.before.actions;
     this.replaying = start.replaying ?? false;
     this.tickCounter = start.tickCounter ?? null;
-    this.rng = new SeededRng(this.seed);
+    this.rng = this.tickCounter === null ? new SeededRng(this.seed) : new BorlandRng(this.seed);
   }
 
   /**

@@ -389,6 +389,10 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       areaColumns: MAP_VIEW_COLUMNS,
       areaRows: MAP_VIEW_ROWS,
       monsterKinds: rules.monsterKinds(rules.sectionOf(pc.module, pc.level)),
+      // A run played on the clock reseeds where the original reseeds, off the readings of the
+      // tick counter its log carries; a run played off the clock has none and the game draws its
+      // own numbers, which is the README's third departure.
+      clock: run?.gameClock() ?? null,
       solid: (x, y, level, module) => bundledDungeon.solid(x, y, level, module),
       retdwall: (x, y, hv, level, module) => bundledDungeon.side(x, y, hv as 0 | 1, level, module),
       markKnown: (x, y) => this.memory.markKnown(x, y),

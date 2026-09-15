@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { bytesFromBase64 } from '../bytes';
 import { bundledDungeon } from '../game/dungeon';
 import { loadPlayer, savePlayer } from '../game/port/record';
+import { BorlandRng, SeededRng } from '../game/port/rng';
 import { characterFile, floorSquare, press, settle, teleporterSquare, townSquare } from './battle.test-support';
 import { runMoveControl, startGame, type CharacterFile, type GameSession } from './engine';
 import { runPlayLoop } from './loop';
@@ -218,6 +219,34 @@ describe('the run log', () => {
     ]);
     // Nobody pressed a reading, so the count of the keys a person pressed is the two keys.
     expect(run.presses).toBe(2);
+  });
+
+  it('hands the game the reading taken before the input it is handling', async () => {
+    let tick = 500;
+    const { session } = recordedGame({}, 12345, undefined, () => (tick += 7));
+
+    await press(session, KEY.arrowUp);
+    expect(session.game.clock?.()).toBe(507);
+    await press(session, KEY.arrowLeft);
+    expect(session.game.clock?.()).toBe(514);
+    session.finish();
+  });
+
+  it('leaves a game played off the clock drawing its own numbers', () => {
+    const { session, run } = recordedGame();
+
+    expect(session.game.clock).toBeNull();
+    expect(run.gameClock()).toBeNull();
+    session.finish();
+  });
+
+  it("rolls a run played on the clock off Borland's generator, which is what a reseed answers", () => {
+    const record = new Uint8Array(8);
+    const clocked = new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record, seed: 7, tickCounter: () => 3 });
+    const ownNumbers = new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record, seed: 7 });
+
+    expect(clocked.rng).toBeInstanceOf(BorlandRng);
+    expect(ownNumbers.rng).toBeInstanceOf(SeededRng);
   });
 
   it('tells a reading of the tick counter from an input the game was really given', () => {
