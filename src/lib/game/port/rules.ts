@@ -19,6 +19,8 @@ export interface GameRules {
   bottomLevel(module: number): number;
   /** Which section a floor belongs to, counted 1 to 20 across all five modules. */
   sectionOf(module: number, floor: number): number;
+  /** Where a section sits, or null when there is no section of that number. */
+  sectionPlace(section: number): SectionPlace | null;
   /** The 27 monster descriptions the game keeps loaded while the character is in a section. */
   monsterKinds(section: number): MonsterKind[];
   /** The highest monster level a kill is paid experience for. */
@@ -27,6 +29,16 @@ export interface GameRules {
   monsterLevel(module: number, floor: number): number;
   /** The two picture files a section's corridors and monsters are drawn from. */
   pictureFiles(section: number): SectionPictures;
+}
+
+/** Where a section sits in the dungeon, which is what a floor is stocked from. */
+export interface SectionPlace {
+  /** The module the section belongs to, 0 to 4, the way the port counts modules. */
+  module: number;
+  /** Which of its module's sections this one is, 1 to 4. */
+  part: number;
+  /** The floor the section's Shadow boss stands on. */
+  bossFloor: number;
 }
 
 /** The shape of `dotu-data.json`, which is where the game's own tables were read out to. */
@@ -40,16 +52,27 @@ type GameData = typeof data;
  * around, both of them in the reference bundle already. `experienceCap` is the level exp_value
  * (exe 3000:a0fa) stops counting at, `monsterKinds` what load_md_bin (exe 2000:5fec) reads for a
  * section, and `pictureFiles` the two files load_section_pictures (exe 2000:372c) reads for one.
+ * `sectionPlace` is the twenty-row section table of `dotu-data.json`, which counts four sections
+ * to a module and puts each section's Shadow boss on the last of its floors.
  */
 export function faithfulRules(data: GameData): GameRules {
   return {
     bottomLevel: (module) => data.constants.bottomLevel[module],
     sectionOf,
+    sectionPlace: (section) => sectionPlace(data, section),
     monsterKinds: (section) => sectionMonsterKinds(data, section),
     experienceCap: data.constants.expValueLevelCap,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
     pictureFiles: sectionPictures,
   };
+}
+
+/** The section's row of `dotu-data.json`, which numbers modules from 1 where the port numbers
+ *  them from 0. `section` is 1 to 20. */
+function sectionPlace(data: GameData, section: number): SectionPlace | null {
+  const entry = data.sections[section - 1];
+  if (!entry) return null;
+  return { module: entry.module - 1, part: entry.part, bossFloor: entry.bossFloor };
 }
 
 /**

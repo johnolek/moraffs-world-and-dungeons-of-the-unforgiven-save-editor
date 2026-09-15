@@ -3,6 +3,7 @@ import { isPuffball } from '../bestiary/monsters';
 import { sectionOf } from '../game/dotu-files.js';
 import { MONSTER_TYPE_ODDS, monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import { bundledDungeon } from '../game/dungeon';
+import { FAITHFUL_RULES } from '../game/port/rules';
 import { sectionInfo } from '../game/sections';
 import { UNFORGIVEN_AREA } from './area';
 import {
@@ -33,7 +34,7 @@ const floorOf = (module: number, level: number) => bundledDungeon.floor(level, m
 describe('stockFloor', () => {
   it('puts one monster on each of 145 distinct open squares', () => {
     const rows = floorOf(2, 31);
-    const monsters = stockFloor(rows, 2, 31, seeded(5));
+    const monsters = stockFloor(FAITHFUL_RULES, rows, 2, 31, seeded(5));
     expect(monsters).toHaveLength(MONSTER_SLOTS);
     for (const monster of monsters) expect(rows[monster.y][monster.x].solid).toBe(false);
     const squares = new Set(monsters.map((monster) => `${monster.x},${monster.y}`));
@@ -41,31 +42,31 @@ describe('stockFloor', () => {
   });
 
   it('numbers the slots in order', () => {
-    const monsters = stockFloor(floorOf(0, 3), 0, 3, seeded(9));
+    const monsters = stockFloor(FAITHFUL_RULES, floorOf(0, 3), 0, 3, seeded(9));
     expect(monsters.map((monster) => monster.slot)).toEqual(monsters.map((_, i) => i));
   });
 
   it('gives slot 0 to the Shadow boss on a boss floor and to nothing else elsewhere', () => {
-    const boss = stockFloor(floorOf(0, 5), 0, 5, seeded(13));
+    const boss = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(13));
     expect(monsterById(boss[0].monsterId).name).toBe(sectionInfo(0, 5)!.bossName);
     expect(boss.slice(1).some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
 
-    const plain = stockFloor(floorOf(0, 4), 0, 4, seeded(13));
+    const plain = stockFloor(FAITHFUL_RULES, floorOf(0, 4), 0, 4, seeded(13));
     expect(plain.some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
   });
 
   it('leaves a Shadow boss who has been killed off his floor', () => {
     const section = sectionInfo(0, 5)!;
-    const beaten = stockFloor(floorOf(0, 5), 0, 5, seeded(13), [], 1 << (section.part - 1));
+    const beaten = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(13), [], 1 << (section.part - 1));
     expect(beaten.some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
 
-    const anotherSectionsBoss = stockFloor(floorOf(0, 5), 0, 5, seeded(13), [], 2);
+    const anotherSectionsBoss = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(13), [], 2);
     expect(monsterById(anotherSectionsBoss[0].monsterId).name).toBe(section.bossName);
   });
 
   it('places the Shadow boss in the middle 50 squares of both axes', () => {
     for (let seed = 1; seed <= 20; seed++) {
-      const [boss] = stockFloor(floorOf(1, 20), 1, 20, seeded(seed));
+      const [boss] = stockFloor(FAITHFUL_RULES, floorOf(1, 20), 1, 20, seeded(seed));
       expect(boss.x).toBeGreaterThanOrEqual(25);
       expect(boss.x).toBeLessThanOrEqual(74);
       expect(boss.y).toBeGreaterThanOrEqual(25);
@@ -75,7 +76,7 @@ describe('stockFloor', () => {
 
   it('rolls a level near the floor base and hit points that fit the monster', () => {
     const base = monsterLevelBase(41, 4);
-    for (const monster of stockFloor(floorOf(4, 41), 4, 41, seeded(17))) {
+    for (const monster of stockFloor(FAITHFUL_RULES, floorOf(4, 41), 4, 41, seeded(17))) {
       expect(Math.abs(monster.level - base)).toBeLessThanOrEqual(15);
       const entry = monsterById(monster.monsterId);
       const section = entry.origin.kind === 'section' ? entry.origin.section : 1;
@@ -87,7 +88,7 @@ describe('stockFloor', () => {
 
   it('rolls the hit points from the floor base and not from the nudged level', () => {
     const base = monsterLevelBase(12, 0);
-    const monsters = stockFloor(floorOf(0, 12), 0, 12, seeded(3));
+    const monsters = stockFloor(FAITHFUL_RULES, floorOf(0, 12), 0, 12, seeded(3));
     // On this seed slot 62 is a Giant Ball stocked at level 9 on a level 12 floor, holding more
     // hit points than level 9 could ever roll.
     const nudgedDown = monsters[62];
@@ -100,13 +101,13 @@ describe('stockFloor', () => {
   });
 
   it('leaves a floor the game could not stock empty', () => {
-    expect(stockFloor(floorOf(0, -5), 0, -5, seeded(3))).toEqual([]);
+    expect(stockFloor(FAITHFUL_RULES, floorOf(0, -5), 0, -5, seeded(3))).toEqual([]);
   });
 
   it('picks the monster kinds about as often as the game does', () => {
     const rnd = seeded(23);
     const monsters: StockedMonster[] = [];
-    for (let i = 0; i < 50; i++) monsters.push(...stockFloor(floorOf(0, 12), 0, 12, rnd));
+    for (let i = 0; i < 50; i++) monsters.push(...stockFloor(FAITHFUL_RULES, floorOf(0, 12), 0, 12, rnd));
     for (const [kind, odds] of Object.entries(MONSTER_TYPE_ODDS)) {
       const share = monsters.filter((monster) => kindOf(monster.monsterId) === kind).length / monsters.length;
       expect(Math.abs(share - odds)).toBeLessThan(0.02);
@@ -123,28 +124,28 @@ function kindOf(id: string): keyof typeof MONSTER_TYPE_ODDS {
 
 describe('stockingSection', () => {
   it('names the section a floor of the module draws its monsters from', () => {
-    expect(stockingSection(0, 3)).toMatchObject({ section: 1 });
-    expect(stockingSection(0, 30000)).toMatchObject({ section: 4 });
+    expect(stockingSection(FAITHFUL_RULES, 0, 3)).toMatchObject({ section: 1 });
+    expect(stockingSection(FAITHFUL_RULES, 0, 30000)).toMatchObject({ section: 4 });
   });
 
   it('has no section for a floor below the sections of the module', () => {
-    expect(stockingSection(0, -5)).toBeNull();
+    expect(stockingSection(FAITHFUL_RULES, 0, -5)).toBeNull();
     // Section 16 is the fourth of Module IV, so Module V cannot load it.
     expect(sectionOf(4, -24)).toBe(16);
-    expect(stockingSection(4, -24)).toBeNull();
+    expect(stockingSection(FAITHFUL_RULES, 4, -24)).toBeNull();
   });
 
   it('has no section where the monsters would come out below level 1', () => {
     expect(sectionOf(0, -1)).toBe(1);
     expect(monsterLevelBase(-1, 0)).toBe(-1);
-    expect(stockingSection(0, -1)).toBeNull();
-    expect(stockingSection(0, 0)).toBeNull();
+    expect(stockingSection(FAITHFUL_RULES, 0, -1)).toBeNull();
+    expect(stockingSection(FAITHFUL_RULES, 0, 0)).toBeNull();
   });
 });
 
 describe('monsterCounts', () => {
   it('counts each type, commonest first, with the Shadow boss at the top', () => {
-    const monsters = stockFloor(floorOf(0, 5), 0, 5, seeded(31));
+    const monsters = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(31));
     const counts = monsterCounts(monsters);
     expect(counts[0].name).toBe(sectionInfo(0, 5)!.bossName);
     expect(counts[0].count).toBe(1);
@@ -196,7 +197,7 @@ describe('groupedMonsterCounts', () => {
   });
 
   it('holds every type a stocked floor has, and counts them as the flat list does', () => {
-    const monsters = stockFloor(floorOf(0, 5), 0, 5, seeded(31));
+    const monsters = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(31));
     const grouped = groupedMonsterCounts(monsters).flatMap((group) => group.counts);
     expect(grouped).toHaveLength(monsterCounts(monsters).length);
     expect(grouped.reduce((total, entry) => total + entry.count, 0)).toBe(MONSTER_SLOTS);
@@ -216,7 +217,7 @@ describe('beyondMapCount', () => {
   });
 
   it('finds about one monster in twenty beyond it on a stocked floor', () => {
-    const monsters = stockFloor(floorOf(0, 12), 0, 12, seeded(41));
+    const monsters = stockFloor(FAITHFUL_RULES, floorOf(0, 12), 0, 12, seeded(41));
     expect(beyondMapCount(monsters, UNFORGIVEN_AREA)).toBeGreaterThan(0);
     expect(beyondMapCount(monsters, UNFORGIVEN_AREA)).toBeLessThan(monsters.length / 4);
   });
@@ -224,7 +225,7 @@ describe('beyondMapCount', () => {
 
 describe('monsterAt', () => {
   it('finds the monster standing on a square, if any', () => {
-    const monsters = stockFloor(floorOf(0, 7), 0, 7, seeded(29));
+    const monsters = stockFloor(FAITHFUL_RULES, floorOf(0, 7), 0, 7, seeded(29));
     const [first] = monsters;
     expect(monsterAt(monsters, first.x, first.y)).toBe(first);
     const free = monsters.reduce((x, monster) => Math.max(x, monster.x), 0) + 1;

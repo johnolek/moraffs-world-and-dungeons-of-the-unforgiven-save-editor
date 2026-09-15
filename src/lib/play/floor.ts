@@ -142,6 +142,7 @@ export class FloorMonsters {
       if (level !== 0) {
         const index = bossSquareIndex(game, level);
         const stocked = stockFloor(
+          game.rules,
           rows,
           game.pc.module,
           level,

@@ -1,9 +1,8 @@
 import { allMonsters, isPuffball, type Monster } from '../bestiary/monsters';
 import { renderMonster } from '../bestiary/pictures';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
-import { sectionOf } from '../game/dotu-files.js';
-import { monsterLevelBase } from '../game/dotu-mech.js';
-import { sectionInfo, type SectionInfo } from '../game/sections';
+import { FAITHFUL_RULES, type GameRules, type SectionPlace } from '../game/port/rules';
+import { sectionInfo } from '../game/sections';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
 import { isOnMap, type MapArea } from './area';
 import type { MapSquare, MapStocking, StockedKind } from './game';
@@ -58,7 +57,7 @@ export const NO_BOSS_BEATEN = 0;
  * and 8 are the four sections of the module, and kill_monster (exe 3000:b12d) sets one when its
  * boss dies.
  */
-function bossStandsOn(section: SectionInfo, floor: number, bossesBeaten: number): boolean {
+function bossStandsOn(section: StockedSection, floor: number, bossesBeaten: number): boolean {
   if (floor !== section.bossFloor) return false;
   return (bossesBeaten & (1 << (section.part - 1))) === 0;
 }
@@ -82,18 +81,25 @@ export function monsterById(id: string): Monster {
   return entry;
 }
 
+/** A section as a floor is stocked from it: where it sits, and the number its monster table is
+ *  loaded by. */
+export interface StockedSection extends SectionPlace {
+  /** 1..20 across all modules. */
+  section: number;
+}
+
 /**
  * The section whose monsters a floor is stocked from, or null when the game itself could not
  * stock it. The game needs two things the floor override can take away: a floor belonging to
- * one of its own module's four sections, so there is a monster table to load, and a monster
- * level of at least 1.
+ * one of its own module's sections, so there is a monster table to load, and a monster level of
+ * at least 1.
  */
-export function stockingSection(moduleIndex: number, floor: number): SectionInfo | null {
-  const firstOfModule = moduleIndex * 4 + 1;
-  const section = sectionOf(moduleIndex, floor);
-  if (section < firstOfModule || section > firstOfModule + 3) return null;
-  if (monsterLevelBase(floor, moduleIndex) <= 0) return null;
-  return sectionInfo(moduleIndex, floor);
+export function stockingSection(rules: GameRules, moduleIndex: number, floor: number): StockedSection | null {
+  const section = rules.sectionOf(moduleIndex, floor);
+  const place = rules.sectionPlace(section);
+  if (!place || place.module !== moduleIndex) return null;
+  if (rules.monsterLevel(moduleIndex, floor) <= 0) return null;
+  return { section, ...place };
 }
 
 /** The game's random(n): an integer 0..n-1. */
@@ -119,12 +125,15 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  *
  * A floor the game could not stock gets nothing.
  *
+ * @param rules the tables the floor is stocked from: its section, and the level its monsters are
+ *   rolled around.
  * @param bossesBeaten the module's kill flags, which keep a Shadow boss who has already been
  *   killed off his floor for good.
  * @param bossLastSeen the square this section's Shadow boss was last put down on, which he is
  *   put back within seven squares of.
  */
 export function stockFloor(
+  rules: GameRules,
   rows: MapSquare[][],
   moduleIndex: number,
   floor: number,
@@ -133,9 +142,9 @@ export function stockFloor(
   bossesBeaten: number = NO_BOSS_BEATEN,
   bossLastSeen: BossSquare = BOSS_NEVER_PLACED,
 ): StockedMonster[] {
-  const section = stockingSection(moduleIndex, floor);
+  const section = stockingSection(rules, moduleIndex, floor);
   if (!section) return [];
-  const baseLevel = monsterLevelBase(floor, moduleIndex);
+  const baseLevel = rules.monsterLevel(moduleIndex, floor);
   const taken = new Set<number>(occupied);
   const monsters: StockedMonster[] = [];
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) {
@@ -274,8 +283,8 @@ function bossSquare(
 
 /** Dungeons of the Unforgiven's monsters, as the map descriptor asks for them. */
 export const UNFORGIVEN_STOCKING: MapStocking = {
-  stocks: (dungeon, floor) => stockingSection(dungeon, floor) !== null,
-  stock: (rows, dungeon, floor) => stockFloor(rows, dungeon, floor, Math.random),
+  stocks: (dungeon, floor) => stockingSection(FAITHFUL_RULES, dungeon, floor) !== null,
+  stock: (rows, dungeon, floor) => stockFloor(FAITHFUL_RULES, rows, dungeon, floor, Math.random),
   kind: unforgivenKind,
   groups: groupedMonsterCounts,
   describe: (monster) => `${monsterById(monster.monsterId).name} · level ${monster.level} · ${monster.hp} HP`,

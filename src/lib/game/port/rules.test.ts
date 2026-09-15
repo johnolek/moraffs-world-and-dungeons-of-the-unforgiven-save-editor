@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import data from '../dotu-data.json';
 import { sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
+import { sectionInfo } from '../sections';
 import { BOTTOM_LEVEL } from '../unfmap.js';
 import { wallPictureFile } from './pictures';
 import { FAITHFUL_RULES, faithfulRules } from './rules';
@@ -39,6 +40,24 @@ describe('the faithful rules', () => {
         expect(rules.sectionOf(module, floor), `module ${module} floor ${floor}`).toBe(sectionOf(module, floor));
       }
     }
+  });
+
+  it('gives a floor the part and the boss floor sectionInfo gives it', () => {
+    for (const module of MODULES) {
+      for (const floor of floorsOf(module)) {
+        const info = sectionInfo(module, floor);
+        const place = rules.sectionPlace(rules.sectionOf(module, floor));
+        expect(place && { part: place.part, bossFloor: place.bossFloor }, `module ${module} floor ${floor}`).toEqual(
+          info && { part: info.part, bossFloor: info.bossFloor },
+        );
+        expect(place?.module, `module ${module} floor ${floor}`).toBe(module);
+      }
+    }
+  });
+
+  it('has no section either side of the twenty', () => {
+    expect(rules.sectionPlace(0)).toBeNull();
+    expect(rules.sectionPlace(21)).toBeNull();
   });
 
   it("loads the 22 built-in monsters and the section's five for every section", () => {
