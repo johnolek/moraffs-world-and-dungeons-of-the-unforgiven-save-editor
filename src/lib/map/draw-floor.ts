@@ -149,10 +149,12 @@ function drawSide(ctx: CanvasRenderingContext2D, stroke: SideStroke | null, x0: 
  *  over the short tick. On a side running along the top of the square it is the small-side case
  *  of an if/else (exe 3000:848c), so a long side gets the pair alone. On a side running down the
  *  left the pair's branch falls through into it (exe 3000:8678), so it is drawn at every size,
- *  after the pair. drawZoomSide in play/display.ts draws the same. */
+ *  after the pair. drawZoomSide in play/display.ts draws the game's own map, at the game's own
+ *  lengths; here the long pair is drawn a quarter shorter than draw_side draws it, because the
+ *  site's own map gives a square more room and the game's length overran it. */
 function drawDoorBar(ctx: CanvasRenderingContext2D, x0: number, y0: number, length: number, vertical: boolean): void {
   const mid = length >> 1;
-  const reach = Math.trunc(length / 3);
+  const reach = Math.trunc(length / 4);
   const long = length >= 8;
   ctx.strokeStyle = palette.line;
   if (vertical) {

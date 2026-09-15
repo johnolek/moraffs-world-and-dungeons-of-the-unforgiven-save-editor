@@ -131,10 +131,10 @@ describe('the ticks drawSquare puts across a door', () => {
   }
 
   it('crosses a door in a side running along the square with the long pair alone', () => {
-    // Middle at 5, reach 3: one tick either side of the middle, nothing on the middle itself.
+    // Middle at 5, reach 2: one tick either side of the middle, nothing on the middle itself.
     expect(ticks('n', 10)).toEqual([
-      [4.5, -3, 4.5, 4],
-      [6.5, -3, 6.5, 4],
+      [4.5, -2, 4.5, 3],
+      [6.5, -2, 6.5, 3],
     ]);
   });
 
@@ -144,8 +144,8 @@ describe('the ticks drawSquare puts across a door', () => {
 
   it('crosses a door in a side running down the square with the short tick under the pair', () => {
     expect(ticks('w', 10)).toEqual([
-      [-3, 6.5, 4, 6.5],
-      [-3, 4.5, 4, 4.5],
+      [-2, 6.5, 3, 6.5],
+      [-2, 4.5, 3, 4.5],
       [-1, 5.5, 2, 5.5],
     ]);
     expect(ticks('w', 7)).toEqual([[-1, 3.5, 2, 3.5]]);
