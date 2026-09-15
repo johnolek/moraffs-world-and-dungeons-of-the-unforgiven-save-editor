@@ -1,8 +1,10 @@
 import { SeededRng } from '../game/port/rng';
 import type { MapSquare } from '../map/game';
+import { sectionPictures } from '../game/port/pictures';
 import { monsterById, type StockedMonster } from '../map/stocking';
 import type { KilledOnScreen } from './engine';
 import { viewPictures } from './view3d/browser';
+import type { ViewPictures } from './view3d/pictures';
 import type { KilledMonster, ViewMonster, ViewScene } from './view3d/render';
 
 /**
@@ -25,6 +27,9 @@ export interface ViewSceneInput {
   /** The section whose pictures the walls and the monsters are drawn out of, or null in the
    *  town, which is in none of the twenty. */
   section: number | null;
+  /** The picture set to draw with, which a game takes from its rules. A scene built out of
+   *  nothing but a section leaves it out and the section's own files are read. */
+  pictures?: ViewPictures;
   monsters: ViewMonster[];
   /** The monster whose skull is standing, or null when nothing has just been killed. */
   killed: KilledMonster | null;
@@ -50,7 +55,7 @@ export function dotuViewScene(input: ViewSceneInput): ViewScene {
     floor: input.from.floor,
     module: input.from.module,
     moduleCarried: input.from.module,
-    pictures: viewPictures(input.section ?? 1),
+    pictures: input.pictures ?? viewPictures(sectionPictures(input.section ?? 1)),
     detail: 0,
     screen: input.screen,
     videoClass: 2,

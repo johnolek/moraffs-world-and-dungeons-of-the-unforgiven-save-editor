@@ -218,6 +218,9 @@
 
   const section = $derived(sectionInfo(place.module, place.floor));
   const part = $derived(section?.part ?? 1);
+  /** The pictures this floor is drawn with. The town belongs to no section and is drawn with
+   *  section 1's, which is the file the game falls back on. */
+  const pictures = $derived(viewPictures(game.rules.pictureFiles(section?.section ?? 1)));
   const height = $derived(game.pc.height);
   /** What a screen whose own fill the port does not know blacks out, which is all of it. */
   const WHOLE_DISPLAY: ScreenRect = { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
@@ -386,7 +389,7 @@
       over.pixels.set(screen.pixels);
       over.journal = screen.journal;
       if (plaque === 'blanked') blankPlaque(over, SCREEN_PIXELS);
-      else drawPlaque(over, SCREEN_PIXELS, viewPictures(section?.section ?? 1).wall);
+      else drawPlaque(over, SCREEN_PIXELS, pictures.wall);
       return over;
     };
 
@@ -445,7 +448,7 @@
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
     // the slab and its four lines and nothing else.
     if (tablet) {
-      drawTablet(frame, SCREEN_PIXELS, tablet, viewPictures(section?.section ?? 1).wall);
+      drawTablet(frame, SCREEN_PIXELS, tablet, pictures.wall);
       paint();
       return;
     }
@@ -453,7 +456,7 @@
     // erase_menu_block blanks the display, the tablet comes down lowered with the taunt on it and
     // the boss stands in a panel beside the three lines saying whose office the message is from.
     if (bossOffice) {
-      drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(bossOffice.section));
+      drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(game.rules.pictureFiles(bossOffice.section)));
       drawDotuScreenText(frame, SCREEN_PIXELS, text);
       paint();
       return;
@@ -461,7 +464,7 @@
     // The S key's screen (monster_manual, exe 3000:c39d): the section's five monsters in their
     // panels and the slab its words are read off, with the lines the manual printed over them.
     if (sectionScreen) {
-      drawSectionScreen(frame, SCREEN_PIXELS, sectionScreen, viewPictures(sectionScreen.section));
+      drawSectionScreen(frame, SCREEN_PIXELS, sectionScreen, viewPictures(game.rules.pictureFiles(sectionScreen.section)));
       drawDotuScreenText(frame, SCREEN_PIXELS, text);
       paint();
       return;
@@ -479,7 +482,7 @@
     if (buildingScreen) {
       drawBuilding(frame, SCREEN_PIXELS, buildingScreen, {
         building: buildingPictures(buildingScreen.file),
-        wall: viewPictures(section?.section ?? 1).wall,
+        wall: pictures.wall,
       });
       if (box.length > 0) fillScreenBox(frame, MESSAGE_BOX);
       drawDotuScreenText(frame, SCREEN_PIXELS, text);
@@ -502,6 +505,7 @@
         rows,
         from: views,
         section: section?.section ?? null,
+        pictures,
         monsters: drawn,
         killed: skull,
         viewsDrawn,

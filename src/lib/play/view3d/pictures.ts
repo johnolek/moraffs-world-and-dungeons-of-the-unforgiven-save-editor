@@ -78,7 +78,7 @@ export interface ViewPictures {
   ladder(down: boolean): PicRowImage | null;
 }
 
-export { WALL_FILES, wallPictureFile } from '../../game/port/pictures';
+export { WALL_FILES, wallPictureFile, sectionPictures, type SectionPictures } from '../../game/port/pictures';
 
 /** A picture set with nothing in it, which draws the view in flat colours. */
 export const NO_PICTURES: ViewPictures = {

@@ -1,3 +1,4 @@
+import { sectionPictures } from '../game/port/pictures';
 import { monsterById } from '../map/stocking';
 import { viewPictures } from './view3d/browser';
 import { picturePixelIndex } from './view3d/scale';
@@ -29,7 +30,7 @@ export function dotuMonsterThumbnail(monsterId: string, size: number): ZoomThumb
   return shrunk.get(
     monsterId,
     size,
-    () => viewPictures(section).monster(entry.picnum, builtin),
+    () => viewPictures(sectionPictures(section)).monster(entry.picnum, builtin),
     (value, row) => picturePixelIndex(value, row, { base: entry.colorSet << 4, tint: entry.color }),
   );
 }

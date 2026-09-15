@@ -16,6 +16,7 @@
   import type { StockedMonster } from '../map/stocking';
   import type { KilledOnScreen } from './engine';
   import { dotuViewScene, killedMonster, viewMonsters } from './view-scene';
+  import { viewPictures } from './view3d/browser';
   import { framePainter } from './view3d/canvas';
   import { clearFrame, newFrame } from './view3d/frame';
   import { WHOLE_SCREEN_VIEW } from './view3d/geometry';
@@ -56,6 +57,7 @@
   const frame = newFrame(VIEW_PIXELS.width, VIEW_PIXELS.height);
 
   const section = $derived(sectionInfo(place.module, place.floor));
+  const pictures = $derived(viewPictures(game.rules.pictureFiles(section?.section ?? 1)));
   const palette = $derived(sectionPalette(place.module + 1, section?.part ?? 1, game.colourSetting));
   const drawn = $derived(viewMonsters(monsters));
   const skull = $derived(killedMonster(killed));
@@ -69,6 +71,7 @@
       rows,
       from: viewsFrom,
       section: section?.section ?? null,
+      pictures,
       monsters: drawn,
       killed: skull,
       viewsDrawn,

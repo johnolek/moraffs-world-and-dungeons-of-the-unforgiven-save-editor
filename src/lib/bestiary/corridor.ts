@@ -1,4 +1,5 @@
 import type { MapSquare } from '../map/game';
+import { sectionPictures } from '../game/port/pictures';
 import { viewPictures } from '../play/view3d/browser';
 import { newFrame, toRgba } from '../play/view3d/frame';
 import { WHOLE_SCREEN_VIEW } from '../play/view3d/geometry';
@@ -79,7 +80,7 @@ export function corridorScene(entry: Monster, place: CorridorPlace): ViewScene {
     floor: place.floor,
     module: place.module,
     moduleCarried: place.module,
-    pictures: viewPictures(place.section),
+    pictures: viewPictures(sectionPictures(place.section)),
     detail: DETAIL_TEXTURED,
     screen: { width: CORRIDOR_WIDTH, height: CORRIDOR_HEIGHT },
     videoClass: VIDEO_CLASS,
