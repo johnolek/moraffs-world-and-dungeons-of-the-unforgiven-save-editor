@@ -4,7 +4,16 @@ import type { JournalEntry } from '../src/lib/play/journal';
 import type { ServerConfig } from './config';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { openSignInAttempts, type SignInAttempts } from './attempts';
-import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName, isLivingSort, livingPage } from './boards';
+import {
+  boardPage,
+  boardWorld,
+  hasBoard,
+  isBoardGame,
+  isBoardLeaderboard,
+  isBoardName,
+  isLivingSort,
+  livingPage,
+} from './boards';
 import { writeCorsHeaders } from './cors';
 import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
 import { everyoneOf } from './everyone';
@@ -61,6 +70,7 @@ const NO_SUCH_CHARACTER = 'No character of yours has that name here.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 const NOT_A_PAGE = 'That is not a page of a board.';
 const NOT_A_LIVING_SORT = 'That is not an order the living are ranked in.';
+const NOT_A_WORLD = 'That is not an endless world.';
 const NOT_A_HISTORY_PAGE = 'That is not a page of the announcements.';
 
 /** A players request carries a field or two, so anything longer than this is not one. */
@@ -195,6 +205,7 @@ export function createRunServer(
         decodeURIComponent(living[2]),
         asked.searchParams.get('sort'),
         asked.searchParams.get('page'),
+        asked.searchParams.get('world'),
       );
       return;
     }
@@ -208,6 +219,7 @@ export function createRunServer(
         decodeURIComponent(board[2]),
         decodeURIComponent(board[3]),
         asked.searchParams.get('page'),
+        asked.searchParams.get('world'),
       );
       return;
     }
@@ -230,10 +242,12 @@ export function createRunServer(
 /**
  * One page of one board.
  *
- * The three parts of the path are a board there is: a game the site plays, one of faithful and
- * speedrun, and one of the six boards. Anything else is not a board that exists rather than a
- * board with nothing on it, so it is a 404 and not an empty page. The rules about which runs
- * stand on a board and in what order are `server/boards.ts`.
+ * The three parts of the path are a board there is: a game the site plays, one of the ways of
+ * playing it, and one of that way's own boards — the endless dungeon has boards of its own and
+ * none of the boards of wins. Anything else is not a board that exists rather than a board with
+ * nothing on it, so it is a 404 and not an empty page. An endless board is read for one world,
+ * which `world` names and which is the world being played now where the query names none. The
+ * rules about which runs stand on a board and in what order are `server/boards.ts`.
  */
 async function sendHealth(response: ServerResponse, engines: EngineStore): Promise<void> {
   const kept = await engines.keptCommits();
@@ -247,8 +261,9 @@ async function sendBoard(
   leaderboard: string,
   board: string,
   asked: string | null,
+  askedWorld: string | null,
 ): Promise<void> {
-  if (!isBoardGame(game) || !isBoardLeaderboard(leaderboard) || !isBoardName(board)) {
+  if (!isBoardGame(game) || !isBoardLeaderboard(leaderboard) || !isBoardName(board) || !hasBoard(leaderboard, board)) {
     sendJson(response, 404, { error: `No such board: ${game}/${leaderboard}/${board}` });
     return;
   }
@@ -257,7 +272,12 @@ async function sendBoard(
     sendJson(response, 400, { error: NOT_A_PAGE });
     return;
   }
-  sendJson(response, 200, await boardPage(sql, { game, leaderboard, board, page }));
+  const world = worldAsked(askedWorld);
+  if (world === false) {
+    sendJson(response, 400, { error: NOT_A_WORLD });
+    return;
+  }
+  sendJson(response, 200, await boardPage(sql, { game, leaderboard, board, page, world: boardWorld(leaderboard, world) }));
 }
 
 /**
@@ -275,6 +295,7 @@ async function sendLivingBoard(
   leaderboard: string,
   sort: string | null,
   asked: string | null,
+  askedWorld: string | null,
 ): Promise<void> {
   if (!isBoardGame(game) || !isBoardLeaderboard(leaderboard)) {
     sendJson(response, 404, { error: `No such board: ${game}/${leaderboard}/living` });
@@ -290,7 +311,13 @@ async function sendLivingBoard(
     sendJson(response, 400, { error: NOT_A_PAGE });
     return;
   }
-  sendJson(response, 200, await livingPage(sql, { game, leaderboard, sort: order, page }, Date.now()));
+  const world = worldAsked(askedWorld);
+  if (world === false) {
+    sendJson(response, 400, { error: NOT_A_WORLD });
+    return;
+  }
+  const read = { game, leaderboard, sort: order, page, world: boardWorld(leaderboard, world) };
+  sendJson(response, 200, await livingPage(sql, read, Date.now()));
 }
 
 /**
@@ -306,6 +333,18 @@ async function sendEveryone(response: ServerResponse, sql: Queries, game: string
     return;
   }
   sendJson(response, 200, await everyoneOf(sql, game, Date.now()));
+}
+
+/**
+ * Which endless world was asked for, and null where the query names none, which leaves the board
+ * to answer for the world being played now.
+ *
+ * False is a query that is not a world at all, which is a request to refuse rather than one to
+ * answer with another world's board.
+ */
+function worldAsked(asked: string | null): number | null | false {
+  if (asked === null) return null;
+  return /^[0-9]{1,15}$/.test(asked) ? Number(asked) : false;
 }
 
 /** Which page of a board was asked for, counting from one, or null when the query names

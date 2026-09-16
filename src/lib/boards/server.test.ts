@@ -29,6 +29,7 @@ function row(name: string): BoardRow {
     timed: true,
     deepest: 2,
     level: 7,
+    kills: 9,
     outcome: 'win',
     at: '2026-09-09 21:00:00',
   };

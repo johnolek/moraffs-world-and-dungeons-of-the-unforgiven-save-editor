@@ -9,16 +9,17 @@ import type { Queries } from './sql';
  * Everything about ranking is here so that the server and the site say the same thing about a
  * board. The site's pages over these are MORF-146; nothing here draws anything.
  *
- * A board is one game and one of faithful and speedrun, never the two mixed: they are different
- * games to play, so runs of one tell you nothing about runs of the other. A run's board is the
- * `leaderboard` of the character it was played with — the board it was rolled for and locked to
- * for life — and a character rolled for no board is on none of them. Only a run that was verified
- * and had no record written into it from outside the game is on a board at all, which is what
- * `eligible` on the verdict already says.
+ * A board is one game and one way of playing it, never two mixed: faithful, speedrun and endless
+ * are different games to play, so runs of one tell you nothing about runs of another. A run's
+ * board is the `leaderboard` of the character it was played with — the board it was rolled for and
+ * locked to for life — and a character rolled for no board is on none of them. Only a run that was
+ * verified and had no record written into it from outside the game is on a board at all, which is
+ * what `eligible` on the verdict already says.
  *
- * A character can also be rolled to play the endless dungeon. Its runs are taken, replayed and
- * given a verdict like any other, and they stand on none of the boards below: the endless dungeon
- * has no board of its own yet.
+ * The endless dungeon is cut finer still: a board of it is one world as well as one game, since
+ * two worlds stand different monsters on the same floor. Its boards are not the same boards
+ * either — a dungeon with no bottom has no winning, so there is nothing to rank by fewest actions
+ * or least time — and {@link boardsOf} is which boards a way of playing has.
  */
 
 /**
@@ -90,12 +91,25 @@ function highest(numbers: number[]): number {
 export const BOARD_GAMES = ['unforgiven', 'moraffsWorld', 'revenge'] as const satisfies readonly PortedGameId[];
 
 /** The ways a character is rolled to be played that have a board, which never share one. */
-export const BOARD_LEADERBOARDS = ['faithful', 'speedrun'] as const satisfies readonly Leaderboard[];
+export const BOARD_LEADERBOARDS = ['faithful', 'speedrun', 'endless'] as const satisfies readonly Leaderboard[];
 
-export type BoardName = 'actions' | 'clock' | 'wall' | 'deepest' | 'level' | 'deaths';
+/**
+ * The world every endless character is rolled into today, which is `ENDLESS_WORLD_SEED` in
+ * `src/lib/game/endless/rules.ts`.
+ *
+ * The number is written out here rather than imported because importing a value from that file
+ * would pull the engine into this build, the way `RUN_LOG_VERSION` is written out in
+ * `server/verifying.ts`; `server/boards.test.ts` holds the two to each other. MORF-513 is where
+ * the server hands the number out instead of everybody sharing this one, and the boards are ready
+ * for it: each one is read for a world, and the worlds there are runs in are
+ * {@link endlessWorlds}.
+ */
+export const CURRENT_ENDLESS_WORLD = 1;
+
+export type BoardName = 'actions' | 'clock' | 'wall' | 'deepest' | 'level' | 'deaths' | 'kills';
 
 /** Which of a row's numbers a board puts the runs in order of. */
-export type SortedOn = 'actions' | 'clock' | 'playMs' | 'deepest' | 'level' | 'at';
+export type SortedOn = 'actions' | 'clock' | 'playMs' | 'deepest' | 'level' | 'kills' | 'at';
 
 export interface Board {
   name: BoardName;
@@ -118,6 +132,25 @@ export const BOARDS: readonly Board[] = [
   { name: 'level', sortedOn: 'level', sorts: 'Every run, by the highest level reached' },
   { name: 'deaths', sortedOn: 'at', sorts: 'Deaths, newest first' },
 ];
+
+/**
+ * The boards of the endless dungeon, in the order the site should offer them.
+ *
+ * There are no boards of wins here: the dungeon has no bottom, so nobody finishes it and the three
+ * boards of the fastest win are boards nothing could ever stand on. What is left is how deep a run
+ * got, how high it levelled and how much it killed — and the deepest floor is the deepest floor a
+ * Shadow was killed on ({@link deepestShadowKilled}), not the deepest floor fallen to.
+ */
+export const ENDLESS_BOARDS: readonly Board[] = [
+  { name: 'deepest', sortedOn: 'deepest', sorts: 'Every run, by the deepest Shadow killed' },
+  { name: 'level', sortedOn: 'level', sorts: 'Every run, by the highest level reached' },
+  { name: 'kills', sortedOn: 'kills', sorts: 'Every run, by monsters killed' },
+];
+
+/** The boards a way of playing has. */
+export function boardsOf(leaderboard: string): readonly Board[] {
+  return leaderboard === 'endless' ? ENDLESS_BOARDS : BOARDS;
+}
 
 /**
  * The boards of the living: characters still being played, ranked by how high they have levelled
@@ -167,6 +200,8 @@ export interface BoardRow {
   timed: boolean;
   deepest: number;
   level: number;
+  /** How many monsters the run killed. */
+  kills: number;
   outcome: string | null;
   /** When the run ended. */
   at: string | null;
@@ -176,6 +211,8 @@ export interface BoardPage {
   game: string;
   leaderboard: string;
   board: BoardName;
+  /** The endless world this page was read for, and null for a board that is one dungeon. */
+  world: number | null;
   page: number;
   rows: BoardRow[];
   /** Whether there is a page after this one. */
@@ -190,8 +227,27 @@ export function isBoardLeaderboard(leaderboard: string): boolean {
   return (BOARD_LEADERBOARDS as readonly string[]).includes(leaderboard);
 }
 
+/** Whether this is a ranked board at all, whichever way of playing has it. */
 export function isBoardName(board: string): board is BoardName {
-  return BOARDS.some((known) => known.name === board);
+  return [...BOARDS, ...ENDLESS_BOARDS].some((known) => known.name === board);
+}
+
+/** Whether this way of playing has this board: the endless dungeon has no wins to rank and
+ *  nothing else is ranked by kills. */
+export function hasBoard(leaderboard: string, board: BoardName): boolean {
+  return boardsOf(leaderboard).some((known) => known.name === board);
+}
+
+/**
+ * The world a board is read for, and null for a board that is one dungeon and has no world to be
+ * read for.
+ *
+ * Only the endless dungeon has worlds. A request that names none is asking for the world being
+ * played now, since that is the board anybody arriving is looking for.
+ */
+export function boardWorld(leaderboard: string, asked: number | null): number | null {
+  if (leaderboard !== 'endless') return null;
+  return asked ?? CURRENT_ENDLESS_WORLD;
 }
 
 /**
@@ -211,32 +267,42 @@ const ORDERS: Record<BoardName, { holds: string | null; order: string }> = {
   wall: { holds: "c.outcome = 'win' AND v.timed AND v.play_ms > 0", order: 'v.play_ms ASC, c.finished_at ASC' },
   deepest: { holds: null, order: 'v.deepest DESC, v.actions ASC, c.finished_at ASC' },
   level: { holds: null, order: 'v.level DESC, v.actions ASC, c.finished_at ASC' },
+  kills: { holds: null, order: 'v.kills DESC, v.actions ASC, c.finished_at ASC' },
   deaths: { holds: "c.outcome = 'death'", order: 'c.finished_at DESC' },
 };
 
-/** One page of a board. Pages count from one. */
+/**
+ * One page of a board. Pages count from one.
+ *
+ * `world` is the endless world the board is read for, and null for the boards that are one
+ * dungeon; {@link boardWorld} is which it is.
+ */
 export async function boardPage(
   sql: Queries,
-  asked: { game: string; leaderboard: string; board: BoardName; page: number },
+  asked: { game: string; leaderboard: string; board: BoardName; page: number; world: number | null },
 ): Promise<BoardPage> {
   const board = ORDERS[asked.board];
+  const values: unknown[] = [asked.game, asked.leaderboard, RUNS_PER_PAGE + 1, (asked.page - 1) * RUNS_PER_PAGE];
+  if (asked.world !== null) values.push(asked.world);
+  const inThatWorld = asked.world === null ? '' : ` AND c.world_seed = $${values.length}`;
   // One row more than a page is asked for, and it is not shown: that is the whole answer to
   // whether there is a page after this one, without counting the board twice.
   const rows = await sql.query<BoardRowShape>(
     `SELECT v.character_id, p.name AS player, c.name AS name, v.actions, v.time, v.play_ms,
-            v.timed, v.deepest, v.level, c.outcome, c.finished_at
+            v.timed, v.deepest, v.level, v.kills, c.outcome, c.finished_at
      FROM verdicts v
      JOIN characters c ON c.id = v.character_id
      JOIN players p ON p.id = c.player_id
-     WHERE v.game = $1 AND v.leaderboard = $2 AND v.eligible${board.holds === null ? '' : ` AND ${board.holds}`}
+     WHERE v.game = $1 AND v.leaderboard = $2 AND v.eligible${board.holds === null ? '' : ` AND ${board.holds}`}${inThatWorld}
      ORDER BY ${board.order}
      LIMIT $3 OFFSET $4`,
-    [asked.game, asked.leaderboard, RUNS_PER_PAGE + 1, (asked.page - 1) * RUNS_PER_PAGE],
+    values,
   );
   return {
     game: asked.game,
     leaderboard: asked.leaderboard,
     board: asked.board,
+    world: asked.world,
     page: asked.page,
     rows: rows.slice(0, RUNS_PER_PAGE).map(rowOf),
     more: rows.length > RUNS_PER_PAGE,
@@ -255,6 +321,7 @@ type BoardRowShape = {
   timed: boolean;
   deepest: number;
   level: number;
+  kills: number;
   outcome: string | null;
   finished_at: Date | null;
 };
@@ -270,6 +337,7 @@ function rowOf(row: BoardRowShape): BoardRow {
     timed: row.timed,
     deepest: row.deepest,
     level: row.level,
+    kills: row.kills,
     outcome: row.outcome,
     at: row.finished_at === null ? null : row.finished_at.toISOString(),
   };
@@ -299,6 +367,8 @@ export interface LivingPage {
   game: string;
   leaderboard: string;
   sort: LivingSort;
+  /** The endless world this page was read for, and null for a board that is one dungeon. */
+  world: number | null;
   page: number;
   rows: LivingRow[];
   /** Whether there is a page after this one. */
@@ -330,9 +400,12 @@ const LIVING_ORDERS: Record<LivingSort, string> = {
  */
 export async function livingPage(
   sql: Queries,
-  asked: { game: string; leaderboard: string; sort: LivingSort; page: number },
+  asked: { game: string; leaderboard: string; sort: LivingSort; page: number; world: number | null },
   now: number,
 ): Promise<LivingPage> {
+  const values: unknown[] = [asked.game, asked.leaderboard, RUNS_PER_PAGE + 1, (asked.page - 1) * RUNS_PER_PAGE];
+  if (asked.world !== null) values.push(asked.world);
+  const inThatWorld = asked.world === null ? '' : ` AND c.world_seed = $${values.length}`;
   // One row more than a page is asked for, and it is not shown: that is the whole answer to
   // whether there is a page after this one, without counting the board twice.
   const rows = await sql.query<LivingRowShape>(
@@ -341,15 +414,16 @@ export async function livingPage(
      FROM living l
      JOIN characters c ON c.id = l.character_id
      JOIN players p ON p.id = c.player_id
-     WHERE l.game = $1 AND l.leaderboard = $2 AND l.status = 'verified' AND c.finished_at IS NULL
+     WHERE l.game = $1 AND l.leaderboard = $2 AND l.status = 'verified' AND c.finished_at IS NULL${inThatWorld}
      ORDER BY ${LIVING_ORDERS[asked.sort]}
      LIMIT $3 OFFSET $4`,
-    [asked.game, asked.leaderboard, RUNS_PER_PAGE + 1, (asked.page - 1) * RUNS_PER_PAGE],
+    values,
   );
   return {
     game: asked.game,
     leaderboard: asked.leaderboard,
     sort: asked.sort,
+    world: asked.world,
     page: asked.page,
     rows: rows.slice(0, RUNS_PER_PAGE).map((row) => livingRowOf(row, now)),
     more: rows.length > RUNS_PER_PAGE,

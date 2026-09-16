@@ -2,10 +2,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone, MilestoneKind } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
+import { ENDLESS_WORLD_SEED } from '../src/lib/game/endless/rules';
 import {
   boardPage,
+  boardWorld,
+  CURRENT_ENDLESS_WORLD,
   deepestReach,
   deepestShadowKilled,
+  hasBoard,
   highestLevel,
   isBoardLeaderboard,
   killsIn,
@@ -144,6 +148,10 @@ interface Kept {
   status: string;
   deepest: number;
   level: number;
+  kills: number;
+  /** The endless world the character was rolled into, and null for one playing the game as it
+   *  shipped. */
+  worldSeed: number | null;
 }
 
 async function keep(sql: Sql, over: Partial<Kept> & { id: string }): Promise<void> {
@@ -162,6 +170,8 @@ async function keep(sql: Sql, over: Partial<Kept> & { id: string }): Promise<voi
     status: 'verified',
     deepest: 0,
     level: 0,
+    kills: 0,
+    worldSeed: null,
     ...over,
   };
   const held = await sql.query<{ id: number }>('SELECT id FROM players WHERE name = $1', [run.player]);
@@ -170,13 +180,14 @@ async function keep(sql: Sql, over: Partial<Kept> & { id: string }): Promise<voi
       ? held
       : await sql.query<{ id: number }>('INSERT INTO players (name) VALUES ($1) RETURNING id', [run.player]);
   await sql.query(
-    'INSERT INTO characters (id, player_id, game, name, finished_at, outcome) VALUES ($1, $2, $3, $4, $5, $6)',
-    [run.id, players[0].id, run.game, run.name, run.finishedAt, run.outcome],
+    `INSERT INTO characters (id, player_id, game, name, finished_at, outcome, world_seed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [run.id, players[0].id, run.game, run.name, run.finishedAt, run.outcome, run.worldSeed],
   );
   await sql.query(
     `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
-                           eligible, game, leaderboard, deepest, level, engine_commits)
-     VALUES ($1, $2, NULL, $3, $4, '[]', $5, $6, $7, $8, $9, $10, $11, '[]')`,
+                           eligible, game, leaderboard, deepest, level, kills, engine_commits)
+     VALUES ($1, $2, NULL, $3, $4, '[]', $5, $6, $7, $8, $9, $10, $11, $12, '[]')`,
     [
       run.id,
       run.status,
@@ -189,6 +200,7 @@ async function keep(sql: Sql, over: Partial<Kept> & { id: string }): Promise<voi
       run.leaderboard,
       run.deepest,
       run.level,
+      run.kills,
     ],
   );
 }
@@ -196,13 +208,15 @@ async function keep(sql: Sql, over: Partial<Kept> & { id: string }): Promise<voi
 async function ids(
   sql: Sql,
   board: BoardName,
-  over: { game?: string; leaderboard?: string; page?: number } = {},
+  over: { game?: string; leaderboard?: string; page?: number; world?: number } = {},
 ): Promise<string[]> {
+  const leaderboard = over.leaderboard ?? 'speedrun';
   const page = await boardPage(sql, {
     game: over.game ?? 'unforgiven',
-    leaderboard: over.leaderboard ?? 'speedrun',
+    leaderboard,
     board,
     page: over.page ?? 1,
+    world: boardWorld(leaderboard, over.world ?? null),
   });
   return page.rows.map((row) => row.characterId);
 }
@@ -262,7 +276,13 @@ describe('the order a board puts runs in', () => {
     await keep(sql, { id: 'newer', outcome: 'death', finishedAt: '2026-09-08T00:00:00.000Z', deepest: 3, level: 7 });
     await keep(sql, { id: 'won' });
 
-    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'deaths', page: 1 });
+    const page = await boardPage(sql, {
+      game: 'unforgiven',
+      leaderboard: 'speedrun',
+      board: 'deaths',
+      page: 1,
+      world: null,
+    });
 
     expect(page.rows.map((row) => row.characterId)).toEqual(['newer', 'older']);
     expect(page.rows[0]).toMatchObject({ deepest: 3, level: 7, outcome: 'death', player: 'John', name: 'Grond' });
@@ -307,10 +327,11 @@ describe('which runs a board holds at all', () => {
     expect(await ids(sql, 'deepest')).toEqual([]);
   });
 
-  it('keeps an endless run and puts it on no board, there being none to put it on', async () => {
-    await keep(sql, { id: 'endless-run', leaderboard: 'endless' });
+  it('never mixes an endless run with the runs of the game as it shipped', async () => {
+    await keep(sql, { id: 'endless-run', leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD, deepest: 460 });
 
-    expect(isBoardLeaderboard('endless')).toBe(false);
+    expect(isBoardLeaderboard('endless')).toBe(true);
+    expect(await ids(sql, 'deepest', { leaderboard: 'endless' })).toEqual(['endless-run']);
     expect(await ids(sql, 'deepest', { leaderboard: 'faithful' })).toEqual([]);
     expect(await ids(sql, 'deepest', { leaderboard: 'speedrun' })).toEqual([]);
   });
@@ -320,6 +341,70 @@ describe('which runs a board holds at all', () => {
 
     expect(await ids(sql, 'deepest')).toEqual([]);
     expect(await ids(sql, 'deepest', { leaderboard: 'faithful' })).toEqual([]);
+  });
+});
+
+describe('the boards of the endless dungeon', () => {
+  let sql: Sql;
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  /** Another world than the one being played now, which is a board of its own. */
+  const OLDER_WORLD = 9;
+
+  it('is rolled into the same world as the run it ranks', async () => {
+    expect(CURRENT_ENDLESS_WORLD).toBe(ENDLESS_WORLD_SEED);
+  });
+
+  it('holds the runs of one world and not another world’s', async () => {
+    await keep(sql, { id: 'now', leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD, deepest: 300 });
+    await keep(sql, { id: 'before', leaderboard: 'endless', worldSeed: OLDER_WORLD, deepest: 900 });
+
+    expect(await ids(sql, 'deepest', { leaderboard: 'endless' })).toEqual(['now']);
+    expect(await ids(sql, 'deepest', { leaderboard: 'endless', world: OLDER_WORLD })).toEqual(['before']);
+  });
+
+  it('reads the world being played now for a request that names none', async () => {
+    await keep(sql, { id: 'now', leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD });
+
+    expect(boardWorld('endless', null)).toBe(CURRENT_ENDLESS_WORLD);
+    expect(boardWorld('faithful', null)).toBeNull();
+    expect(await ids(sql, 'deepest', { leaderboard: 'endless' })).toEqual(['now']);
+  });
+
+  it('puts the run that killed the most first on the board of kills', async () => {
+    const world = { leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD };
+    await keep(sql, { id: 'butcher', ...world, kills: 4000 });
+    await keep(sql, { id: 'tourist', ...world, kills: 12 });
+
+    expect(await ids(sql, 'kills', { leaderboard: 'endless' })).toEqual(['butcher', 'tourist']);
+  });
+
+  it('puts the deepest Shadow first, and the fewest actions first among equals', async () => {
+    const world = { leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD };
+    await keep(sql, { id: 'shallow', ...world, deepest: 120 });
+    await keep(sql, { id: 'deep-slow', ...world, deepest: 460, actions: 900 });
+    await keep(sql, { id: 'deep-quick', ...world, deepest: 460, actions: 90 });
+
+    expect(await ids(sql, 'deepest', { leaderboard: 'endless' })).toEqual(['deep-quick', 'deep-slow', 'shallow']);
+  });
+
+  it('offers no board of wins, there being no winning it, and no kills anywhere else', () => {
+    expect(hasBoard('endless', 'deepest')).toBe(true);
+    expect(hasBoard('endless', 'level')).toBe(true);
+    expect(hasBoard('endless', 'kills')).toBe(true);
+    expect(hasBoard('endless', 'actions')).toBe(false);
+    expect(hasBoard('endless', 'clock')).toBe(false);
+    expect(hasBoard('endless', 'wall')).toBe(false);
+    expect(hasBoard('endless', 'deaths')).toBe(false);
+    expect(hasBoard('faithful', 'kills')).toBe(false);
+    expect(hasBoard('speedrun', 'actions')).toBe(true);
   });
 });
 
@@ -336,7 +421,13 @@ describe('paging a board', () => {
   });
 
   it('holds fifty runs on a page and says there is another', async () => {
-    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 1 });
+    const page = await boardPage(sql, {
+      game: 'unforgiven',
+      leaderboard: 'speedrun',
+      board: 'actions',
+      page: 1,
+      world: null,
+    });
 
     expect(page.rows).toHaveLength(RUNS_PER_PAGE);
     expect(page.rows[0].characterId).toBe('run-0');
@@ -344,7 +435,13 @@ describe('paging a board', () => {
   });
 
   it('goes on from where the page before it stopped', async () => {
-    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 2 });
+    const page = await boardPage(sql, {
+      game: 'unforgiven',
+      leaderboard: 'speedrun',
+      board: 'actions',
+      page: 2,
+      world: null,
+    });
 
     expect(page.rows.map((row) => row.characterId)).toEqual(['run-50', 'run-51']);
     expect(page.more).toBe(false);
@@ -437,7 +534,13 @@ describe('a run that went the whole way through the verifier', () => {
     verifier.verifySoon(CHARACTER);
     await verifier.idle();
 
-    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 1 });
+    const page = await boardPage(sql, {
+      game: 'unforgiven',
+      leaderboard: 'speedrun',
+      board: 'actions',
+      page: 1,
+      world: null,
+    });
 
     expect(page.rows).toHaveLength(1);
     expect(page.rows[0]).toMatchObject({
