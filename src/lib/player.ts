@@ -13,7 +13,8 @@ import { runServerUrl } from './run-server';
  *
  * A name is not stuck on the device it was claimed on: claiming one is answered with a passphrase
  * of six words, and a browser that says that name and those words is let in as the same player,
- * with its own secret beside the first.
+ * with its own secret beside the first. The browser keeps the words it was handed or signed in
+ * with, because the run server's admin endpoints take the passphrase and nothing else.
  */
 
 /** Where the secret is kept, beside `moraff-tools.roster` and the rest. */
@@ -21,6 +22,9 @@ const SECRET_KEY = 'moraff-tools.player-secret';
 
 /** Where the opt-out is kept, beside the secret. */
 const OFF_THE_BOARDS_KEY = 'moraff-tools.off-the-boards';
+
+/** Where the passphrase is kept, beside the secret. */
+const PASSPHRASE_KEY = 'moraff-tools.passphrase';
 
 /** A secret is 43 base64url characters, which is what 32 bytes come to without padding. */
 const SECRET = /^[A-Za-z0-9_-]{43}$/;
@@ -73,6 +77,28 @@ export function setOffTheBoards(off: boolean): void {
   else removeStored(OFF_THE_BOARDS_KEY);
 }
 
+/**
+ * The passphrase this browser last learned, or null when it has learned none.
+ *
+ * The run server's admin endpoints take the passphrase and nothing else -- they are reached off a
+ * piece of paper and into curl as readily as from a page -- so keeping the words is what lets the
+ * Admin tab ask the server anything without them being typed again (`src/lib/admin/`).
+ *
+ * The words are kept beside the secret and are worth rather more: the secret plays as this player
+ * in this browser, and the words play as them anywhere. A browser somebody else can read is
+ * already a browser that plays as this player, so what is added is that they could carry the
+ * player elsewhere.
+ */
+export function myPassphrase(): string | null {
+  return readStored(PASSPHRASE_KEY);
+}
+
+/** Keeps the words, whether the server just handed them over or the player just proved they are
+ *  theirs. */
+function keepPassphrase(passphrase: string): void {
+  writeStored(PASSPHRASE_KEY, passphrase);
+}
+
 function newSecret(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   const binary = String.fromCharCode(...bytes);
@@ -101,7 +127,9 @@ export async function myName(): Promise<string | null> {
 /** Claims the name for this browser's secret, and says what the server made of it. A name nobody
  *  held makes a player, and the answer carries that player's passphrase. */
 export async function claimName(name: string): Promise<NameAnswer> {
-  return nameIn(await tellTheBoards('/players', { name }));
+  const answer = nameIn(await tellTheBoards('/players', { name }));
+  if (answer.ok && answer.passphrase !== null) keepPassphrase(answer.passphrase);
+  return answer;
 }
 
 /**
@@ -110,7 +138,9 @@ export async function claimName(name: string): Promise<NameAnswer> {
  * the name and the device the name was claimed on keeps it too.
  */
 export async function signIn(name: string, passphrase: string): Promise<NameAnswer> {
-  return nameIn(await tellTheBoards('/players/sign-in', { name, passphrase }));
+  const answer = nameIn(await tellTheBoards('/players/sign-in', { name, passphrase }));
+  if (answer.ok) keepPassphrase(passphrase);
+  return answer;
 }
 
 /** Draws this browser's player a new passphrase, which stops the one they had working. */
@@ -118,7 +148,9 @@ export async function newPassphrase(): Promise<PassphraseAnswer> {
   const answer = await tellTheBoards('/players/passphrase', {});
   if (!answer.answered) return { ok: false, message: answer.message };
   const passphrase = answer.body.passphrase;
-  return typeof passphrase === 'string' ? { ok: true, passphrase } : { ok: false, message: NO_ANSWER };
+  if (typeof passphrase !== 'string') return { ok: false, message: NO_ANSWER };
+  keepPassphrase(passphrase);
+  return { ok: true, passphrase };
 }
 
 /** What one call to the server came to: what it answered with, or the words to show instead. */

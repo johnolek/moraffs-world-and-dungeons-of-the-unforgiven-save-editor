@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { claimName, myName, newPassphrase, offTheBoards, playerSecret, setOffTheBoards, signIn } from './player';
+import {
+  claimName,
+  myName,
+  myPassphrase,
+  newPassphrase,
+  offTheBoards,
+  playerSecret,
+  setOffTheBoards,
+  signIn,
+} from './player';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -98,6 +107,54 @@ describe('the opt-out from the boards', () => {
     setOffTheBoards(true);
 
     expect(offTheBoards()).toBe(false);
+  });
+});
+
+describe('the passphrase this browser keeps', () => {
+  it('is nothing until the browser has learned one', () => {
+    useStorage(fakeStorage());
+
+    expect(myPassphrase()).toBeNull();
+  });
+
+  it('is the words a claim that made a player was handed', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(200, { name: 'Moraff', passphrase: 'acid acorn acre afar affix aged' });
+
+    await claimName('Moraff');
+
+    expect(myPassphrase()).toBe('acid acorn acre afar affix aged');
+  });
+
+  it('is the words a sign-in proved, since the server cannot say them again', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(200, { name: 'Moraff' });
+
+    await signIn('Moraff', 'acid acorn acre afar affix aged');
+
+    expect(myPassphrase()).toBe('acid acorn acre afar affix aged');
+  });
+
+  it('is the newly drawn words once the player draws some', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(200, { passphrase: 'bold botch bough bound bowl boxcar' });
+
+    await newPassphrase();
+
+    expect(myPassphrase()).toBe('bold botch bough bound bowl boxcar');
+  });
+
+  it('is left alone by a sign-in the server refused', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(401, { error: 'That name and passphrase do not go together.' });
+
+    await signIn('Moraff', 'wrong words here at all');
+
+    expect(myPassphrase()).toBeNull();
   });
 });
 
