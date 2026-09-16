@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app, entryById, type RosterEntry } from '../app-state.svelte';
 import { base64FromBytes } from '../bytes';
 import { bringRunKeysHere } from '../character/current';
@@ -93,9 +93,40 @@ function standingDeep(): RosterEntry {
   });
 }
 
+/**
+ * The same dungeon every run.
+ *
+ * A sitting draws a seed of its own from the platform's randomness (`drawSeed` in `run.ts`) and
+ * reads the page's clock as its log opens, and the floor the character wakes on is stocked from
+ * those two, so these tests play a different dungeon every time they are run. That makes a count
+ * of actions a count that is only usually the same: on about one dungeon in four hundred a
+ * monster met by a moment waited here puts a message on the screen that waits for a key of its
+ * own, the pass never reaches the save that writes the sitting back to the roster, and the
+ * sitting played after it counts on from a total an action short. Holding the draw and the clock
+ * still is what makes these counts the same count every run.
+ *
+ * Neither number means anything: they are one of the draws and one of the readings a sitting can
+ * take, picked because a dungeon has to be picked.
+ */
+const HELD_SEED = 2246822519;
+const HELD_CLOCK_MS = 123456;
+
+let heldSeed: { mockRestore(): void };
+let heldClock: { mockRestore(): void };
+
+beforeEach(() => {
+  heldSeed = vi.spyOn(crypto, 'getRandomValues').mockImplementation((bits) => {
+    new Uint32Array((bits as Uint32Array).buffer).fill(HELD_SEED);
+    return bits;
+  });
+  heldClock = vi.spyOn(performance, 'now').mockReturnValue(HELD_CLOCK_MS);
+});
+
 afterEach(() => {
   app.roster = [];
   app.characterId = null;
+  heldSeed.mockRestore();
+  heldClock.mockRestore();
 });
 
 describe('a character played again', () => {
