@@ -45,6 +45,10 @@ const faithfulFloors = (module: number): number[] =>
 /** The deepest floor the record's signed word at 0x7b4 can say a character is standing on. */
 const RECORD_FLOOR_MAX = 32767;
 
+/** How wide a line of the words on the S screen is: MD.BIN holds four forty-column lines a
+ *  section, and the widest line the game itself writes is 39 characters. */
+const MD_BIN_COLUMNS = 39;
+
 describe('an endless dungeon', () => {
   it("bottoms out at 30,000, which is inside the floor the record can hold", () => {
     expect(ENDLESS_BOTTOM).toBe(30000);
@@ -317,6 +321,19 @@ describe("an endless section's theme", () => {
     const plain = floorOf(sectionWith('plain'));
     expect(tough.monsterLevel(MODULE_V, elite)).toBe(baseLevelOf(elite) + 2);
     expect(tough.monsterLevel(MODULE_V, plain)).toBe(baseLevelOf(plain));
+  });
+
+  it('says on the S screen what the section does with its monsters', () => {
+    expect(tough.sectionNote(sectionWith('fire'))).toBe('Everything down here breathes fire.');
+    expect(tough.sectionNote(sectionWith('elites'))).toBe('The monsters here stand two levels up.');
+    expect(tough.sectionNote(sectionWith('plain'))).toBeNull();
+    for (const section of [1, 20]) expect(tough.sectionNote(section), `section ${section}`).toBeNull();
+  });
+
+  it('keeps that line inside the forty columns MD.BIN writes in', () => {
+    for (const theme of new Set(sweep())) {
+      expect(tough.sectionNote(sectionWith(theme))?.length ?? 0, theme).toBeLessThanOrEqual(MD_BIN_COLUMNS);
+    }
   });
 
   it('draws every theme there is', () => {

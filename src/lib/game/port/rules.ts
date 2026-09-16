@@ -40,6 +40,12 @@ export interface GameRules {
   monsterKinds(section: number): MonsterKind[];
   /** How often the type roll picks each kind of monster on a floor of this section. */
   monsterTypeOdds(section: number): MonsterTypeOdds;
+  /**
+   * One line for the S screen about what the monsters of this section do, or null for a section
+   * with nothing of its own to say. The game itself has nothing: MD.BIN describes each of its
+   * twenty sections in four lines of its own, and those are printed as they stand.
+   */
+  sectionNote(section: number): string | null;
   /** The highest monster level a kill is paid experience for. */
   readonly experienceCap: number;
   /** The trap door keys the character carries. */
@@ -213,7 +219,8 @@ type GameData = typeof data;
  * `sectionSource` is every section's own number: the game has a wall file, a palette and a row
  * of MD.BIN for each of the twenty, so none of them borrows another's. `monsterTypeOdds` is the
  * four rolls get_mtype (exe 2000:65f8) picks a stocked monster's type with, which are the same
- * four in every section. `keys` and `bossSquares` are the two tables of the
+ * four in every section, and `sectionNote` is nothing at all, MD.BIN's own four lines being all
+ * the game has ever had to say about a section. `keys` and `bossSquares` are the two tables of the
  * character record that a dungeon deeper than the game's own would run off the end of.
  */
 export function faithfulRules(data: GameData): GameRules {
@@ -225,6 +232,7 @@ export function faithfulRules(data: GameData): GameRules {
     sectionSource: (section) => section,
     monsterKinds: (section) => sectionMonsterKinds(data, section),
     monsterTypeOdds: () => GAME_TYPE_ODDS,
+    sectionNote: () => null,
     experienceCap: data.constants.expValueLevelCap,
     keys: RECORD_KEYS,
     bossSquares: RECORD_BOSS_SQUARES,

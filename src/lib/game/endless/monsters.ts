@@ -143,6 +143,22 @@ export function endlessSection(seed: number, section: number): EndlessSection {
   return { source, theme, monsters: themed(monsters, theme, drainer, rng) };
 }
 
+/**
+ * The line the S screen prints about a themed section, or null for a section that does nothing
+ * worth a line.
+ *
+ * It stands where the fourth of MD.BIN's own forty-column lines would stand, so it is written to
+ * that width: the tablet the words are cut into holds four lines and no more.
+ */
+export function themeNote(theme: SectionTheme): string | null {
+  if (theme === 'fire') return 'Everything down here breathes fire.';
+  if (theme === 'ice') return 'Everything down here breathes ice.';
+  if (theme === 'drainers') return 'Level drainers are everywhere.';
+  if (theme === 'afflictions') return 'Poison and disease are everywhere.';
+  if (theme === 'elites') return 'The monsters here stand two levels up.';
+  return null;
+}
+
 /** How many levels deeper than the floor a themed section rolls its monsters, which is none for
  *  every theme but the one that is about the levels. */
 export function themeLevels(theme: SectionTheme): number {

@@ -44,13 +44,24 @@ const FIRST_LETTER = 0x41;
  * twenty MD.BIN describes: it says which section it is and whose pages the reader is about to
  * turn, since the five monsters under the letters are that section's and not the ones standing
  * on the floor.
+ *
+ * A section whose rules have a line of their own about its monsters spends the last of the four
+ * on that, and says the rest of it in three. Four lines is what the tablet holds.
  */
-function borrowedIntro(section: number, source: number): string[] {
+function borrowedIntro(section: number, source: number, note: string | null): string[] {
+  if (note === null) {
+    return [
+      `SECTION ${section}`,
+      'Nobody mapped this far down. The pages',
+      `below are section ${source}'s. Its monsters`,
+      'are not the ones standing here.',
+    ];
+  }
   return [
     `SECTION ${section}`,
     'Nobody mapped this far down. The pages',
-    `below are section ${source}'s. Its monsters`,
-    'are not the ones standing here.',
+    `below are section ${source}'s, not this one's.`,
+    note,
   ];
 }
 
@@ -92,7 +103,7 @@ export function manualOpening(game: Game): ManualOpening {
   return {
     source,
     part: game.rules.sectionPlace(standingIn)?.part ?? row.part,
-    intro: source === standingIn ? row.intro : borrowedIntro(standingIn, source),
+    intro: source === standingIn ? row.intro : borrowedIntro(standingIn, source, game.rules.sectionNote(standingIn)),
   };
 }
 

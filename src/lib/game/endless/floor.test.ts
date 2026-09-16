@@ -258,6 +258,15 @@ describe('the S screen on a floor below the bottom of the game', () => {
     expect(opening.intro.join(' ')).toContain(`section ${source}`);
   });
 
+  it('names what the section does with its monsters', () => {
+    // Section 23 of this world is one whose five monsters all breathe ice, and floor 160 is one
+    // of its 25 floors.
+    const BREATHES_ICE = 160;
+    const game = gameOn(BREATHES_ICE);
+    expect(rules.sectionOf(MODULE_V, BREATHES_ICE)).toBe(23);
+    expect(manualOpening(game).intro[3]).toBe('Everything down here breathes ice.');
+  });
+
   it('opens on MD.BIN itself for a floor of a section the game describes', () => {
     const game = gameOn(50);
     expect(manualOpening(game)).toEqual({ source: 18, part: 2, intro: data.sections[17].intro });

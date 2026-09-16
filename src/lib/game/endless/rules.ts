@@ -8,7 +8,14 @@ import {
   type TrapDoorKeys,
 } from '../port/rules';
 import type { PlayerCharacter } from '../port/state';
-import { endlessMonsterKinds, endlessSection, themeLevels, themeTypeOdds, type SectionTheme } from './monsters';
+import {
+  endlessMonsterKinds,
+  endlessSection,
+  themeLevels,
+  themeNote,
+  themeTypeOdds,
+  type SectionTheme,
+} from './monsters';
 import { shadowKilled, wanderingShadow } from './shadows';
 import { endlessStateOf } from './state';
 
@@ -190,6 +197,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     monsterKinds: (section) =>
       section <= LAST_OWN_SECTION ? FAITHFUL_RULES.monsterKinds(section) : endlessMonsterKinds(seed, section),
     monsterTypeOdds: (section) => themeTypeOdds(themeOf(section)),
+    sectionNote: (section) => themeNote(themeOf(section)),
     experienceCap: ENDLESS_EXPERIENCE_CAP,
     keys: endlessKeys(FAITHFUL_RULES.bottomLevel(endlessModule)),
     bossSquares: ENDLESS_BOSS_SQUARES,
