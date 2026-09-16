@@ -93,7 +93,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `strike` | 2000:7e36 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/screens.ts`, `play/engine.ts`, `play/fight.ts`, `play/panel.ts`, `play/sawtooth.ts`, `play/screens.ts`, `play/session.ts` |
 | `gain_or_drain` | 2000:8189 | `game/port/combat.ts` | `game/port/state.ts` |
 | `FUN_2000_826d` | 2000:826d | `game/port/sound.ts` |  |
-| `defend` | 2000:82b7 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/screens.ts`, `game/port/state.ts`, `play/hits-you.ts`, `play/panel.ts` |
+| `defend` | 2000:82b7 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/endless/monsters.ts`, `game/port/screens.ts`, `game/port/state.ts`, `play/hits-you.ts`, `play/panel.ts` |
 | `FUN_2000_907b` | 2000:907b | `game/port/sound.ts` |  |
 | `FUN_2000_9232` | 2000:9232 |  | `game/port/kills.ts`, `game/port/sound.ts`, `play/engine.ts` |
 | `view_prep_spells` | 2000:92b1 | `game/port/screens.ts` | `play/spellScreens.ts` |

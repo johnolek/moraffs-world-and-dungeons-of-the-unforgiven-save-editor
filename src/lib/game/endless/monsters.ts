@@ -50,6 +50,11 @@ const BOSS_SLOT = 22;
 const REGULAR_SLOTS = [23, 24, 25];
 const DRAINER_SLOT = 26;
 
+/** The breath a monster's row carries, as `dotu-data.json` holds the byte: 1 fire, 2 ice. A
+ *  monster with any breath at all breathes it instead of striking about half the time. */
+const FIRE_BREATH = 1;
+const ICE_BREATH = 2;
+
 /** The odd multiplier a 32-bit hash spreads its input with: two to the 32 over the golden
  *  ratio. */
 const GOLDEN_RATIO = 0x9e3779b1;
@@ -105,7 +110,21 @@ export function endlessSection(seed: number, section: number): EndlessSection {
   // The theme comes out of the generator after the five monsters, so which five a section
   // stands does not depend on which theme it drew.
   const theme = THEME_DRAW[rng.random(THEME_DRAW.length)];
-  return { source, theme, monsters };
+  return { source, theme, monsters: themed(monsters, theme) };
+}
+
+/**
+ * The section's five monsters as its theme has them.
+ *
+ * A breathing theme is written into the rows themselves, because the row is where a monster's
+ * blow reads its breath from (exe 2000:8817): a borrowed monster breathes here whatever the row
+ * says, rather than what it breathed in the section it came from. Everything else about it is
+ * untouched, and the picture is the picture either way.
+ */
+function themed(monsters: MonsterKind[], theme: SectionTheme): MonsterKind[] {
+  if (theme === 'fire') return monsters.map((row) => ({ ...row, breath: FIRE_BREATH }));
+  if (theme === 'ice') return monsters.map((row) => ({ ...row, breath: ICE_BREATH }));
+  return monsters;
 }
 
 /** The 27 rows an endless section keeps loaded: the 22 monsters every section has, then its own

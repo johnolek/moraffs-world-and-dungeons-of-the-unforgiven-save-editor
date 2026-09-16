@@ -223,6 +223,20 @@ describe("an endless section's theme", () => {
 
   const sweep = (): SectionTheme[] => SWEEP_WORLDS.flatMap((seed) => themesOf(seed, SWEEP_SECTIONS));
 
+  /** The shallowest section of the sweep that drew this theme. */
+  const sectionWith = (theme: SectionTheme): number => {
+    const found = SWEEP_SECTIONS.find((section) => endlessSection(SEED, section).theme === theme);
+    if (found === undefined) throw new Error(`no ${theme} section in ${SWEEP_SECTIONS.length} of world ${SEED}`);
+    return found;
+  };
+
+  /** The section's own five rows, which are the last five of the 27 it keeps loaded. */
+  const fiveOf = (section: number) => tough.monsterKinds(section).slice(-5);
+
+  /** The breath byte of a monster's row: 1 fire, 2 ice. */
+  const FIRE = 1;
+  const ICE = 2;
+
   it('is the same theme for everybody playing the same world', () => {
     expect(themesOf(SEED, ENDLESS_SECTIONS)).toEqual(themesOf(SEED, ENDLESS_SECTIONS));
   });
@@ -236,6 +250,20 @@ describe("an endless section's theme", () => {
     const plain = drawn.filter((theme) => theme === 'plain').length / drawn.length;
     expect(plain).toBeGreaterThan(0.25);
     expect(plain).toBeLessThan(0.5);
+  });
+
+  it('has every monster of a fire section breathe fire', () => {
+    for (const row of fiveOf(sectionWith('fire'))) expect(row.breath, row.name).toBe(FIRE);
+  });
+
+  it('has every monster of an ice section breathe ice', () => {
+    for (const row of fiveOf(sectionWith('ice'))) expect(row.breath, row.name).toBe(ICE);
+  });
+
+  it('leaves the breath of a plain section to the monsters it borrowed', () => {
+    const plain = sectionWith('plain');
+    expect(fiveOf(plain).every((row) => row.breath === FIRE)).toBe(false);
+    expect(fiveOf(plain).every((row) => row.breath === ICE)).toBe(false);
   });
 
   it('draws every theme there is', () => {
