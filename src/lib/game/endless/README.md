@@ -22,9 +22,12 @@ answered by passing the question to `FAITHFUL_RULES`.
   its endless floors are Module IV's — and `seed` is the world.
 - **`monsters.ts`** — the five monsters a new section stands, drawn from the world's seed and the
   section number.
-- **`state.ts`** — what an endless character carries beside the record: the trap door keys and the
-  Shadow boss squares of the sections the record has no room for. `src/lib/play/README.md` is
-  where that state is written up, since it travels with a run.
+- **`shadows.ts`** — the Shadows that wander the floors between the section bosses, and what
+  killing a Shadow this deep leaves behind.
+- **`state.ts`** — what an endless character carries beside the record: the trap door keys, the
+  Shadow boss squares and the Shadow kills of the sections the record has no room for, and the
+  Shadow wandering the dungeon now. `src/lib/play/README.md` is where that state is written up,
+  since it travels with a run.
 
 ## One world
 
@@ -116,6 +119,55 @@ dungeon exists.
 The rows the game keeps loaded for a section carry that id (`MonsterKind.id`), which is how the
 stocking knows what it has rolled and how the drawing knows what is standing there.
 
+## Wandering Shadows
+
+One floor in a hundred below the bottom of the game has a Shadow wandering it (John, MORF-504):
+one of the game's own twenty Shadow bosses, standing on a floor that is nobody's boss floor. Which
+floors of a world have one, and which Shadow it is, are drawn from the world's seed and the floor
+and from nothing else, so everybody's floor 433 holds the same Shadow and a replay of a run works
+the floor out again from the world the log names rather than being told (`shadows.ts`).
+
+It stands where a section's own boss stands: slot 0 of the floor's monster table, in row 22 —
+which is what the deepest-Shadow board recognises a Shadow by (`deepestShadowKilled`,
+`server/boards.ts`) — rolled at the level the floor rolls its monsters around and with a boss's
+hit points, on a square of the middle fifty of each axis. The square is remembered the way a
+section boss's is, so coming back to the floor finds it roughly where it was left.
+
+Only one is alive at a time, and that is the character's own business rather than the world's:
+while one is standing, every other floor's draw is passed over, and once it is killed only the
+floors below the one it fell on can stand another. So the dungeon hands out Shadows at the pace
+the character kills them rather than at the pace it falls down trap doors, which is the same
+thing the endless record measures — the deepest floor a Shadow was killed on.
+
+The last floor of a section is passed over altogether, since that section's own Shadow boss is
+standing on it.
+
+## What a Shadow leaves behind
+
+Killing a Shadow below the bottom of the game — one that wanders, or the boss of an endless
+section — hands over what it was carrying, drawn from the world and the floor the same way:
+
+- **Between one and twenty potions**, in one colour or spread over several. The potions are the
+  loot worth carrying home: each of the six raises one of the character's characteristics and
+  drops another (`src/lib/play/potions.ts`), and a characteristic is what the to-hit total and the
+  number of damage dice are counted off, so a pile of them is how much deeper the character can
+  go.
+- **An orb, from about one Shadow in three**, which puts a plus of 200, 300 or 500 on the weapon
+  in hand. The character keeps the better of the plus it had and the plus the orb brings. The
+  game's own orbs stop at the plus 101 the Shadow Ogeroth hands over for finishing the twenty
+  sections.
+
+Everything in the pile is pushed as a `found` event, so the run journal and the summary count what
+a Shadow was worth, and the message box says what fell out of it.
+
+`kill_monster` has a reward written for each of the twenty sections the game has and nothing for a
+twenty-first, so a Shadow deeper than that is handed to the rules instead (`GameRules.deepShadows`).
+A faithful game has none of them and never reaches it.
+
+An endless section's own Shadow boss is killed for good: the kill goes beside the record with the
+keys and the squares, since the record's one byte a module has a bit for each of the module's four
+sections and no more.
+
 ## The game's limits
 
 Dungeons of the Unforgiven is a 16-bit program, and its character record is a 16-bit program's
@@ -146,7 +198,7 @@ difference is a faithful gap, and it is written down as one in
 | **The six characteristics, potions of healing, stones of teleportation**, signed words | A puffball moves a characteristic by one and a drop adds one item; nothing caps any of them, so 32,768 of anything wraps. | Plain numbers in play, wrapped by the save. | Yes. Out of reach in the game; an endless character could in principle reach it. Not lifted here. |
 | **Rings of regeneration, lucky charms, grenades, stones of seeing** (0x7ca to 0x7cd) **and the six potions** (0x15d), signed bytes | A drop adds one and nothing caps them, so the hundred and twenty-eighth reads as -128. | Plain numbers in play, wrapped by the save. | Yes. This is the *first* limit an endless character meets, well before any word, and it is not lifted here. |
 | **The trap door keys** (0x822) and **the Shadow boss squares** (0x855, 0x8a5) | 36 key flags reaching floor 179, and eight squares a module. | Already answered beside the record rather than in it, since the endless dungeon has more floors and more sections than either table holds (`state.ts`). | Yes — the faithful rules read and write the record's own tables. |
-| **The beaten-boss flags**, 0x849, one byte a module with four bits used | One bit per section of the module. | `kill_monster` hands out a boss reward and sets a bit only for the twenty sections the game has (`bossReward`, `src/lib/game/port/kills.ts`), so an endless section's Shadow boss sets none. | Yes, and there is nothing to lift: the byte is never asked a question it cannot answer. |
+| **The beaten-boss flags**, 0x849, one byte a module with four bits used | One bit per section of the module, set by `kill_monster` (exe 3000:b12d) as each boss dies. | The stocking asks the rules whether a section's boss is dead rather than reading the byte itself (`GameRules.bossBeaten`), and the faithful rules read the same bit the game reads. | Yes. **Endless lifts it**: the sections past the twentieth have no bit of their own, so their kills go in the state beside the record and their bosses stay dead. |
 
 The save editor is a separate matter. It bounds every field it offers to the range of the type the
 record holds it in (`INT_RANGES`, `src/lib/editor/fields.ts`), which is right for a tool whose job

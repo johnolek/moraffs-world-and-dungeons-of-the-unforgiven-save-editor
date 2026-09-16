@@ -109,9 +109,9 @@ export interface SessionInChain {
    *  session of a chain, which starts from whatever the character was rolled as. */
   after: Uint8Array | null;
   /**
-   * What an endless character was carrying beside that record — the trap door keys and the Shadow
-   * boss squares the record has no room for — and null for the first session of a chain and for
-   * every session of a character playing the game as it shipped.
+   * What an endless character was carrying beside that record — the trap door keys, the Shadows
+   * and the hit points the record has no room for — and null for the first session of a chain and
+   * for every session of a character playing the game as it shipped.
    *
    * It is threaded the way the record is, and for the same reason: a key found below floor 179 in
    * one sitting is a key the character still holds in the next, and a replay that started without

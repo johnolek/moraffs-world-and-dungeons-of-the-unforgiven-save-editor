@@ -66,8 +66,8 @@ export interface CharacterSave {
    */
   worldSeed: number | null;
   /**
-   * What the character carries in that world — the trap door keys, the Shadow boss squares and
-   * the hit points its record has no room for — and null for a character carrying nothing
+   * What the character carries in that world — the trap door keys, the Shadows and the hit points
+   * its record has no room for — and null for a character carrying nothing
    * (`src/lib/game/endless/state.ts`).
    *
    * It is the half of the save the 2695 bytes cannot hold, written at the same moment the record

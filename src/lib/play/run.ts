@@ -772,7 +772,7 @@ export interface RunReplay {
   journal: JournalEntry[];
   /**
    * What an endless character was carrying beside its record when the sitting ended — the trap
-   * door keys and the Shadow boss squares the record has no room for
+   * door keys, the Shadows and the hit points the record has no room for
    * (`src/lib/game/endless/state.ts`) — and null for a sitting of the game as it shipped.
    *
    * It is handed back for the same reason the record is: the next sitting of the chain starts

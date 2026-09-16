@@ -227,7 +227,7 @@ played, so that a claimed ending can be checked by playing it again rather than 
   holding, and so the one the next session of the chain has to start from. A replay never raises
   the repeat-fight flag, since those swings are in the log already. `carried` is what an endless
   character was carrying beside its record when the session before this one ended — the trap
-  door keys and the Shadow boss squares the record has no room for
+  door keys, the Shadows and the hit points the record has no room for
   (`src/lib/game/endless/state.ts`) — and the replay hands back what it is carrying at its own
   end beside the record, written at the same moment the record was. A session of the game as it
   shipped carries null both ways.

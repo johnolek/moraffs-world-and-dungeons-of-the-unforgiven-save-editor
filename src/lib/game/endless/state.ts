@@ -4,11 +4,12 @@ import type { PlayerCharacter } from '../port/state';
 /**
  * What an endless character carries that the 2695-byte record has no room for.
  *
- * The record holds one trap door key flag per five floors down to floor 179, and one square per
- * section for the Shadow bosses of the twenty sections the game has. An endless dungeon goes
- * deeper than 179 and has more sections than twenty, so the keys and the squares beyond what the
- * record reaches are kept here instead — beside the record, never in it, so that an endless
- * character's bytes are still a save Dungeons of the Unforgiven itself would read.
+ * The record holds one trap door key flag per five floors down to floor 179, and a square and a
+ * kill flag per section for the Shadow bosses of the twenty sections the game has. An endless
+ * dungeon goes deeper than 179 and has more sections than twenty, so the keys, the squares and
+ * the kills beyond what the record reaches are kept here instead, along with the Shadow wandering
+ * the dungeon now, which is nobody's section's — beside the record, never in it, so that an
+ * endless character's bytes are still a save Dungeons of the Unforgiven itself would read.
  *
  * It is held against the character rather than inside it the way `random_events_tick`'s step
  * count is (`src/lib/play/office.ts`): a character read from a record afresh starts with none,
