@@ -1,5 +1,6 @@
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
 import { base64FromBytes } from '../bytes';
+import type { KeptEndlessState } from '../game/endless/state';
 import type { JournalEntry } from '../play/journal';
 import type { Milestone, RunGame, RunSession } from '../play/run';
 import { oldestFirst } from './roster';
@@ -46,6 +47,8 @@ interface CharacterRow {
   /** The endless world the character was rolled into, for one locked to the endless dungeon;
    *  every other character has none. */
   worldSeed?: number;
+  /** What an endless character carries beside its record. */
+  endless?: KeptEndlessState;
 }
 
 /**
@@ -210,6 +213,9 @@ function characterRow(entry: RosterEntry): CharacterRow {
     lock: entry.lock,
     rolledAt: entry.rolledAt,
     worldSeed: entry.worldSeed,
+    // A character read out of the site's roster is reactive, so what it carries is a Proxy, and
+    // the database refuses to clone a Proxy.
+    endless: $state.snapshot(entry.endless),
   };
 }
 
@@ -307,6 +313,7 @@ function entryOf(row: CharacterRow, run: RunSession[], journal: JournalEntry[][]
     lock: row.lock ?? row.leaderboard,
     rolledAt: row.rolledAt ?? null,
     worldSeed: row.worldSeed,
+    endless: row.endless,
     run,
     journal,
   };

@@ -23,6 +23,21 @@ export interface EndlessState {
   bossSquares: Map<number, BossSquare>;
 }
 
+/**
+ * The same state as plain arrays, which is how it is kept beside the character between sittings.
+ *
+ * A character is played, put down and played again, and the second sitting has to start with the
+ * keys and the bosses the first one left behind. The record cannot carry them, so the roster
+ * entry does (`RosterEntry.endless`), and the browser's database writes down plain data rather
+ * than a Set and a Map.
+ */
+export interface KeptEndlessState {
+  /** {@link EndlessState.keys}. */
+  keys: number[];
+  /** {@link EndlessState.bossSquares}, each square with the section it belongs to. */
+  bossSquares: { section: number; x: number; y: number }[];
+}
+
 const states = new WeakMap<PlayerCharacter, EndlessState>();
 
 /** The state kept beside this character, made the first time anything asks for it. */
@@ -30,4 +45,20 @@ export function endlessStateOf(pc: PlayerCharacter): EndlessState {
   const state = states.get(pc) ?? { keys: new Set<number>(), bossSquares: new Map<number, BossSquare>() };
   states.set(pc, state);
   return state;
+}
+
+/** What this character is carrying now, ready to be written down. */
+export function keptEndlessState(pc: PlayerCharacter): KeptEndlessState {
+  const state = endlessStateOf(pc);
+  return {
+    keys: [...state.keys],
+    bossSquares: [...state.bossSquares].map(([section, square]) => ({ section, x: square.x, y: square.y })),
+  };
+}
+
+/** Put back what this character was carrying when it was last written down. */
+export function restoreEndlessState(pc: PlayerCharacter, kept: KeptEndlessState): void {
+  const state = endlessStateOf(pc);
+  state.keys = new Set(kept.keys);
+  state.bossSquares = new Map(kept.bossSquares.map((boss) => [boss.section, { x: boss.x, y: boss.y }]));
 }

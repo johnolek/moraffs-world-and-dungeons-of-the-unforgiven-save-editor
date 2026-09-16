@@ -1,3 +1,4 @@
+import type { KeptEndlessState } from './game/endless/state';
 import { HistoryCursor } from './history';
 import type { JournalEntry } from './play/journal';
 import type { RunSession } from './play/run';
@@ -96,6 +97,17 @@ export interface RosterEntry extends CurrentCharacter {
    * in.
    */
   worldSeed?: number;
+  /**
+   * What an endless character is carrying that its 2695-byte record has no room for: the trap
+   * door keys found below the floor the record's own flags reach, and the squares the Shadow
+   * bosses of the sections past the twentieth were last put down on
+   * (`src/lib/game/endless/state.ts`).
+   *
+   * It is beside the record rather than in it so that an endless character's bytes are still a
+   * save Dungeons of the Unforgiven itself would read. The game being played writes it wherever
+   * it writes the record, and starting the character again reads it back.
+   */
+  endless?: KeptEndlessState;
   /**
    * The character's run: every sitting at the game it has been played in, oldest first.
    *

@@ -195,7 +195,8 @@ function serverSession(value: unknown): ServerSession | null {
  * `kept` is the copy this device already had, and two things are taken from it: the file the
  * character was imported from, which never leaves the device it was dropped on, and the journal,
  * which the server does not keep -- it replays a run's log for one. A session of the chain this
- * device has not played has no journal here until something replays it.
+ * device has not played has no journal here until something replays it. What an endless character
+ * carries beside its record is taken from it for the first reason: the server is not told.
  */
 export function entryFromServer(character: ServerCharacter, kept: RosterEntry | null): RosterEntry | null {
   const bytes = character.record === null ? null : fromBase64(character.record);
@@ -217,6 +218,7 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
     // stays with it for the same reason.
     rolledAt: kept?.rolledAt ?? null,
     worldSeed: kept?.worldSeed,
+    endless: kept?.endless,
     run: character.run.map((session, at) => sittingWithKeys(session, kept?.run[at])),
     journal: kept?.journal ?? [],
   };
