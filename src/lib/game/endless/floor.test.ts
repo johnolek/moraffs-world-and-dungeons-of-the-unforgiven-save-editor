@@ -19,12 +19,23 @@ import { endlessRules } from './rules';
 const SEED = 20260915;
 const MODULE_V = 4;
 const FLOOR = 120;
+/** A floor deep enough that the game's own key odds would never hand out a key for it. */
+const DEEP_FLOOR = 300;
 const FAITHFUL_BOTTOM = 105;
+/** How far apart a section's last floor and the shallowest floor its trap doors lead to are. */
+const TRAP_DOOR_FLOORS = 80;
+/** The deepest floor the record's own key flags reach. */
+const DEEPEST_RECORD_KEY = 179;
+/** The fewest and the most trap doors one floor of Module V has as the game itself generates it,
+ *  counted over all 105 of them. */
+const FEWEST_FAITHFUL_DOORS = 10;
+const MOST_FAITHFUL_DOORS = 35;
 
 const rules = endlessRules({ hard: true, seed: SEED });
 const bottom = rules.bottomLevel(MODULE_V);
 
-const floorRows = (level: number): MapSquare[][] => UNFORGIVEN_MAP.floor(level, MODULE_V, bottom);
+const floorRows = (level: number): MapSquare[][] =>
+  UNFORGIVEN_MAP.floor(level, MODULE_V, bottom, rules.trapdoorReach(MODULE_V, level));
 
 /** A game standing on an open square of the floor, the way one arrives on it. */
 function gameOn(level: number): Game {
@@ -55,6 +66,44 @@ describe('a floor below the bottom of the game', () => {
   it('has chutes, which the game will not drop anybody down this deep', () => {
     expect(squares.some((square) => square.chute !== 0)).toBe(true);
     expect(bundledDungeon.floor(FLOOR, MODULE_V).flat().some((square) => square.chute !== 0)).toBe(false);
+  });
+});
+
+describe('the trap doors of a floor below the bottom of the game', () => {
+  const doorsOn = (level: number): number[] =>
+    floorRows(level)
+      .flat()
+      .map((square) => square.trapdoor)
+      .filter((destination) => destination >= 0);
+
+  const lastFloorOf = (level: number): number => rules.sectionPlace(rules.sectionOf(MODULE_V, level))?.bossFloor ?? 0;
+
+  it.each([FLOOR, DEEP_FLOOR])('are as few on floor %i as on a floor the game has itself', (level) => {
+    expect(doorsOn(level).length).toBeGreaterThanOrEqual(FEWEST_FAITHFUL_DOORS);
+    expect(doorsOn(level).length).toBeLessThanOrEqual(MOST_FAITHFUL_DOORS);
+  });
+
+  it.each([FLOOR, DEEP_FLOOR])('lead off floor %i into the eighty floors ending its section', (level) => {
+    const lastFloor = lastFloorOf(level);
+    for (const destination of doorsOn(level)) {
+      expect(destination % 5, `door to ${destination}`).toBe(0);
+      expect(destination, `door to ${destination}`).toBeGreaterThan(lastFloor - TRAP_DOOR_FLOORS);
+      expect(destination, `door to ${destination}`).toBeLessThanOrEqual(lastFloor);
+      expect(Math.trunc(destination / 5), `door to ${destination}`).not.toBe(Math.trunc(level / 5));
+    }
+  });
+
+  it('leads some of them up from the floor and some of them further down', () => {
+    expect(doorsOn(FLOOR).some((destination) => destination < FLOOR)).toBe(true);
+    expect(doorsOn(FLOOR).some((destination) => destination > FLOOR)).toBe(true);
+  });
+
+  it('leaves a floor of a module the endless world has nothing to do with alone', () => {
+    const MODULE_I = 0;
+    const level = 20;
+    expect(
+      UNFORGIVEN_MAP.floor(level, MODULE_I, rules.bottomLevel(MODULE_I), rules.trapdoorReach(MODULE_I, level)),
+    ).toEqual(bundledDungeon.floor(level, MODULE_I));
   });
 });
 
@@ -137,25 +186,25 @@ describe('the S screen on a floor below the bottom of the game', () => {
 });
 
 describe('a trap door on a floor below the bottom of the game', () => {
-  const deepDoor = (): number => {
-    const found = floorRows(FLOOR)
+  const doorBelow = (level: number, shallowest: number): number => {
+    const found = floorRows(level)
       .flat()
-      .find((square) => square.trapdoor > FAITHFUL_BOTTOM);
-    if (!found) throw new Error('no trap door leading below the bottom of the game');
+      .find((square) => square.trapdoor > shallowest);
+    if (!found) throw new Error(`floor ${level} has no trap door leading below floor ${shallowest}`);
     return found.trapdoor;
   };
 
   it('is shut until the character has the key labelled with the floor it leads to', () => {
     const game = gameOn(FLOOR);
-    const destination = deepDoor();
+    const destination = doorBelow(FLOOR, FAITHFUL_BOTTOM);
     expect(explainTrapdoor(game, destination)).toBe(false);
     rules.keys.take(game.pc, destination);
     expect(explainTrapdoor(game, destination)).toBe(true);
   });
 
   it('leaves the record alone for a key the record has no flag for', () => {
-    const game = gameOn(FLOOR);
-    const destination = deepDoor();
+    const game = gameOn(DEEP_FLOOR);
+    const destination = doorBelow(DEEP_FLOOR, DEEPEST_RECORD_KEY);
     rules.keys.take(game.pc, destination);
     expect(game.pc.keys.every((flag) => flag === 0)).toBe(true);
   });

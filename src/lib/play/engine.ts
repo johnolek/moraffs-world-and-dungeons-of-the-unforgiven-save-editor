@@ -667,13 +667,14 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   /**
    * A floor of the module the character is in.
    *
-   * The ladders, trap doors and chutes on it reach down to the bottom the game's rules give that
-   * module, which is the module's own everywhere the game itself can be played and deeper for a
-   * game played past it.
+   * The ladders and chutes on it reach down to the bottom the game's rules give that module, and
+   * its trap doors lead as far as the rules let a trap door lead. Both are the game's own
+   * everywhere the game itself can be played, and the rules' own for a game played past it.
    */
   private floorRows(level: number): MapSquare[][] {
     const module = this.game.pc.module;
-    return UNFORGIVEN_MAP.floor(level, module, this.game.rules.bottomLevel(module));
+    const rules = this.game.rules;
+    return UNFORGIVEN_MAP.floor(level, module, rules.bottomLevel(module), rules.trapdoorReach(module, level));
   }
 
   /** Arriving on a floor: the floor itself, then its monsters. */

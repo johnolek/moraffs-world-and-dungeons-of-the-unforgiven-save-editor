@@ -14,8 +14,9 @@ import type { Turn } from './engine';
  * leads to, and -1 for a square with no trap door.
  */
 export function trapdoorUnder(game: Game): number {
-  const module = game.pc.module;
-  return bundledDungeon.trapdoor(game.pc.x, game.pc.y, game.pc.level, module, game.rules.bottomLevel(module));
+  const { module, level, x, y } = game.pc;
+  const rules = game.rules;
+  return bundledDungeon.trapdoor(x, y, level, module, rules.bottomLevel(module), rules.trapdoorReach(module, level));
 }
 
 /**

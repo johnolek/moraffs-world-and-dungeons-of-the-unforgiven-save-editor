@@ -3,7 +3,7 @@ import type { RenderedImage } from '../bestiary/pictures';
 import { bundledDungeon } from '../game/dungeon';
 import { bundledMwDungeon } from '../game/mw-dungeon';
 import { LEVELS as REVENGE_LEVELS, floor as revengeFloor, squareOn as revengeSquareOn } from '../game/revmap.js';
-import { BOTTOM_LEVEL } from '../game/unfmap.js';
+import { BOTTOM_LEVEL, type TrapdoorReach } from '../game/unfmap.js';
 import { MORAFFS_REVENGE_AREA, MORAFFS_WORLD_AREA, UNFORGIVEN_AREA, type MapArea } from './area';
 import {
   exploredFloorCount,
@@ -121,11 +121,12 @@ export interface MapGame {
   /**
    * A whole floor.
    *
-   * `bottom` is how deep the ways down off it may lead, for a game played past the deepest floor
-   * the dungeon itself has; without one they stop where the game stops them. Only Dungeons of the
-   * Unforgiven can be asked for a floor below its own bottom, so the other two ignore it.
+   * `bottom` is how deep the ways down off it may lead, and `reach` how far its trap doors lead,
+   * for a game played past the deepest floor the dungeon itself has; without them both stop where
+   * the game stops them. Only Dungeons of the Unforgiven can be asked for a floor below its own
+   * bottom, so the other two ignore them.
    */
-  floor(level: number, dungeon: number, bottom?: number): MapSquare[][];
+  floor(level: number, dungeon: number, bottom?: number, reach?: TrapdoorReach): MapSquare[][];
   /** One square of any floor, without generating the rest of it. */
   squareOn(x: number, y: number, level: number, dungeon: number): MapSquare;
   /** The square every trap door leading to a floor lands on, or null for a game with none. */
@@ -195,7 +196,7 @@ export const UNFORGIVEN_MAP: MapGame = {
   defaultDungeon: 0,
   dungeonStorageKey: null,
   bottomFloor: (dungeon) => BOTTOM_LEVEL[dungeon],
-  floor: (level, dungeon, bottom) => bundledDungeon.floor(level, dungeon, true, bottom),
+  floor: (level, dungeon, bottom, reach) => bundledDungeon.floor(level, dungeon, true, bottom, reach),
   squareOn(x, y, level, dungeon) {
     const square: MapSquare = {
       ...bundledDungeon.sides(x, y, level, dungeon),

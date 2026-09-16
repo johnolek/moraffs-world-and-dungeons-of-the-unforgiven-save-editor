@@ -3,7 +3,7 @@ import data from '../dotu-data.json';
 import { bossIndex, sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
 import { sectionInfo } from '../sections';
-import { BOTTOM_LEVEL } from '../unfmap.js';
+import { BOTTOM_LEVEL, trapdoorReach } from '../unfmap.js';
 import { wallPictureFile } from './pictures';
 import { FAITHFUL_RULES, faithfulRules } from './rules';
 import { newGame } from './state';
@@ -32,6 +32,17 @@ describe('the faithful rules', () => {
 
   it('puts the bottom of every module where the map generator does', () => {
     for (const module of MODULES) expect(rules.bottomLevel(module)).toBe(BOTTOM_LEVEL[module]);
+  });
+
+  it("leads a trap door as deep as the generator's own arithmetic leads one", () => {
+    for (const module of MODULES) {
+      for (const floor of floorsOf(module)) {
+        expect(rules.trapdoorReach(module, floor), `module ${module} floor ${floor}`).toEqual(
+          trapdoorReach(BOTTOM_LEVEL[module]),
+        );
+      }
+    }
+    expect(rules.trapdoorReach(4, 100)).toEqual({ limit: 84, offset: 0 });
   });
 
   it('puts every floor in the section sectionOf puts it in', () => {

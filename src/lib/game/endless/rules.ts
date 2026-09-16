@@ -57,6 +57,22 @@ const ENDLESS_EXPERIENCE_CAP = 3407;
  *  ratio. */
 const GOLDEN_RATIO = 0x9e3779b1;
 
+/**
+ * The floor an endless trap door's roll must name to be a door at all, which is Module V's own
+ * number.
+ *
+ * The game keeps a door when the roll names a floor in the upper four fifths of the module, and
+ * four fifths of a module 32767 floors deep is every floor the roll can name, so an endless floor
+ * that asked the question the game's way would have a door on nearly every square. Module V asks
+ * it of 105 floors and keeps sixteen of the 2400 rolls, which is a couple of dozen doors on a
+ * floor, and the endless floors keep that test and move the floors it names instead.
+ */
+const ENDLESS_TRAP_DOOR_LIMIT = 84;
+
+/** The deepest floor those sixteen rolls name. The offset slides it onto the last floor of the
+ *  character's section, so the doors of a floor lead to the eighty floors ending there. */
+const ENDLESS_TRAP_DOOR_DEEPEST = 80;
+
 /** One endless world. */
 export interface EndlessWorld {
   /**
@@ -112,13 +128,16 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     section <= LAST_OWN_SECTION ? section : borrowedSection(seed, section);
 
   return {
-    // The map generator reads the bottom three ways, and one of them has a consequence worth
-    // knowing about: `trapdoor` puts a door on a square whenever the floor it rolls lies in the
-    // upper four fifths of the module, and the deepest floor it can ever roll is 11995. A module
-    // 32767 floors deep therefore has a trap door on nearly every square that has no ladder,
-    // where Module V as the game ships it has about twenty per floor.
+    // How far down a ladder or a chute off a floor may lead. The map generator works a trap
+    // door's destination out from the bottom as well, which a bottom this deep makes nonsense of,
+    // so `trapdoorReach` answers that on its own.
     bottomLevel: (module) => (module === endlessModule ? ENDLESS_BOTTOM : FAITHFUL_RULES.bottomLevel(module)),
     sectionOf,
+    trapdoorReach: (module, floor) => {
+      if (module !== endlessModule) return FAITHFUL_RULES.trapdoorReach(module, floor);
+      const lastFloor = sectionPlace(sectionOf(module, floor))?.bossFloor ?? 0;
+      return { limit: ENDLESS_TRAP_DOOR_LIMIT, offset: Math.max(0, lastFloor - ENDLESS_TRAP_DOOR_DEEPEST) };
+    },
     sectionPlace,
     sectionSource,
     monsterKinds: (section) => FAITHFUL_RULES.monsterKinds(sectionSource(section)),

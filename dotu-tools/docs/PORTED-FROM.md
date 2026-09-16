@@ -120,7 +120,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `dig_hole` | 2000:ba3f |  | `play/dig.ts` |
 | `FUN_2000_bcb6` | 2000:bcb6 | `game/port/moment.ts` | `game/port/screens.ts`, `game/port/state.ts`, `play/engine.ts`, `play/trapdoor.ts` |
 | `FUN_2000_bce5` | 2000:bce5 | `game/port/moment.ts` |  |
-| `town_features` | 2000:bd32 | `play/trapdoor.ts` | `formulas/formulas.ts`, `play/engine.ts` |
+| `town_features` | 2000:bd32 | `play/trapdoor.ts` | `formulas/formulas.ts`, `game/port/rules.ts`, `play/engine.ts` |
 | `trapdoor_dest` | 2000:bda6 |  | `formulas/formulas.ts` |
 | `explain_trapdoor` | 2000:be3d | `play/trapdoor.ts` | `game/port/rules.ts` |
 | `FUN_2000_bf91` | 2000:bf91 | `play/misc.ts` |  |

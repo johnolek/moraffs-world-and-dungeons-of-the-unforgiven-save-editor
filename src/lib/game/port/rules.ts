@@ -1,6 +1,7 @@
 import data from '../dotu-data.json';
 import { bossIndex, sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
+import { trapdoorReach, type TrapdoorReach } from '../unfmap.js';
 import { sectionPictures, type SectionPictures } from './pictures';
 import type { MonsterKind, PlayerCharacter } from './state';
 
@@ -19,6 +20,15 @@ export interface GameRules {
   bottomLevel(module: number): number;
   /** Which section a floor belongs to, counted 1 to 20 across all five modules. */
   sectionOf(module: number, floor: number): number;
+  /**
+   * How far the trap doors of a floor lead.
+   *
+   * The roll behind a door names a floor between 5 and 11995 and the game keeps the door when
+   * that floor is in the upper four fifths of the module, so a module deeper than 14994 floors
+   * keeps every roll and has a door on nearly every square. Rules that go that deep answer with
+   * a reach of their own instead.
+   */
+  trapdoorReach(module: number, floor: number): TrapdoorReach;
   /** Where a section sits, or null when there is no section of that number. */
   sectionPlace(section: number): SectionPlace | null;
   /**
@@ -102,7 +112,9 @@ type GameData = typeof data;
 /**
  * The tables of Dungeons of the Unforgiven itself, read out of `dotu-data.json`.
  *
- * `bottomLevel` is the table at exe DS:0493: 25, 45, 65, 85, 105. `sectionOf` is section_number3
+ * `bottomLevel` is the table at exe DS:0493: 25, 45, 65, 85, 105. `trapdoorReach` is the test
+ * town_features (exe 2000:bd32), the routine that puts a trap door on a square, makes on the floor
+ * it rolls: the module's bottom again, and no offset at all. `sectionOf` is section_number3
  * (unf.c) and `monsterLevel` the base level stock_level (exe 2000:671e) rolls a floor's monsters
  * around, both of them in the reference bundle already. `experienceCap` is the level exp_value
  * (exe 3000:a0fa) stops counting at, `monsterKinds` what load_md_bin (exe 2000:5fec) reads for a
@@ -118,6 +130,7 @@ export function faithfulRules(data: GameData): GameRules {
   return {
     bottomLevel: (module) => data.constants.bottomLevel[module],
     sectionOf,
+    trapdoorReach: (module) => trapdoorReach(data.constants.bottomLevel[module]),
     sectionPlace: (section) => sectionPlace(data, section),
     sectionSource: (section) => section,
     monsterKinds: (section) => sectionMonsterKinds(data, section),
