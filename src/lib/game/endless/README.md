@@ -108,8 +108,9 @@ what the port does, and whether a faithful game keeps it.
 
 The short answer is that **the port almost never reproduces a wrap**. Every number the engine
 works on is a plain JavaScript number, so nothing overflows while the game is being played; the
-only place a field's width bites is `savePlayer` (`src/lib/game/port/record.ts`), which writes the
-record with `setInt16` and `setInt8`. The original wraps the moment the arithmetic happens. That
+only place a field of the character record bites is `savePlayer`
+(`src/lib/game/port/record.ts`), which writes it with `setInt16` and `setInt8`. The monster
+limits below are the exception: those the port does keep, because the stocking keeps them. The original wraps the moment the arithmetic happens. That
 difference is a faithful gap, and it is written down as one in
 `dotu-tools/docs/FAITHFUL-GAPS.md`; it is not something this section fixes.
 
@@ -164,6 +165,12 @@ load and make sense of — it shows a character pegged at 32,767 hit points. Whe
 picked up again the state's numbers are put back over the record's, so the sitting carries on with
 what the character really has. A replay carries the same state from sitting to sitting, so a run
 verified on the server arrives at the same numbers the player saw.
+
+One thing the clamp cannot do is tell a player's edit apart from its own work. The save editor
+shows an endless character pegged at 32,767, and a record written back from it at that number
+reads as the character really having 32,767, so the hit points above the word are lost. Editing a
+record from outside the game already makes a sitting unverifiable, so this only ever costs a
+character nobody is putting on a board.
 
 Nothing else is lifted. The byte item counts are the limit an endless character meets first, and
 lifting them the same way would be the obvious next step.
