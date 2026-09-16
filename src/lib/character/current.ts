@@ -84,8 +84,9 @@ export function keepRolledCharacter(
   bytes: Uint8Array<ArrayBuffer>,
   lock: Leaderboard | null = null,
   onBoard = false,
+  rolledAt: number | null = null,
 ): void {
-  const entry = newEntry({ game, name, slot, bytes, imported: false, lock, onBoard });
+  const entry = newEntry({ game, name, slot, bytes, imported: false, lock, onBoard, rolledAt });
   app.roster = withEntry(app.roster, entry);
   chooseEntry(entry.id);
   keepNow(entry);

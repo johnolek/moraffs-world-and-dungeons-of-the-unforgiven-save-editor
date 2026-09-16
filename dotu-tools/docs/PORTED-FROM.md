@@ -145,7 +145,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_3000_342d` | 3000:342d |  | `map/wall-texture.ts`, `play/memory.ts`, `play/plaque.ts`, `play/section-screen.ts`, `play/tablet.ts`, `play/view3d/flood.ts`, `play/view3d/pictures.ts`, `play/view3d/wall.ts` |
 | `read_uroll_line` | 3000:4a24 | `game/port/character.ts` |  |
 | `show_rolled_character` | 3000:4a67 | `game/port/character.ts` |  |
-| `roll_char` | 3000:4c77 | `game/port/character.ts`, `game/port/hints.ts` | `game/dotu-pic.js`, `game/port/state.ts`, `roller/session.ts` |
+| `roll_char` | 3000:4c77 | `game/port/character.ts`, `game/port/hints.ts` | `app-state.svelte.ts`, `game/dotu-pic.js`, `game/port/state.ts`, `roller/NewCharacter.svelte`, `roller/session.ts` |
 | `FUN_3000_6b8a` | 3000:6b8a |  | `snake/situations.ts` |
 | `boss_office_message` | 3000:6c9d | `game/port/hints.ts`, `game/port/town.ts` | `play/Screen.svelte`, `play/boss-office.ts`, `play/office.ts`, `play/tablet.ts` |
 | `random_events_tick` | 3000:6e85 |  | `play/office.ts` |

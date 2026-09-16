@@ -74,6 +74,15 @@ export interface RosterEntry extends CurrentCharacter {
    */
   lock: Leaderboard | null;
   /**
+   * The second the roll that made this character was started in, or null for a character that
+   * was imported or rolled before the roller was given a wall clock.
+   *
+   * `roll_char` (exe 3000:5447) seeds its generator from `time()`, which changes once a second,
+   * so this second and the answers to the roller's six questions are the whole of what the
+   * character is made of: the roll can be made again from them and nothing else.
+   */
+  rolledAt: number | null;
+  /**
    * The character's run: every sitting at the game it has been played in, oldest first.
    *
    * The game being played now is the last of them, written again after every key, so that a tab

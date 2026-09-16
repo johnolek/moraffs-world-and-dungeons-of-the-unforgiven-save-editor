@@ -20,6 +20,7 @@
   import { MW_SCREEN_COLOURS, SCREEN_COLOURS } from './screen';
   import { newRevCharacterFile, newRevExploredFile, REV_SLOTS, revExploredFileName, revRecordFileName } from './rev-save-file';
   import { REV_ROLLER_PORT, type RevRollerView } from './rev-session';
+  import { sittingSecond } from '../play/run';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
   import { ROLLER_PORT, RollerSession, type RollerView } from './session';
 
@@ -95,7 +96,10 @@
       classes: CLASS_NAMES,
       folder: 'Back up the file you are replacing first. Drop the download into your game folder next to UNF.EXE, keeping the name, and the character is waiting on the select screen.',
       fileName: slotFileName,
-      newSession: (slot) => new RollerSession(ROLLER_PORT, slot),
+      // roll_char (exe 3000:5447) seeds from time(), so the roll is handed the wall clock and
+      // two rolls started in the same second make the same character. Neither of the other two
+      // games' rollers reseeds, so neither is handed one.
+      newSession: (slot) => new RollerSession(ROLLER_PORT, slot, sittingSecond),
       writeRecord: newCharacterFile,
       answerBase: 0,
       classSeparator: ') ',
@@ -220,7 +224,15 @@
   function keepWhenDone() {
     if (!view || view.question !== null || kept) return;
     kept = true;
-    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc), lock, onBoard);
+    keepRolledCharacter(
+      rolling,
+      view.pc.name || fileName,
+      slot,
+      chosen.writeRecord(view.pc),
+      lock,
+      onBoard,
+      session?.rolledAt ?? null,
+    );
   }
 
   function answer(value: number | string) {

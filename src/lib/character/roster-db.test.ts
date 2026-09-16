@@ -65,6 +65,15 @@ describe('the roster in the database', () => {
     expect(read?.[0]).toEqual(older);
   });
 
+  it('keeps the second a character was rolled in, which is what its roll was made of', async () => {
+    const entry = character('a', 'SAGEY');
+    entry.rolledAt = 1_757_000_000;
+    await store.keepPlayed([entry], []);
+
+    const read = await store.readRoster();
+    expect(read?.[0].rolledAt).toBe(1_757_000_000);
+  });
+
   it('keeps the journal of a session beside the session itself', async () => {
     const entry = character('a', 'SAGEY');
     played(entry, [-0x48]);

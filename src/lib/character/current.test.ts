@@ -225,6 +225,16 @@ describe('a character rolled here', () => {
     expect(currentEntry()?.importedBytes).toBeNull();
   });
 
+  it('keeps the second the roll was started in, which is what the roll was made of', () => {
+    keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'), null, false, 1_757_000_000);
+    expect(currentEntry()?.rolledAt).toBe(1_757_000_000);
+  });
+
+  it('has no second for a game whose roller is not seeded from the wall clock', () => {
+    keepRolledCharacter('moraffsWorld', 'WANDA', 3, saveFile('WANDA'));
+    expect(currentEntry()?.rolledAt).toBeNull();
+  });
+
   it('carries the board the roller was asked to roll it for', () => {
     keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'speedrun', true);
     expect(currentEntry()?.leaderboard).toBe('speedrun');

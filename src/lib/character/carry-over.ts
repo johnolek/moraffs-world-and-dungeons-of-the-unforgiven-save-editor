@@ -117,6 +117,9 @@ function entryFrom(value: unknown): RosterEntry | null {
     createdAt,
     editedAt,
     dead: dead === true,
+    // The roster this reads was written before the roller was given a wall clock, so nothing it
+    // holds says which second a character was rolled in.
+    rolledAt: null,
     // A roster stored before the site had leaderboards names no board, and reads as free play.
     leaderboard: isLeaderboard(leaderboard) ? leaderboard : null,
     // A roster stored before the board and the lock were two questions names no lock, and the

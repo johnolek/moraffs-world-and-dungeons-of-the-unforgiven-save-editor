@@ -212,6 +212,9 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
     dead: character.dead,
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     lock: isLeaderboard(character.lock) ? character.lock : isLeaderboard(character.leaderboard) ? character.leaderboard : null,
+    // The second a roll was started in stays on the device that rolled it: the server keeps the
+    // record and the run, and a roll is neither.
+    rolledAt: kept?.rolledAt ?? null,
     run: character.run.map((session, at) => sittingWithKeys(session, kept?.run[at])),
     journal: kept?.journal ?? [],
   };

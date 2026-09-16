@@ -23,6 +23,9 @@ export interface NewCharacter {
   /** Whether its runs go on the leaderboard of that mode. A character with no lock goes on no
    *  board, since a board is a set of runs played the same way. */
   onBoard?: boolean;
+  /** The second the roll was started in, which is what seeded it (`RosterEntry.rolledAt`). An
+   *  imported file has none. */
+  rolledAt?: number | null;
 }
 
 export function newId(): string {
@@ -44,6 +47,7 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     dead: false,
     lock,
     leaderboard: lock !== null && character.onBoard === true ? lock : null,
+    rolledAt: character.imported ? null : (character.rolledAt ?? null),
     run: [],
     journal: [],
   };

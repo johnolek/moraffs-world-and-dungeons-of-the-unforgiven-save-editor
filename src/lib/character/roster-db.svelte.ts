@@ -41,6 +41,8 @@ interface CharacterRow {
   /** Rows written before the board and the lock were two questions have no lock; the board they
    *  name is the mode that character was locked to. */
   lock?: Leaderboard | null;
+  /** Rows written before the roller was given a wall clock have none. */
+  rolledAt?: number | null;
 }
 
 /**
@@ -203,6 +205,7 @@ function characterRow(entry: RosterEntry): CharacterRow {
     dead: entry.dead,
     leaderboard: entry.leaderboard,
     lock: entry.lock,
+    rolledAt: entry.rolledAt,
   };
 }
 
@@ -298,6 +301,7 @@ function entryOf(row: CharacterRow, run: RunSession[], journal: JournalEntry[][]
     dead: row.dead,
     leaderboard: row.leaderboard,
     lock: row.lock ?? row.leaderboard,
+    rolledAt: row.rolledAt ?? null,
     run,
     journal,
   };
