@@ -1,4 +1,4 @@
-import type { GameId, Tab } from './app-state.svelte';
+import { app, type GameId, type Tab } from './app-state.svelte';
 import { runServerUrl } from './run-server';
 
 /** Which group of the nav a tab sits in: `play` is the things you do with a character of your own,
@@ -29,14 +29,15 @@ export const TABS: TabEntry[] = [
   { id: 'tidbits', label: 'Tidbits', group: 'extras' },
   { id: 'snake', label: 'Snake', group: 'extras' },
   { id: 'source', label: 'Source', group: 'extras' },
+  { id: 'admin', label: 'Admin', group: 'extras' },
 ];
 
 /** The tabs each game other than Dungeons of the Unforgiven has, which has them all: the fight
  *  simulator, the calculators, the formulas and the snake are that game's alone. A game listing
  *  `tidbits` here needs a file of its own in `src/lib/tidbits/files.ts` to show on it. */
 const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
-  moraffsWorld: ['map', 'play', 'boards', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source'],
-  revenge: ['map', 'play', 'boards', 'editor', 'monsters', 'tidbits', 'roller', 'source'],
+  moraffsWorld: ['map', 'play', 'boards', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source', 'admin'],
+  revenge: ['map', 'play', 'boards', 'editor', 'monsters', 'tidbits', 'roller', 'source', 'admin'],
 };
 
 /** The one tab the other games call something else, since only Dungeons of the Unforgiven needs
@@ -47,12 +48,24 @@ const OTHER_GAME_LABELS: Partial<Record<Tab, string>> = { map: 'Map' };
 const FALLBACK_TAB: Tab = 'editor';
 
 export function tabsFor(game: GameId): TabEntry[] {
-  // All three games have the boards, and a build that was given no run server address has none
-  // to show: that is the only tab there is nothing at all behind without one.
-  const shown = TABS.filter((tab) => tab.id !== 'boards' || runServerUrl() !== null);
+  const shown = TABS.filter(inThisSite);
   const theirs = GAME_TABS[game];
   if (!theirs) return shown;
   return shown.filter((tab) => theirs.includes(tab.id)).map((tab) => ({ ...tab, label: OTHER_GAME_LABELS[tab.id] ?? tab.label }));
+}
+
+/**
+ * Whether a tab that is not on every page is on this one. The rest are always there.
+ *
+ * All three games have the boards, and a build that was given no run server address has none to
+ * show. The Admin tab is for the player whose passphrase the run server answered as an admin's,
+ * which is an answer only a build with a server ever got, and nobody else is to know there is
+ * such a tab.
+ */
+function inThisSite(tab: TabEntry): boolean {
+  if (tab.id === 'boards') return runServerUrl() !== null;
+  if (tab.id === 'admin') return app.admin !== null;
+  return true;
 }
 
 /** The tabs a game has, split into the groups the nav draws with a gap between them. A group the

@@ -5,6 +5,8 @@
   import { GAME_CHOICES } from './lib/game-choice';
   import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
   import { tabGroupsFor, tabsFor } from './lib/tabs';
+  import { whoAmI } from './lib/admin/server';
+  import Admin from './lib/admin/Admin.svelte';
   import Monsters from './lib/bestiary/Monsters.svelte';
   import Boards from './lib/boards/Boards.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
@@ -31,6 +33,10 @@
   const tabGroups = $derived(tabGroupsFor(app.game));
 
   onMount(() => {
+    // The Admin tab shows for one player and nobody else, so the server is asked the once whether
+    // the passphrase this browser keeps is an admin's. Everybody else is answered no and never
+    // sees that there was a tab.
+    void whoAmI().then((admin) => (app.admin = admin));
     // Read the entry first: restoring the game rewrites it to say which tab that game is showing.
     const state = history.state;
     // The roster is read out of the database, which answers a moment later, so the site puts up
@@ -142,6 +148,11 @@
   </main>
   <main class:hidden={app.tab !== 'source'}>
     <SourceViewer />
+  </main>
+  <!-- Not kept mounted, for the same reason the boards are not: it is a page of what the server
+       has now, so opening it reads the server again. -->
+  <main class:hidden={app.tab !== 'admin'}>
+    {#if app.tab === 'admin'}<Admin />{/if}
   </main>
   <!-- The game keeps its status block along the bottom of the screen, so the character does too. -->
   <CharacterPanel />

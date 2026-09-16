@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { app } from './app-state.svelte';
 import { tabFor, tabGroupsFor, tabsFor, TAB_GROUPS, TABS, type TabGroup } from './tabs';
 
 /** A build given a run server, which is the only kind that has boards to show. */
@@ -6,13 +7,21 @@ function withBoards(): void {
   vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
 }
 
+/** A browser the run server answered as an admin's, which is the only kind that has the Admin
+ *  tab. Such an answer only ever comes back in a build with a server, so the two go together. */
+function asAnAdmin(): void {
+  withBoards();
+  app.admin = 'John';
+}
+
 afterEach(() => {
   vi.unstubAllEnvs();
+  app.admin = null;
 });
 
 describe('the tabs a game has', () => {
   it('is all of them for Dungeons of the Unforgiven', () => {
-    withBoards();
+    asAnAdmin();
 
     expect(tabsFor('unforgiven')).toEqual(TABS);
   });
@@ -31,6 +40,23 @@ describe('the tabs a game has', () => {
     expect(tabsFor('unforgiven').map((tab) => tab.id)).toContain('boards');
     expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toContain('boards');
     expect(tabsFor('revenge').map((tab) => tab.id)).toContain('boards');
+  });
+
+  it('gives all three games the Admin tab where the browser is an admin’s', () => {
+    asAnAdmin();
+
+    expect(tabsFor('unforgiven').map((tab) => tab.id)).toContain('admin');
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toContain('admin');
+    expect(tabsFor('revenge').map((tab) => tab.id)).toContain('admin');
+  });
+
+  it('gives no game the Admin tab where the browser is nobody’s in particular', () => {
+    withBoards();
+
+    expect(tabsFor('unforgiven').map((tab) => tab.id)).not.toContain('admin');
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).not.toContain('admin');
+    expect(tabsFor('revenge').map((tab) => tab.id)).not.toContain('admin');
+    expect(tabFor('unforgiven', 'admin')).toBe('editor');
   });
 
   it('gives no game the Boards tab in a build with no run server', () => {
@@ -64,12 +90,12 @@ describe('the tabs a game has', () => {
 
 describe('the groups the tabs are drawn in', () => {
   it('is the three groups in their order', () => {
-    withBoards();
+    asAnAdmin();
 
     expect(tabGroupsFor('unforgiven').map((group) => group.map((tab) => tab.id))).toEqual([
       ['play', 'boards', 'roller', 'editor'],
       ['map', 'monsters', 'spells', 'fight', 'calculators', 'formulas'],
-      ['tidbits', 'snake', 'source'],
+      ['tidbits', 'snake', 'source', 'admin'],
     ]);
   });
 

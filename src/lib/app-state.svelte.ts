@@ -3,7 +3,7 @@ import { HistoryCursor } from './history';
 import type { JournalEntry } from './play/journal';
 import type { RunSession } from './play/run';
 
-export type Tab = 'map' | 'play' | 'boards' | 'fight' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
+export type Tab = 'map' | 'play' | 'boards' | 'fight' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source' | 'admin';
 
 /** Which game the site is about, which is also the id of its schema in
  *  `src/lib/editor/games.ts`. */
@@ -176,6 +176,15 @@ export interface AppState {
   /** Whether the last attempt to keep the roster in the browser worked. False raises the notice
    *  saying the characters are not being saved, so a full or blocked store is not silent. */
   rosterKept: boolean;
+  /**
+   * The name the run server knows this player by, when the passphrase this browser keeps is an
+   * admin's, and null for everybody else.
+   *
+   * It is what the Admin tab is shown on, and it is asked once as the page loads
+   * (`src/lib/admin/server.ts`). Nothing about it is kept in the browser: a browser whose words
+   * have stopped being an admin's is answered no on the next visit and has no tab.
+   */
+  admin: string | null;
 }
 
 export const app = $state<AppState>({
@@ -192,6 +201,7 @@ export const app = $state<AppState>({
   characterVersion: 0,
   startPlaying: null,
   rosterKept: true,
+  admin: null,
 });
 
 /**
