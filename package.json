@@ -30,6 +30,7 @@
     "build:server": "vite build --config vite.server.config.ts --logLevel warn",
     "build:engine": "vite build --config vite.engine.config.ts --logLevel warn",
     "build:ported": "node scripts/build-ported-from.mts",
+    "build:favicon": "node scripts/build-favicon.mts",
     "build:font": "node scripts/build-font.mts",
     "routine": "node scripts/show-routine.mts",
     "check:port": "node scripts/check-port.mts",
