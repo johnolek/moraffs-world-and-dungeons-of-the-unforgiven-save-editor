@@ -166,10 +166,8 @@ played, so that a claimed ending can be checked by playing it again rather than 
   page load would carry every character's — so a chain another device played arrives with none of
   them, and `bringRunKeysHere` fetches the character's own before the two things that need them:
   playing it on, and exporting the run. What an endless character carries beside its record is
-  not kept anywhere either — not on the server and not in the log — so the same call replays the
-  chain it has just fetched and works it out again before the game starts, the way the run server
-  does before it passes a verdict (`carriedAtTheEnd` in `verify.ts`); a device that played the
-  character itself holds it already. The session being
+  not in the chain at all: it comes back on the roster with the record, written beside it by the
+  device that last played the character. The session being
   played is the last of the chain, written again wherever the record is written, which is after
   every key: the record and that one session go into the store together and nothing else on the
   roster is touched, so a tab closed in the middle of a game loses nothing and the next session

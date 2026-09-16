@@ -285,10 +285,13 @@ sent with the character on every batch, and written into every sitting of the lo
 the engine is handed, since a character plays its whole run in the world it was
 rolled into. The other is what the character carries that its 2695-byte record
 has no room for — the trap door keys found below floor 179, and the squares the
-Shadow bosses of the sections past the twentieth were left on — and that is not
-kept here at all: replaying a sitting hands back what the character was carrying
-when it ended, and the walk along the chain hands it to the next sitting the way
-it hands over the record.
+Shadow bosses of the sections past the twentieth were left on. That is a column
+on the character's row as well, and it is there for one reason: it is what the
+next device the player signs in on is handed, the way the record is. The verdict
+is not read off it. Replaying a sitting hands back what the character was
+carrying when it ended, and the walk along the chain hands that to the next
+sitting the way it hands over the record, so a device that sent a state its keys
+do not account for fails its own next sitting rather than passing one.
 
 ### The journal
 
@@ -346,11 +349,13 @@ A character rolled to play the endless dungeon carries the world it was rolled
 into here too, and the roster hands it back, so a player who signs in on a second
 device plays it in the same dungeon rather than in the first world. A device that
 names no world leaves the one here, the way it does with the mode a character is
-locked to: both are decided at the roll and never again. What the character
-carries beside its record is not here to hand back, so the device works it out
-the way this server does: it replays the chain of keys it has just been given
-before it plays the character on, and the sitting it then plays starts holding
-what the sittings before it left.
+locked to: both are decided at the roll and never again.
+
+What such a character carries in that world comes back on the roster as well,
+beside the record it was written with, so the second device picks the character
+up holding the keys and the boss squares it really holds. That one does change as
+the character is played, so every save writes it over; a save that carries none
+leaves what is here, which is what a device on an older build sends.
 
 A device asks for the keys of one character at a time, and only for the two
 things that need them: playing that character on, since a new sitting sends the

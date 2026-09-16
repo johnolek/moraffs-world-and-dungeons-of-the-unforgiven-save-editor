@@ -165,8 +165,8 @@ function recorder(
 function endlessPlay(entry: RosterEntry): EndlessPlay | undefined {
   if (entry.lock !== 'endless') return undefined;
   return {
-    // A character that came back from the run server without its world -- the server is not told
-    // which one it was rolled into -- plays in the one world there is.
+    // A character that came back from a run server that names no world -- one that has not been
+    // told which world it was rolled into -- plays in the one world there is.
     seed: entry.worldSeed ?? ENDLESS_WORLD_SEED,
     kept: {
       read: () => entry.endless ?? null,
