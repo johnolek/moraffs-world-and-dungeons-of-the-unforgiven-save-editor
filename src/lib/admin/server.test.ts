@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { whoAmI } from './server';
+import { forgetCharacter, loadCharacters, whoAmI } from './server';
 
 /** A browser holding the words, or holding none. `player.ts` reads them straight out of the
  *  store, so the store is the whole of what has to stand in for a browser here. */
@@ -83,5 +83,39 @@ describe('whoAmI', () => {
     vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
 
     expect(await whoAmI()).toBeNull();
+  });
+});
+
+describe('the list of every character here', () => {
+  it('asks for the page it was given', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { page: 2, rows: [], more: false });
+
+    expect(await loadCharacters(2)).toEqual({ ok: true, body: { page: 2, rows: [], more: false } });
+    expect(calls[0].url).toBe('https://runs.example.com/admin/characters?page=2');
+  });
+});
+
+describe('forgetting a character', () => {
+  it('deletes it by id, whatever the id has in it', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { forgotten: 'a b' });
+
+    expect(await forgetCharacter('a b')).toEqual({ ok: true, body: { forgotten: 'a b' } });
+    expect(calls[0].url).toBe('https://runs.example.com/admin/characters/a%20b');
+    expect(calls[0].init.method).toBe('DELETE');
+  });
+
+  it('hands back the words the server refused with', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(404, { error: 'No character here has that name.' });
+
+    expect(await forgetCharacter('nobody')).toEqual({
+      ok: false,
+      message: 'No character here has that name.',
+    });
   });
 });

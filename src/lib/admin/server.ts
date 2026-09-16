@@ -1,5 +1,8 @@
 import { myPassphrase } from '../player';
 import { runServerUrl } from '../run-server';
+// The shape the server answers with, and nothing but the shape: this is a type, so none of the
+// server's code comes along with it.
+import type { AdminCharacters } from '../../../server/admins';
 
 /**
  * Every call the Admin tab makes to the run server.
@@ -33,6 +36,17 @@ export async function whoAmI(): Promise<string | null> {
   const answer = await askTheServer<{ name?: unknown }>('GET', '/admin/me');
   if (!answer.ok || typeof answer.body.name !== 'string') return null;
   return answer.body.name;
+}
+
+/** One page of every character here, whoever's it is, the newest first. Pages count from one. */
+export async function loadCharacters(page: number): Promise<AdminAnswer<AdminCharacters>> {
+  return await askTheServer<AdminCharacters>('GET', `/admin/characters?page=${page}`);
+}
+
+/** Forgets one character for good, whoever it belongs to: its run, the verdict on it and whatever
+ *  was announced about it go with it. */
+export async function forgetCharacter(characterId: string): Promise<AdminAnswer<{ forgotten: string }>> {
+  return await askTheServer('DELETE', `/admin/characters/${encodeURIComponent(characterId)}`);
 }
 
 /** One call to an admin endpoint carrying the words this browser keeps. */
