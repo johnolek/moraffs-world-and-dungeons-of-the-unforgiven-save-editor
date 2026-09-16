@@ -2,38 +2,22 @@
   The announcements beside the boards: everything the server has said, newest first, with each new
   one arriving as it is made.
 
-  The feed goes up before the history is asked for, so that a run announced while the history is on
-  its way is not missed. The two overlap for that moment and an announcement is shown once.
+  The feed itself is `announcement-feed.svelte.ts`, which the footer reads as well, so the page
+  follows one feed however many places on it are showing announcements. It goes on being followed
+  after this panel has gone away with the tab.
 -->
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { runServerUrl } from '../run-server';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { announcementWords } from './announce';
-  import { browserFeed, followFeed, merged, prepended, type FollowedFeed } from './feed';
-  import { loadAnnouncements, loadOlderAnnouncements, NO_ANNOUNCEMENTS, type LoadedAnnouncements } from './server';
+  import { announcementsShowing, older } from './announcement-feed.svelte';
   import { BOARDS_PAGE, whenWords } from './words';
 
-  let showing = $state<LoadedAnnouncements>(NO_ANNOUNCEMENTS);
+  const showing = $derived(announcementsShowing());
   let reading = $state(false);
 
-  const server = runServerUrl();
-  let feed: FollowedFeed | null = null;
-
-  if (server !== null) {
-    feed = followFeed(browserFeed(server), (announcement) => {
-      showing = { ...showing, announcements: prepended(showing.announcements, announcement) };
-    });
-    void loadAnnouncements().then((history) => {
-      showing = { ...history, announcements: merged(showing.announcements, history.announcements) };
-    });
-  }
-
-  onDestroy(() => feed?.stop());
-
-  async function older(): Promise<void> {
+  async function readOlder(): Promise<void> {
     reading = true;
-    showing = await loadOlderAnnouncements(showing);
+    await older();
     reading = false;
   }
 </script>
@@ -52,7 +36,7 @@
       {/each}
     </ul>
     {#if showing.more}
-      <button type="button" onclick={older} disabled={reading}>{BOARDS_PAGE.more}</button>
+      <button type="button" onclick={readOlder} disabled={reading}>{BOARDS_PAGE.more}</button>
     {/if}
     {#if showing.failed}
       <p class="empty">{BOARDS_PAGE.announcementsUnreachable}</p>
