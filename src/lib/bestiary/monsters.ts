@@ -159,6 +159,29 @@ export function monsterGroups(): MonsterGroup[] {
   return groups;
 }
 
+/**
+ * The id of a monster of the catalogue painted in a colour set other than the one the game
+ * paints it in.
+ *
+ * An endless section's five monsters are borrowed from sections all over the game and repainted
+ * so that they read as new ones (`src/lib/game/endless/README.md`). The colour set goes in the
+ * id because everything that draws a monster draws it by its id: the 3-D view, the thumbnail on
+ * the map and the portrait all look the monster up and read the colours off it, and none of them
+ * has to know that the endless dungeon exists.
+ */
+export function recolouredId(id: string, colorSet: number): string {
+  return `${id}-set${colorSet}`;
+}
+
+const RECOLOURED_ID = /^(.+)-set(\d+)$/;
+
+/** The monster a recoloured id was made from and the colour set it is painted in, or null when
+ *  the id names a monster of the catalogue itself. */
+export function readRecolouredId(id: string): { id: string; colorSet: number } | null {
+  const match = RECOLOURED_ID.exec(id);
+  return match ? { id: match[1], colorSet: Number(match[2]) } : null;
+}
+
 /** An inclusive run of floors within one module; module is 0-based. */
 export interface FloorRange {
   module: number;

@@ -1,4 +1,4 @@
-import { allMonsters, isPuffball, type Monster } from '../bestiary/monsters';
+import { allMonsters, isPuffball, readRecolouredId, type Monster } from '../bestiary/monsters';
 import { renderMonster } from '../bestiary/pictures';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
 import { FAITHFUL_RULES, type BossSquare, type GameRules, type SectionPlace } from '../game/port/rules';
@@ -68,8 +68,10 @@ export interface StockedMonster {
 
 const catalogue = new Map(allMonsters().map((entry) => [entry.id, entry]));
 
-/** The catalogue entry a stocked monster refers to. */
+/** The catalogue entry a stocked monster refers to, repainted when its id asks for that. */
 export function monsterById(id: string): Monster {
+  const recoloured = readRecolouredId(id);
+  if (recoloured) return { ...monsterById(recoloured.id), id, colorSet: recoloured.colorSet };
   const entry = catalogue.get(id);
   if (!entry) throw new Error(`no monster ${id}`);
   return entry;

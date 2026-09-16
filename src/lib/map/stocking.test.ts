@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPuffball } from '../bestiary/monsters';
+import { isPuffball, recolouredId } from '../bestiary/monsters';
 import { sectionOf } from '../game/dotu-files.js';
 import { MONSTER_TYPE_ODDS, monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import { bundledDungeon } from '../game/dungeon';
@@ -121,6 +121,20 @@ function kindOf(id: string): keyof typeof MONSTER_TYPE_ODDS {
   if (isPuffball(entry)) return 'puffball';
   return entry.special === 0 ? 'blocker' : 'poisonDisease';
 }
+
+describe('a monster asked for by a repainted id', () => {
+  it('is the monster it was painted from, in the colour set the id names', () => {
+    const own = monsterById('section-7-24');
+    const repainted = monsterById(recolouredId('section-7-24', 2));
+    expect(repainted.colorSet).toBe(2);
+    expect(own.colorSet).not.toBe(2);
+    expect({ ...repainted, id: own.id, colorSet: own.colorSet }).toEqual(own);
+  });
+
+  it('is refused when the monster it names is nobody', () => {
+    expect(() => monsterById(recolouredId('section-99-24', 1))).toThrow();
+  });
+});
 
 describe('stockingSection', () => {
   it('names the section a floor of the module draws its monsters from', () => {
