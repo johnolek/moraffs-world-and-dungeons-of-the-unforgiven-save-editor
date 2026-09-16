@@ -11,7 +11,9 @@
   as they do without it.
 -->
 <script lang="ts">
-  import { secondsToTheDrop, swingRoll, SWING_ROLL_VALUES } from './sawtooth';
+  import { linear } from 'svelte/easing';
+  import { Tween } from 'svelte/motion';
+  import { secondsToTheDrop, swingRoll, SWING_ROLL_VALUES, TICK_MS } from './sawtooth';
 
   interface Props {
     /** What the tick counter reads now, or null when nothing is being drawn from it. */
@@ -24,15 +26,25 @@
   let { tick, overScreen = false }: Props = $props();
 
   const roll = $derived(tick === null ? 0 : swingRoll(tick));
-  /** How full the bar is: the roll out of the eighty a swing can draw. */
-  const filled = $derived((roll / SWING_ROLL_VALUES) * 100);
+  /**
+   * How full the bar is: the roll out of the eighty a swing can draw, eased from one reading to
+   * the next so that the fill glides instead of jumping once a tick.
+   *
+   * The glide takes two ticks. A reading arrives every tick, so the fill is still moving when the
+   * next one comes and never stands still waiting on a late timer; the cost is that it runs one
+   * tick behind the counter, a hundredth of the climb.
+   */
+  const filled = Tween.of(() => (roll / SWING_ROLL_VALUES) * 100, {
+    duration: 2 * TICK_MS,
+    easing: linear,
+  });
   /** How long the roll has left to climb before it drops back, as the label prints it. */
   const secondsLeft = $derived(tick === null ? '0.0' : secondsToTheDrop(tick).toFixed(1));
 </script>
 
 {#if tick !== null}
   <div class="clock-bar" class:over-screen={overScreen} title="The roll a swing made now would get, out of 80">
-    <div class="track"><div class="fill" style:width="{filled}%"></div></div>
+    <div class="track"><div class="fill" style:width="{filled.current}%"></div></div>
     <div class="reading">SWING ROLL {roll} · {secondsLeft}s TO THE DROP</div>
   </div>
 {/if}
@@ -54,8 +66,6 @@
     background: rgba(0, 0, 0, 0.55);
     overflow: hidden;
   }
-  /* The fill has no transition: the bar is a reading of a counter rather than a gauge easing
-     towards a value, and an eased one would still be climbing when the roll had already wrapped. */
   .fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent-dim, #4a4), var(--accent, #7f7));
