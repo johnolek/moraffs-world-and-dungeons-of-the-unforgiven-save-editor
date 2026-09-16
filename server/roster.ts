@@ -119,7 +119,7 @@ export async function rosterOf(
 
 async function characterOf(sql: Queries, row: RosterRow, device: string, now: number): Promise<RosterCharacter> {
   const sessions = await sessionsOf(sql, row.id);
-  const counted = await keysPerSitting(sql, row.id);
+  const counted = await inputsPerSitting(sql, row.id);
   return {
     id: row.id,
     game: row.game,
@@ -143,15 +143,25 @@ async function characterOf(sql: Queries, row: RosterRow, device: string, now: nu
   };
 }
 
-/** How many keys the server holds for each sitting of one character, by the place that sitting
- *  comes in the run. The keys themselves are never read: counting them is the whole point. */
-async function keysPerSitting(sql: Queries, characterId: string): Promise<Map<number, number>> {
-  const rows = await sql.query<{ session_index: number; keys: string }>(
-    `SELECT session_index, coalesce(sum(jsonb_array_length(inputs)), 0) AS keys
+/**
+ * How many inputs the server holds for each sitting of one character, by the place that sitting
+ * comes in the run. The inputs themselves are never read: counting them is the whole point.
+ *
+ * It is the length of the log and not the number of keys a person pressed. The device compares
+ * this against the length of its own copy of that sitting to work out which copy of the character
+ * stands (`deviceIsAhead` in `src/lib/character/server-roster.ts`), and the log is the only thing
+ * the device has to count. A run played on the clock writes a tick reading into the log ahead of
+ * every key, and Moraff's Revenge writes an input for every tick of its monsters' clock, so those
+ * runs count well above the keys that were pressed — on both sides, which is what matters here.
+ * The number of keys is `sum(pressed)` over the same rows, for anything that wants it.
+ */
+async function inputsPerSitting(sql: Queries, characterId: string): Promise<Map<number, number>> {
+  const rows = await sql.query<{ session_index: number; inputs: string }>(
+    `SELECT session_index, coalesce(sum(jsonb_array_length(inputs)), 0) AS inputs
      FROM batches WHERE character_id = $1 GROUP BY session_index`,
     [characterId],
   );
-  return new Map(rows.map((row) => [row.session_index, Number(row.keys)]));
+  return new Map(rows.map((row) => [row.session_index, Number(row.inputs)]));
 }
 
 /**

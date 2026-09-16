@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { clockSecondInput, clockTickInput } from '../src/lib/play/run';
 import { announceRun } from './announcing';
 import {
   forgetKeptCharacter,
@@ -172,7 +173,7 @@ describe("a player's characters", () => {
     expect(character.endless).toBeNull();
   });
 
-  it('carries the chain without its keys, counting them instead', async () => {
+  it('carries the chain without its keys, counting its inputs instead', async () => {
     await playedTwice();
 
     const [character] = await rosterOf(sql, ME.player, ME.device, 100000);
@@ -180,6 +181,18 @@ describe("a player's characters", () => {
     expect(character.run.map((session) => session.inputCount)).toEqual([3, 1]);
     expect(character.run[0]).toMatchObject({ seed: 12345, record: 'AAEC', game: 'unforgiven', actions: 2 });
     expect(character.run[0]).not.toHaveProperty('inputs');
+  });
+
+  it('counts the clock readings of a sitting played on the clock along with its keys', async () => {
+    // The count is what the device compares the length of its own copy of the sitting against,
+    // and that copy holds the readings too, so leaving them out here would have every clocked run
+    // look to the device like one it had played further than the server knows.
+    const played = [clockSecondInput(1757000000), clockTickInput(900), 104, clockTickInput(918), 106];
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, inputs: played, pressed: 2 }), 1000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character.run[0].inputCount).toBe(played.length);
   });
 
   it('rebuilds the chain out of the sittings and the stretches that arrived when it is asked for', async () => {
