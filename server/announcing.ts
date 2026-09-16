@@ -4,18 +4,22 @@ import type { Queries } from './sql';
 /**
  * What the server says about a run once it has been checked.
  *
- * A verified run that may go on a board is announced: that the character won or died, and every
- * milestone of its whole run that has not been announced before — a boss beaten, a module or a
- * dungeon reached, a level, a floor of Moraff's Revenge. The chain carries every milestone the
- * character has ever reached, so a run of a character that has been played before repeats most of
- * them, and saying a thing once is the index on the table.
+ * A verified run that may go on a board is announced: that the character won or died, and the few
+ * things of its whole run worth stopping to read that have not been announced before. The chain
+ * carries every milestone the character has ever reached, so a run of a character that has been
+ * played before repeats most of them, and saying a thing once is the index on the table.
  *
  * The rows carry fields and no sentence: how an announcement reads is the site's, in
  * `src/lib/boards/announce.ts`, so that the feed and the history read the same way and neither is
  * frozen into the database.
  */
 
-/** What is being announced. A win and a death have nothing to count and their `which` is 0. */
+/**
+ * What is being announced. A win and a death have nothing to count and their `which` is 0.
+ *
+ * `dungeon` and `floor` are kinds nothing writes any more. They are here because the table still
+ * holds rows of them from when it did, and a row nobody can name is a row nobody can read.
+ */
 export type AnnouncementKind = 'win' | 'death' | 'boss' | 'dungeon' | 'level' | 'floor';
 
 /** One announcement, as it is kept and as it goes out over the feed. */
@@ -56,9 +60,15 @@ export interface AnnouncedRun {
   playMs: number;
 }
 
-/** The milestone kinds announced one by one. A death and a win are the run's outcome instead, and
- *  that is announced once whatever the chain says about how it ended. */
-const ANNOUNCED_MILESTONES: readonly MilestoneKind[] = ['boss', 'dungeon', 'level', 'floor'];
+/**
+ * The milestone kinds announced one by one.
+ *
+ * A module, a dungeon and a floor are not among them. A character reaches dozens of those over a
+ * run, and the feed is read on every page of the site, so it holds only what somebody would stop
+ * to read. A death and a win are the run's outcome instead, and that is announced once whatever
+ * the chain says about how it ended.
+ */
+const ANNOUNCED_MILESTONES: readonly MilestoneKind[] = ['boss', 'level'];
 
 /**
  * Announce a run: the milestones it reached that have not been announced, oldest first, and then

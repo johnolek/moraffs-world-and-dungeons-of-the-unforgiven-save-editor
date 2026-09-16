@@ -50,7 +50,6 @@ describe('announcing a run that has been checked', () => {
       sql,
       run({
         milestones: [
-          reached({ kind: 'dungeon', which: 3 }),
           reached({ kind: 'boss', which: 2 }),
           reached({ kind: 'level', which: 12 }),
           reached({ kind: 'death', which: 0, floor: 7 }),
@@ -59,11 +58,25 @@ describe('announcing a run that has been checked', () => {
     );
 
     expect(made.map((announcement) => [announcement.kind, announcement.which])).toEqual([
-      ['dungeon', 3],
       ['boss', 2],
       ['level', 12],
       ['death', 0],
     ]);
+  });
+
+  it('says nothing about a module, a dungeon or a floor reached', async () => {
+    const made = await announceRun(
+      sql,
+      run({
+        milestones: [
+          reached({ kind: 'dungeon', which: 3 }),
+          reached({ kind: 'floor', which: 30 }),
+          reached({ kind: 'death', which: 0, floor: 7 }),
+        ],
+      }),
+    );
+
+    expect(made.map((announcement) => announcement.kind)).toEqual(['death']);
   });
 
   it('says where a death happened, which is the last milestone and what the run had reached', async () => {

@@ -395,11 +395,10 @@ describe('announcing a run that has been checked', () => {
     const announcements = await playToADeath(fakeEngines(() => ({ replayed: { actions: 12, time: 30, milestones: DIED } })));
 
     expect(announcements.map((announcement) => [announcement.kind, announcement.which])).toEqual([
-      ['dungeon', 2],
       ['level', 5],
       ['death', 0],
     ]);
-    expect(announcements[2]).toMatchObject({ player: 'Moraff', name: 'Grond', game: 'unforgiven', floor: 7, level: 5 });
+    expect(announcements[1]).toMatchObject({ player: 'Moraff', name: 'Grond', game: 'unforgiven', floor: 7, level: 5 });
   });
 
   it('checks and announces nothing for a character rolled for no board', async () => {
