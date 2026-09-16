@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { bytesFromBase64 } from '../bytes';
+import { deepestShadowKilled } from '../../../server/boards';
 import { endlessRules, ENDLESS_WORLD_SEED } from '../game/endless/rules';
+import { shadowLoot } from '../game/endless/shadows';
 import { savePlayer, loadPlayer } from '../game/port/record';
 import { characterFile, press, settle, teleporterSquare, townSquare } from './battle.test-support';
 import { runMoveControl, startGame } from './engine';
@@ -15,7 +17,15 @@ import { REV_KEY } from './rev/keys';
 import { actionWords, ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
 import { RUN_LOG_VERSION } from './run';
 import { firstSwingsReading, unforgivenClockedRun } from './test-clocked-run';
-import { endlessChain, endlessRun, RUN_BOSS_SQUARE, RUN_SECTION, RUN_WORLD } from './test-endless-run';
+import {
+  endlessChain,
+  endlessRun,
+  endlessShadowKill,
+  RUN_BOSS_SQUARE,
+  RUN_SECTION,
+  RUN_WORLD,
+  WANDERED_FLOOR,
+} from './test-endless-run';
 import { readRunLog, verifyRun, verifySession, whatToSayAboutTheEngine } from './verify';
 
 /**
@@ -456,6 +466,28 @@ describe('verifying a run of the endless dungeon', () => {
     // The Shadow boss of a section past the twentieth is remembered beside the record, since the
     // record's own table has no place for him.
     expect(replay.endless).toEqual({ keys: [], bossSquares: [{ section: RUN_SECTION, ...RUN_BOSS_SQUARE }] });
+  });
+
+  it('replays a sitting that killed the Shadow wandering a floor, the pile it left and all', async () => {
+    const { log, record } = await endlessShadowKill();
+    // The Shadow of that floor of that world carries twenty orange potions, and the log says
+    // nothing about them: the replay draws them for itself out of the world and the floor. The
+    // record the player kept holds one more, which the Shadow handed over for draining levels.
+    expect(shadowLoot(RUN_WORLD, WANDERED_FLOOR).potions).toEqual([20, 0, 0, 0, 0, 0]);
+    expect(loadPlayer(record).potions).toEqual([21, 0, 0, 0, 0, 0]);
+
+    const replay = await replayRun(log);
+
+    const found = replay.journal.filter((entry) => entry.text === 'Found a ORANGE POTION');
+    expect(found).toHaveLength(21);
+  });
+
+  it('puts a wandering Shadow where the deepest-Shadow board counts it', async () => {
+    const { log } = await endlessShadowKill();
+
+    const replay = await replayRun(log);
+
+    expect(deepestShadowKilled(replay.journal)).toBe(WANDERED_FLOOR);
   });
 
   it('hands back nothing for a sitting of the game as it shipped', async () => {

@@ -63,6 +63,21 @@ const STARTED_AT = ['2026-09-07T00:00:00.000Z', '2026-09-07T01:00:00.000Z'];
 /** The keys of a sitting: swing, answer the box the swing puts up, and again. */
 const SWINGS = [KEY.fight, KEY.enter, KEY.fight, KEY.enter, KEY.fight, KEY.enter];
 
+/**
+ * The floor of Module IV that {@link RUN_WORLD} stands a Shadow wandering, and the square the
+ * roll of that floor under {@link FIRST_SEED} puts it on.
+ *
+ * One endless floor in a hundred has one, drawn from the world and the floor, and this is the
+ * shallowest of that world's. The character wakes on the square south of it, facing it.
+ */
+export const WANDERED_FLOOR = 101;
+const WANDERING_SHADOW = { x: 37, y: 45 };
+const FACING_THE_WANDERER = { x: WANDERING_SHADOW.x, y: WANDERING_SHADOW.y + 1 };
+
+/** The keys of the sitting that kills it: the fight key, which goes on swinging until the Shadow
+ *  is down, and one more to take what the kill left in the box off the screen. */
+const KILL_THE_WANDERER = [KEY.fight, KEY.enter];
+
 /** Where what the character carries between sittings is kept while these runs are played, which
  *  is the roster entry's job on the site. */
 function heldBetweenSittings(): EndlessStore {
@@ -98,6 +113,7 @@ async function playOneSitting(
   startedAt: string,
   before: RunSession[],
   world: number,
+  keys: number[] = SWINGS,
 ): Promise<{ log: RunSession; record: Uint8Array }> {
   const file: CharacterFile = { ...characterFile(), bytes: record, endless: { seed: world, kept } };
   const run = new RunRecorder({
@@ -114,7 +130,7 @@ async function playOneSitting(
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
   await settle();
-  for (const key of SWINGS) await press(session, key);
+  for (const key of keys) await press(session, key);
   session.save();
   session.finish();
   return { log: run.log(), record: file.bytes };
@@ -130,6 +146,48 @@ async function playOneSitting(
 export async function endlessRun(world = RUN_WORLD): Promise<RunSession> {
   const played = await playOneSitting(endlessCharacter(), heldBetweenSittings(), FIRST_SEED, STARTED_AT[0], [], world);
   return played.log;
+}
+
+/**
+ * A character big enough to put the Shadow wandering floor 101 down in one engagement, standing
+ * face to face with it.
+ *
+ * A Shadow that deep has ten thousand hit points, so the swing has to be worth thousands: the
+ * blow counts the character's strength twice over, once in the number of dice it rolls and once
+ * in what it adds to them.
+ */
+function shadowKiller(): Uint8Array {
+  return characterFile({
+    module: MODULE,
+    level: WANDERED_FLOOR,
+    dir: 0,
+    ...FACING_THE_WANDERER,
+    lev: 999,
+    hp: 30000,
+    maxHp: 30000,
+    str: 30000,
+    weapon: 7,
+    weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 1],
+  }).bytes;
+}
+
+/**
+ * One sitting in which the character kills the Shadow wandering a floor and takes the pile it was
+ * carrying, and the record it left.
+ *
+ * What the Shadow was carrying is drawn from the world and the floor, so a replay of this log
+ * arrives at the same potions without being told what they were.
+ */
+export async function endlessShadowKill(): Promise<{ log: RunSession; record: Uint8Array }> {
+  return playOneSitting(
+    shadowKiller(),
+    heldBetweenSittings(),
+    FIRST_SEED,
+    STARTED_AT[0],
+    [],
+    RUN_WORLD,
+    KILL_THE_WANDERER,
+  );
 }
 
 /**
