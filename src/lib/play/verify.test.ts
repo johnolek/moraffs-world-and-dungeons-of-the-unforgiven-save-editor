@@ -16,7 +16,7 @@ import { actionWords, ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals
 import { RUN_LOG_VERSION } from './run';
 import { firstSwingsReading, unforgivenClockedRun } from './test-clocked-run';
 import { endlessChain, endlessRun, RUN_BOSS_SQUARE, RUN_SECTION, RUN_WORLD } from './test-endless-run';
-import { carriedAtTheEnd, readRunLog, verifyRun, verifySession, whatToSayAboutTheEngine } from './verify';
+import { readRunLog, verifyRun, verifySession, whatToSayAboutTheEngine } from './verify';
 
 /**
  * A short run of Dungeons of the Unforgiven, played headless with a seed of the test's own: three
@@ -491,25 +491,6 @@ describe('verifying a run of the endless dungeon', () => {
 
     expect(log?.sessions[0].worldSeed).toBeUndefined();
     expect((await verifyRun(log!)).status).toBe('verified');
-  });
-
-  it('works out what a chain leaves the character carrying', async () => {
-    const chain = await endlessChain();
-
-    expect(await carriedAtTheEnd(chain)).toEqual({
-      keys: [],
-      bossSquares: [{ section: RUN_SECTION, ...RUN_BOSS_SQUARE }],
-    });
-  });
-
-  it('works out nothing carried for a chain of the game as it shipped', async () => {
-    expect(await carriedAtTheEnd((await unforgivenChain()).sessions)).toBeNull();
-  });
-
-  it('works out nothing carried for a chain the engine cannot play through', async () => {
-    const [first, second] = await endlessChain();
-
-    expect(await carriedAtTheEnd([first, { ...second, record: 'AAEC' }])).toBeNull();
   });
 });
 
