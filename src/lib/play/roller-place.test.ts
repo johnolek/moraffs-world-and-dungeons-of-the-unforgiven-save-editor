@@ -30,7 +30,7 @@ describe('the roller on the Play tab', () => {
   it('answers the keyboard on the tab it was mounted on and on no other', () => {
     // Both are mounted at once — every tab stays in the page — so the one on the Play tab and the
     // one on the New Character tab would otherwise each take every key.
-    expect(roller).toContain('if (app.tab !== tab) return;');
+    expect(roller).toContain('if (!keysGoTo(tab)) return;');
   });
 
   it('shuts on Escape, but not while a character is part-way through being rolled', () => {
