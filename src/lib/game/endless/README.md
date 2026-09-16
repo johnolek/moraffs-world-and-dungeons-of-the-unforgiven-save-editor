@@ -288,3 +288,34 @@ costs a character nobody is putting on a board.
 Nothing else is lifted. The six characteristics and the counts the record keeps in a whole word —
 potions of healing, stones of teleportation — are the next fields an endless character could run
 off the end of, and lifting them would be the same piece of work again.
+
+### What endless takes away
+
+One thing goes the other way.
+
+**Autokill stops working past floor 200.** It is the only attack in the game that never looks at a
+monster's hit points: it rolls the character's mind against the monster's and, winning, simply
+declares the monster dead. Every other way of killing something is worth less the deeper the floor,
+because the floors stock monsters with more and more hit points, and this one is worth exactly the
+same at every depth.
+
+Its own odds do not save it either. The roll is
+`random(monsterLevel + random(speed)) < random(charLevel + random(iq + wis)) + random(floor)`, and
+an endless monster's level is `floor + 15 * module` — which grows one for one with the floor, at
+exactly the rate the character's own depth roll grows. So the two sides of the roll pull apart at
+the same speed, the character's level and mind become a rounding error once the floor is in the
+thousands, and the odds settle a little under a half and stay there for the rest of the dungeon.
+A permanent coin flip that deletes anything is not something a character should be able to lean on
+for twenty-nine thousand floors.
+
+So `GameRules.autokillDeepestFloor` is 200 for an endless game and null for a faithful one, and
+`autokill` (`src/lib/game/port/magic.ts`) reads it. Cast deeper than that, the spell refuses and
+says so in a box whose wording is the port's own; because it reports failure, `cast_a_spell`
+charges nothing for it, so a player who forgets loses no spell points and no time. Floor 200 still
+works. The game's own dungeon bottoms out at 105, so a faithful game never meets the rule at all.
+
+Drain Monster looks like the same problem and is not. It kills a monster whose level is under the
+caster's wisdom outright, with no roll at all, and wisdom has no cap — but it sets the monster's
+level to zero on the way, and a kill's experience is worked out from that level, so the kill pays
+almost nothing. It is a way out of a fight rather than a way to grow, which is what Go Away is
+too (John, 2026-09-16).
