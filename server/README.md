@@ -385,6 +385,7 @@ again but the database.
 | `GET /admin/characters`       | Every character here, whoever's it is, the newest first, fifty to a page: the player's name and the character's, the game, the board or the mode it was rolled for, whether it is alive, dead or has won, and when the server last heard from it. `?page=` for the ones after the first, counting from one. |
 | `DELETE /admin/characters/:id` | Forgets one for good, whoever it belongs to: its run, the verdict on it and whatever was announced about it go with it. 404 when no character here has that id. |
 | `POST /admin/admins`          | `{ "name": "..." }` makes that player an admin as well. 404 when nobody here has the name. |
+| `POST /admin/worlds/endless`  | `{ "seed": n }` opens a new endless world, and a body that names no seed asks the server to draw one. 200 with `{ "world": n }`, 400 when the seed is not a whole number between 1 and 2^31-1. |
 
 An admin says their **passphrase** and nothing else:
 
@@ -451,8 +452,7 @@ written into it from outside the game is on a board at all, which is what
 An endless board is cut finer still: it is one world as well as one game, since
 a world decides which of the game's twenty sections each endless section
 borrows its monsters from and two worlds stand different monsters on the same
-floor. Until MORF-513 hands the number out there is one world, and
-`CURRENT_ENDLESS_WORLD` in `server/boards.ts` is it.
+floor. Which world that is comes from the `worlds` table below.
 
 Every board's rows are the same shape — the player's name and the character's,
 the actions, the game's clock, the play time and whether it may be believed,
@@ -481,6 +481,34 @@ of the section is the hardest thing a floor asks for, so a floor counts once
 its Shadow is dead. That number and the count of kills are read off the journal
 the replay wrote, which is where a kill and the floor it happened on stand
 together.
+
+## The endless worlds
+
+A world is one number. Two characters rolled into the same one meet the same
+monsters on the same floor and see the same sections, which is why a board of
+the endless dungeon is one world's own.
+
+| Endpoint                        | What it does                                    |
+| ------------------------------- | ----------------------------------------------- |
+| `GET /worlds/endless/current`   | `{ "world": n }`, the world a character rolled now is rolled into. Anybody may ask. |
+
+Every world there has been is a row of `worlds`, and the newest row is the one
+being rolled into. It changes when the admin says so and at no other time:
+`POST /admin/worlds/endless` is the only thing that writes a row, there is no
+schedule, and nothing rolls a new world over anybody's head. The first row is
+world 1, which nobody set — it is the world every endless character rolled
+before any of this was rolled into, so those characters stand on the board of
+the world they were really played in.
+
+A character takes the world at the roll and keeps it for life. So the worlds
+before are still played, still replayed by the server, and still have boards of
+their own, and setting a new one takes nothing away from anybody: it only
+decides where the next roll goes.
+
+The roller asks for the world when the endless type is picked, and a roller that
+cannot reach the server rolls the character into world 1 and says so on the page
+— `ENDLESS_WORLD_SEED` in `src/lib/game/endless/rules.ts` is that number, and it
+is the site's fallback and nothing else.
 
 ## The boards of the living
 

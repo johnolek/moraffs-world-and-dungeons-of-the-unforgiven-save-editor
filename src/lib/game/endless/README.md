@@ -33,9 +33,10 @@ answered by passing the question to `FAITHFUL_RULES`.
 
 A world is one number. Two characters rolled into the same world meet the same monsters in the
 same section, and nothing about the character reaches any of these rolls, so a section is the
-same section for everybody playing that world. `ENDLESS_WORLD_SEED` in `rules.ts` is the world
-every endless character is rolled into for now; MORF-513 is where the run server hands the number
-out.
+same section for everybody playing that world. The run server hands the number out
+(`GET /worlds/endless/current`), so that everybody rolling at the same time is rolled into the
+same dungeon, and the character keeps it for life. `ENDLESS_WORLD_SEED` in `rules.ts` is world 1,
+which is what a roll falls back to when the server cannot be reached.
 
 ## Where a trap door leads
 

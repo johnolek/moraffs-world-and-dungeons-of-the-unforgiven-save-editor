@@ -96,11 +96,12 @@ const ENDLESS_TRAP_DOOR_LIMIT = 84;
 const ENDLESS_TRAP_DOOR_DROP = 100;
 
 /**
- * The endless world every endless character is rolled into for now.
+ * The first endless world, and the one a roll falls back to.
  *
  * A world is one number, and two characters rolled into the same one meet the same monsters on
- * the same floor. MORF-513 is where the run server hands the number out, so that everybody
- * playing at the same time is playing the same dungeon; until it lands there is this one world.
+ * the same floor. The run server hands the number out (`GET /worlds/endless/current`), so that
+ * everybody rolling at the same time is rolled into the same dungeon; this is the world it starts
+ * at, and what the roller writes on a character when the server cannot be reached.
  */
 export const ENDLESS_WORLD_SEED = 1;
 
