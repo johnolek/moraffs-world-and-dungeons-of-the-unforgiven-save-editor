@@ -1,3 +1,4 @@
+import { FAITHFUL_RULES, type GameRules } from '../game/port/rules';
 import type { Frame } from './view3d/frame';
 import { fillRect } from './view3d/frame';
 import type { ViewPictures } from './view3d/pictures';
@@ -36,7 +37,8 @@ const PICTURE = { x1: 0x19, y1: 0x19, x2: 0x145, y2: 0x1d1 };
 
 /** What the tab needs to draw the screen. */
 export interface BossOffice {
-  /** The section the character is standing in, 1 to 20. */
+  /** The section the character is standing in: 1 to 20 in the game itself, and past 20 on a
+   *  floor below the bottom of it. */
   section: number;
   /** The four lines of the taunt, which are read off the lowered tablet (`tablet.ts`). */
   lines: string[];
@@ -58,6 +60,7 @@ export function drawBossOffice(
   screen: BossOfficeScreen,
   showing: BossOffice,
   pictures: ViewPictures,
+  rules: GameRules = FAITHFUL_RULES,
 ): void {
   // erase_menu_block (exe 4000:42b4) fills the whole display with colour 0, so nothing of the
   // screen the character was walking through is left under the office.
@@ -74,9 +77,11 @@ export function drawBossOffice(
     });
   }
   // The record at DS:5247, which is the section's Shadow boss and the first of its five monsters.
-  const boss = sectionMonsterRecords(showing.section)[0];
+  // A section below the bottom of the game borrows its boss from one of the game's own twenty,
+  // and the drawer is told which section's picture file to read him out of.
+  const boss = sectionMonsterRecords(showing.section, rules)[0];
   if (!boss) return;
-  const picture = pictures.monster(boss.picnum, false);
+  const picture = pictures.monster(boss.picnum, false, boss.section);
   if (!picture) return;
   scaleImage(frame, PICTURE.x1, PICTURE.y1, PICTURE.x2, PICTURE.y2, picture, 0, 0xff, {
     screen,

@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { UNFORGIVEN_MAP, type MapSquare } from '../../map/game';
 import { monsterById, MONSTER_SLOTS } from '../../map/stocking';
+import { drawBossOffice } from '../../play/boss-office';
+import { SCREEN_PIXELS } from '../../play/display';
 import { BOSS_KIND, drawnMonsters, FloorMonsters, loadLevelMap } from '../../play/floor';
 import { manualOpening } from '../../play/manual';
 import { explainTrapdoor } from '../../play/trapdoor';
 import { viewMonsters } from '../../play/view-scene';
 import { viewPictures } from '../../play/view3d/browser';
+import { newFrame, pixelAt, type Frame } from '../../play/view3d/frame';
+import type { PicRowImage } from '../../play/view3d/texture';
 import data from '../dotu-data.json';
 import { bundledDungeon } from '../dungeon';
 import { expValue, strike } from '../port/combat';
@@ -270,6 +274,60 @@ describe('the S screen on a floor below the bottom of the game', () => {
   it('opens on MD.BIN itself for a floor of a section the game describes', () => {
     const game = gameOn(50);
     expect(manualOpening(game)).toEqual({ source: 18, part: 2, intro: data.sections[17].intro });
+  });
+});
+
+describe("the office of a Shadow boss below the bottom of the game", () => {
+  /** The last floor of section 21, which is where that section's own Shadow boss stands. */
+  const BOSS_FLOOR = 125;
+
+  /** The rectangle boss_office_message stretches the boss into (exe 3000:6de0), in the 1600 by
+   *  1200 grid everything is placed in. */
+  const PICTURE = { x1: 0x19, y1: 0x19, x2: 0x145, y2: 0x1d1 };
+
+  /** A point of that grid as the drawer puts it on the screen (exe 4000:4929). */
+  const atX = (x: number): number => Math.trunc(((SCREEN_PIXELS.width - 1) * x) / 1599);
+  const atY = (y: number): number => Math.trunc(((SCREEN_PIXELS.height - 1) * y) / 1199);
+
+  /** The section's Shadow boss as the catalogue has him, which is who the office draws. */
+  const boss = monsterById(rules.monsterKinds(21)[BOSS_KIND].id);
+
+  /** Which picture file the boss's own picture is in, since a section below the bottom of the
+   *  game borrows its boss from one of the game's own twenty. */
+  const bossHome = boss.origin.kind === 'section' ? boss.origin.section : null;
+
+  /** The office as the tab draws it, with every picture the drawer asked for written down. */
+  function officeOn(floor: number): { asked: [number, number | null | undefined][]; frame: Frame } {
+    const section = rules.sectionOf(MODULE_V, floor);
+    const own = viewPictures(rules.pictureFiles(section));
+    const asked: [number, number | null | undefined][] = [];
+    const pictures = {
+      ...own,
+      monster: (picnum: number, builtin: boolean, from?: number | null): PicRowImage | null => {
+        asked.push([picnum, from]);
+        return own.monster(picnum, builtin, from);
+      },
+    };
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawBossOffice(frame, SCREEN_PIXELS, { section, lines: [] }, pictures, rules);
+    return { asked, frame };
+  }
+
+  it("draws the section's own Shadow boss, out of the file of the section he came from", () => {
+    expect(boss.origin.kind === 'section' && boss.origin.slot).toBe(BOSS_KIND);
+    expect(officeOn(BOSS_FLOOR).asked).toEqual([[boss.picnum, bossHome]]);
+  });
+
+  it('puts him on the screen in the colour set of his own record', () => {
+    const { frame } = officeOn(BOSS_FLOOR);
+    const painted = new Set<number>();
+    for (let y = atY(PICTURE.y1); y <= atY(PICTURE.y2); y += 1) {
+      for (let x = atX(PICTURE.x1); x <= atX(PICTURE.x2); x += 1) painted.add(pixelAt(frame, x, y));
+    }
+    // A picture's pixels land in its own colour set's bank, except for the values 29 to 31, which
+    // read the gradient bank at 96 and up instead.
+    const base = boss.colorSet << 4;
+    expect([...painted].some((entry) => entry >= base && entry <= base + 31)).toBe(true);
   });
 });
 

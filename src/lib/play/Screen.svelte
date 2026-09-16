@@ -480,7 +480,8 @@
     // erase_menu_block blanks the display, the tablet comes down lowered with the taunt on it and
     // the boss stands in a panel beside the three lines saying whose office the message is from.
     if (bossOffice) {
-      drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(game.rules.pictureFiles(bossOffice.section)));
+      const officePictures = viewPictures(game.rules.pictureFiles(bossOffice.section));
+      drawBossOffice(frame, SCREEN_PIXELS, bossOffice, officePictures, game.rules);
       drawDotuScreenText(frame, SCREEN_PIXELS, text);
       paint();
       return;
@@ -488,7 +489,8 @@
     // The S key's screen (monster_manual, exe 3000:c39d): the section's five monsters in their
     // panels and the slab its words are read off, with the lines the manual printed over them.
     if (sectionScreen) {
-      drawSectionScreen(frame, SCREEN_PIXELS, sectionScreen, viewPictures(game.rules.pictureFiles(sectionScreen.section)));
+      const manualPictures = viewPictures(game.rules.pictureFiles(sectionScreen.section));
+      drawSectionScreen(frame, SCREEN_PIXELS, sectionScreen, manualPictures, game.rules);
       drawDotuScreenText(frame, SCREEN_PIXELS, text);
       paint();
       return;
