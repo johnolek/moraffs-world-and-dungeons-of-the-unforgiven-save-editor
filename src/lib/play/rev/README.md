@@ -57,7 +57,10 @@ BASIC.
   and the key it names for switching to them is Escape.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `chute.ts`, `fight.ts`,
   `attack.ts`, `kill.ts`, `town.ts`, `death.ts`, `advice.ts`, `help.ts`, `pause.ts`,
-  `settings.ts` — so that two people can add two keys without touching the same file.
+  `settings.ts`, `abandon.ts` — so that two people can add two keys without touching the same
+  file. `abandon.ts` is the A key (1000:1918): it throws every coin the character carries away
+  and weighs them again as their armour and themselves, which is how a character too deep to
+  walk their treasure back to the bank gets quiet enough for the monsters to stop hearing them.
 * **`pass.ts`** — 1000:3FFC, what the game does on the far side of every key whatever the key
   was: the rings of health healing and the disease drain.
 * **`screens.ts`** — the screens that take the whole display over. A `CLS` blacks the screen out
@@ -224,9 +227,7 @@ Four things are this game's own:
   (`clock.ts`). So monsters walk about behind a screen that does not show it and have moved when
   the frame comes down, where the original's busy loop leaves them exactly where they were —
   `TIMER` is the only thing that runs there. Stopping the clock instead would let a display
-  timer change the game and put the run log at the mercy of what the tab was showing. The one
-  hold that is not ported is the four seconds at 1000:1941, in the A key that drops the coins,
-  which is not built.
+  timer change the game and put the run log at the mercy of what the tab was showing.
 * **The words go where the game `LOCATE`s them** — the message rows top left, the spells top
   right, `EXP. VALUE:` at the bottom — and every line in them is the literal the executable holds.
   The lines the port keeps in a list rather than at a row are put back on rows in
@@ -348,16 +349,6 @@ worth knowing before reading the code.
   forgets to take the armour off. And a kill that turns up a bag of holding for a character who
   has one falls into the next line of the drops table rather than saying NOTHING (`1000:AD7D`),
   so a second bag of holding is a magic sword.
-
-## What is not built yet
-
-Every key the dungeon dispatches on has an entry in `REV_KEY_HANDLERS` and every one of them
-answers. These say what the game would have done rather than doing it, and each names the routine
-it stands in for:
-
-| key | what the game does | where |
-| --- | --- | --- |
-| A | drops all the coins carried, which is what makes a character light | 1000:1918 |
 
 ## Six things read out of the code that the documents had otherwise
 
