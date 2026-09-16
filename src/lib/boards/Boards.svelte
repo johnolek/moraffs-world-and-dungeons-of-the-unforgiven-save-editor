@@ -114,6 +114,10 @@
     worlds.map((seed) => ({ id: String(seed), label: worldWords(seed, currentWorld) })),
   );
 
+  /** Whether a board of one endless world is what is showing. The table of everyone is every
+   *  character of the game whatever world it is in, so it has no world to pick. */
+  const showingAWorld = $derived(ranked === 'endless' && picked !== 'everyone');
+
   /** The leaderboards the table of everyone is cut down to. */
   const leaderboards = $derived<Leaderboard[]>(leaderboard === 'both' ? BOTH_LEADERBOARDS : [leaderboard]);
 
@@ -122,7 +126,7 @@
     leaderboard: ranked,
     board: picked,
     // A board of the game as it shipped is one dungeon and has no world to be read for.
-    world: ranked === 'endless' ? world : null,
+    world: showingAWorld ? world : null,
   });
 
   /** Pick a board, off both leaderboards, since a ranked board is of one of them. */
@@ -152,7 +156,7 @@
   // which is the world anybody arriving is looking for.
   $effect(() => {
     const game = app.game;
-    if (ranked !== 'endless') return;
+    if (!showingAWorld) return;
     void loadEndlessWorlds(game).then((read) => {
       if (read === null || game !== app.game) return;
       worlds = read.worlds;
@@ -236,7 +240,7 @@
           <span class="label">{BOARDS_PAGE.board}</span>
           <Segmented label={BOARDS_PAGE.board} choices={picks} value={picked} onpick={pickBoard} wrap />
         </div>
-        {#if ranked === 'endless'}
+        {#if showingAWorld}
           <div class="pick">
             <span class="label">{BOARDS_PAGE.world}</span>
             <Segmented
