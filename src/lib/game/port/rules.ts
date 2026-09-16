@@ -38,6 +38,8 @@ export interface GameRules {
   sectionSource(section: number): number;
   /** The 27 monster descriptions the game keeps loaded while the character is in a section. */
   monsterKinds(section: number): MonsterKind[];
+  /** How often the type roll picks each kind of monster on a floor of this section. */
+  monsterTypeOdds(section: number): MonsterTypeOdds;
   /** The highest monster level a kill is paid experience for. */
   readonly experienceCap: number;
   /** The trap door keys the character carries. */
@@ -66,6 +68,27 @@ export interface GameRules {
   readonly monsterHpMax: number;
   /** The two picture files a section's corridors and monsters are drawn from. */
   pictureFiles(section: number): SectionPictures;
+}
+
+/**
+ * The four one-in-N tests get_mtype (exe 2000:65f8, unf.c "get_mtype") makes in order, each of
+ * them settled before the next is asked: a puffball, else a garbage can or a giant ball, else the
+ * section's level drainer, else a poison or disease monster, else one of the section's three
+ * regulars.
+ *
+ * These are the game's own numbers for every section the game has. Rules whose sections are not
+ * the game's may answer with numbers of their own, which is how a section can be made to stand
+ * more level drainers or more poison than the game ever stood.
+ */
+export interface MonsterTypeOdds {
+  /** One roll in this many is a puffball. */
+  puffball: number;
+  /** One of the rolls left in this many is a garbage can or a giant ball. */
+  blocker: number;
+  /** One of the rolls left in this many is the section's level drainer. */
+  levelDrainer: number;
+  /** One of the rolls left in this many is a poison or a disease monster. */
+  poisonDisease: number;
 }
 
 /**
@@ -188,7 +211,9 @@ type GameData = typeof data;
  * inside the two bytes the monster's record holds it in, and `monsterLevelWrap` the 256 its nudge
  * counts round, the level being one byte of that record.
  * `sectionSource` is every section's own number: the game has a wall file, a palette and a row
- * of MD.BIN for each of the twenty, so none of them borrows another's. `keys` and `bossSquares` are the two tables of the
+ * of MD.BIN for each of the twenty, so none of them borrows another's. `monsterTypeOdds` is the
+ * four rolls get_mtype (exe 2000:65f8) picks a stocked monster's type with, which are the same
+ * four in every section. `keys` and `bossSquares` are the two tables of the
  * character record that a dungeon deeper than the game's own would run off the end of.
  */
 export function faithfulRules(data: GameData): GameRules {
@@ -199,6 +224,7 @@ export function faithfulRules(data: GameData): GameRules {
     sectionPlace: (section) => sectionPlace(data, section),
     sectionSource: (section) => section,
     monsterKinds: (section) => sectionMonsterKinds(data, section),
+    monsterTypeOdds: () => GAME_TYPE_ODDS,
     experienceCap: data.constants.expValueLevelCap,
     keys: RECORD_KEYS,
     bossSquares: RECORD_BOSS_SQUARES,
@@ -211,6 +237,9 @@ export function faithfulRules(data: GameData): GameRules {
     pictureFiles: sectionPictures,
   };
 }
+
+/** The four tests get_mtype makes, in the order it makes them (exe 2000:65f8). */
+const GAME_TYPE_ODDS: MonsterTypeOdds = { puffball: 20, blocker: 7, levelDrainer: 15, poisonDisease: 12 };
 
 /** What a stocked monster's level counts round at in the game itself: it is one byte of the
  *  monster's six (exe 2000:671e, unf.c "stock_level"). */

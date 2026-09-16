@@ -142,6 +142,17 @@ describe('the faithful rules', () => {
     expect(rules.experienceCap).toBe(130);
   });
 
+  it("rolls a stocked monster's type on the four tests get_mtype makes", () => {
+    for (const section of SECTIONS) {
+      expect(rules.monsterTypeOdds(section), `section ${section}`).toEqual({
+        puffball: 20,
+        blocker: 7,
+        levelDrainer: 15,
+        poisonDisease: 12,
+      });
+    }
+  });
+
   it('tops a nudged monster level off where stock_level tops it off', () => {
     expect(rules.monsterLevelMax).toBe(210);
   });

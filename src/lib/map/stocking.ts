@@ -5,6 +5,7 @@ import {
   FAITHFUL_RULES,
   type BossSquare,
   type GameRules,
+  type MonsterTypeOdds,
   type SectionPlace,
   type WanderingShadow,
 } from '../game/port/rules';
@@ -166,6 +167,7 @@ export function stockFloor(
   const section = stockingSection(rules, moduleIndex, floor);
   if (!section) return [];
   const kinds = rules.monsterKinds(section.section);
+  const odds = rules.monsterTypeOdds(section.section);
   const baseLevel = rules.monsterLevel(moduleIndex, floor);
   const taken = new Set<number>(occupied);
   const shadow = shadowOfSlotZero(kinds, section, floor, bossBeaten, bossLastSeen, wanderer);
@@ -175,7 +177,7 @@ export function stockFloor(
     const beforeTry = clocked === null ? null : () => clocked.reseed(slot, (tries += 1));
     let { x, y } = freeSquare(rows, taken, rnd, beforeTry);
     taken.add(y * WIDTH + x);
-    let entry = rollKind(kinds, rnd, clocked);
+    let entry = rollKind(kinds, odds, rnd, clocked);
     if (slot === 0 && shadow) {
       entry = shadow.entry;
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
@@ -270,20 +272,27 @@ export function groupedMonsterCounts(monsters: StockedMonster[]): MonsterCountGr
 /**
  * get_mtype (exe 2000:65f8, unf.c "get_mtype"): the type roll. 1 in 20 a puffball, else 1 in 7 a
  * garbage can or ball, else 1 in 15 the section's level drainer, else 1 in 12 a poison or disease
- * monster, else one of the section's three regulars.
+ * monster, else one of the section's three regulars. The four numbers come from the rules, which
+ * answer the game's own for every section the game has.
  *
  * Each of the four tests asks whether the roll came up 1 rather than 0, which is the same one
  * chance in twenty over an even generator and a different monster over a reseeded one. Only the
  * first roll is a `Random` call (2000:6601); the six under it are written inline.
  *
  * @param kinds the 27 rows the rules have loaded for the section, which the roll picks one of.
+ * @param odds how often each of the four tests comes up.
  */
-function rollKind(kinds: MonsterKind[], rnd: () => number, clocked: ClockedStocking | null): Monster {
-  const puffballs = clocked === null ? random(rnd, 20) : clocked.randomCall(20);
+function rollKind(
+  kinds: MonsterKind[],
+  odds: MonsterTypeOdds,
+  rnd: () => number,
+  clocked: ClockedStocking | null,
+): Monster {
+  const puffballs = clocked === null ? random(rnd, odds.puffball) : clocked.randomCall(odds.puffball);
   if (puffballs === 1) return kindAt(kinds, random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
-  if (random(rnd, 7) === 1) return kindAt(kinds, random(rnd, BLOCKER_COUNT));
-  if (random(rnd, 15) === 1) return kindAt(kinds, LEVEL_DRAINER_SLOT);
-  if (random(rnd, 12) === 1) return kindAt(kinds, random(rnd, POISON_COUNT) + FIRST_POISON);
+  if (random(rnd, odds.blocker) === 1) return kindAt(kinds, random(rnd, BLOCKER_COUNT));
+  if (random(rnd, odds.levelDrainer) === 1) return kindAt(kinds, LEVEL_DRAINER_SLOT);
+  if (random(rnd, odds.poisonDisease) === 1) return kindAt(kinds, random(rnd, POISON_COUNT) + FIRST_POISON);
   return kindAt(kinds, random(rnd, 3) + FIRST_REGULAR_SLOT);
 }
 

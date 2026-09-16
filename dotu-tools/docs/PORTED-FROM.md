@@ -73,7 +73,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `which_monster` | 2000:6573 |  | `play/floor.ts` |
 | `monster_at` | 2000:65b0 | `game/port/state.ts` |  |
 | `set_monster_map` | 2000:65dc | `game/port/state.ts` |  |
-| `get_mtype` | 2000:65f8 |  | `formulas/formulas.ts`, `map/stocking.ts` |
+| `get_mtype` | 2000:65f8 |  | `formulas/formulas.ts`, `game/port/rules.ts`, `map/stocking.ts` |
 | `stock_level` | 2000:671e | `bestiary/roll.ts`, `map/stocking.ts` | `formulas/formulas.ts`, `game/port/character.ts`, `game/port/rules.ts`, `game/port/state.ts`, `play/fight-sim.ts`, `play/floor.ts` |
 | `FUN_2000_7210` | 2000:7210 |  | `map/area.ts`, `play/memory.ts`, `play/zoom-map.ts` |
 | `FUN_2000_7277` | 2000:7277 |  | `play/memory.ts` |

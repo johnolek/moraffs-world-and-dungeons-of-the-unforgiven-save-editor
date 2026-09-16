@@ -184,6 +184,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     sectionSource,
     monsterKinds: (section) =>
       section <= LAST_OWN_SECTION ? FAITHFUL_RULES.monsterKinds(section) : endlessMonsterKinds(seed, section),
+    monsterTypeOdds: FAITHFUL_RULES.monsterTypeOdds,
     experienceCap: ENDLESS_EXPERIENCE_CAP,
     keys: endlessKeys(FAITHFUL_RULES.bottomLevel(endlessModule)),
     bossSquares: ENDLESS_BOSS_SQUARES,
