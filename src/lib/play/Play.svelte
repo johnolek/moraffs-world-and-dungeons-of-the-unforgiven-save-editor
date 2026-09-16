@@ -409,7 +409,7 @@
      saying the same lines a second time. -->
 {#snippet afterRun(stage: Stage)}
   {#if stage.display === 'map' && !pictureScreen(stage.view)}
-    <MessageBox lines={stage.view.box} />
+    <MessageBox lines={stage.view.box} {announcements} />
   {/if}
 {/snippet}
 
