@@ -45,12 +45,29 @@ export class BorlandRand {
   random(n) { return Math.trunc((this.rand() * n) / 0x8000); }
 }
 
-/** How far the trap doors of a floor lead: a roll of `limit` or more is no door, and `offset` is
- *  added to the floor the roll names. The game's own, for a module `bottom` floors deep: the roll
- *  names every fifth floor from 5 up, and a door is kept while it lands in the upper four fifths
- *  of the module. */
+/** How far the trap doors of a floor lead: a roll of `limit` or more is no door, and `deepest` is
+ *  the deepest floor one may lead to, drawn from the square, or null to let the roll name the
+ *  floor itself. The game's own, for a module `bottom` floors deep: the roll names every fifth
+ *  floor from 5 up, and a door is kept while it lands in the upper four fifths of the module. */
 export function trapdoorReach(bottom) {
-  return { limit: Math.trunc(4 * bottom / 5), offset: 0 };
+  return { limit: Math.trunc(4 * bottom / 5), deepest: null };
+}
+
+/** The module the destination of a drawn trap door is asked of. The game has five modules, 0 to
+ *  4, so nothing else ever asks the hash this question. */
+const TRAPDOOR_DEST_DUNGEON = 5;
+
+/** Which floor a trap door on this square leads to when the reach names a deepest floor rather
+ *  than letting the roll name one: one of the multiples of five from 5 up to `deepest`.
+ *
+ *  The draw is the same hash the rest of the floor comes out of, asked about a module the game
+ *  does not have. Asking it about the square's own module would hand back a number some square's
+ *  roll for a door was taken from, and only sixteen of the 2400 rolls put a door down, so the
+ *  destinations would come from that narrow set: on a deep floor they would all crowd near the
+ *  top of the dungeon and no door would ever lead downwards. */
+function drawnTrapdoorDest(x, y, level, dungeon, deepest) {
+  const floors = Math.trunc(deepest / 5);
+  return 5 * (1 + myrand(x, y, level, TRAPDOOR_DEST_DUNGEON, floors));
 }
 
 export class Dungeon {
@@ -124,7 +141,7 @@ export class Dungeon {
   trapdoor(x, y, level, dungeon, bottom = BOTTOM_LEVEL[dungeon], reach = trapdoorReach(bottom)) {
     const a = myrand(x, y, level, dungeon, 2400) * 5;
     if (a < 5 || a >= reach.limit) return -1;
-    const dest = a + reach.offset;
+    const dest = reach.deepest === null ? a : drawnTrapdoorDest(x, y, level, dungeon, reach.deepest);
     if (Math.trunc(dest / 5) === Math.trunc(level / 5)) return -1;
     return dest;
   }

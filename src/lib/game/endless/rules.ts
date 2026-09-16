@@ -70,15 +70,21 @@ const ENDLESS_MONSTER_HP_MAX = Number.MAX_SAFE_INTEGER;
  *
  * The game keeps a door when the roll names a floor in the upper four fifths of the module, and
  * four fifths of a module thirty thousand floors deep is every floor the roll can name, so an
- * endless floor that asked the question the game's way would have a door on nearly every square. Module V asks
- * it of 105 floors and keeps sixteen of the 2400 rolls, which is a couple of dozen doors on a
- * floor, and the endless floors keep that test and move the floors it names instead.
+ * endless floor that asked the question the game's way would have a door on nearly every square.
+ * Module V asks it of 105 floors and keeps sixteen of the 2400 rolls, which is a couple of dozen
+ * doors on a floor; the endless floors keep that test and draw the floor a door leads to rather
+ * than letting the roll name it.
  */
 const ENDLESS_TRAP_DOOR_LIMIT = 84;
 
-/** The deepest floor those sixteen rolls name. The offset slides it onto the last floor of the
- *  character's section, so the doors of a floor lead to the eighty floors ending there. */
-const ENDLESS_TRAP_DOOR_DEEPEST = 80;
+/**
+ * How far below the character an endless trap door may lead (John, 2026-09-15).
+ *
+ * A door leads to any floor above the character and to no more than this many below, so the
+ * deeper the floor the more of the dungeon is above it and the more a door is a way back rather
+ * than a way on. The ways further down are the ladders, the chutes and the two Descend spells.
+ */
+const ENDLESS_TRAP_DOOR_DROP = 100;
 
 /**
  * The endless world every endless character is rolled into for now.
@@ -155,8 +161,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     sectionOf,
     trapdoorReach: (module, floor) => {
       if (module !== endlessModule) return FAITHFUL_RULES.trapdoorReach(module, floor);
-      const lastFloor = sectionPlace(sectionOf(module, floor))?.bossFloor ?? 0;
-      return { limit: ENDLESS_TRAP_DOOR_LIMIT, offset: Math.max(0, lastFloor - ENDLESS_TRAP_DOOR_DEEPEST) };
+      return { limit: ENDLESS_TRAP_DOOR_LIMIT, deepest: Math.min(floor + ENDLESS_TRAP_DOOR_DROP, ENDLESS_BOTTOM) };
     },
     sectionPlace,
     sectionSource,

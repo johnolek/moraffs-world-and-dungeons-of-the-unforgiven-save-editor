@@ -43,7 +43,7 @@ describe('the faithful rules', () => {
         );
       }
     }
-    expect(rules.trapdoorReach(4, 100)).toEqual({ limit: 84, offset: 0 });
+    expect(rules.trapdoorReach(4, 100)).toEqual({ limit: 84, deepest: null });
   });
 
   it('puts every floor in the section sectionOf puts it in', () => {

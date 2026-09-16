@@ -56,6 +56,8 @@ describe('a floor told how far its trap doors lead', () => {
   const MODULE_V = 4;
   const FLOOR = 100;
   const BOTTOM = BOTTOM_LEVEL[MODULE_V];
+  /** Deeper than the roll behind a door could ever name a floor itself. */
+  const DEEPEST = 20000;
 
   const doorsOf = (reach?: TrapdoorReach): number[] =>
     bundledDungeon
@@ -64,8 +66,8 @@ describe('a floor told how far its trap doors lead', () => {
       .map((square) => square.trapdoor);
 
   it('reaches four fifths of the way down the module when nobody moves it', () => {
-    expect(trapdoorReach(BOTTOM)).toEqual({ limit: 84, offset: 0 });
-    expect(trapdoorReach(BOTTOM_LEVEL[0])).toEqual({ limit: 20, offset: 0 });
+    expect(trapdoorReach(BOTTOM)).toEqual({ limit: 84, deepest: null });
+    expect(trapdoorReach(BOTTOM_LEVEL[0])).toEqual({ limit: 20, deepest: null });
   });
 
   it('generates the floor it always did when told the reach it already has', () => {
@@ -74,16 +76,25 @@ describe('a floor told how far its trap doors lead', () => {
     );
   });
 
-  it('leads every door the offset deeper, and leaves the squares that have one alone', () => {
-    const OFFSET = 200;
-    const moved = doorsOf({ limit: trapdoorReach(BOTTOM).limit, offset: OFFSET });
-    expect(moved).toEqual(doorsOf().map((floor) => (floor < 0 ? -1 : floor + OFFSET)));
+  it('draws a floor of five for every door when told the deepest one may lead to', () => {
+    const drawn = doorsOf({ limit: trapdoorReach(BOTTOM).limit, deepest: DEEPEST });
+    const rolled = doorsOf();
+    for (const [square, floor] of drawn.entries()) {
+      if (floor < 0) continue;
+      expect(rolled[square], `square ${square}`).toBeGreaterThanOrEqual(0);
+      expect(floor % 5, `door to ${floor}`).toBe(0);
+      expect(floor, `door to ${floor}`).toBeGreaterThanOrEqual(5);
+      expect(floor, `door to ${floor}`).toBeLessThanOrEqual(DEEPEST);
+    }
+    expect(drawn.some((floor) => floor > BOTTOM)).toBe(true);
   });
 
-  it('refuses a door the offset lands on the floor it leads off', () => {
-    const moved = doorsOf({ limit: trapdoorReach(BOTTOM).limit, offset: 20 });
-    expect(doorsOf().includes(FLOOR - 20)).toBe(true);
-    expect(moved.includes(FLOOR)).toBe(false);
+  it('refuses a door drawn onto the five floors it leads off', () => {
+    const drawn = doorsOf({ limit: trapdoorReach(BOTTOM).limit, deepest: DEEPEST });
+    expect(drawn.some((floor) => floor >= 0)).toBe(true);
+    for (const floor of drawn) {
+      if (floor >= 0) expect(Math.trunc(floor / 5), `door to ${floor}`).not.toBe(Math.trunc(FLOOR / 5));
+    }
   });
 });
 

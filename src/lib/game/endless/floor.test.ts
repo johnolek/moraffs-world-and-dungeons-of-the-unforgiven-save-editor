@@ -34,9 +34,11 @@ const DEEP_MONSTER_LEVEL = 300;
 const DEEP_MONSTER_HP = 60000;
 /** What the game's own jitter counts a level round. */
 const MONSTER_LEVEL_BYTE = 256;
+/** A floor deep enough that nearly the whole dungeon is above it. */
+const FAR_FLOOR = 5000;
 const FAITHFUL_BOTTOM = 105;
-/** How far apart a section's last floor and the shallowest floor its trap doors lead to are. */
-const TRAP_DOOR_FLOORS = 80;
+/** The furthest below the character one of its trap doors may lead. */
+const TRAP_DOOR_DROP = 100;
 /** The deepest floor the record's own key flags reach. */
 const DEEPEST_RECORD_KEY = 179;
 /** The fewest and the most trap doors one floor of Module V has as the game itself generates it,
@@ -89,19 +91,16 @@ describe('the trap doors of a floor below the bottom of the game', () => {
       .map((square) => square.trapdoor)
       .filter((destination) => destination >= 0);
 
-  const lastFloorOf = (level: number): number => rules.sectionPlace(rules.sectionOf(MODULE_V, level))?.bossFloor ?? 0;
-
-  it.each([FLOOR, DEEP_FLOOR])('are as few on floor %i as on a floor the game has itself', (level) => {
+  it.each([FLOOR, DEEP_FLOOR, FAR_FLOOR])('are as few on floor %i as on a floor the game has itself', (level) => {
     expect(doorsOn(level).length).toBeGreaterThanOrEqual(FEWEST_FAITHFUL_DOORS);
     expect(doorsOn(level).length).toBeLessThanOrEqual(MOST_FAITHFUL_DOORS);
   });
 
-  it.each([FLOOR, DEEP_FLOOR])('lead off floor %i into the eighty floors ending its section', (level) => {
-    const lastFloor = lastFloorOf(level);
+  it.each([FLOOR, DEEP_FLOOR, FAR_FLOOR])('lead off floor %i to any floor above and a hundred below', (level) => {
     for (const destination of doorsOn(level)) {
       expect(destination % 5, `door to ${destination}`).toBe(0);
-      expect(destination, `door to ${destination}`).toBeGreaterThan(lastFloor - TRAP_DOOR_FLOORS);
-      expect(destination, `door to ${destination}`).toBeLessThanOrEqual(lastFloor);
+      expect(destination, `door to ${destination}`).toBeGreaterThanOrEqual(5);
+      expect(destination, `door to ${destination}`).toBeLessThanOrEqual(level + TRAP_DOOR_DROP);
       expect(Math.trunc(destination / 5), `door to ${destination}`).not.toBe(Math.trunc(level / 5));
     }
   });
@@ -109,6 +108,10 @@ describe('the trap doors of a floor below the bottom of the game', () => {
   it('leads some of them up from the floor and some of them further down', () => {
     expect(doorsOn(FLOOR).some((destination) => destination < FLOOR)).toBe(true);
     expect(doorsOn(FLOOR).some((destination) => destination > FLOOR)).toBe(true);
+  });
+
+  it('leads one off a floor far down back above the floors the game itself has', () => {
+    expect(doorsOn(FAR_FLOOR).some((destination) => destination < FAITHFUL_BOTTOM)).toBe(true);
   });
 
   it('leaves a floor of a module the endless world has nothing to do with alone', () => {

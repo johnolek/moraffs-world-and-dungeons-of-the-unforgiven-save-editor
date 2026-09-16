@@ -35,8 +35,9 @@ export function myrand(x: number, y: number, level: number, dungeon: number, rng
 export interface TrapdoorReach {
   /** The roll names a floor; a floor of `limit` or more is no door at all. */
   limit: number;
-  /** Added to the floor the roll names, which is where the door leads. */
-  offset: number;
+  /** The deepest floor a door may lead to, the floor itself drawn from the square, or null for
+   *  the game's own doors, which lead to the floor the roll names. */
+  deepest: number | null;
 }
 
 /** The reach the game gives the doors of a module `bottom` floors deep. */

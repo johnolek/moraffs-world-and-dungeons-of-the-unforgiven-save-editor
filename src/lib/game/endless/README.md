@@ -34,6 +34,24 @@ same section for everybody playing that world. `ENDLESS_WORLD_SEED` in `rules.ts
 every endless character is rolled into for now; MORF-513 is where the run server hands the number
 out.
 
+## Where a trap door leads
+
+Sixteen of the 2400 rolls behind a square put a trap door on it, which is between 10 and 35 doors
+on a floor of Module V, and the endless floors keep exactly that test. What they do not keep is
+the destination: the game lets the roll name the floor the door leads to, and the roll can never
+name one past 11,995, so on a dungeon 30,000 floors deep it would have nothing left to say.
+
+An endless door's destination is drawn from the square instead — the same hash the walls and the
+ladders come out of — as a multiple of five from floor 5 down to a hundred floors below the
+character (John, 2026-09-15). So a door can lead to any floor above and at most a hundred below,
+and never to the five floors the character is already in, which is the one destination the game
+itself refuses as well. Every destination is a multiple of five because a trap door key is
+labelled with the floor it opens and there is one key to every five floors.
+
+The deeper the floor, the more of the dungeon lies above it, so a door on floor 5,000 almost
+always leads back up. The ways further down are the ladders, the chutes and the two Descend
+spells.
+
 ## What a new section is made of
 
 A section past the twentieth draws two things from a generator started from the world's seed and
