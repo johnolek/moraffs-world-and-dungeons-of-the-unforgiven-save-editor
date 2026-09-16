@@ -13,6 +13,7 @@
   import { app, currentEntry, entryById, keysGoTo, type Leaderboard } from '../app-state.svelte';
   import { bringRunKeysHere, catchUpWithTheServer } from '../character/current';
   import { ENDLESS_PLAY_NOTE, leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
+  import { characterStatus } from '../character/record';
   import { beingPlayedElsewhere } from '../character/server-roster';
   import RunJournal from '../journal/RunJournal.svelte';
   import { journalIsOpen } from '../journal/lock';
@@ -174,6 +175,13 @@
   /** Everything the character has done, in words: the sittings of its run one after another, so
    *  that a character played twice reads as one timeline. */
   const journal = $derived(played?.journal.flat() ?? []);
+
+  /** What the character who played the run came to be, which the journal shows above the summary.
+   *  It is followed rather than taken once, because the record changes as the game is played. */
+  const playedStatus = $derived.by(() => {
+    void app.characterVersion;
+    return played === null ? null : characterStatus(played);
+  });
 
   /** Whether the journal is there to be read yet, which for a character rolled for a board is
    *  once the run has ended. */
@@ -567,7 +575,7 @@
         {@render sideFoot?.(stage)}
         {#if view.run}
           {#if journalOpen}
-            <RunJournal entries={journal} reached={view.run} names={words} />
+            <RunJournal entries={journal} reached={view.run} names={words} status={playedStatus} />
           {:else}
             <p class="journal-locked">{JOURNAL.locked}</p>
           {/if}

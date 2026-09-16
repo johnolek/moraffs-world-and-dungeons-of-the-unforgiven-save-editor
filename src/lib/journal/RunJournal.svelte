@@ -8,6 +8,8 @@
   on a board is on the Boards tab because it has ended.
 -->
 <script lang="ts">
+  import CharacterStats from '../character/CharacterStats.svelte';
+  import type { CharacterStatus } from '../character/record';
   import Segmented from '../ui/Segmented.svelte';
   import type { JournalEntry } from '../play/journal';
   import { summarizeJournal, summarySections, SUMMARY_HEADINGS, type RunClockTotals, type SummaryNames } from '../play/summary';
@@ -21,9 +23,12 @@
     reached: RunClockTotals;
     /** The game's own words for its clock, its dungeons and its money. */
     names: SummaryNames;
+    /** What the character came to be, for a caller that has their record; null where the journal
+     *  is all that is known about the run. */
+    status?: CharacterStatus | null;
   }
 
-  let { entries, reached, names }: Props = $props();
+  let { entries, reached, names, status = null }: Props = $props();
 
   /** The parts the summary can be read as: the whole run, or one of its modules. */
   const WHOLE_RUN = 'all';
@@ -93,6 +98,9 @@
 
 <div class="journal">
   <h3>{JOURNAL.summary}</h3>
+  {#if status}
+    <CharacterStats {status} />
+  {/if}
   {#if entries.length === 0}
     <p class="empty">{JOURNAL.nothing}</p>
   {:else}
