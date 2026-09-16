@@ -10,12 +10,11 @@
 -->
 <script lang="ts">
   import { sectionPalette } from '../bestiary/pictures';
-  import { sectionInfo } from '../game/sections';
   import type { Game } from '../game/port/state';
   import type { MapSquare } from '../map/game';
   import type { StockedMonster } from '../map/stocking';
   import type { KilledOnScreen } from './engine';
-  import { dotuViewScene, killedMonster, viewMonsters } from './view-scene';
+  import { dotuViewScene, killedMonster, sectionDrawn, viewMonsters } from './view-scene';
   import { viewPictures } from './view3d/browser';
   import { framePainter } from './view3d/canvas';
   import { clearFrame, newFrame } from './view3d/frame';
@@ -56,9 +55,10 @@
   const painter = framePainter(VIEW_PIXELS.width, VIEW_PIXELS.height);
   const frame = newFrame(VIEW_PIXELS.width, VIEW_PIXELS.height);
 
-  const section = $derived(sectionInfo(place.module, place.floor));
-  const pictures = $derived(viewPictures(game.rules.pictureFiles(section?.section ?? 1)));
-  const palette = $derived(sectionPalette(place.module + 1, section?.part ?? 1, game.colourSetting));
+  /** The look this floor is drawn in, which the game's own rules give (`view-scene.ts`). */
+  const section = $derived(sectionDrawn(game.rules, place.module, place.floor));
+  const pictures = $derived(viewPictures(game.rules.pictureFiles(section.section ?? 1)));
+  const palette = $derived(sectionPalette(section.module + 1, section.part, game.colourSetting));
   const drawn = $derived(viewMonsters(monsters));
   const skull = $derived(killedMonster(killed));
 
@@ -70,7 +70,7 @@
     const scene = dotuViewScene({
       rows,
       from: viewsFrom,
-      section: section?.section ?? null,
+      section: section.section,
       pictures,
       monsters: drawn,
       killed: skull,

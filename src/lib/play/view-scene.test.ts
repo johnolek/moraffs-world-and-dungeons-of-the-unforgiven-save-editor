@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { endlessRules } from '../game/endless/rules';
+import { FAITHFUL_RULES } from '../game/port/rules';
+import { sectionInfo } from '../game/sections';
+import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import type { MapSquare } from '../map/game';
-import { dotuViewScene, type ViewSceneInput } from './view-scene';
+import { dotuViewScene, sectionDrawn, type ViewSceneInput } from './view-scene';
 import type { ViewScene } from './view3d/render';
 
 /** One open square, which is floor enough for a scene to be built over. */
@@ -44,3 +48,48 @@ describe('the scene the 3-D views are drawn from', () => {
     expect(scene.dir).toBe(3);
   });
 });
+
+describe('the look a floor is drawn in', () => {
+  const MODULES = [0, 1, 2, 3, 4];
+  /** A world of the endless dungeon, and a floor a hundred below the bottom of Module V. */
+  const SEED = 20260915;
+  const MODULE_V = 4;
+  const ENDLESS_FLOOR = 205;
+
+  it("is the floor's own section, in its own module, everywhere the game itself reaches", () => {
+    for (const module of MODULES) {
+      for (let floor = 0; floor <= BOTTOM_LEVEL[module]; floor++) {
+        const info = sectionInfo(module, floor)!;
+        expect(sectionDrawn(FAITHFUL_RULES, module, floor), `module ${module} floor ${floor}`).toEqual({
+          section: info.section,
+          module,
+          part: info.part,
+        });
+      }
+    }
+  });
+
+  it("is the module's last section for a floor below the module's bottom, as the game counts", () => {
+    const info = sectionInfo(0, 30000)!;
+    expect(sectionDrawn(FAITHFUL_RULES, 0, 30000)).toEqual({ section: info.section, module: 0, part: info.part });
+  });
+
+  it('is nothing at all above the town, which is in no section', () => {
+    expect(sectionDrawn(FAITHFUL_RULES, 0, -5)).toEqual({ section: null, module: 0, part: 1 });
+  });
+
+  it('is the borrowed section for a floor below the bottom of the game', () => {
+    const rules = endlessRules({ hard: true, seed: SEED });
+    const borrowed = rules.sectionSource(rules.sectionOf(MODULE_V, ENDLESS_FLOOR));
+    const drawn = sectionDrawn(rules, MODULE_V, ENDLESS_FLOOR);
+
+    expect(rules.sectionOf(MODULE_V, ENDLESS_FLOOR)).toBeGreaterThan(20);
+    expect(drawn).toEqual(sectionDrawn(FAITHFUL_RULES, ...floorOfSection(borrowed)));
+  });
+});
+
+/** The module and a floor of one of the game's own sections, for asking what it is drawn in. */
+function floorOfSection(section: number): [number, number] {
+  const place = FAITHFUL_RULES.sectionPlace(section)!;
+  return [place.module, place.bossFloor];
+}

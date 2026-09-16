@@ -43,6 +43,7 @@
     zoomMapMonsters,
     type PlayMode,
   } from './mode';
+  import { sectionDrawn } from './view-scene';
 
   type Stage = PlayStage<GameSession, PlayView>;
 
@@ -283,7 +284,7 @@
          which is the one the game has a picture of on its own screen. -->
     {@const facing = view.ahead ? view.engaged : null}
     {#snippet closeUp()}
-      <Portrait monster={facing} module={view.place.module} floor={view.place.floor} />
+      <Portrait monster={facing} section={sectionDrawn(stage.session.game.rules, view.place.module, view.place.floor)} />
     {/snippet}
     <!-- The game's own forward view in the same frame, which draws the monster ahead itself. -->
     {#snippet forward()}

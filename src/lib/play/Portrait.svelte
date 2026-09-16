@@ -1,27 +1,24 @@
 <script lang="ts">
   import MonsterPicture from '../bestiary/MonsterPicture.svelte';
-  import { sectionInfo } from '../game/sections';
   import { monsterById, type StockedMonster } from '../map/stocking';
   import PortraitFrame from './PortraitFrame.svelte';
+  import type { SectionDrawn } from './view-scene';
 
   interface Props {
     /** The monster standing straight ahead, or null when the character faces none. */
     monster: StockedMonster | null;
-    /** 0-based, the way the record counts modules. */
-    module: number;
-    floor: number;
+    /** The look the floor the monster stands on is drawn in (`view-scene.ts`), which is the
+     *  palette its picture is drawn in. */
+    section: SectionDrawn;
   }
 
-  let { monster, module, floor }: Props = $props();
+  let { monster, section }: Props = $props();
 
   const entry = $derived(monster ? monsterById(monster.monsterId) : null);
-  /** A monster is drawn in the palette of the section it stands in; the town belongs to none,
-   *  and has no monsters to draw either. */
-  const part = $derived(sectionInfo(module, floor)?.part ?? 1);
 </script>
 
 <PortraitFrame {entry}>
   {#snippet picture(entry)}
-    <MonsterPicture {entry} module={module + 1} {part} />
+    <MonsterPicture {entry} module={section.module + 1} part={section.part} />
   {/snippet}
 </PortraitFrame>

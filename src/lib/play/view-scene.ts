@@ -1,4 +1,5 @@
 import { sectionPictures } from '../game/port/pictures';
+import type { GameRules } from '../game/port/rules';
 import { SeededRng } from '../game/port/rng';
 import type { MapSquare } from '../map/game';
 import { monsterById, type StockedMonster } from '../map/stocking';
@@ -19,6 +20,33 @@ import type { KilledMonster, ViewMonster, ViewScene } from './view3d/render';
 
 /** The three sections the views draw under water (`bestiary/corridor.ts` names the same three). */
 const WATER_SECTIONS = [4, 8, 20];
+
+/** Which section's look a floor is drawn in. */
+export interface SectionDrawn {
+  /** The section the corridors and the monsters are drawn out of, or null for a floor that is in
+   *  no section at all. */
+  section: number | null;
+  /** The module whose palette the walls are drawn in, 0 to 4 the way the port counts modules. */
+  module: number;
+  /** Which of that module's four sections the palette belongs to, 1 to 4. */
+  part: number;
+}
+
+/**
+ * The look a floor is drawn in: its own section's, and for a floor below the bottom of the game
+ * the look of the section that floor's section borrowed.
+ *
+ * There are twenty sections' worth of pictures and twenty sections' worth of palettes, and an
+ * endless section is past all of them, so it is drawn in the look of the one it takes its
+ * monsters from (`src/lib/game/endless/rules.ts`). A game played by the rules the game shipped
+ * with borrows nothing, and every floor of it comes out in its own section's look.
+ */
+export function sectionDrawn(rules: GameRules, module: number, floor: number): SectionDrawn {
+  const section = rules.sectionSource(rules.sectionOf(module, floor));
+  const place = rules.sectionPlace(section);
+  if (place === null) return { section: null, module, part: 1 };
+  return { section, module: place.module, part: place.part };
+}
 
 export interface ViewSceneInput {
   rows: MapSquare[][];

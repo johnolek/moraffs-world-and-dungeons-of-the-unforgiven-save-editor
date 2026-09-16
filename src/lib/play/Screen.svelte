@@ -2,7 +2,6 @@
   import type { MapSquare } from '../map/game';
   import type { StockedMonster } from '../map/stocking';
   import type { Rgb } from '../game/dotu-pic.js';
-  import { sectionInfo } from '../game/sections';
   import { sectionPalette, townPalette } from '../bestiary/pictures';
   import { battleSpellLines } from '../game/port/screens';
   import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
@@ -57,7 +56,7 @@
   import { framePainter } from './view3d/canvas';
   import { clearFrame, newFrame, type Frame } from './view3d/frame';
   import { renderFourViews } from './view3d/render';
-  import { dotuViewScene, killedMonster, viewMonsters } from './view-scene';
+  import { dotuViewScene, killedMonster, sectionDrawn, viewMonsters } from './view-scene';
   import { drawDotuScreenText } from './view3d/text';
   import { whileShowing } from './while-showing';
   import { viewLabels } from './view3d/views';
@@ -228,11 +227,11 @@
    *  nobody is looking at, where a wipe would be drawing for no one. */
   const revealed = $derived(visible.showing ? redraw : 0);
 
-  const section = $derived(sectionInfo(place.module, place.floor));
-  const part = $derived(section?.part ?? 1);
-  /** The pictures this floor is drawn with. The town belongs to no section and is drawn with
-   *  section 1's, which is the file the game falls back on. */
-  const pictures = $derived(viewPictures(game.rules.pictureFiles(section?.section ?? 1)));
+  /** The look this floor is drawn in, which the game's own rules give (`view-scene.ts`). */
+  const section = $derived(sectionDrawn(game.rules, place.module, place.floor));
+  /** The pictures this floor is drawn with. A floor in no section at all is drawn with section
+   *  1's, which is the file the game falls back on. */
+  const pictures = $derived(viewPictures(game.rules.pictureFiles(section.section ?? 1)));
   const height = $derived(game.pc.height);
   /** What a screen whose own fill the port does not know blacks out, which is all of it. */
   const WHOLE_DISPLAY: ScreenRect = { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
@@ -244,8 +243,8 @@
   // copies the two shop tables over the banks the building picture is drawn out of.
   const palette = $derived(
     buildingScreen
-      ? townPalette(place.module + 1, part, game.colourSetting)
-      : sectionPalette(place.module + 1, part, game.colourSetting),
+      ? townPalette(section.module + 1, section.part, game.colourSetting)
+      : sectionPalette(section.module + 1, section.part, game.colourSetting),
   );
 
   /**
@@ -516,7 +515,7 @@
       dotuViewScene({
         rows,
         from: views,
-        section: section?.section ?? null,
+        section: section.section,
         pictures,
         monsters: drawn,
         killed: skull,
