@@ -1,4 +1,5 @@
 import { shortCommit } from '../src/lib/commit';
+import { flagAdminPlayer } from './admins';
 import { configFromEnvironment } from './config';
 import { openRunDatabase } from './db';
 import { ENGINE_COMMIT, publishBuiltEngine } from './engines';
@@ -16,6 +17,7 @@ import { readBuiltPage } from './site';
 const config = configFromEnvironment();
 const sql = await openRunDatabase(config.databaseUrl);
 await publishOwnEngine();
+await flagTheAdmin();
 const feed = openFeed();
 const page = readBuiltPage();
 const server = createRunServer(config, sql, feed, page);
@@ -48,6 +50,26 @@ async function publishOwnEngine(): Promise<void> {
     published.wasAlreadyThere
       ? `The engine build ${shortCommit(ENGINE_COMMIT)} was already published.`
       : `Published the engine build ${shortCommit(ENGINE_COMMIT)}.`,
+  );
+}
+
+/**
+ * Who the admin is comes from the box rather than from the database, so that John is recognised
+ * on a database nobody has opened by hand and on one restored from a backup.
+ *
+ * The player has to have claimed the name already. A start that finds nobody by that name says so
+ * and flags nobody: claim the name and restart, and the flag is there.
+ */
+async function flagTheAdmin(): Promise<void> {
+  if (config.adminPlayer === null) {
+    console.log('ADMIN_PLAYER names nobody, so this server has no admin.');
+    return;
+  }
+  const admin = await flagAdminPlayer(sql, config.adminPlayer);
+  console.log(
+    admin === null
+      ? `No player here is called ${config.adminPlayer}, so nobody was made an admin.`
+      : `${admin.name} is an admin.`,
   );
 }
 
