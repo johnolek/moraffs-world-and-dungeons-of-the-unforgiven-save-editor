@@ -151,6 +151,18 @@ const STEPPED: JournalEntry = {
   event: { kind: 'stepped', dir: 0 },
 };
 
+/** A kill of the section's Shadow, which stands in row 22 of the five rows a section loads, on
+ *  the floor named. */
+function killedAShadow(floor: number): JournalEntry {
+  return {
+    at: 4,
+    floor,
+    module: 3,
+    text: 'Killed a SHADOW CENTIPEDE',
+    event: { kind: 'killed', monster: { type: 22, level: 300, name: 'SHADOW CENTIPEDE' }, experience: 900 },
+  };
+}
+
 /** An engine build that says what a test wants it to say about the run it is handed. */
 function fakeEngines(verdictFor: (log: RunLog) => Partial<RunVerdict>): EngineStore {
   return {
@@ -280,6 +292,36 @@ describe('replaying a run once its last batch has arrived', () => {
       deepest: 2,
       level: 5,
     });
+  });
+
+  it('counts the kills the replay wrote down', async () => {
+    await play(
+      fakeEngines(() => ({ journal: [killedAShadow(120), STEPPED, killedAShadow(460)] })),
+      { batch: batch({ session: header }), at: 1000 },
+      { batch: batch({ sequence: 1, ending: true }), at: 6000 },
+    );
+
+    expect((await verdictFor(sql, CHARACTER))?.kills).toBe(2);
+  });
+
+  it("reads an endless run's depth off the deepest Shadow it killed", async () => {
+    await play(
+      fakeEngines(() => ({
+        leaderboard: 'endless',
+        journal: [killedAShadow(120), killedAShadow(460), killedAShadow(305)],
+        replayed: {
+          actions: 12,
+          time: 30,
+          milestones: [{ kind: 'dungeon', which: 3, actions: 4, time: 10, floor: 460 }],
+        },
+      })),
+      { batch: batch({ session: { ...header, leaderboard: 'endless' } }), at: 1000 },
+      { batch: batch({ sequence: 1, ending: true }), at: 6000 },
+    );
+
+    // The module it was standing in is what the other boards read as how far a run got, and it is
+    // not what this one is ranked by.
+    expect(await verdictFor(sql, CHARACTER)).toMatchObject({ leaderboard: 'endless', deepest: 460, kills: 3 });
   });
 
   it('keeps a run whose keys nobody could have pressed, off the wall clock', async () => {

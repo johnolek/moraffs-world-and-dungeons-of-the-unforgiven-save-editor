@@ -4,7 +4,7 @@ import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone, RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
 import { announceRun, type Announcement } from './announcing';
-import { deepestReach, highestLevel } from './boards';
+import { deepestReach, deepestShadowKilled, highestLevel, killsIn } from './boards';
 import type { EngineStore, KeptEngine, SessionVerifier } from './engines';
 import { batchesOf, runFor, sessionsOf, type KeptBatch, type KeptSession } from './runs';
 import type { Queries } from './sql';
@@ -162,6 +162,8 @@ export interface KeptVerdict {
   /** How far the run got, and the highest level it reached. */
   deepest: number;
   level: number;
+  /** How many monsters the run killed, which the endless dungeon has a board of. */
+  kills: number;
   engines: string[];
   /**
    * The run written up in words by the replay, oldest sitting first, which is what a run's page
@@ -371,20 +373,21 @@ async function keepVerdict(
   eligible: boolean,
 ): Promise<void> {
   const totals = verdict.replayed ?? verdict.claimed;
-  // The game, the board and the two numbers a board sorts on go here as well as being reachable
-  // through the character's rows and the milestones, so that reading a board is one table and no
-  // JSON. `server/boards.ts` is what they are for.
+  const journal = journalOf(verdict);
+  // The game, the board and the numbers a board sorts on go here as well as being reachable
+  // through the character's rows, the milestones and the journal, so that reading a board is one
+  // table and no JSON. `server/boards.ts` is what they are for.
   await sql.query(
     `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
-                           eligible, game, leaderboard, deepest, level, engine_commits, journal,
-                           verified_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
+                           eligible, game, leaderboard, deepest, level, kills, engine_commits,
+                           journal, verified_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, now())
      ON CONFLICT (character_id) DO UPDATE SET
        status = excluded.status, reason = excluded.reason, actions = excluded.actions,
        time = excluded.time, milestones = excluded.milestones, play_ms = excluded.play_ms,
        timed = excluded.timed, eligible = excluded.eligible, game = excluded.game,
        leaderboard = excluded.leaderboard, deepest = excluded.deepest, level = excluded.level,
-       engine_commits = excluded.engine_commits, journal = excluded.journal,
+       kills = excluded.kills, engine_commits = excluded.engine_commits, journal = excluded.journal,
        verified_at = excluded.verified_at`,
     [
       characterId,
@@ -398,12 +401,30 @@ async function keepVerdict(
       eligible,
       verdict.game,
       verdict.leaderboard,
-      deepestReach(verdict.game, totals.milestones),
+      howFarItGot(verdict, totals.milestones, journal),
       highestLevel(totals.milestones),
+      killsIn(journal),
       JSON.stringify(verdict.engine.played),
-      JSON.stringify(journalOf(verdict)),
+      JSON.stringify(journal),
     ],
   );
+}
+
+/**
+ * How far a run got, as the board it stands on counts it.
+ *
+ * The endless dungeon is ranked by the deepest floor a run killed a Shadow monster on, and the
+ * other two boards by the module or the dungeon the run reached. Both go in the one column: a
+ * board asks how far a run got and reads the answer in its own currency, which is what
+ * `server/boards.ts` decides.
+ */
+function howFarItGot(
+  verdict: RunVerdict,
+  milestones: readonly Milestone[],
+  journal: readonly JournalEntry[],
+): number {
+  if (verdict.leaderboard === 'endless') return deepestShadowKilled(journal);
+  return deepestReach(verdict.game, milestones);
 }
 
 /** The journal a verdict carries. A build kept from a commit older than the run journal hands
@@ -427,6 +448,7 @@ export async function verdictFor(sql: Queries, characterId: string): Promise<Kep
     leaderboard: string | null;
     deepest: number;
     level: number;
+    kills: number;
     engine_commits: string[];
     journal: JournalEntry[] | null;
     verified_at: Date;
@@ -446,6 +468,7 @@ export async function verdictFor(sql: Queries, characterId: string): Promise<Kep
     leaderboard: row.leaderboard,
     deepest: row.deepest,
     level: row.level,
+    kills: row.kills,
     engines: row.engine_commits,
     // A verdict written before this server kept journals has none.
     journal: row.journal ?? [],
@@ -559,16 +582,24 @@ async function stillBeingPlayed(sql: Queries, characterId: string): Promise<bool
  *  by. */
 interface Reach {
   level: number;
-  deepest: number;
+  /** Null where the site claims nothing this board could read as a depth. */
+  deepest: number | null;
 }
 
-/** What the site claims the character has reached over its whole run. Each sitting claims the
- *  milestones reached in that sitting, so the run's are all of them together. */
+/**
+ * What the site claims the character has reached over its whole run. Each sitting claims the
+ * milestones reached in that sitting, so the run's are all of them together.
+ *
+ * An endless run's depth is the deepest floor it killed a Shadow monster on, which is in the
+ * journal a replay writes and in nothing a sitting claims, so such a character claims no depth at
+ * all and its chain is replayed again on the level or on the clock alone.
+ */
 function claimedReach(sessions: readonly KeptSession[]): Reach {
+  const newest = sessions[sessions.length - 1];
   const milestones = sessions.flatMap((session) => session.milestones);
   return {
     level: highestLevel(milestones),
-    deepest: deepestReach(sessions[sessions.length - 1].game, milestones),
+    deepest: newest.leaderboard === 'endless' ? null : deepestReach(newest.game, milestones),
   };
 }
 
@@ -590,7 +621,8 @@ function worthReplaying(held: LivingSnapshot | null, newest: number, claimed: Re
   if (held === null) return true;
   if (newest <= held.replayedThrough) return false;
   if (now - Date.parse(held.replayedAt) >= REPLAY_LIVING_AFTER_MS) return true;
-  return held.status === 'verified' && (claimed.level > held.level || claimed.deepest > held.deepest);
+  if (held.status !== 'verified') return false;
+  return claimed.level > held.level || (claimed.deepest !== null && claimed.deepest > held.deepest);
 }
 
 async function keepLivingSnapshot(
@@ -601,6 +633,7 @@ async function keepLivingSnapshot(
   now: number,
 ): Promise<LivingSnapshot> {
   const totals = verdict.replayed ?? verdict.claimed;
+  const journal = journalOf(verdict);
   await sql.query(
     `INSERT INTO living (character_id, status, reason, level, deepest, actions, time, game,
                          leaderboard, journal, replayed_through, replayed_at)
@@ -615,12 +648,12 @@ async function keepLivingSnapshot(
       verdict.status,
       verdict.reason,
       highestLevel(totals.milestones),
-      deepestReach(verdict.game, totals.milestones),
+      howFarItGot(verdict, totals.milestones, journal),
       totals.actions,
       totals.time,
       verdict.game,
       verdict.leaderboard,
-      JSON.stringify(journalOf(verdict)),
+      JSON.stringify(journal),
       replayedThrough,
       now,
     ],
