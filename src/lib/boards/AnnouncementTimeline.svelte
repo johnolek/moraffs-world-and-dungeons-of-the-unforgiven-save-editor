@@ -65,7 +65,7 @@
     >
       X
     </button>
-    <Announcements fills />
+    <Announcements fills onopened={onclose} />
   </div>
 </div>
 

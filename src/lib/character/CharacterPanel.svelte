@@ -1,10 +1,11 @@
 <script lang="ts">
   import { app, currentEntry, type Tab } from '../app-state.svelte';
-  import { announcementWords } from '../boards/announce';
+  import { announcementDid, announcementWho } from '../boards/announce';
   import { latestAnnouncement } from '../boards/announcement-feed.svelte';
   import { agoWords } from '../boards/words';
   import { GAMES, UNFORGIVEN } from '../editor/games';
   import { goToTab } from '../history';
+  import { helpCycleColour } from '../ui/help-colours';
   import CharacterList from './CharacterList.svelte';
   import { EXP_NEEDED_HEADING, expNeededRows } from './exp-needed';
   import { characterStatus, collapsedLine, expLabel, levelLabel, withSeparators } from './record';
@@ -60,6 +61,11 @@
 
   function show(tab: Tab) {
     goToTab(app, tab);
+  }
+
+  function showRun(characterId: string) {
+    app.requestedRun = characterId;
+    goToTab(app, 'boards');
   }
 
   function showOnMap() {
@@ -157,8 +163,13 @@
   </div>
 
   {#if latest}
-    <p class="latest">
-      <span class="said">{announcementWords(latest)}</span>
+    <p class="latest" style:--said={helpCycleColour(latest.id)}>
+      <span class="said">
+        <button type="button" class="who" onclick={() => showRun(latest.characterId)}
+          >{announcementWho(latest)}</button
+        >
+        {announcementDid(latest)}
+      </span>
       <span class="ago">{agoWords(latest.at, now)}</span>
     </p>
   {/if}
@@ -204,11 +215,32 @@
     font-size: 12px;
     color: var(--muted);
   }
+  /* The game's own face, which is drawn from a ten-pixel box: twenty puts two screen pixels on
+     each game pixel and every edge lands on a whole one. */
   .latest .said {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    color: var(--ink);
+    font-family: var(--font-game);
+    font-size: 20px;
+    color: var(--said);
+  }
+  .latest .who {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  /* A DOS menu marks what it is on by swapping its colours over, and so does this. */
+  .latest .who:hover,
+  .latest .who:focus-visible {
+    background: var(--said);
+    color: #000;
+    text-decoration: none;
+    outline: none;
   }
   .latest .ago {
     flex: none;

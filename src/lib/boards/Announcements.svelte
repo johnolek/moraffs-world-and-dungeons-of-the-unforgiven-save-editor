@@ -10,18 +10,25 @@
   is what `fills` is for: one list, drawn beside the boards or filling a panel laid over the page.
 -->
 <script lang="ts">
+  import { app } from '../app-state.svelte';
+  import { goToTab } from '../history';
+  import { helpCycleColour } from '../ui/help-colours';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { announcementWords } from './announce';
+  import { announcementDid, announcementWho } from './announce';
   import { announcementsShowing, older } from './announcement-feed.svelte';
   import { BOARDS_PAGE, whenWords } from './words';
+  import type { Announcement } from '../../../server/announcing';
 
   interface Props {
     /** Fill whatever this is in rather than standing as a column of a fixed width down the side
      *  of the page. */
     fills?: boolean;
+    /** Called when a name has been clicked, so that a panel laid over the page can get out of the
+     *  way of the run about to be shown underneath it. */
+    onopened?: () => void;
   }
 
-  let { fills = false }: Props = $props();
+  let { fills = false, onopened }: Props = $props();
 
   const showing = $derived(announcementsShowing());
   let reading = $state(false);
@@ -30,6 +37,12 @@
     reading = true;
     await older();
     reading = false;
+  }
+
+  function openRun(announcement: Announcement): void {
+    app.requestedRun = announcement.characterId;
+    goToTab(app, 'boards');
+    onopened?.();
   }
 </script>
 
@@ -40,14 +53,21 @@
   {:else}
     <ul>
       {#each showing.announcements as announcement (announcement.id)}
-        <li>
-          <span class="said">{announcementWords(announcement)}</span>
+        <!-- The colour is the announcement's own number counted into the cycle, so it keeps the
+             colour it was first drawn in however many newer ones arrive above it. -->
+        <li style:--said={helpCycleColour(announcement.id)}>
+          <span class="said">
+            <button type="button" class="who" onclick={() => openRun(announcement)}
+              >{announcementWho(announcement)}</button
+            >
+            {announcementDid(announcement)}
+          </span>
           <span class="when">{whenWords(announcement.at)}</span>
         </li>
       {/each}
     </ul>
     {#if showing.more}
-      <button type="button" onclick={readOlder} disabled={reading}>{BOARDS_PAGE.more}</button>
+      <button type="button" class="more" onclick={readOlder} disabled={reading}>{BOARDS_PAGE.more}</button>
     {/if}
     {#if showing.failed}
       <p class="empty">{BOARDS_PAGE.announcementsUnreachable}</p>
@@ -61,7 +81,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-    width: 320px;
+    width: 400px;
     flex-shrink: 0;
     padding: 16px;
     border-left: 1px solid var(--line);
@@ -86,10 +106,31 @@
     padding: 6px 0;
     border-bottom: 1px solid var(--line);
   }
+  /* The game's own face, which is drawn from a ten-pixel box: twenty puts two screen pixels on
+     each game pixel and every edge lands on a whole one. */
   .said {
     display: block;
-    font-size: 13px;
-    line-height: 1.4;
+    font-family: var(--font-game);
+    font-size: 20px;
+    line-height: 1.35;
+    color: var(--said);
+  }
+  .who {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  /* A DOS menu marks what it is on by swapping its colours over, and so does this. */
+  .who:hover,
+  .who:focus-visible {
+    background: var(--said);
+    color: #000;
+    text-decoration: none;
+    outline: none;
   }
   .when {
     display: block;
@@ -97,7 +138,7 @@
     color: var(--muted);
     font-size: 11px;
   }
-  button {
+  .more {
     padding: 6px 12px;
     border: 1px solid var(--line);
     border-radius: 6px;
@@ -107,7 +148,7 @@
     font-size: 13px;
     cursor: pointer;
   }
-  button:disabled {
+  .more:disabled {
     opacity: 0.5;
     cursor: default;
   }
