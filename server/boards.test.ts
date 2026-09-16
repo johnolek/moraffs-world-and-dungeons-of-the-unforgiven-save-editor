@@ -6,7 +6,6 @@ import { ENDLESS_WORLD_SEED } from '../src/lib/game/endless/rules';
 import {
   boardPage,
   boardWorld,
-  CURRENT_ENDLESS_WORLD,
   deepestReach,
   deepestShadowKilled,
   hasBoard,
@@ -21,6 +20,10 @@ import { endRun, takeBatch, type BatchSender } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 import { createRunVerifier } from './verifying';
+import { currentEndlessWorld } from './worlds';
+
+/** The world a database nobody has set one on is playing, which the migration puts there. */
+const WORLD_NOW = ENDLESS_WORLD_SEED;
 
 /** The player whose run a test streams in, playing from one device. */
 const ME: BatchSender = { player: 1, device: 'a'.repeat(64) };
@@ -216,7 +219,7 @@ async function ids(
     leaderboard,
     board,
     page: over.page ?? 1,
-    world: boardWorld(leaderboard, over.world ?? null),
+    world: await boardWorld(sql, leaderboard, over.world ?? null),
   });
   return page.rows.map((row) => row.characterId);
 }
@@ -328,7 +331,7 @@ describe('which runs a board holds at all', () => {
   });
 
   it('never mixes an endless run with the runs of the game as it shipped', async () => {
-    await keep(sql, { id: 'endless-run', leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD, deepest: 460 });
+    await keep(sql, { id: 'endless-run', leaderboard: 'endless', worldSeed: WORLD_NOW, deepest: 460 });
 
     expect(isBoardLeaderboard('endless')).toBe(true);
     expect(await ids(sql, 'deepest', { leaderboard: 'endless' })).toEqual(['endless-run']);
@@ -358,12 +361,12 @@ describe('the boards of the endless dungeon', () => {
   /** Another world than the one being played now, which is a board of its own. */
   const OLDER_WORLD = 9;
 
-  it('is rolled into the same world as the run it ranks', async () => {
-    expect(CURRENT_ENDLESS_WORLD).toBe(ENDLESS_WORLD_SEED);
+  it('starts at the world the site rolls a character into when the server cannot be reached', async () => {
+    expect(await currentEndlessWorld(sql)).toBe(ENDLESS_WORLD_SEED);
   });
 
   it('holds the runs of one world and not another world’s', async () => {
-    await keep(sql, { id: 'now', leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD, deepest: 300 });
+    await keep(sql, { id: 'now', leaderboard: 'endless', worldSeed: WORLD_NOW, deepest: 300 });
     await keep(sql, { id: 'before', leaderboard: 'endless', worldSeed: OLDER_WORLD, deepest: 900 });
 
     expect(await ids(sql, 'deepest', { leaderboard: 'endless' })).toEqual(['now']);
@@ -371,15 +374,15 @@ describe('the boards of the endless dungeon', () => {
   });
 
   it('reads the world being played now for a request that names none', async () => {
-    await keep(sql, { id: 'now', leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD });
+    await keep(sql, { id: 'now', leaderboard: 'endless', worldSeed: WORLD_NOW });
 
-    expect(boardWorld('endless', null)).toBe(CURRENT_ENDLESS_WORLD);
-    expect(boardWorld('faithful', null)).toBeNull();
+    expect(await boardWorld(sql, 'endless', null)).toBe(WORLD_NOW);
+    expect(await boardWorld(sql, 'faithful', null)).toBeNull();
     expect(await ids(sql, 'deepest', { leaderboard: 'endless' })).toEqual(['now']);
   });
 
   it('puts the run that killed the most first on the board of kills', async () => {
-    const world = { leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD };
+    const world = { leaderboard: 'endless', worldSeed: WORLD_NOW };
     await keep(sql, { id: 'butcher', ...world, kills: 4000 });
     await keep(sql, { id: 'tourist', ...world, kills: 12 });
 
@@ -387,7 +390,7 @@ describe('the boards of the endless dungeon', () => {
   });
 
   it('puts the deepest Shadow first, and the fewest actions first among equals', async () => {
-    const world = { leaderboard: 'endless', worldSeed: CURRENT_ENDLESS_WORLD };
+    const world = { leaderboard: 'endless', worldSeed: WORLD_NOW };
     await keep(sql, { id: 'shallow', ...world, deepest: 120 });
     await keep(sql, { id: 'deep-slow', ...world, deepest: 460, actions: 900 });
     await keep(sql, { id: 'deep-quick', ...world, deepest: 460, actions: 90 });

@@ -2,6 +2,7 @@ import type { Leaderboard, PortedGameId } from '../src/lib/app-state.svelte';
 import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone } from '../src/lib/play/run';
 import type { Queries } from './sql';
+import { currentEndlessWorld } from './worlds';
 
 /**
  * The boards: which runs go on one, and what order they stand in.
@@ -92,19 +93,6 @@ export const BOARD_GAMES = ['unforgiven', 'moraffsWorld', 'revenge'] as const sa
 
 /** The ways a character is rolled to be played that have a board, which never share one. */
 export const BOARD_LEADERBOARDS = ['faithful', 'speedrun', 'endless'] as const satisfies readonly Leaderboard[];
-
-/**
- * The world every endless character is rolled into today, which is `ENDLESS_WORLD_SEED` in
- * `src/lib/game/endless/rules.ts`.
- *
- * The number is written out here rather than imported because importing a value from that file
- * would pull the engine into this build, the way `RUN_LOG_VERSION` is written out in
- * `server/verifying.ts`; `server/boards.test.ts` holds the two to each other. MORF-513 is where
- * the server hands the number out instead of everybody sharing this one, and the boards are ready
- * for it: each one is read for a world, and the worlds there are runs in are
- * {@link endlessWorlds}.
- */
-export const CURRENT_ENDLESS_WORLD = 1;
 
 export type BoardName = 'actions' | 'clock' | 'wall' | 'deepest' | 'level' | 'deaths' | 'kills';
 
@@ -212,8 +200,9 @@ export async function endlessWorlds(sql: Queries, game: string): Promise<Endless
      ORDER BY newest DESC`,
     [game],
   );
-  const older = rows.map((row) => row.world_seed).filter((world) => world !== CURRENT_ENDLESS_WORLD);
-  return { game, current: CURRENT_ENDLESS_WORLD, worlds: [CURRENT_ENDLESS_WORLD, ...older] };
+  const current = await currentEndlessWorld(sql);
+  const older = rows.map((row) => row.world_seed).filter((world) => world !== current);
+  return { game, current, worlds: [current, ...older] };
 }
 
 /** How many runs a page of a board holds. */
@@ -282,9 +271,9 @@ export function hasBoard(leaderboard: string, board: BoardName): boolean {
  * Only the endless dungeon has worlds. A request that names none is asking for the world being
  * played now, since that is the board anybody arriving is looking for.
  */
-export function boardWorld(leaderboard: string, asked: number | null): number | null {
+export async function boardWorld(sql: Queries, leaderboard: string, asked: number | null): Promise<number | null> {
   if (leaderboard !== 'endless') return null;
-  return asked ?? CURRENT_ENDLESS_WORLD;
+  return asked ?? (await currentEndlessWorld(sql));
 }
 
 /**

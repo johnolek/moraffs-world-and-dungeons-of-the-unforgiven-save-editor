@@ -1,10 +1,11 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CURRENT_ENDLESS_WORLD, RUNS_PER_PAGE } from './boards';
+import { RUNS_PER_PAGE } from './boards';
 import { createRunServer } from './http';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
+import { currentEndlessWorld } from './worlds';
 
 /** A run already replayed and written down, which is all a board reads. */
 async function keep(
@@ -320,6 +321,9 @@ describe('asking the server for the boards of the endless dungeon', () => {
   /** A world nobody is rolled into any more, which has a board of its own all the same. */
   const OLDER_WORLD = 9;
 
+  /** The world a character rolled now is rolled into, which nobody here has changed. */
+  let worldNow: number;
+
   /** An endless run that has been replayed and written down, in the world named. */
   async function keepEndless(run: { id: string; world: number; deepest?: number; kills?: number }): Promise<void> {
     await sql.query(
@@ -338,8 +342,9 @@ describe('asking the server for the boards of the endless dungeon', () => {
   beforeAll(async () => {
     sql = await openTestDatabase();
     await sql.query('INSERT INTO players (id, name) VALUES (1, $1)', ['John']);
-    await keepEndless({ id: 'now-deep', world: CURRENT_ENDLESS_WORLD, deepest: 460, kills: 40 });
-    await keepEndless({ id: 'now-shallow', world: CURRENT_ENDLESS_WORLD, deepest: 120, kills: 900 });
+    worldNow = await currentEndlessWorld(sql);
+    await keepEndless({ id: 'now-deep', world: worldNow, deepest: 460, kills: 40 });
+    await keepEndless({ id: 'now-shallow', world: worldNow, deepest: 120, kills: 900 });
     await keepEndless({ id: 'older-world', world: OLDER_WORLD, deepest: 2000, kills: 5 });
     server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -364,8 +369,8 @@ describe('asking the server for the boards of the endless dungeon', () => {
     expect(status).toBe(200);
     expect(body).toEqual({
       game: 'unforgiven',
-      current: CURRENT_ENDLESS_WORLD,
-      worlds: [CURRENT_ENDLESS_WORLD, OLDER_WORLD],
+      current: worldNow,
+      worlds: [worldNow, OLDER_WORLD],
     });
   });
 
@@ -376,7 +381,7 @@ describe('asking the server for the boards of the endless dungeon', () => {
   it('answers with the world being played now where the request names none', async () => {
     const { body } = await board('/deepest');
 
-    expect(body).toMatchObject({ leaderboard: 'endless', board: 'deepest', world: CURRENT_ENDLESS_WORLD });
+    expect(body).toMatchObject({ leaderboard: 'endless', board: 'deepest', world: worldNow });
     expect(body.rows.map((row: { characterId: string }) => row.characterId)).toEqual(['now-deep', 'now-shallow']);
   });
 

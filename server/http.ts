@@ -59,6 +59,7 @@ import {
   type LivingSnapshot,
   type RunVerifier,
 } from './verifying';
+import { currentEndlessWorld, drawEndlessWorld, isEndlessWorldSeed, setEndlessWorld } from './worlds';
 
 /** What a refused request says. The site shows these words as they are. */
 const NOT_A_SECRET = 'That is not a player secret.';
@@ -192,6 +193,11 @@ export function createRunServer(
       return;
     }
 
+    if (request.method === 'GET' && path === '/worlds/endless/current') {
+      void sendCurrentEndlessWorld(response, sql);
+      return;
+    }
+
     const batches = path.match(/^\/runs\/([^/]+)\/batches$/);
     if (request.method === 'POST' && batches !== null) {
       void takeRunBatch(request, response, sql, verifier, decodeURIComponent(batches[1]));
@@ -308,6 +314,11 @@ async function serveAdmin(
     return;
   }
 
+  if (request.method === 'POST' && path === '/admin/worlds/endless') {
+    await openANewEndlessWorld(request, response, sql, admin);
+    return;
+  }
+
   sendNoSuchEndpoint(response, path);
 }
 
@@ -388,6 +399,37 @@ async function flagAnotherAdmin(
 }
 
 /**
+ * A new endless world, which every endless character rolled from now on is rolled into.
+ *
+ * The seed is the admin's own number where they name one, since a world worth going back to is a
+ * number worth choosing; a request that names none is asking for a world nobody has to think of,
+ * and the server draws it. Either way the worlds already played are left exactly as they are.
+ */
+async function openANewEndlessWorld(
+  request: IncomingMessage,
+  response: ServerResponse,
+  sql: Queries,
+  admin: AdminPlayer,
+): Promise<void> {
+  const body = (await readJsonBody(request)) as { seed?: unknown } | null;
+  const asked = body?.seed;
+  if (asked !== undefined && !isEndlessWorldSeed(asked)) {
+    sendJson(response, 400, { error: NOT_A_WORLD });
+    return;
+  }
+  const seed = asked ?? drawEndlessWorld();
+  await setEndlessWorld(sql, { seed, by: admin.id });
+  await logAdminAction(sql, { by: admin.id, did: 'set-endless-world', about: String(seed) });
+  sendJson(response, 200, { world: seed });
+}
+
+/** The endless world a character rolled now is rolled into, which the roller asks for before it
+ *  writes the world on a new endless character. */
+async function sendCurrentEndlessWorld(response: ServerResponse, sql: Queries): Promise<void> {
+  sendJson(response, 200, { world: await currentEndlessWorld(sql) });
+}
+
+/**
  * One page of one board.
  *
  * The three parts of the path are a board there is: a game the site plays, one of the ways of
@@ -425,7 +467,8 @@ async function sendBoard(
     sendJson(response, 400, { error: NOT_A_WORLD });
     return;
   }
-  sendJson(response, 200, await boardPage(sql, { game, leaderboard, board, page, world: boardWorld(leaderboard, world) }));
+  const inWorld = await boardWorld(sql, leaderboard, world);
+  sendJson(response, 200, await boardPage(sql, { game, leaderboard, board, page, world: inWorld }));
 }
 
 /**
@@ -464,7 +507,7 @@ async function sendLivingBoard(
     sendJson(response, 400, { error: NOT_A_WORLD });
     return;
   }
-  const read = { game, leaderboard, sort: order, page, world: boardWorld(leaderboard, world) };
+  const read = { game, leaderboard, sort: order, page, world: await boardWorld(sql, leaderboard, world) };
   sendJson(response, 200, await livingPage(sql, read, Date.now()));
 }
 
