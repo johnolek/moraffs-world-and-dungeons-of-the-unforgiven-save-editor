@@ -354,20 +354,33 @@ export function strengthAndSpeed(game: Game): boolean {
 }
 
 /**
- * relocate (exe 3000:da2c, unf.c "relocate"): Relocate, which drops the player on a random open
- * square of the same floor that no monster is standing on.
+ * relocate (exe 3000:da2c, unf.c "relocate"): drop the character on a random open square of the
+ * floor they are on that nothing is standing on.
+ *
+ * The x is drawn over the columns the game shows and the y over its rows, so column 79 and the
+ * rows past 103 never come up even though the floor has them. Both are Random calls (exe
+ * 3000:da47 and 3000:da56), so each one reseeds.
+ *
+ * It is a spell, and it is also what a new module and a hole dug through the floor put the
+ * character down with, so `src/lib/play/` calls it too.
  */
-export function relocateSpell(game: Game): boolean {
-  setMonsterMap(game, game.pc.x, game.pc.y, MAP_EMPTY);
+export function relocate(game: Game): void {
+  const pc = game.pc;
+  setMonsterMap(game, pc.x, pc.y, MAP_EMPTY);
   do {
     do {
-      game.pc.x = game.randomCall(game.columns);
-      game.pc.y = game.randomCall(game.rows);
-    } while (game.solid(game.pc.x, game.pc.y, game.pc.level, game.pc.module));
-  } while (monsterAt(game, game.pc.x, game.pc.y) !== -1);
-  setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+      pc.x = game.randomCall(game.columns);
+      pc.y = game.randomCall(game.rows);
+    } while (game.solid(pc.x, pc.y, pc.level, pc.module));
+  } while (monsterAt(game, pc.x, pc.y) !== -1);
+  setMonsterMap(game, pc.x, pc.y, MAP_PLAYER);
   game.recenterMap = true;
   game.redrawView = true;
+}
+
+/** Relocate, the spell, which is the routine above and nothing else. */
+export function relocateSpell(game: Game): boolean {
+  relocate(game);
   return true;
 }
 

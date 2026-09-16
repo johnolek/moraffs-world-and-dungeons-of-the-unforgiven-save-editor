@@ -1,6 +1,7 @@
 import { attackTiming } from '../game/port/combat';
 import { showHint } from '../game/port/drops';
-import { endBattleSpells, passMoment, relocate } from '../game/port/moment';
+import { relocate } from '../game/port/magic';
+import { endBattleSpells, passMoment } from '../game/port/moment';
 import {
   BATTLE_TEXT_COLOUR,
   clearMenuBlock,

@@ -26,7 +26,7 @@ const HELPERS = {
   strength: ['msgYouFeelVeryGood', 'msgAlreadyCastThisSpell'],
   speed: ['msgYouFeelVeryGood', 'msgAlreadyCastThisSpell'],
   strengthAndSpeed: ['msgAlreadyCastThisSpell', 'msgYouFeelVeryGood'],
-  relocateSpell: [],
+  relocateSpell: ['relocate'],
   goAway: ['msgNoMonster', 'bossImmuneCheck'],
   autokill: ['msgNoMonster', 'bossImmuneCheck'],
   powerWeapon: ['msgAlreadyInEffect', 'msgSixtyMovesLonger'],

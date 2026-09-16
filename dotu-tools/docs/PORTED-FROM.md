@@ -209,7 +209,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `strength` | 3000:d990 | `game/port/magic.ts` |  |
 | `speed` | 3000:d9ba | `game/port/magic.ts` |  |
 | `strength_and_speed` | 3000:d9e4 | `game/port/magic.ts` |  |
-| `relocate` | 3000:da2c | `game/port/magic.ts`, `game/port/moment.ts` | `formulas/formulas.ts`, `map/area.ts`, `map/relocate.ts` |
+| `relocate` | 3000:da2c | `game/port/magic.ts` | `formulas/formulas.ts`, `map/area.ts`, `map/relocate.ts` |
 | `boss_immune_check` | 3000:dab7 | `game/port/magic.ts` |  |
 | `go_away` | 3000:db1e | `game/port/magic.ts` | `formulas/formulas.ts` |
 | `autokill` | 3000:dc18 | `game/port/magic.ts` | `formulas/formulas.ts` |

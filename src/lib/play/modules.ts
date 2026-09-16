@@ -1,5 +1,5 @@
 import { showHint } from '../game/port/drops';
-import { relocate } from '../game/port/moment';
+import { relocate } from '../game/port/magic';
 import type { JournalEvent } from '../game/journal-events';
 import type { Turn } from './engine';
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { arriveSquare, leaveSquare, passMoment, relocate, tickSpellTimers } from './moment';
+import { relocate } from './magic';
+import { arriveSquare, leaveSquare, passMoment, tickSpellTimers } from './moment';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, newGame, setMonsterMap, type Game } from './state';
 
 /** A generator that always hands back the same number, so a moment can be checked step by step. */
