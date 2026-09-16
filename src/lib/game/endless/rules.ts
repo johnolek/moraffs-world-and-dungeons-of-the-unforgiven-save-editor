@@ -175,7 +175,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
       section <= LAST_OWN_SECTION
         ? FAITHFUL_RULES.bossBeaten(pc, section)
         : endlessStateOf(pc).bossesKilled.has(section),
-    deepShadows: { killed: shadowKilled },
+    deepShadows: { killed: (game) => shadowKilled(game, seed) },
     // stock_level's own base level rolls back round to 1 at 221, which no floor of the game is
     // deep enough to reach; an endless floor is, and a dungeon that got easier the deeper it went
     // would be no dungeon at all.

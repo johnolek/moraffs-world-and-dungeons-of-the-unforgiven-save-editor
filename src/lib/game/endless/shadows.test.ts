@@ -6,8 +6,9 @@ import { bundledDungeon } from '../dungeon';
 import { killMonster } from '../port/kills';
 import { BorlandRng } from '../port/rng';
 import { FAITHFUL_RULES } from '../port/rules';
-import { newGame, setMonsterMap, type Game } from '../port/state';
+import { newGame, setMonsterMap, type Game, type PlayerCharacter } from '../port/state';
 import { endlessRules } from './rules';
+import { shadowLoot } from './shadows';
 
 /** The Shadow boss of section 21, the first section below the bottom of the game, and the floor
  *  he stands on. */
@@ -26,11 +27,11 @@ const floorRows = (level: number): MapSquare[][] =>
 
 /** A monk standing over the dead Shadow boss of his section: a monk is refused every drop that
  *  rolls dice of its own, which leaves the kill itself to be read without scripting one. */
-function standingOverTheShadow(): Game {
+function standingOverTheShadow(pc: Partial<PlayerCharacter> = {}): Game {
   const game = newGame({
     rules,
     rng: { random: () => 0 },
-    pc: { cls: 2, module: MODULE_V, level: BOSS_FLOOR, hp: 100, maxHp: 100, x: 40, y: 50 },
+    pc: { cls: 2, module: MODULE_V, level: BOSS_FLOOR, hp: 100, maxHp: 100, x: 40, y: 50, ...pc },
     choice: async () => LEAVE,
     pressAnyKey: () => {},
     delay: () => {},
@@ -64,6 +65,14 @@ function standingOn(game: Game): boolean {
   return monsterById(game.monsterKinds[game.monsters[0].type].id).isBoss;
 }
 
+/** How many potions a pile holds. */
+const counted = (potions: number[]): number => potions.reduce((all, one) => all + one, 0);
+
+/** How many potions the run journal was told about, which is one event for each of them. */
+function potionsFound(game: Game): number {
+  return game.events.filter((event) => event.kind === 'found' && event.find.what === 'potion').length;
+}
+
 describe('killing the Shadow boss of a section below the bottom of the game', () => {
   it('writes the kill down beside the record, where the record has no bit for it', async () => {
     const game = standingOverTheShadow();
@@ -88,6 +97,40 @@ describe('killing the Shadow boss of a section below the bottom of the game', ()
     expect(standingOn(game)).toBe(false);
   });
 
+  it("hands over the potions that floor's Shadow was carrying, and says what they were", async () => {
+    const game = standingOverTheShadow();
+    const loot = shadowLoot(SEED, BOSS_FLOOR);
+    expect(game.pc.potions).toEqual([0, 0, 0, 0, 0, 0]);
+
+    await killMonster(game);
+
+    expect(game.pc.potions).toEqual(loot.potions);
+    expect(potionsFound(game)).toBe(counted(loot.potions));
+    expect(game.messages).toContain('  THE SHADOW LEAVES BEHIND:');
+    expect(game.messages).toContain('  3 ORANGE POTIONS');
+  });
+
+  it('puts the orb it was carrying on the weapon in hand', async () => {
+    const game = standingOverTheShadow({ weapon: 6, weaponsOwned: [1, 0, 0, 0, 0, 0, 1, 0] });
+    expect(shadowLoot(SEED, BOSS_FLOOR).weaponPlus).toBe(200);
+
+    await killMonster(game);
+
+    expect(game.pc.weaponPlus).toEqual([0, 0, 0, 0, 0, 0, 200, 0]);
+    expect(game.messages).toContain('  YOUR LONG SWORD IS NOW');
+    expect(game.messages).toContain('PLUS 200.');
+  });
+
+  it('leaves a weapon that already carries a better plus alone', async () => {
+    const plus = [0, 0, 0, 0, 0, 0, 900, 0];
+    const game = standingOverTheShadow({ weapon: 6, weaponsOwned: [1, 0, 0, 0, 0, 0, 1, 0], weaponPlus: plus });
+
+    await killMonster(game);
+
+    expect(game.pc.weaponPlus[6]).toBe(900);
+    expect(game.messages).toContain('PLUS 900.');
+  });
+
   it('leaves the twenty sections the game has to the reward kill_monster has for them', async () => {
     const game = newGame({
       rules,
@@ -105,5 +148,38 @@ describe('killing the Shadow boss of a section below the bottom of the game', ()
 
     expect(game.pc.objective[0]).toBe(1);
     expect(game.pc.maxHp).toBe(130);
+  });
+});
+
+describe('what a Shadow of the endless dungeon is carrying', () => {
+  /** A thousand floors of one world, which is ten sections' worth of Shadows and enough to see
+   *  the shape of the draw. */
+  const piles = Array.from({ length: 1000 }, (unused, index) => shadowLoot(SEED, 200 + index));
+
+  it('is the same pile for everybody who kills the Shadow of that floor', () => {
+    expect(shadowLoot(SEED, 433)).toEqual(shadowLoot(SEED, 433));
+    expect(shadowLoot(SEED, 433)).not.toEqual(shadowLoot(SEED, 434));
+    expect(shadowLoot(SEED, 433)).not.toEqual(shadowLoot(SEED + 1, 433));
+  });
+
+  it('is between one and twenty potions', () => {
+    for (const pile of piles) {
+      expect(counted(pile.potions)).toBeGreaterThanOrEqual(1);
+      expect(counted(pile.potions)).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it('is in one colour or spread over several', () => {
+    const colours = piles.map((pile) => pile.potions.filter((count) => count > 0).length);
+    expect(colours.filter((count) => count === 1).length).toBeGreaterThan(0);
+    expect(colours.filter((count) => count > 1).length).toBeGreaterThan(0);
+    expect(Math.max(...colours)).toBeLessThanOrEqual(6);
+  });
+
+  it('carries an orb about one Shadow in three', () => {
+    const orbs = piles.filter((pile) => pile.weaponPlus > 0);
+    expect(orbs.length).toBeGreaterThan(piles.length / 5);
+    expect(orbs.length).toBeLessThan(piles.length / 2);
+    expect(new Set(orbs.map((pile) => pile.weaponPlus))).toEqual(new Set([200, 300, 500]));
   });
 });
