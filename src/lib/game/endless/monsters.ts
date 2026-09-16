@@ -64,6 +64,17 @@ const ICE_BREATH = 2;
  */
 const DRAINERS_THEME_ODDS = 5;
 
+/**
+ * How often the type roll reaches for the eight poison and disease monsters in an afflictions
+ * section, where the game's own answer is one of the rolls left in twelve.
+ *
+ * It puts about a quarter of what such a floor stands on the character's characteristics rather
+ * than on its hit points: a hit that poisons takes a point of strength every 450 moves from then
+ * on, and one that gives a disease takes a point of constitution, until a temple or a spell puts
+ * it right.
+ */
+const AFFLICTIONS_THEME_ODDS = 3;
+
 /** The odd multiplier a 32-bit hash spreads its input with: two to the 32 over the golden
  *  ratio. */
 const GOLDEN_RATIO = 0x9e3779b1;
@@ -129,6 +140,7 @@ export function endlessSection(seed: number, section: number): EndlessSection {
 export function themeTypeOdds(theme: SectionTheme): MonsterTypeOdds {
   const game = FAITHFUL_RULES.monsterTypeOdds(1);
   if (theme === 'drainers') return { ...game, levelDrainer: DRAINERS_THEME_ODDS };
+  if (theme === 'afflictions') return { ...game, poisonDisease: AFFLICTIONS_THEME_ODDS };
   return game;
 }
 

@@ -5,7 +5,7 @@ import { UNFORGIVEN_MAP } from '../../map/game';
 import { monsterById, stockFloor } from '../../map/stocking';
 import { expValue } from '../port/combat';
 import { FAITHFUL_RULES } from '../port/rules';
-import { newGame } from '../port/state';
+import { newGame, type MonsterKind } from '../port/state';
 import { BOTTOM_LEVEL } from '../unfmap.js';
 import { endlessSection, type SectionTheme } from './monsters';
 import { endlessRules, ENDLESS_BOTTOM } from './rules';
@@ -248,16 +248,26 @@ describe("an endless section's theme", () => {
   const FIRE = 1;
   const ICE = 2;
 
-  /** What share of a floor of this section takes a level off the character when it hits. The
-   *  floor is the section's second last, so no Shadow boss stands on it. */
-  const drainerShareOf = (section: number): number => {
+  /** The eight poison and disease monsters of the game's own table, which every section keeps
+   *  loaded as rows 14 to 21. */
+  const AFFLICTED = new Set(Array.from({ length: 8 }, (unused, index) => `builtin-${14 + index}`));
+
+  /** What share of a stocked floor of this section counts. The floor is the section's second
+   *  last, so that no Shadow boss stands on it. */
+  const shareOf = (section: number, counts: (row: MonsterKind) => boolean): number => {
     const rows = new Map(tough.monsterKinds(section).map((kind) => [kind.id, kind]));
     const floor = (tough.sectionPlace(section)?.bossFloor ?? 0) - 1;
     const map = UNFORGIVEN_MAP.floor(floor, MODULE_V, tough.bottomLevel(MODULE_V), tough.trapdoorReach(MODULE_V, floor));
     const monsters = stockFloor(tough, map, MODULE_V, floor, seeded(11));
-    const draining = monsters.filter((monster) => (rows.get(monster.monsterId)?.levelDrain ?? 0) !== 0);
-    return draining.length / monsters.length;
+    const counted = monsters.filter((monster) => {
+      const row = rows.get(monster.monsterId);
+      return row !== undefined && counts(row);
+    });
+    return counted.length / monsters.length;
   };
+
+  const drainerShareOf = (section: number): number => shareOf(section, (row) => row.levelDrain !== 0);
+  const afflictedShareOf = (section: number): number => shareOf(section, (row) => AFFLICTED.has(row.id));
 
   it('is the same theme for everybody playing the same world', () => {
     expect(themesOf(SEED, ENDLESS_SECTIONS)).toEqual(themesOf(SEED, ENDLESS_SECTIONS));
@@ -290,6 +300,10 @@ describe("an endless section's theme", () => {
 
   it('stands far more level drainers in a drainers section than in a plain one', () => {
     expect(drainerShareOf(sectionWith('drainers'))).toBeGreaterThan(3 * drainerShareOf(sectionWith('plain')));
+  });
+
+  it('stands far more poison and disease in an afflictions section than in a plain one', () => {
+    expect(afflictedShareOf(sectionWith('afflictions'))).toBeGreaterThan(2 * afflictedShareOf(sectionWith('plain')));
   });
 
   it('draws every theme there is', () => {
