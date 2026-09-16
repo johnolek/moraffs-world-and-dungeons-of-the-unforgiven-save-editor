@@ -1,9 +1,12 @@
 import { resetViewCaches } from '../game/port/character';
 import data from '../game/dotu-data.json';
+import type { GameRules } from '../game/port/rules';
 import { toUpperByte } from '../game/port/screens';
-import type { Game } from '../game/port/state';
+import type { Game, MonsterKind } from '../game/port/state';
+import { monsterById } from '../map/stocking';
 import type { Turn } from './engine';
 import {
+  FIRST_SECTION_MONSTER,
   MANUAL_DEAD,
   MANUAL_LETTERS,
   MANUAL_TEXT,
@@ -23,6 +26,10 @@ import {
  *
  * `section-screen.ts` is the rest of it: the five panels of the section's wall material with the
  * monsters standing in them, and the fat dark pass of every line printed here.
+ *
+ * A section below the bottom of the game has no row of MD.BIN at all. Its five monsters are
+ * borrowed from sections all over the game (`src/lib/game/endless/README.md`), so the pages under
+ * the letters are the pages those sections give those monsters.
  */
 
 /** How many lines of MD.BIN one monster's description is. */
@@ -41,28 +48,15 @@ const FIRST_LETTER = 0x41;
 
 /**
  * What the screen says about a section the game has no words for, which is a section past the
- * twenty MD.BIN describes: it says which section it is and whose pages the reader is about to
- * turn, since the five monsters under the letters are that section's and not the ones standing
- * on the floor.
+ * twenty MD.BIN describes: which section it is, and that the five under the letters are the five
+ * standing here.
  *
- * A section whose rules have a line of their own about its monsters spends the last of the four
- * on that, and says the rest of it in three. Four lines is what the tablet holds.
+ * A section whose rules have a line of their own about its monsters spends the fourth line on
+ * that. Four lines is what the tablet holds.
  */
-function borrowedIntro(section: number, source: number, note: string | null): string[] {
-  if (note === null) {
-    return [
-      `SECTION ${section}`,
-      'Nobody mapped this far down. The pages',
-      `below are section ${source}'s. Its monsters`,
-      'are not the ones standing here.',
-    ];
-  }
-  return [
-    `SECTION ${section}`,
-    'Nobody mapped this far down. The pages',
-    `below are section ${source}'s, not this one's.`,
-    note,
-  ];
+function endlessIntro(section: number, note: string | null): string[] {
+  const opening = [`SECTION ${section}`, 'Nobody mapped this far down. The five', 'below are what stands here.'];
+  return note === null ? opening : [...opening, note];
 }
 
 /** The line across the bottom (exe DS:3598), as psfont draws it when there is no mouse. */
@@ -84,40 +78,61 @@ export interface ManualHost {
 
 /** What the S key opens on. */
 export interface ManualOpening {
-  /** The section the five monsters under the letters come from, 1 to 20. */
-  source: number;
-  /** Which of its module's sections the character is standing in, counted from 1. */
-  part: number;
+  /** The section the character is standing in, whose five monsters the letters turn to: 1 to 20
+   *  in the game itself, and past 20 on a floor below the bottom of it. */
+  section: number;
   /** The four lines on the slab. */
   intro: string[];
 }
 
 /**
- * The section the S key shows for the floor the character is standing on: the row of MD.BIN the
- * five monsters and their descriptions come from, and the words the screen opens on.
+ * The section the S key shows for the floor the character is standing on, and the words the
+ * screen opens on.
+ *
+ * A section of the game's own twenty opens on the four lines MD.BIN gives it. A section below the
+ * bottom of the game has no row of MD.BIN, so the screen says what it can about it instead.
  */
 export function manualOpening(game: Game): ManualOpening {
-  const standingIn = game.rules.sectionOf(game.pc.module, game.pc.level);
-  const source = game.rules.sectionSource(standingIn);
-  const row = data.sections[source - 1];
+  const section = game.rules.sectionOf(game.pc.module, game.pc.level);
+  const row = data.sections[section - 1];
   return {
-    source,
-    part: game.rules.sectionPlace(standingIn)?.part ?? row.part,
-    intro: source === standingIn ? row.intro : borrowedIntro(standingIn, source, game.rules.sectionNote(standingIn)),
+    section,
+    intro: row ? row.intro : endlessIntro(section, game.rules.sectionNote(section)),
   };
+}
+
+/**
+ * The four lines of MD.BIN each of the section's five monsters is described in, in the order the
+ * section's own table has them, which is the order the letters read them in.
+ *
+ * A section of the game's own twenty is described by its own row: twenty forty-column lines, four
+ * to a monster, in slot order. A section below the bottom of the game stands five monsters
+ * borrowed from sections all over the game, so each of them brings the four lines the row of the
+ * section it came from gives it.
+ */
+export function manualPages(rules: GameRules, section: number): string[][] {
+  return rules.monsterKinds(section).slice(FIRST_SECTION_MONSTER).map(monsterPage);
+}
+
+/** The four lines the monster's own section describes it in. */
+function monsterPage(kind: MonsterKind): string[] {
+  const origin = monsterById(kind.id).origin;
+  if (origin.kind !== 'section') return [];
+  const block = origin.slot - FIRST_SECTION_MONSTER;
+  return data.sections[origin.section - 1].descriptions.slice(block * BLOCK_LINES, (block + 1) * BLOCK_LINES);
 }
 
 /** The S key, until the reader leaves it. */
 export async function readTheMonsterManual(turn: Turn): Promise<void> {
   const game = turn.game;
   const opening = manualOpening(game);
-  const section = data.sections[opening.source - 1];
+  const pages = manualPages(game.rules, opening.section);
   let shown: string[] = opening.intro;
   for (;;) {
-    drawManualPage(turn.session, opening.source, opening.part - 1, shown);
+    drawManualPage(turn.session, opening.section, shown);
     const block = letterPressed(await game.key());
     if (block === null) break;
-    shown = section.descriptions.slice(block * BLOCK_LINES, (block + 1) * BLOCK_LINES);
+    shown = pages[block];
   }
   turn.session.sectionScreen = null;
   game.eraseScreen();
@@ -140,13 +155,17 @@ function letterPressed(key: number): number | null {
  * pages, redrawing only the tablet and the line across the bottom; the port draws every line of
  * the screen again for each page, which comes out the same picture.
  *
- * @param section the section the five monsters come from.
- * @param part which of its module's sections the character is standing in, counted from 0, which
- *   is what says whether its Shadow boss has been killed.
+ * The DEAD stamp over the first panel goes up when the section's Shadow boss has already been
+ * killed. The original reads the module's byte at DS:c0c9 for that (exe 3000:c4b5), which has one
+ * bit per section of the module; the rules are asked here instead, and the faithful rules read
+ * that same bit. A section below the bottom of the game has no bit of its own, so its rules keep
+ * the kill beside the record.
+ *
+ * @param section the section the character is standing in, whose five monsters the panels stand.
  */
-export function drawManualPage(session: ManualHost, section: number, part: number, lines: string[]): void {
+export function drawManualPage(session: ManualHost, section: number, lines: string[]): void {
   const game = session.game;
-  const bossDead = bossIsDead(game, part);
+  const bossDead = game.rules.bossBeaten(game.pc, section);
   game.eraseScreen();
   session.sectionScreen = { section, lines, bossDead };
   game.draw({ ...MANUAL_LETTERS.box, ...MANUAL_LETTERS.bright, text: MANUAL_LETTERS.text, font: 1 });
@@ -155,12 +174,4 @@ export function drawManualPage(session: ManualHost, section: number, part: numbe
     game.draw({ ...manualTextBox(index), ...MANUAL_TEXT.bright, text, font: 1 });
   });
   game.draw(PROMPT);
-}
-
-/**
- * Whether the section's Shadow boss has been killed (exe 3000:c4b5): the module's byte at
- * DS:c0c9, which the save calls `objective`, has one bit per section of the module.
- */
-function bossIsDead(game: Game, part: number): boolean {
-  return (game.pc.objective[game.pc.module] & (1 << part)) !== 0;
 }

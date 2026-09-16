@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { readRecolouredId } from '../../bestiary/monsters';
 import { UNFORGIVEN_MAP, type MapSquare } from '../../map/game';
 import { monsterById, MONSTER_SLOTS } from '../../map/stocking';
 import { drawBossOffice } from '../../play/boss-office';
 import { SCREEN_PIXELS } from '../../play/display';
 import { BOSS_KIND, drawnMonsters, FloorMonsters, loadLevelMap } from '../../play/floor';
-import { manualOpening } from '../../play/manual';
+import { manualOpening, manualPages } from '../../play/manual';
+import { drawSectionScreen, sectionMonsterRecords } from '../../play/section-screen';
 import { explainTrapdoor } from '../../play/trapdoor';
 import { viewMonsters } from '../../play/view-scene';
 import { viewPictures } from '../../play/view3d/browser';
@@ -253,13 +255,19 @@ describe('the Shadow boss of a section below the bottom of the game', () => {
 });
 
 describe('the S screen on a floor below the bottom of the game', () => {
-  it('says which section it is and whose monsters are standing on it', () => {
+  /** The section floor 120 belongs to, and the five monsters it stands, in the order its own
+   *  table has them: the Shadow boss, three regulars and the level drainer. */
+  const SECTION = 21;
+  const five = rules.monsterKinds(SECTION).slice(BOSS_KIND);
+
+  it('says which section it is and that the five below it are what stands there', () => {
     const game = gameOn(FLOOR);
     const opening = manualOpening(game);
-    const source = rules.sectionSource(21);
-    expect(opening.source).toBe(source);
-    expect(opening.intro[0]).toBe('SECTION 21');
-    expect(opening.intro.join(' ')).toContain(`section ${source}`);
+    expect(opening.section).toBe(SECTION);
+    expect(opening.intro[0]).toBe(`SECTION ${SECTION}`);
+    // The pages are the section's own monsters, so the screen no longer sends the reader off to
+    // the section it is drawn and described as.
+    expect(opening.intro.join(' ')).not.toContain(`section ${rules.sectionSource(SECTION)}`);
   });
 
   it('names what the section does with its monsters', () => {
@@ -273,7 +281,62 @@ describe('the S screen on a floor below the bottom of the game', () => {
 
   it('opens on MD.BIN itself for a floor of a section the game describes', () => {
     const game = gameOn(50);
-    expect(manualOpening(game)).toEqual({ source: 18, part: 2, intro: data.sections[17].intro });
+    expect(manualOpening(game)).toEqual({ section: 18, intro: data.sections[17].intro });
+  });
+
+  it('turns one page per monster of its own set, each of them that monster paragraph', () => {
+    const pages = manualPages(rules, SECTION);
+    expect(pages).toHaveLength(five.length);
+    pages.forEach((page, index) => {
+      const name = five[index].name;
+      expect(page, name).toHaveLength(4);
+      // MD.BIN heads a monster's paragraph with its name and a colon.
+      expect(page[0].startsWith(`${name}:`), page[0]).toBe(true);
+    });
+    // None of the five pages is a page of the section the screen is drawn and described as.
+    const drawnAs = data.sections[rules.sectionSource(SECTION) - 1].descriptions;
+    expect(pages.some((page) => drawnAs.includes(page[0]))).toBe(false);
+  });
+
+  it('stands each of the five in its panel out of the file of the section it came from', () => {
+    const records = sectionMonsterRecords(SECTION, rules);
+    const pictures = viewPictures(rules.pictureFiles(SECTION));
+    expect(records).toHaveLength(five.length);
+    records.forEach((record, index) => {
+      const entry = monsterById(five[index].id);
+      const home = entry.origin.kind === 'section' ? entry.origin.section : null;
+      expect(record.picnum, entry.name).toBe(entry.picnum);
+      expect(record.section, entry.name).toBe(home);
+      expect(pictures.monster(record.picnum, false, record.section), entry.name).not.toBeNull();
+    });
+  });
+
+  it("draws a section the game itself has exactly as a faithful game draws it", () => {
+    // Section 18, which floor 50 of Module V is in, is one of the game's own twenty, so an
+    // endless game standing there reads the pages the 1993 game reads.
+    const OWN_SECTION = 18;
+    const showing = { section: OWN_SECTION, lines: data.sections[OWN_SECTION - 1].intro, bossDead: true };
+    const pictures = viewPictures(rules.pictureFiles(OWN_SECTION));
+    const faithful = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    const endless = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+
+    drawSectionScreen(faithful, SCREEN_PIXELS, showing, pictures, FAITHFUL_RULES);
+    drawSectionScreen(endless, SCREEN_PIXELS, showing, pictures, rules);
+
+    expect(endless.pixels).toEqual(faithful.pixels);
+    expect(manualPages(rules, OWN_SECTION)).toEqual(manualPages(FAITHFUL_RULES, OWN_SECTION));
+  });
+
+  it('paints them in the colours the stocking paints them in', () => {
+    const records = sectionMonsterRecords(SECTION, rules);
+    // The Shadow boss keeps the colours he came with, and the other four are repainted.
+    expect(readRecolouredId(five[0].id)).toBeNull();
+    expect(records[0].colorSet).toBe(monsterById(five[0].id).colorSet);
+    records.slice(1).forEach((record, index) => {
+      const painted = readRecolouredId(five[index + 1].id);
+      expect(painted, five[index + 1].id).not.toBeNull();
+      expect(record.colorSet).toBe(painted?.colorSet);
+    });
   });
 });
 

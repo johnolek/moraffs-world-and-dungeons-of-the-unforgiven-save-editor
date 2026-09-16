@@ -61,10 +61,9 @@ spells.
 A section past the twentieth draws three things from a generator started from the world's seed and
 its own number (`endlessSection` in `monsters.ts`):
 
-- **A section of the game to be drawn and described as.** Its walls, its palette and the pages its
-  S screen turns are one of the game's own twenty, because there are twenty sections' worth of
-  wall files and twenty sections' worth of palettes and nothing else to draw a floor with.
-  `sectionSource` is which one.
+- **A section of the game to be drawn as.** Its walls and its palette are one of the game's own
+  twenty, because there are twenty sections' worth of wall files and twenty sections' worth of
+  palettes and nothing else to draw a floor with. `sectionSource` is which one.
 - **Five monsters of its own**, filling the five rows `load_md_bin` (exe 2000:5fec) fills for a
   section: a Shadow boss in slot 22, three regulars in 23 to 25, and a level drainer in 26. Each
   is one of the hundred monsters the game has, taken out of the slot it fills in its own section,
@@ -82,8 +81,12 @@ which lives in the file of the section it came from — `ufmon<N>.pic` — which
 which section's file to read and the picture set of the 3-D view reads that file
 (`src/lib/play/view3d/browser.ts`).
 
-Because the five come from all over the game, the words of the S screen are no longer about the
-monsters standing on the floor. The screen says so.
+The S screen turns a page for each of the five, and a borrowed monster brings its own page with
+it: the four lines of MD.BIN the section it came from describes it in, read out of that section's
+row rather than out of the row of the section this one is drawn as. Its picture comes from that
+section's file the same way, painted in the colour set the stocking gave it. What the screen has
+no row for is the section itself, so the line it opens on says which section the reader is
+standing in and leaves it at that.
 
 ## Section themes
 
