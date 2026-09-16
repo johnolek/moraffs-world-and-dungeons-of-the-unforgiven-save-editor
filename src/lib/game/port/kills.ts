@@ -274,12 +274,13 @@ export function drainerBonus(game: Game): void {
     return;
   }
   const keys = game.rules.keys;
-  const key = Math.trunc(pc.level / 5);
+  // The number on the key, which is the floor rounded down to the five its trap doors share.
+  const label = Math.trunc(pc.level / 5) * 5;
   if (keys.flag(pc, pc.level) === 1 || !keys.foundOn(pc.level)) return;
   // DS:31c2, 31dd 2668 with the number between them, 258b, 31f0, 320a, 3224, 258b, 3236
   game.say(
     '  YOU HAVE FOUND A KEY! IT',
-    `IS LABELED NUMBER ${key * 5}.`,
+    `IS LABELED NUMBER ${label}.`,
     '',
     '  THIS KEY WILL ALLOW YOU',
     'TO USE TRAP DOORS LABELED',
@@ -288,7 +289,7 @@ export function drainerBonus(game: Game): void {
     '      HIT ANY KEY...',
   );
   keys.take(pc, pc.level);
-  game.events.push({ kind: 'found', find: { what: 'key', key: key * 5 } });
+  game.events.push({ kind: 'found', find: { what: 'key', key: label } });
 }
 
 /**
