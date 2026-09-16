@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app } from './lib/app-state.svelte';
+  import { SvelteSet } from 'svelte/reactivity';
+  import { app, type Tab } from './lib/app-state.svelte';
   import { rememberNow, restoreGame, restoreRoster, switchGame } from './lib/character/current';
   import { GAME_CHOICES } from './lib/game-choice';
   import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
   import { runServerUrl } from './lib/run-server';
-  import { tabGroupsFor, tabsFor } from './lib/tabs';
+  import { tabGroupsFor, tabIsBuilt, tabsFor } from './lib/tabs';
   import { askWhetherAdmin } from './lib/admin/server';
   import Admin from './lib/admin/Admin.svelte';
   import Monsters from './lib/bestiary/Monsters.svelte';
@@ -34,6 +35,15 @@
 
   const tabs = $derived(tabsFor(app.game));
   const tabGroups = $derived(tabGroupsFor(app.game));
+
+  /** Every tab that has been on screen, which is what {@link tabIsBuilt} answers from. */
+  const opened = new SvelteSet<Tab>();
+  $effect(() => {
+    opened.add(app.tab);
+  });
+
+  /** Whether a tab's contents belong in the page (`src/lib/tabs.ts`). */
+  const built = (tab: Tab): boolean => tabIsBuilt(app.tab, opened, tab);
 
   /** A build with no run server hears no announcements, so there is neither a marker nor a
    *  timeline to open. */
@@ -113,13 +123,17 @@
       Not saving: this browser's storage is full or turned off, so nothing from here on is kept.
     </p>
   {/if}
-  <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
+  <!-- A tab is built the first time it is opened and then stays mounted, so the map view, the
+       loaded save and a game in progress all survive switching. A tab nobody has opened is not
+       in the page at all. -->
   <main class:hidden={app.tab !== 'map'}>
-    <MapExplorer />
+    {#if built('map')}<MapExplorer />{/if}
   </main>
   <main class:hidden={app.tab !== 'play'}>
     <!-- The three games are three executables with three loops, so each brings its own. -->
-    {#if app.game === 'moraffsWorld'}<MwPlay />{:else if app.game === 'revenge'}<RevPlay />{:else}<Play />{/if}
+    {#if built('play')}
+      {#if app.game === 'moraffsWorld'}<MwPlay />{:else if app.game === 'revenge'}<RevPlay />{:else}<Play />{/if}
+    {/if}
   </main>
   <!-- The one tab that is not kept mounted: it is a page of what the run server has now, so
        opening it reads the boards and the announcements again rather than showing what they said
@@ -129,42 +143,46 @@
   </main>
   <!-- Dungeons of the Unforgiven's alone, so nothing here asks which game is showing. -->
   <main class:hidden={app.tab !== 'fight'}>
-    <FightTab />
+    {#if built('fight')}<FightTab />{/if}
   </main>
   <main class:hidden={app.tab !== 'editor'}>
-    <SaveEditor />
+    {#if built('editor')}<SaveEditor />{/if}
   </main>
   <main class:hidden={app.tab !== 'monsters'}>
     <!-- The two games share the list and the search but not a single fact about a monster, so
          each brings its own database rather than one being taught both. -->
-    {#if app.game === 'moraffsWorld'}
-      <MwMonsters />
-    {:else if app.game === 'revenge'}
-      <RevMonsters />
-    {:else}
-      <Monsters />
+    {#if built('monsters')}
+      {#if app.game === 'moraffsWorld'}
+        <MwMonsters />
+      {:else if app.game === 'revenge'}
+        <RevMonsters />
+      {:else}
+        <Monsters />
+      {/if}
     {/if}
   </main>
   <main class:hidden={app.tab !== 'spells'}>
-    {#if app.game === 'moraffsWorld'}<MwSpellReference />{:else}<SpellReference />{/if}
+    {#if built('spells')}
+      {#if app.game === 'moraffsWorld'}<MwSpellReference />{:else}<SpellReference />{/if}
+    {/if}
   </main>
   <main class:hidden={app.tab !== 'calculators'}>
-    <Calculators />
+    {#if built('calculators')}<Calculators />{/if}
   </main>
   <main class:hidden={app.tab !== 'formulas'}>
-    <Formulas />
+    {#if built('formulas')}<Formulas />{/if}
   </main>
   <main class:hidden={app.tab !== 'tidbits'}>
-    <Tidbits />
+    {#if built('tidbits')}<Tidbits />{/if}
   </main>
   <main class:hidden={app.tab !== 'snake'}>
-    <Snake />
+    {#if built('snake')}<Snake />{/if}
   </main>
   <main class:hidden={app.tab !== 'roller'}>
-    <NewCharacter />
+    {#if built('roller')}<NewCharacter />{/if}
   </main>
   <main class:hidden={app.tab !== 'source'}>
-    <SourceViewer />
+    {#if built('source')}<SourceViewer />{/if}
   </main>
   <!-- Not kept mounted, for the same reason the boards are not: it is a page of what the server
        has now, so opening it reads the server again. -->

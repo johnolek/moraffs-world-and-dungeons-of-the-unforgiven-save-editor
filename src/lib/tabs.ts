@@ -82,3 +82,20 @@ export function tabFor(game: GameId, tab: Tab): Tab {
   if (theirs.some((entry) => entry.id === tab)) return tab;
   return theirs.some((entry) => entry.id === FALLBACK_TAB) ? FALLBACK_TAB : theirs[0].id;
 }
+
+/**
+ * Whether a tab's contents are built into the page.
+ *
+ * A tab is built the first time it is opened and then kept in the page, hidden, for the rest of
+ * the visit, so that everything it remembers — a game in progress, where the map is looking, a
+ * half-rolled character, a fight set up — is still there when the player comes back to it. A tab
+ * nobody has opened is not built at all, which is what keeps the first paint to the one tab the
+ * site opens on.
+ *
+ * @param showing the tab on screen now
+ * @param opened every tab that has been on screen before
+ * @param tab the tab being asked about
+ */
+export function tabIsBuilt(showing: Tab, opened: ReadonlySet<Tab>, tab: Tab): boolean {
+  return showing === tab || opened.has(tab);
+}

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { app } from './app-state.svelte';
-import { tabFor, tabGroupsFor, tabsFor, TAB_GROUPS, TABS, type TabGroup } from './tabs';
+import { app, type Tab } from './app-state.svelte';
+import { tabFor, tabGroupsFor, tabIsBuilt, tabsFor, TAB_GROUPS, TABS, type TabGroup } from './tabs';
 
 /** A build given a run server, which is the only kind that has boards to show. */
 function withBoards(): void {
@@ -131,5 +131,21 @@ describe('the tab to show', () => {
     expect(tabFor('revenge', 'spells')).toBe('editor');
     expect(tabFor('revenge', 'editor')).toBe('editor');
     expect(tabFor('revenge', 'source')).toBe('source');
+  });
+});
+
+describe('whether a tab is built into the page', () => {
+  it('builds the tab on screen, whether or not it has been opened before', () => {
+    expect(tabIsBuilt('map', new Set(), 'map')).toBe(true);
+    expect(tabIsBuilt('map', new Set<Tab>(['map']), 'map')).toBe(true);
+  });
+
+  it('leaves out a tab nobody has opened', () => {
+    expect(tabIsBuilt('map', new Set<Tab>(['map']), 'snake')).toBe(false);
+    expect(tabIsBuilt('map', new Set(), 'play')).toBe(false);
+  });
+
+  it('keeps a tab that has been opened, so what it remembers survives leaving it', () => {
+    expect(tabIsBuilt('map', new Set<Tab>(['map', 'play']), 'play')).toBe(true);
   });
 });
