@@ -358,8 +358,12 @@
    * about eighteen times a second, which is why it is not in the frame above (`debug-screen.ts`).
    * The stone tablet is the one screen that carries none of the game's own lines, so nothing debug
    * prints stands over it either.
+   *
+   * It stands down while a fade runs. A fade takes every colour on the screen toward black a step
+   * at a time (`fade.ts`), and this layer is painted in the palette's own colours, so a line left
+   * on it would be the one lit thing on a screen going dark.
    */
-  const liveHit = $derived(debug && !tablet ? liveHitLine(game, tick) : null);
+  const liveHit = $derived(debug && !tablet && fade === null ? liveHitLine(game, tick) : null);
   /** The pixels the layer covers, which never move: the box holds the longest reading the line
    *  can take. */
   const hitBox = liveHitBox(SCREEN_PIXELS);
