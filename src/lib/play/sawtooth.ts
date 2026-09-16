@@ -20,6 +20,12 @@ export const TICKS_A_SECOND = 18.2;
 /** How long one tick of the counter lasts, which is how often a display of it is worth redrawing. */
 export const TICK_MS = 1000 / TICKS_A_SECOND;
 
+/**
+ * How many ticks the roll takes to climb from the bottom of its range to the top and start again:
+ * 32768 of the generator's range divided by the 346 it moves per tick.
+ */
+export const SAWTOOTH_TICKS = 32768 / 346;
+
 /** The swing's roll is random(80), an integer from 0 to 79 (exe 2000:7e89). */
 export const SWING_ROLL_VALUES = 80;
 
@@ -31,3 +37,19 @@ export function swingRoll(tick: number): number {
   return new BorlandRand(tick & 0xffff).random(SWING_ROLL_VALUES);
 }
 
+/**
+ * How long until the roll drops back to the bottom of its climb, in seconds.
+ *
+ * It is found by asking the generator tick by tick rather than by dividing {@link SAWTOOTH_TICKS}
+ * into the tick, because the climb is 346.29 out of the generator's 32768 rather than a round
+ * number and the two answers drift apart over a few thousand ticks. A cycle is under a hundred
+ * ticks, so the search is short; a stretch with no drop in it at all, which cannot happen, gives
+ * the whole cycle.
+ */
+export function secondsToTheDrop(tick: number): number {
+  const whole = Math.ceil(SAWTOOTH_TICKS);
+  for (let ahead = 1; ahead <= whole; ahead++) {
+    if (swingRoll(tick + ahead) < swingRoll(tick + ahead - 1)) return ahead / TICKS_A_SECOND;
+  }
+  return whole / TICKS_A_SECOND;
+}

@@ -18,6 +18,7 @@
   import MessageBox from './MessageBox.svelte';
   import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
+  import ClockBar from './ClockBar.svelte';
   import { debugMonsterLines } from './debug-screen';
   import { ailments, monsterKindSquares, spellTimers, untimedSpells, type PanelLine } from './panel';
   import { pathToNearestTeleporter } from '../map/path';
@@ -295,11 +296,16 @@
         killed={view.killed}
         viewsDrawn={view.viewsDrawn} />
     {/snippet}
+    <!-- The sawtooth a swing's to-hit roll climbs, under the picture, in debug mode alone. -->
+    {#snippet clockBar()}
+      <ClockBar tick={stage.tick} />
+    {/snippet}
     <MapHud
       bind:barHeight={hudBarHeight}
       closeUp={forwardView ? forward : facing ? closeUp : undefined}
       closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
       closeUpLines={debugDrawn(stage.mode) ? debugMonsterLines(stage.session.game, stage.tick).map((line) => line.text) : []}
+      underCloseUp={stage.tick === null ? undefined : clockBar}
       spells={spellsRunning(stage)}
       afflictions={afflictions(stage)}
       hp={view.hp}

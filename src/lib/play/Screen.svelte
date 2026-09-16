@@ -9,6 +9,7 @@
   import type { DiscoveredMap } from '../map/draw-floor';
   import type { Point } from '../map/viewport';
   import { ARROW_FLASH_MS, facingArrowCells } from '../map/you';
+  import ClockBar from './ClockBar.svelte';
   import { debugMonsterLines } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
   import { drawnSmaller } from '../ui/drawn-smaller.svelte';
@@ -718,6 +719,9 @@
       style:height="{(marker.size / SCREEN_PIXELS.height) * 100}%"
     ></canvas>
   {/if}
+  {#if debug}
+    <ClockBar {tick} overScreen />
+  {/if}
 </div>
 
 <style>
@@ -725,6 +729,8 @@
     position: relative;
     width: 100%;
     background: #000;
+    /* The bar in the corner sizes its type off the width of the picture rather than the page. */
+    container-type: inline-size;
   }
   canvas {
     display: block;

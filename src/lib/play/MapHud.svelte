@@ -33,6 +33,12 @@
      */
     closeUpLines?: string[];
     /**
+     * A strip under the close-up, for whatever the game has to show there that is neither the
+     * monster nor its hit points: Dungeons of the Unforgiven's bar of the sawtooth a swing's
+     * roll climbs, in debug mode. Left out by a game with none.
+     */
+    underCloseUp?: Snippet;
+    /**
      * The spells the character has running, each with the moves it has left or what it is
      * standing at, and a note for its tooltip. Left out for a game with no such list.
      */
@@ -66,6 +72,7 @@
     closeUp,
     closeUpHp,
     closeUpLines,
+    underCloseUp,
     spells = [],
     afflictions = { poisoned: false, diseased: false, lines: [] },
     hp,
@@ -92,17 +99,22 @@
 </script>
 
 <div class="hud" style:--orb-cap="{HUD_ORB_PX}px">
-  {#if closeUp}
-    <div class="close-up">
-      {#if closeUpHp}
-        <HudMonsterBar value={closeUpHp.now} max={closeUpHp.full} />
+  {#if closeUp || underCloseUp}
+    <div class="top">
+      {#if closeUp}
+        <div class="close-up">
+          {#if closeUpHp}
+            <HudMonsterBar value={closeUpHp.now} max={closeUpHp.full} />
+          {/if}
+          <div class="frame">
+            {@render closeUp()}
+            {#if closeUpLines && closeUpLines.length > 0}
+              <div class="lines">{#each closeUpLines as line}<div>{line}</div>{/each}</div>
+            {/if}
+          </div>
+        </div>
       {/if}
-      <div class="frame">
-        {@render closeUp()}
-        {#if closeUpLines && closeUpLines.length > 0}
-          <div class="lines">{#each closeUpLines as line}<div>{line}</div>{/each}</div>
-        {/if}
-      </div>
+      {@render underCloseUp?.()}
     </div>
   {/if}
   {#if spells.length > 0}
@@ -144,14 +156,22 @@
     --orb-size: min(var(--orb-cap), 26cqh);
     --bar-height: calc(var(--orb-size) * 0.5);
   }
-  /* The bar of hit points and the picture side by side, the bar stretched to the height the
-     picture's own aspect ratio gives it. */
-  .close-up {
+  /* The column across the top of the map: the monster's picture, and under it whatever the game
+     shows there besides. It is one box so that the strip under the picture follows the picture's
+     own height, which its aspect ratio decides. */
+  .top {
     position: absolute;
     left: 50%;
     top: var(--inset);
     transform: translateX(-50%);
     width: min(40%, 340px);
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--orb-size) * 0.08);
+  }
+  /* The bar of hit points and the picture side by side, the bar stretched to the height the
+     picture's own aspect ratio gives it. */
+  .close-up {
     display: flex;
     align-items: stretch;
     gap: calc(var(--orb-size) * 0.08);

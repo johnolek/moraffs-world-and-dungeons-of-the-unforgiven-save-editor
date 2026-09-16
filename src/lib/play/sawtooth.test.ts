@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SWING_ROLL_VALUES, swingRoll, TICK_MS } from './sawtooth';
+import { SAWTOOTH_TICKS, SWING_ROLL_VALUES, secondsToTheDrop, swingRoll, TICKS_A_SECOND, TICK_MS } from './sawtooth';
 
 /**
  * Borland's generator worked out by hand: srand (exe 1000:18a5) puts the low sixteen bits of the
@@ -25,6 +25,18 @@ describe('the roll a swing made at a given tick would get', () => {
     expect(rolls.slice(0, 10)).toEqual([0, 0, 1, 2, 3, 4, 5, 5, 6, 7]);
     expect(rolls[94]).toBe(SWING_ROLL_VALUES - 1);
     expect(rolls[95]).toBe(0);
+    expect(SAWTOOTH_TICKS).toBeCloseTo(94.7, 1);
+  });
+
+  it('counts down to the drop by asking the generator rather than by dividing the cycle', () => {
+    // Tick 94 is the top of a cycle, so the drop is the very next tick.
+    expect(secondsToTheDrop(94)).toBeCloseTo(1 / TICKS_A_SECOND, 6);
+    expect(secondsToTheDrop(95)).toBeCloseTo(95 / TICKS_A_SECOND, 6);
+    // Far enough out for the cycle to have drifted off a round 95 ticks, the count still lands on
+    // the tick the roll really drops.
+    const late = 50_000;
+    const ahead = Math.round(secondsToTheDrop(late) * TICKS_A_SECOND);
+    expect(swingRoll(late + ahead)).toBeLessThan(swingRoll(late + ahead - 1));
   });
 
   it('is worth redrawing once a tick', () => {
