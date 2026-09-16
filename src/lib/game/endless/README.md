@@ -117,7 +117,7 @@ difference is a faithful gap, and it is written down as one in
 
 | limit | what the game does | what the port does | faithful keeps it |
 |---|---|---|---|
-| **Hit points and their maximum**, 0x31 and 0x33, signed words | Both live in words in the data segment, so passing 32,767 reads as a negative number, and `movecontrol`'s test at 2000:c474 finds hit points below zero and ends the game. A character who heals past the limit dies of it. | Plain numbers in play, so they grow as far as they like; `savePlayer` wraps them into the two words, and the character comes back from the save dead. | Yes, as it stands: faithful mode wraps on the save rather than on the arithmetic, which is the gap above. |
+| **Hit points and their maximum**, 0x31 and 0x33, signed words | Both live in words in the data segment, so passing 32,767 reads as a negative number, and `movecontrol`'s test at 2000:c474 finds hit points below zero and ends the game. A character who heals past the limit dies of it. | Plain numbers in play, so they grow as far as they like; `savePlayer` wraps them into the two words, and the character comes back from the save dead. | Yes, as it stands: faithful mode wraps on the save rather than on the arithmetic, which is the gap above. **Endless lifts this**: the real numbers go beside the record and the bytes get a copy brought back inside the words. |
 | **Spell points and their maximum**, 0x35 and 0x39, 32-bit floats | These are the only two numbers of the record the game keeps as floats. There is no word to overflow; whole numbers stay exact to 16,777,216. | The same float fields, written back by `savePlayer` unchanged. | Yes. There is nothing to lift: a character's maximum grows by at most a few dozen a level and the level count stops at 1000, so spell points are nowhere near where a float loses whole numbers. |
 | **Experience**, 0x7a4, a 64-bit float | The one double in the record. `exp_value` (exe 3000:a0fa) is what could make it useless rather than the field: it stops counting a monster's level at 130. | The same double. The cap is a rule (`GameRules.experienceCap`). | Yes. The endless rules already raise the cap to 3407, the level where `5 * 1.23 ** level` stops being a number a double holds. |
 | **Experience level**, 0x7ac, a signed word | `gain_level` counts up from zero and gives up at 1000, so the level never approaches the word. | The same loop (`gainLevel`, `src/lib/game/port/levels.ts`). | Yes, and nothing to lift. |
@@ -145,3 +145,25 @@ numbers alone.
 | **Hit points**, the slot's two bytes | `stock_level` (exe 2000:671e) caps a roll at 32,000, and the pair is read back unsigned, so the cap keeps the word out of trouble with room to spare. | `stockedHp` (`src/lib/bestiary/roll.ts`) caps at `GameRules.monsterHpMax`. | Yes: the faithful rules answer 32,000. **Endless lifts it** to the largest whole number a double holds, since the port writes no monster record for the cap to protect. |
 | **The stored level**, the slot's sixth byte | The jitter is done on the byte itself, so it counts round at 256; the byte is then read unsigned and a level over 210 is put back to 1 (exe 2000:6fdf and 2000:7005). The base level is only written into the byte at all when it is under 221. | `nudgeLevel` counts the jitter round `GameRules.monsterLevelWrap` and puts a level over `GameRules.monsterLevelMax` back to 1. | Yes: the faithful rules answer 256 and 210. **Endless lifts both** — no wrap at all, and a top level as deep as the dungeon goes. |
 | **The attack timers**, `Game.monsterTimers` | Seconds until each slot's next swing, a word in the data segment. | An `Int16Array`, which is the same word. | Yes, and nothing to lift: the values are a handful of seconds. |
+
+### What endless lifts, and how
+
+Three of these are lifted, and they are lifted two different ways.
+
+**A monster's numbers are lifted by the rules**, because a monster only ever lives in memory here.
+`GameRules` carries `monsterHpMax` and `monsterLevelWrap` beside the `monsterLevelMax` it already
+had. The faithful rules answer 32,000, 256 and 210, which is exactly what the executable's own
+tables answer; the endless rules answer numbers nothing is ever folded back by, so a monster of
+floor 4,000 stands at the level and the hit points that floor calls for.
+
+**The character's hit points are lifted by the state beside the record**, because the record has
+to stay a record. An endless character's hit points and maximum go into `KeptEndlessState`
+whenever they have grown past what the record's two words hold, and the bytes get a copy brought
+back inside them (`clampedToRecord`). The file is still a save Dungeons of the Unforgiven would
+load and make sense of — it shows a character pegged at 32,767 hit points. When the character is
+picked up again the state's numbers are put back over the record's, so the sitting carries on with
+what the character really has. A replay carries the same state from sitting to sitting, so a run
+verified on the server arrives at the same numbers the player saw.
+
+Nothing else is lifted. The byte item counts are the limit an endless character meets first, and
+lifting them the same way would be the obvious next step.

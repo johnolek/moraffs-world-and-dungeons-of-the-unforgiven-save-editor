@@ -379,6 +379,11 @@ describe('saving', () => {
   });
 });
 
+/** The largest number the record's two hit point fields hold, they being signed words, and a
+ *  number of hit points past it. */
+const RECORD_HP_MAX = 32767;
+const DEEP_HP = 40000;
+
 describe('a character playing the endless dungeon', () => {
   /** The world every endless character is rolled into for now. */
   const WORLD = ENDLESS_WORLD_SEED;
@@ -436,6 +441,55 @@ describe('a character playing the endless dungeon', () => {
     session.game.rules.keys.take(session.game.pc, DEEP_FLOOR);
     session.save();
     expect(session.game.rules.keys.flag(session.game.pc, DEEP_FLOOR)).toBe(1);
+  });
+
+  it('is picked up with the hit points it had, past what the record holds', () => {
+    const kept = store();
+    const file: CharacterFile = { ...characterFile(), endless: { seed: WORLD, kept } };
+    const session = startGame(file, new BorlandRng(3));
+    session.game.pc.hp = DEEP_HP;
+    session.game.pc.maxHp = DEEP_HP;
+
+    session.save();
+
+    // The bytes are still a save the 1993 game would load: the checksum is right and both
+    // numbers are inside the words the record keeps them in.
+    expect(parseSave(file.bytes).checksumOk).toBe(true);
+    expect(loadPlayer(file.bytes).hp).toBe(RECORD_HP_MAX);
+    expect(loadPlayer(file.bytes).maxHp).toBe(RECORD_HP_MAX);
+    expect(kept.kept).toMatchObject({ hp: DEEP_HP, maxHp: DEEP_HP });
+
+    const tomorrow = startGame({ ...file, endless: { seed: WORLD, kept } }, new BorlandRng(3));
+    expect(tomorrow.game.pc.hp).toBe(DEEP_HP);
+    expect(tomorrow.game.pc.maxHp).toBe(DEEP_HP);
+  });
+
+  it('keeps nothing beside the record for a character the record can hold', () => {
+    const kept = store();
+    const session = endlessGame(kept);
+    session.game.pc.hp = RECORD_HP_MAX;
+
+    session.save();
+
+    expect(kept.kept?.hp).toBeUndefined();
+  });
+});
+
+describe('a faithful character with more hit points than the record holds', () => {
+  /**
+   * Nothing catches this, and nothing here changes that. The original would have killed the
+   * character at the blow that took them past the word; the port lets the number grow and narrows
+   * it only when the record is written, which is the gap `dotu-tools/docs/FAITHFUL-GAPS.md` ends
+   * with. Only an endless character is lifted out of it.
+   */
+  it('still comes back from the record wrapped, the way it always has', () => {
+    const file = characterFile();
+    const session = startGame(file, new BorlandRng(3));
+    session.game.pc.hp = DEEP_HP;
+
+    session.save();
+
+    expect(loadPlayer(file.bytes).hp).toBeLessThan(0);
   });
 });
 

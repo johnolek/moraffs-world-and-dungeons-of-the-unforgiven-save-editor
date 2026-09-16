@@ -1,6 +1,11 @@
 import { bundledDungeon } from '../game/dungeon';
 import { endlessRules } from '../game/endless/rules';
-import { keptEndlessState, restoreEndlessState, type EndlessStore } from '../game/endless/state';
+import {
+  clampedToRecord,
+  keptEndlessState,
+  restoreEndlessState,
+  type EndlessStore,
+} from '../game/endless/state';
 import { attackTiming, engagementTiming } from '../game/port/combat';
 import { sectionNumber, tabletMessage, townTablet } from '../game/port/hints';
 import { checkDeath } from '../game/port/kills';
@@ -735,9 +740,17 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     return loadPlayer(bytes);
   }
 
-  /** save_player (exe 2000:79ad): the character back into the record it came from. */
+  /**
+   * save_player (exe 2000:79ad): the character back into the record it came from.
+   *
+   * An endless character can have more hit points than the record's two signed 16-bit fields
+   * hold, and the bytes have to stay a save the 1993 game would load, so what goes into them is a
+   * copy with those two brought back inside the fields. The real numbers go beside the record in
+   * {@link save}.
+   */
   protected override writeRecord(): Uint8Array<ArrayBuffer> {
-    return savePlayer(this.game.pc, this.file.bytes);
+    const pc = this.endless === null ? this.game.pc : clampedToRecord(this.game.pc);
+    return savePlayer(pc, this.file.bytes);
   }
 
   /**
