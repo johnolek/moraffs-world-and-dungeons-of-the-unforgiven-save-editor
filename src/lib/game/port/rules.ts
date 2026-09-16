@@ -1,5 +1,5 @@
 import data from '../dotu-data.json';
-import { sectionOf } from '../dotu-files.js';
+import { bossIndex, sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
 import { sectionPictures, type SectionPictures } from './pictures';
 import type { MonsterKind, PlayerCharacter } from './state';
@@ -32,6 +32,8 @@ export interface GameRules {
   readonly experienceCap: number;
   /** The trap door keys the character carries. */
   readonly keys: TrapDoorKeys;
+  /** Where each section's Shadow boss was last put down. */
+  readonly bossSquares: BossSquares;
   /** The level the monsters of a floor are rolled around. */
   monsterLevel(module: number, floor: number): number;
   /** The highest level a stocked monster may be nudged to; one nudged past it is put back to 1. */
@@ -63,6 +65,27 @@ export interface TrapDoorKeys {
   take(pc: PlayerCharacter, floor: number): void;
 }
 
+/** The square a Shadow boss stands on. Both zero is a boss who has never been put down, which is
+ *  how stock_level tells a first placement from a later one. */
+export interface BossSquare {
+  x: number;
+  y: number;
+}
+
+/**
+ * Where the square each section's Shadow boss was last put down on is kept.
+ *
+ * The record keeps eight per module at 0x855 and 0x8a5, of which the game uses four, one per
+ * section. Rules with more sections than the twenty have to put the rest somewhere else, so
+ * stock_level goes through here for both the read and the write.
+ */
+export interface BossSquares {
+  /** Where this section's Shadow boss was last put down. */
+  of(pc: PlayerCharacter, section: number): BossSquare;
+  /** He has just been put down again. */
+  remember(pc: PlayerCharacter, section: number, square: BossSquare): void;
+}
+
 /** Where a section sits in the dungeon, which is what a floor is stocked from. */
 export interface SectionPlace {
   /** The module the section belongs to, 0 to 4, the way the port counts modules. */
@@ -88,7 +111,8 @@ type GameData = typeof data;
  * to a module and puts each section's Shadow boss on the last of its floors, and
  * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005).
  * `sectionSource` is every section's own number: the game has a row of MD.BIN for each of the
- * twenty, so none of them borrows another's.
+ * twenty, so none of them borrows another's. `keys` and `bossSquares` are the two tables of the
+ * character record that a dungeon deeper than the game's own would run off the end of.
  */
 export function faithfulRules(data: GameData): GameRules {
   return {
@@ -99,6 +123,7 @@ export function faithfulRules(data: GameData): GameRules {
     monsterKinds: (section) => sectionMonsterKinds(data, section),
     experienceCap: data.constants.expValueLevelCap,
     keys: RECORD_KEYS,
+    bossSquares: RECORD_BOSS_SQUARES,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
     monsterLevelMax: data.constants.monsterLevelMax,
     pictureFiles: sectionPictures,
@@ -128,6 +153,27 @@ const RECORD_KEYS: TrapDoorKeys = {
     pc.keys[keyIndex(floor)] = 1;
   },
 };
+
+/**
+ * The boss squares as the game itself keeps them: the record's own table, indexed by the module
+ * and the section's place among that module's four (`bossIndex`, exe: the module times eight
+ * plus section_number2).
+ */
+const RECORD_BOSS_SQUARES: BossSquares = {
+  of: (pc, section) => {
+    const index = recordBossIndex(pc, section);
+    return { x: pc.bossX[index], y: pc.bossY[index] };
+  },
+  remember: (pc, section, square) => {
+    const index = recordBossIndex(pc, section);
+    pc.bossX[index] = square.x;
+    pc.bossY[index] = square.y;
+  },
+};
+
+function recordBossIndex(pc: PlayerCharacter, section: number): number {
+  return bossIndex(pc.module, (section - 1) % 4);
+}
 
 /** The section's row of `dotu-data.json`, which numbers modules from 1 where the port numbers
  *  them from 0. `section` is 1 to 20. */

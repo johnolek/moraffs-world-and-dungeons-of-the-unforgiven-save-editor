@@ -1,4 +1,3 @@
-import { bossIndex } from '../game/dotu-files.js';
 import type { Rng } from '../game/port/rng';
 import type { Game, Monster } from '../game/port/state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from '../game/port/state';
@@ -50,24 +49,14 @@ export function monsterIdOf(type: number, section: number): string {
 export const BOSS_KIND = BUILTIN_KINDS;
 
 /**
- * Where a floor's Shadow boss has his square remembered: `bossIndex` (exe: the module times
- * eight plus section_number2, the section's own place among the module's four).
- */
-function bossSquareIndex(game: Game, level: number): number {
-  const module = game.pc.module;
-  return bossIndex(module, (game.rules.sectionOf(module, level) - 1) % 4);
-}
-
-/**
  * stock_level (exe 2000:671e, unf.c "stock_level"): the square the Shadow boss has just been put
- * down on goes back into the character record, which is where the next roll of his floor puts
- * him within seven squares of. A roll that did not place a boss leaves the record alone.
+ * down on is written back where the rules keep it, which is where the next roll of his floor puts
+ * him within seven squares of. A roll that did not place a boss leaves it alone.
  */
-function rememberBossSquare(game: Game, index: number): void {
+function rememberBossSquare(game: Game, section: number): void {
   const boss = game.monsters[0];
   if (boss.type !== BOSS_KIND) return;
-  game.pc.bossX[index] = boss.x;
-  game.pc.bossY[index] = boss.y;
+  game.rules.bossSquares.remember(game.pc, section, { x: boss.x, y: boss.y });
 }
 
 /** One of the game's 145 monster slots, empty. */
@@ -141,7 +130,7 @@ export class FloorMonsters {
       // The player is on the grid before the roll, so nothing is stocked on top of them.
       setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
       if (level !== 0) {
-        const index = bossSquareIndex(game, level);
+        const section = game.rules.sectionOf(game.pc.module, level);
         const stocked = stockFloor(
           game.rules,
           rows,
@@ -150,12 +139,12 @@ export class FloorMonsters {
           fractions(rng),
           [squareIndex(game.pc.x, game.pc.y)],
           game.pc.objective[game.pc.module],
-          { x: game.pc.bossX[index], y: game.pc.bossY[index] },
+          game.rules.bossSquares.of(game.pc, section),
           clockedStocking(game, rng),
         );
         fill(table.monsters, stocked);
         for (const monster of stocked) table.fullHp[monster.slot] = monster.hp;
-        rememberBossSquare(game, index);
+        rememberBossSquare(game, section);
       }
     }
     for (let slot = 0; slot < table.monsters.length; slot++) {

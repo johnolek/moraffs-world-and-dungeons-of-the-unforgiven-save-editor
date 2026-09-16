@@ -1,11 +1,13 @@
 import { allMonsters, isPuffball, type Monster } from '../bestiary/monsters';
 import { renderMonster } from '../bestiary/pictures';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
-import { FAITHFUL_RULES, type GameRules, type SectionPlace } from '../game/port/rules';
+import { FAITHFUL_RULES, type BossSquare, type GameRules, type SectionPlace } from '../game/port/rules';
 import { sectionInfo } from '../game/sections';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
 import { isOnMap, type MapArea } from './area';
 import type { MapSquare, MapStocking, StockedKind } from './game';
+
+export type { BossSquare };
 
 /** Monsters the game keeps for one floor, boss included (RE notes 4.1). */
 export const MONSTER_SLOTS = 145;
@@ -31,15 +33,6 @@ const BOSS_AREA_SIZE = 50;
  *  on each axis. */
 const BOSS_STEP_SIZE = 15;
 const BOSS_STEP_BACK = 7;
-
-/**
- * The square a section's Shadow boss was last put down on, which the character record keeps at
- * `bossX` and `bossY`. A boss the game has never placed has 0 in both.
- */
-export interface BossSquare {
-  x: number;
-  y: number;
-}
 
 /** A boss nobody has ever put down, which is how the map explorer asks for every roll: it has
  *  no character, so it has nothing to remember. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import data from '../dotu-data.json';
-import { sectionOf } from '../dotu-files.js';
+import { bossIndex, sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
 import { sectionInfo } from '../sections';
 import { BOTTOM_LEVEL } from '../unfmap.js';
@@ -88,6 +88,16 @@ describe('the faithful rules', () => {
       expect(rules.keys.foundOn(floor), `floor ${floor}`).toBe(false);
     }
     for (const floor of [4, 5, 100, 178]) expect(rules.keys.foundOn(floor), `floor ${floor}`).toBe(true);
+  });
+
+  it("keeps a Shadow boss's square in the record, where bossIndex puts it", () => {
+    const pc = newGame({ pc: { module: 2 } }).pc;
+    const section = 11;
+    expect(rules.bossSquares.of(pc, section)).toEqual({ x: 0, y: 0 });
+    rules.bossSquares.remember(pc, section, { x: 31, y: 44 });
+    const index = bossIndex(pc.module, (section - 1) % 4);
+    expect([pc.bossX[index], pc.bossY[index]]).toEqual([31, 44]);
+    expect(rules.bossSquares.of(pc, section)).toEqual({ x: 31, y: 44 });
   });
 
   it('stops paying for a monster where exp_value stops', () => {
