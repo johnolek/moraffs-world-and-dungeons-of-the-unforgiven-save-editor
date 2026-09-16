@@ -234,6 +234,13 @@ describe('streaming a run over HTTP', () => {
     expect(Object.keys(run.verdict ?? {})).not.toContain('journal');
   });
 
+  it('refuses keys for a character it has seen die', async () => {
+    const response = await send(MINE, batch({ sequence: 2, inputs: [107], pressed: 1 }));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'That character has already died.', because: 'dead' });
+  });
+
   it("hands a signed-in device the player's whole roster", async () => {
     const response = await fetch(`${origin}/players/me/characters`, {
       headers: { Authorization: `Bearer ${MY_OTHER}` },

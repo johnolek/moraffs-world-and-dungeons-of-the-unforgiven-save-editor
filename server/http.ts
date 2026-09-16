@@ -75,6 +75,7 @@ const NO_SUCH_SITTING = 'That run has no such sitting.';
 const CHANGED_RESEND = 'That stretch of the run arrived before, holding something else.';
 const MOVED_ON = 'That character has been played on another device since.';
 const BEING_PLAYED = 'That character is being played on another device.';
+const ALREADY_DEAD = 'That character has already died.';
 const NO_SUCH_RUN = 'No such run.';
 const NO_SUCH_CHARACTER = 'No character of yours has that name here.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
@@ -910,6 +911,7 @@ function whyTheBatchWasRefused(because: BatchRefusal): { status: number; error: 
   if (because === 'changed-resend') return { status: 409, error: CHANGED_RESEND };
   if (because === 'moved-on') return { status: 409, error: MOVED_ON };
   if (because === 'leased') return { status: 409, error: BEING_PLAYED };
+  if (because === 'dead') return { status: 409, error: ALREADY_DEAD };
   return { status: 400, error: NO_SUCH_SITTING };
 }
 

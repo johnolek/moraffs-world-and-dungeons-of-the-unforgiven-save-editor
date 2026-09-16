@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   batchesOf,
+  endRun,
   leasedElsewhere,
   leaseOn,
   LEASE_MS,
@@ -377,6 +378,89 @@ describe('the character a batch carries', () => {
     await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: undefined }), 1000);
 
     expect((await saved())[0].record).toBeNull();
+  });
+});
+
+describe('a run that has already ended', () => {
+  let sql: Sql;
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  /** A sitting played to a death, which is where the site stops the game. */
+  async function died(): Promise<void> {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107], pressed: 1, ending: true }), 6000);
+    await endRun(sql, CHARACTER, 'death');
+  }
+
+  it('refuses keys for a character that has died', async () => {
+    await died();
+
+    const after = await takeBatch(sql, CHARACTER, ME, batch({ sequence: 2, inputs: [108] }), 11000);
+
+    expect(after).toEqual({ taken: false, because: 'dead' });
+    expect((await batchesOf(sql, CHARACTER)).flatMap((kept) => kept.inputs)).toEqual([104, 106, 107]);
+  });
+
+  it('refuses a fresh sitting of a character that has died', async () => {
+    await died();
+
+    const again = await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({ sessionIndex: 1, inputs: [108], session: { ...header, startedAt: '2026-09-09T14:00:00.000Z' } }),
+      60000,
+    );
+
+    expect(again).toEqual({ taken: false, because: 'dead' });
+    expect(await sessionsOf(sql, CHARACTER)).toHaveLength(1);
+  });
+
+  it('takes the batch that ended the run when it arrives again', async () => {
+    await died();
+
+    const resent = await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({ sequence: 1, inputs: [107], pressed: 1, ending: true }),
+      11000,
+    );
+
+    expect(resent).toEqual({ taken: true, received: 1, ending: true });
+    expect((await batchesOf(sql, CHARACTER)).flatMap((kept) => kept.inputs)).toEqual([104, 106, 107]);
+  });
+
+  it('takes the sittings before this one again, since they add nothing', async () => {
+    await died();
+
+    const caught = await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({ inputs: [104, 106, 107], pressed: 0, session: header }),
+      11000,
+    );
+
+    expect(caught).toEqual({ taken: true, received: 0, ending: false });
+  });
+
+  it('plays a character that won on, since winning is not the end of it', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107], pressed: 1, ending: true }), 6000);
+    await endRun(sql, CHARACTER, 'win');
+
+    const after = await takeBatch(sql, CHARACTER, ME, batch({ sequence: 2, inputs: [108], pressed: 1 }), 11000);
+
+    expect(after).toEqual({ taken: true, received: 2, ending: false });
   });
 });
 

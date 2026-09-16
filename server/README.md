@@ -160,7 +160,7 @@ how long the run took, and the stamps are an answer the server owns.
 
 | Endpoint                      | What it does                                                     |
 | ----------------------------- | ---------------------------------------------------------------- |
-| `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player, is being played on another device, has been played on somewhere else since, or a sequence comes back holding another stretch, 400 when the body is not a batch or names a sitting the server was never told about. A refusal carries `because` beside the words, which is what the site acts on. |
+| `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player, is being played on another device, has been played on somewhere else since, has already died, or a sequence comes back holding another stretch, 400 when the body is not a batch or names a sitting the server was never told about. A refusal carries `because` beside the words, which is what the site acts on. |
 | `GET /runs/:id`               | The character, who played it, the sittings it was played in with the engine build each names, how it ended, the verdict on it with the milestones the replay reached, the journal the replay wrote with how far the run had got by the end of it, and whether another device of the player's is playing it now. The journal is the verdict's for a run that has ended and the last snapshot's for a character still being played, and it goes out once rather than inside the verdict as well. A run a replay has passed is anybody's to read: that is a verified verdict for a run that has ended, and a verified snapshot for one still being played, which is what a row on a board of the living opens. A run nothing has been checked about, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
 
 `:id` is the id of a roster entry in somebody's browser. The character is made
@@ -190,6 +190,13 @@ their own after them. Anything else about a sitting already here — another
 seed, another moment, keys that do not go on from the ones here — is a second
 run of the same character played somewhere else, and is refused as having moved
 on.
+
+A batch adding keys to a character that has died is refused 409 `dead`, and
+nothing about the run changes. The site stops the game at a death, so keys
+arriving after one come from a page that got past that check, and the run has
+had its verdict passed on it already. The batch that ended the run arriving
+again adds no keys and is taken as any other stretch already here is. Winning is
+not an ending of this kind: a character that won is played on.
 
 ### The character, and the lease
 

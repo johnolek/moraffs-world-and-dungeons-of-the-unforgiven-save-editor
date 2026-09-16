@@ -22,7 +22,7 @@ import type { Queries, Sql } from './sql';
 export type { BatchClaims, BatchSession, CharacterSave, RunBatch };
 
 /** Why a batch was not taken, which is what decides the words and the status the site is sent. */
-export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend' | 'moved-on' | 'leased';
+export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend' | 'moved-on' | 'leased' | 'dead';
 
 /**
  * How long a batch leases the character to the device that sent it.
@@ -126,6 +126,14 @@ export async function takeBatch(
     // device carried the character on while this one was away.
     if (adding.inputs.length > 0 && newest !== null && batch.sessionIndex < newest) {
       return { taken: false, because: 'moved-on' };
+    }
+    // A character that died is played no further. The site stops the game at a death, so keys
+    // arriving after one come from a page that got past that, and taking them would carry a run
+    // on past the point the server has already passed a verdict on. Winning is not an ending of
+    // this kind: a character that won is played on. The batch that ended the run arriving again
+    // adds no keys and is taken as any other stretch already here is.
+    if (character?.outcome === 'death' && adding.append && adding.inputs.length > 0) {
+      return { taken: false, because: 'dead' };
     }
 
     if (character === null) await startBatchCharacter(queries, characterId, sender.player, batch);
