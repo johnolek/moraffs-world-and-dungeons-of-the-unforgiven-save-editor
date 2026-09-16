@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Rng } from '../game/port/rng';
-import { inTheTown, press, settle, standingOn, teleporterSquare } from './battle.test-support';
-import type { GameSession } from './engine';
+import { characterFile, inTheTown, press, settle, standingOn, teleporterSquare, townSquare } from './battle.test-support';
+import { runMoveControl, startGame, type GameSession } from './engine';
 import { KEY } from './keys';
 import type { PlayMode } from './mode';
 import { PLAQUE_DELAY_MS } from './plaque';
+import { RunRecorder, runLogOf, type RunSession } from './run';
+import { verifyRun } from './verify';
 
 /**
  * The pauses Dungeons of the Unforgiven holds a screen for, against the mode the game is being
@@ -13,7 +15,8 @@ import { PLAQUE_DELAY_MS } from './plaque';
  *
  * The original reads no key while one of these is running, so a player at it could not hurry one
  * along. Faithful and speedrun sit through them here and debug cuts them short, and either way
- * the key itself is taken rather than thrown away.
+ * the key itself is taken rather than thrown away, which is what the last test of the file is
+ * about: the same keys make the same run whichever mode it was played in.
  */
 
 const sleep = (ms: number): Promise<unknown> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -129,5 +132,61 @@ describe('the blank before the HIT ANY KEY plaque', () => {
 
     expect(session.plaque).toBeNull();
     session.finish();
+  });
+});
+
+describe('a run played in one mode and in another', () => {
+  /** Four steps around the town and a look at the character sheet, which is a box with a plaque
+   *  of its own. */
+  const KEYS = [KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp, KEY.viewStats, KEY.escape, KEY.arrowUp];
+
+  /**
+   * Press a key and wait until the game has read it, which is how a player plays: the key goes in
+   * and the game takes it when it is ready for one. A mode that sits through the game's pauses
+   * takes it when the pause is out and one that cuts them short takes it at once, so the same
+   * keys reach the game either way.
+   */
+  async function pressWhenRead(session: GameSession, run: RunRecorder, key: number): Promise<void> {
+    const before = run.log().inputs.length;
+    session.press(key);
+    for (let waited = 0; waited < 4000 && run.log().inputs.length === before; waited += 10) {
+      await sleep(10);
+    }
+    await settle();
+  }
+
+  async function playedIn(mode: PlayMode): Promise<RunSession> {
+    const file = characterFile({ level: 0, dir: 0, ...townSquare(), lev: 20, str: 60 });
+    const run = new RunRecorder({
+      game: 'unforgiven',
+      name: 'BRAWLER',
+      record: file.bytes,
+      seed: 12345,
+      startedAt: '2026-09-07T00:00:00.000Z',
+      mode,
+    });
+    const session = startGame(file, run.rng, run);
+    void runMoveControl(session);
+    session.mode = mode;
+    await settle();
+    if (session.view().tablet) await pressWhenRead(session, run, KEY.escape);
+    for (const key of KEYS) await pressWhenRead(session, run, key);
+    session.save();
+    session.finish();
+    return run.log();
+  }
+
+  it('is the same run, and gives the same verdict', async () => {
+    const faithful = await playedIn('faithful');
+    const debug = await playedIn('debug');
+
+    expect(faithful.inputs).toEqual(debug.inputs);
+    expect(faithful.actions).toBe(debug.actions);
+    expect(faithful.record).toBe(debug.record);
+    expect(faithful.milestones).toEqual(debug.milestones);
+    const verdicts = await Promise.all([faithful, debug].map((log) => verifyRun(runLogOf([log]))));
+    expect(verdicts[0].status).toBe('verified');
+    expect(verdicts[0].replayed).toEqual(verdicts[1].replayed);
+    expect(verdicts[0].ending?.record).toBe(verdicts[1].ending?.record);
   });
 });
