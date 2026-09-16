@@ -113,6 +113,11 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     section <= LAST_OWN_SECTION ? section : borrowedSection(seed, section);
 
   return {
+    // The map generator reads the bottom three ways, and one of them has a consequence worth
+    // knowing about: `trapdoor` puts a door on a square whenever the floor it rolls lies in the
+    // upper four fifths of the module, and the deepest floor it can ever roll is 11995. A module
+    // 32767 floors deep therefore has a trap door on nearly every square that has no ladder,
+    // where Module V as the game ships it has about twenty per floor.
     bottomLevel: (module) => (module === endlessModule ? ENDLESS_BOTTOM : faithful.bottomLevel(module)),
     sectionOf,
     sectionPlace,
