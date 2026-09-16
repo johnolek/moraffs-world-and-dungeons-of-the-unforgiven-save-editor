@@ -7,34 +7,44 @@ import type { Announcement } from '../../../server/announcing';
 import { ANNOUNCED_FINDS } from '../../../server/boards';
 
 /**
- * What an announcement says.
+ * The character and the player, which every announcement sentence begins with.
  *
- * Every sentence names the character and, in brackets, the player: an announcement is read on its
- * own in a feed of other people's runs, so it has to say whose it is without anything around it.
+ * An announcement is read on its own in a feed of other people's runs, so it has to say whose it
+ * is without anything around it. It stands apart from the rest of the sentence because the feed
+ * draws it as a link to that character's run and the rest as plain words.
  */
-export function announcementWords(announcement: Announcement): string {
-  const who = `${announcement.name} (${announcement.player})`;
+export function announcementWho(announcement: Announcement): string {
+  return `${announcement.name} (${announcement.player})`;
+}
+
+/** What an announcement says happened, with no character named in front of it. */
+export function announcementDid(announcement: Announcement): string {
   switch (announcement.kind) {
     case 'win':
-      return `${who} won ${gameName(announcement.game)} in ${actionWords(announcement.actions)}`;
+      return `won ${gameName(announcement.game)} in ${actionWords(announcement.actions)}`;
     case 'death':
-      return `${who} died ${whereWords(announcement)} at level ${announcement.level}`;
+      return `died ${whereWords(announcement)} at level ${announcement.level}`;
     case 'boss':
       // The games count their bosses from zero and their players do not.
-      return `${who} beat Boss ${announcement.which + 1}`;
+      return `beat Boss ${announcement.which + 1}`;
     case 'shadow':
-      return `${who} killed the Shadow on floor ${announcement.which}`;
+      return `killed the Shadow on floor ${announcement.which}`;
     case 'kills':
-      return `${who} has killed ${announcement.which} monsters`;
+      return `has killed ${announcement.which} monsters`;
     case 'find':
-      return `${who} found a ${ANNOUNCED_FINDS[announcement.which]}`;
+      return `found a ${ANNOUNCED_FINDS[announcement.which]}`;
     case 'dungeon':
-      return `${who} reached ${dungeonName(announcement.game, announcement.which)}`;
+      return `reached ${dungeonName(announcement.game, announcement.which)}`;
     case 'level':
-      return `${who} reached level ${announcement.which}`;
+      return `reached level ${announcement.which}`;
     case 'floor':
-      return `${who} reached floor ${announcement.which}`;
+      return `reached floor ${announcement.which}`;
   }
+}
+
+/** The whole of what an announcement says, for the places that draw it as one piece of text. */
+export function announcementWords(announcement: Announcement): string {
+  return `${announcementWho(announcement)} ${announcementDid(announcement)}`;
 }
 
 /**
