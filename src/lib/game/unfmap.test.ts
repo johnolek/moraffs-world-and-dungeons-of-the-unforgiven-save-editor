@@ -4,7 +4,7 @@ import { bundledDungeon } from './dungeon';
 import { floorBounds, summarizeFloor, type FloorSummary } from './floor-summary';
 import { MAP_ROWS } from '../map/area';
 import { floorsOf, UNFORGIVEN_MAP } from '../map/game';
-import { BOTTOM_LEVEL, HEIGHT, WIDTH, render, type Dungeon, type Square } from './unfmap.js';
+import { BOTTOM_LEVEL, HEIGHT, WIDTH, render, trapdoorReach, type Dungeon, type Square, type TrapdoorReach } from './unfmap.js';
 
 // Both fixtures were produced by the verified generator (dotu-tools/reference/make_fixtures.mjs).
 // A single differing character means the port is wrong.
@@ -49,6 +49,41 @@ describe('a module told where its bottom is', () => {
     expect(deeper.some((square, i) => square.ladder > 0 && asIs[i].ladder === 0)).toBe(true);
     expect(deeper.some((square, i) => square.trapdoor > asIs[i].trapdoor)).toBe(true);
     expect(deeper.some((square, i) => square.chute > 0 && asIs[i].chute === 0)).toBe(true);
+  });
+});
+
+describe('a floor told how far its trap doors lead', () => {
+  const MODULE_V = 4;
+  const FLOOR = 100;
+  const BOTTOM = BOTTOM_LEVEL[MODULE_V];
+
+  const doorsOf = (reach?: TrapdoorReach): number[] =>
+    bundledDungeon
+      .floor(FLOOR, MODULE_V, true, BOTTOM, reach)
+      .flat()
+      .map((square) => square.trapdoor);
+
+  it('reaches four fifths of the way down the module when nobody moves it', () => {
+    expect(trapdoorReach(BOTTOM)).toEqual({ limit: 84, offset: 0 });
+    expect(trapdoorReach(BOTTOM_LEVEL[0])).toEqual({ limit: 20, offset: 0 });
+  });
+
+  it('generates the floor it always did when told the reach it already has', () => {
+    expect(bundledDungeon.floor(FLOOR, MODULE_V, true, BOTTOM, trapdoorReach(BOTTOM))).toEqual(
+      bundledDungeon.floor(FLOOR, MODULE_V),
+    );
+  });
+
+  it('leads every door the offset deeper, and leaves the squares that have one alone', () => {
+    const OFFSET = 200;
+    const moved = doorsOf({ limit: trapdoorReach(BOTTOM).limit, offset: OFFSET });
+    expect(moved).toEqual(doorsOf().map((floor) => (floor < 0 ? -1 : floor + OFFSET)));
+  });
+
+  it('refuses a door the offset lands on the floor it leads off', () => {
+    const moved = doorsOf({ limit: trapdoorReach(BOTTOM).limit, offset: 20 });
+    expect(doorsOf().includes(FLOOR - 20)).toBe(true);
+    expect(moved.includes(FLOOR)).toBe(false);
   });
 });
 

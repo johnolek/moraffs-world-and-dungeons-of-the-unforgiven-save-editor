@@ -45,6 +45,14 @@ export class BorlandRand {
   random(n) { return Math.trunc((this.rand() * n) / 0x8000); }
 }
 
+/** How far the trap doors of a floor lead: a roll of `limit` or more is no door, and `offset` is
+ *  added to the floor the roll names. The game's own, for a module `bottom` floors deep: the roll
+ *  names every fifth floor from 5 up, and a door is kept while it lands in the upper four fifths
+ *  of the module. */
+export function trapdoorReach(bottom) {
+  return { limit: Math.trunc(4 * bottom / 5), offset: 0 };
+}
+
 export class Dungeon {
   /** @param {Uint8Array} dwall  the 12,800 bytes of UNFDUNG.BIN */
   constructor(dwall) {
@@ -111,12 +119,14 @@ export class Dungeon {
   }
 
   /** trapdoor: destination floor (multiple of 5) or -1. Ladder squares are not checked by the game.
-   *  `bottom` is the deepest floor of the module, as in ladder(). */
-  trapdoor(x, y, level, dungeon, bottom = BOTTOM_LEVEL[dungeon]) {
+   *  `bottom` is the deepest floor of the module, as in ladder(); `reach` is how far the doors of
+   *  this floor lead, the module's own unless a caller moves it. */
+  trapdoor(x, y, level, dungeon, bottom = BOTTOM_LEVEL[dungeon], reach = trapdoorReach(bottom)) {
     const a = myrand(x, y, level, dungeon, 2400) * 5;
-    if (a < 5 || a >= Math.trunc(4 * bottom / 5)) return -1;
-    if (Math.trunc(a / 5) === Math.trunc(level / 5)) return -1;
-    return a;
+    if (a < 5 || a >= reach.limit) return -1;
+    const dest = a + reach.offset;
+    if (Math.trunc(dest / 5) === Math.trunc(level / 5)) return -1;
+    return dest;
   }
 
   /** detect_chute: floor the chute drops to, or `level` if this square has no (working) chute.
@@ -143,7 +153,7 @@ export class Dungeon {
   }
 
   /** Whole floor as rows[y][x] of {n,s,w,e,solid,ladder,chute,trapdoor,town}. */
-  floor(level, dungeon, teleporters = true, bottom = BOTTOM_LEVEL[dungeon]) {
+  floor(level, dungeon, teleporters = true, bottom = BOTTOM_LEVEL[dungeon], reach = trapdoorReach(bottom)) {
     const rows = [];
     for (let y = 0; y < HEIGHT; y++) {
       const row = [];
@@ -159,7 +169,7 @@ export class Dungeon {
             if (level === 0) {
               sq.town = this.townFeature(x, y, dungeon);
             } else {
-              sq.trapdoor = this.trapdoor(x, y, level, dungeon, bottom);
+              sq.trapdoor = this.trapdoor(x, y, level, dungeon, bottom, reach);
               const c = this.chute(x, y, level, dungeon, bottom);
               sq.chute = c !== level ? c : 0;
             }

@@ -31,6 +31,17 @@ export interface Square extends Sides {
 
 export function myrand(x: number, y: number, level: number, dungeon: number, rng: number): number;
 
+/** How far the trap doors of a floor lead. */
+export interface TrapdoorReach {
+  /** The roll names a floor; a floor of `limit` or more is no door at all. */
+  limit: number;
+  /** Added to the floor the roll names, which is where the door leads. */
+  offset: number;
+}
+
+/** The reach the game gives the doors of a module `bottom` floors deep. */
+export function trapdoorReach(bottom: number): TrapdoorReach;
+
 export class BorlandRand {
   constructor(seed: number);
   rand(): number;
@@ -51,12 +62,13 @@ export class Dungeon {
    *    unless a caller moves it. */
   ladder(x: number, y: number, level: number, dungeon: number, bottom?: number): number;
   townFeature(x: number, y: number, dungeon: number): number;
-  trapdoor(x: number, y: number, level: number, dungeon: number, bottom?: number): number;
+  /** @param reach how far this floor's doors lead; the module's own unless a caller moves it. */
+  trapdoor(x: number, y: number, level: number, dungeon: number, bottom?: number, reach?: TrapdoorReach): number;
   chute(x: number, y: number, level: number, dungeon: number, bottom?: number): number;
   /** The (x, y) every trap door to `level` lands on. */
   trapdoorDest(level: number, dungeon: number): [number, number];
   /** Whole floor as rows[y][x]. */
-  floor(level: number, dungeon: number, teleporters?: boolean, bottom?: number): Square[][];
+  floor(level: number, dungeon: number, teleporters?: boolean, bottom?: number, reach?: TrapdoorReach): Square[][];
 }
 
 /** ASCII rendering shared with unfmap.py, for cross-checking ports. */
