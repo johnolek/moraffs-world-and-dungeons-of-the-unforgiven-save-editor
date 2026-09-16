@@ -134,6 +134,29 @@ your wisdom outright, but it sets that monster's level to zero on the way, and t
 worked out from the level — so it pays almost nothing. It is a way out of a fight, not a way to
 grow.
 
+### What endless shows that the game does not
+
+An endless character is meant to be put down for a week and picked up again, often on another
+machine, and the 1993 game kept its bookkeeping to itself: a player who wanted to know how many
+charges were left on a wand wrote it on paper between sittings.
+
+So an endless character is shown that much, in a column beside the screen, whatever mode it is
+being played in:
+
+- the charges left on every wand, scroll and sheet of paper
+- the turns left on every spell that is running, and which spells with no timer are on
+- the poison and disease it is carrying
+- how long it has spent down here
+
+What it is not shown is anything about the dungeon. The monster in front of you has hit points you
+cannot see, the chance your next swing lands is not printed, the square underfoot does not say
+whether it holds a trap door, and nothing tells you how many monsters are alive on the floor or
+where the nearest of them is. Those are debug mode's, and endless is the game with no bottom
+rather than an easier game.
+
+Every endless character is shown exactly the same, so the endless board goes on comparing like
+with like.
+
 ## What the 1993 save cannot hold
 
 ### Where your real numbers live

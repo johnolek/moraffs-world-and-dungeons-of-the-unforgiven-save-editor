@@ -86,7 +86,12 @@ something the original does, a comment says so.
   them, with a row of a table apiece for the few numbers they differ over.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
   prints, beside the map, and the picture of the monster in front of the character, which the
-  map's heads-up display (`MapHud.svelte`) shows at the top of the map.
+  map's heads-up display (`MapHud.svelte`) shows at the top of the map. The panel holds two
+  sorts of number and asks about them separately (`panelVisible` and `dungeonNumbersVisible` in
+  `mode.ts`): what the game keeps about the character — its charges, its spell timers, its
+  ailments — which debug shows and an endless character is shown in any mode, and what the game
+  keeps about the dungeon — the engaged monster's hit points, the trap door odds, the floor's
+  monster census — which is debug's alone and is not even worked out otherwise.
   **`PortraitFrame.svelte`** is the box that picture sits in, which Moraff's World shares; each
   game hands its own picture in as a snippet.
 * **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`, `HudMonsterBar.svelte`** —
