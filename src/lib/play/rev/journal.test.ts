@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../game/port/rng';
 import { COLUMNS, ROWS, chuteLanding, townBuilding } from '../../game/revmap.js';
+import { revDropAllTheCoins } from './abandon';
 import { revMonsterAttack } from './attack';
 import { revFallDownAChute } from './chute';
 import { revDie } from './death';
@@ -342,6 +343,15 @@ describe('what the character carries', () => {
       { kind: 'potionWoreOff', potion: 'POTION OF SHIELDING' },
     ]);
     expect(lines(game)).toContain('The POTION OF SHIELDING wore off');
+  });
+
+  it('says how much treasure the A key threw away', async () => {
+    const pc = revCharacter({ treasure: 620 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([]));
+    keys.push('Y'.charCodeAt(0));
+    await revDropAllTheCoins(game, desk);
+    expect(pushed(game, 'treasureDropped')).toEqual([{ kind: 'treasureDropped', amount: 620 }]);
+    expect(lines(game)).toContain('Threw away 620 of treasure');
   });
 });
 

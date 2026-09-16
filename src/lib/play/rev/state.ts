@@ -64,6 +64,9 @@ export type RevEvent =
   /** The treasure a character walked into the bank with, turned into jewel pieces at face
    *  value (1000:22F7). */
   | { kind: 'treasureSold'; amount: number }
+  /** Every coin the character was carrying thrown away by the A key (1000:1918), which is how
+   *  they go quiet again without walking back to the bank. */
+  | { kind: 'treasureDropped'; amount: number }
   /**
    * One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
    * where the kinds a run counts as actions carry their numbers.

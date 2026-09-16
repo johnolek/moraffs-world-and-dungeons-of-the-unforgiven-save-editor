@@ -102,6 +102,8 @@ export function moraffsRevengeJournal(pushed: { kind: string }): string | null {
       return `Took ${event.amount} jewel pieces out of the bank`;
     case 'treasureSold':
       return `The bank turned ${event.amount} of treasure into jewel pieces`;
+    case 'treasureDropped':
+      return `Threw away ${event.amount} of treasure`;
     case 'fountainDrunk':
       return `Drank from the fountain of youth: generation ${event.generation}`;
     case 'raised':
