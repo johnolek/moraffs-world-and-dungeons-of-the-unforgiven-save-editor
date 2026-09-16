@@ -439,6 +439,15 @@ describe('verifying a run of the endless dungeon', () => {
     expect(elsewhere.journal[0].text).toBe('Came face to face with a Level 165 SHADOW WARRIOR');
   });
 
+  it('replays a log that names the mode and no world, which is what the first ones held', async () => {
+    const log = await endlessRun(ENDLESS_WORLD_SEED);
+    const older = { ...log, mode: 'endless', worldSeed: null };
+
+    const replayed = await replayRun(older);
+
+    expect(replayed.journal).toEqual((await replayRun(log)).journal);
+  });
+
   it('hands back what the character was carrying when the sitting ended', async () => {
     const [first] = await endlessChain();
 

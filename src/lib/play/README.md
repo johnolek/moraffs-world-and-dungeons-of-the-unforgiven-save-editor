@@ -148,7 +148,9 @@ played, so that a claimed ending can be checked by playing it again rather than 
   its monsters and its look from (`src/lib/game/endless/rules.ts`). It is one number for the
   whole run rather than something that happens in it, so it is a field of the session and not an
   input; a log written before it was recorded has no field and reads as the first world, which
-  was the only one there was.
+  was the only one there was. It is also what says a sitting was one of the endless dungeon's at
+  all: the mode beside it says how much of the game the tab was showing, and an endless character
+  that is on no board is shown it whichever way its player likes.
 * **The chain** — the sessions of a character's run, oldest first, each starting from the record
   the one before it left behind. The count of actions and the game's own clock run on through the
   lot, so leaving the game and playing the character again goes on from where the count stood

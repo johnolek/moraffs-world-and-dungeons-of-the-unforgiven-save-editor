@@ -106,7 +106,7 @@ async function playOneSitting(
     record: file.bytes,
     seed,
     startedAt,
-    mode: 'endless',
+    mode: 'faithful',
     leaderboard: 'endless',
     worldSeed: world,
     before: runTotals(before),

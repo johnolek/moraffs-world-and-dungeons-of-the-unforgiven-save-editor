@@ -8,7 +8,6 @@ import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/g
 import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { journalEntry, unforgivenJournal, type JournalEntry, type JournalWords } from './journal';
 import { runPlayLoop, type PlayLoopSession } from './loop';
-import type { PlayMode } from './mode';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
 import { moraffsWorldJournal } from './mw/journal';
 import { mwTurn } from './mw/keys';
@@ -46,9 +45,14 @@ import { TICKS_A_SECOND } from './sawtooth';
  *  finds. */
 export const RUN_LOG_VERSION = 3;
 
-/** The mode a sitting in the endless dungeon is written down as, which is what tells a replay
- *  which dungeon to play it in. */
-const ENDLESS_MODE: PlayMode = 'endless';
+/**
+ * The mode a sitting in the endless dungeon used to be written down as.
+ *
+ * What says a sitting was played in the endless dungeon is the world its log names
+ * ({@link RunSession.worldSeed}). This word was the answer before there was a world to name, and
+ * a log old enough to hold it is still replayed in the endless dungeon.
+ */
+const ENDLESS_MODE = 'endless';
 
 /** Which of the playable games a run was played in. */
 export type RunGame = PortedGameId;
@@ -306,6 +310,8 @@ export interface RunSession {
   /**
    * The number the endless world this sitting was played in is built from
    * (`src/lib/game/endless/rules.ts`), and null for a sitting played in the game's own dungeon.
+   * It is also what says which of the two a sitting was, the mode beside it being how much of the
+   * game was shown rather than which dungeon was played.
    *
    * The world decides which of the game's twenty sections each endless section borrows its
    * monsters and its look from, so a replay that guessed at it would stock the floors from
@@ -903,10 +909,11 @@ async function replayUnforgiven(
   carried: KeptEndlessState | null,
 ): Promise<RunReplay> {
   // A sitting played in the endless dungeon is replayed in it, or the floors it was played on
-  // would not be there at all. The world is the one its log names; a log written before the world
-  // was recorded names none, and every endless character rolled then was rolled into the first
-  // world.
-  const endless = recorded.mode === ENDLESS_MODE ? carriedEndlessState(carried) : null;
+  // would not be there at all. The world its log names is what says it was one; a log written
+  // before the world was recorded names the mode instead, and every endless character rolled then
+  // was rolled into the first world.
+  const inTheEndless = recorded.worldSeed !== null || recorded.mode === ENDLESS_MODE;
+  const endless = inTheEndless ? carriedEndlessState(carried) : null;
   const file: CharacterFile = {
     bytes: run.record.slice(),
     write(bytes) {
