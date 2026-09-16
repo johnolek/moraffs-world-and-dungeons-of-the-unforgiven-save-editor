@@ -182,3 +182,32 @@ export function whenWords(at: string | null): string {
   const when = new Date(at);
   return Number.isNaN(when.getTime()) ? at : when.toLocaleString();
 }
+
+/** How long ago something stops being counted in hours and days and is better said as the date it
+ *  happened on. */
+const AGO_LIMIT_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * How long ago something was said, for a place that shows one announcement and has no room for a
+ * date and a time.
+ *
+ * `now` is passed in rather than read here so that the answer is a function of its two moments:
+ * whatever shows this re-reads it on its own clock, and a test can name both.
+ *
+ * A moment further back than a week is shown as the date instead, since by then how many days ago
+ * it was is no longer what a reader wants. A moment in the future — the server's clock a little
+ * ahead of the reader's — reads as just now.
+ */
+export function agoWords(at: string, now: Date): string {
+  const when = new Date(at);
+  if (Number.isNaN(when.getTime())) return at;
+  const ago = now.getTime() - when.getTime();
+  if (ago >= AGO_LIMIT_MS) return when.toLocaleDateString();
+  const minutes = Math.floor(ago / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
