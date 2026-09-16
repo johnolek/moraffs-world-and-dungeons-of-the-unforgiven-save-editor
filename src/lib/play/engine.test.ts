@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseSave } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
+import { ENDLESS_BOTTOM, ENDLESS_WORLD_SEED } from '../game/endless/rules';
+import type { EndlessStore, KeptEndlessState } from '../game/endless/state';
 import { spellIndex } from '../game/port/inventory';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import { BATTLE_TEXT_COLOUR, messageLine } from '../game/port/screens';
@@ -374,6 +376,66 @@ describe('saving', () => {
     await settle();
     await press(session, KEY.escape);
     expect(parseSave(file.bytes).level).toBe(landing);
+  });
+});
+
+describe('a character playing the endless dungeon', () => {
+  /** The world every endless character is rolled into for now. */
+  const WORLD = ENDLESS_WORLD_SEED;
+  const MODULE_IV = 3;
+  /** The floor a trap door is opened with the key labelled 44, which is deeper than the record's
+   *  own flags reach. */
+  const DEEP_FLOOR = 220;
+  const DEEP_KEY = 44;
+  /** A section past the twenty the record keeps a boss square for. */
+  const ENDLESS_SECTION = 23;
+
+  /** Where the state is kept between sittings, as a test can read it. */
+  function store(kept: KeptEndlessState | null = null): EndlessStore & { kept: KeptEndlessState | null } {
+    return {
+      kept,
+      read() {
+        return this.kept;
+      },
+      write(state) {
+        this.kept = state;
+      },
+    };
+  }
+
+  function endlessGame(kept: EndlessStore | null = null): GameSession {
+    return startGame({ ...characterFile(), endless: { seed: WORLD, kept } }, new BorlandRng(3));
+  }
+
+  it('is played by rules that go on below the bottom of its module', () => {
+    expect(startGame(characterFile(), new BorlandRng(3)).game.rules.bottomLevel(MODULE_IV)).toBe(85);
+    expect(endlessGame().game.rules.bottomLevel(MODULE_IV)).toBe(ENDLESS_BOTTOM);
+  });
+
+  it('starts again carrying the keys and the bosses the last sitting left it', () => {
+    const kept = store({ keys: [DEEP_KEY], bossSquares: [{ section: ENDLESS_SECTION, x: 12, y: 34 }] });
+    const session = endlessGame(kept);
+    const rules = session.game.rules;
+    expect(rules.keys.flag(session.game.pc, DEEP_FLOOR)).toBe(1);
+    expect(rules.bossSquares.of(session.game.pc, ENDLESS_SECTION)).toEqual({ x: 12, y: 34 });
+  });
+
+  it('writes what it is carrying wherever it writes its record', () => {
+    const kept = store();
+    const session = endlessGame(kept);
+    session.game.rules.keys.take(session.game.pc, DEEP_FLOOR);
+    session.game.rules.bossSquares.remember(session.game.pc, ENDLESS_SECTION, { x: 12, y: 34 });
+
+    session.save();
+
+    expect(kept.kept).toEqual({ keys: [DEEP_KEY], bossSquares: [{ section: ENDLESS_SECTION, x: 12, y: 34 }] });
+  });
+
+  it('keeps nothing anywhere for a game nobody is keeping it for', () => {
+    const session = endlessGame();
+    session.game.rules.keys.take(session.game.pc, DEEP_FLOOR);
+    session.save();
+    expect(session.game.rules.keys.flag(session.game.pc, DEEP_FLOOR)).toBe(1);
   });
 });
 

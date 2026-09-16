@@ -1,4 +1,6 @@
 import { bundledDungeon } from '../game/dungeon';
+import { endlessRules } from '../game/endless/rules';
+import { keptEndlessState, restoreEndlessState, type EndlessStore } from '../game/endless/state';
 import { attackTiming, engagementTiming } from '../game/port/combat';
 import { sectionNumber, tabletMessage, townTablet } from '../game/port/hints';
 import { checkDeath } from '../game/port/kills';
@@ -84,6 +86,23 @@ export interface CharacterFile extends PlayedCharacterFile {
    *  record, the way the game keeps its `.DUN` file beside it. A caller with none — a replay, a
    *  test — plays with a map that lasts as long as the session. */
   maps?: MapStore;
+  /** The endless world this character plays in, or none for one playing the game as it
+   *  shipped. */
+  endless?: EndlessPlay;
+}
+
+/**
+ * What it takes to play the endless dungeon: the world the floors below the bottom of the module
+ * are built from, and where what the character carries beside its record is kept.
+ *
+ * A character is endless exactly when it has one of these. The world is the character's own and
+ * is decided at the roll (`RosterEntry.worldSeed`); the two things the character carries are
+ * `src/lib/game/endless/state.ts`, and a caller keeping none of them — a replay, a test — hands
+ * over null and plays a game that remembers them for as long as it lasts.
+ */
+export interface EndlessPlay {
+  seed: number;
+  kept: EndlessStore | null;
 }
 
 /** What movecontrol works out about the square before it reads a key. */
@@ -364,6 +383,10 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   /** A ported function has called mgetch_message and is owed a key once it has finished. */
   private waitOwed = false;
 
+  /** The endless world this character is playing in, or null for one playing the game as it
+   *  shipped. */
+  private readonly endless: EndlessPlay | null;
+
   constructor(
     file: CharacterFile,
     rng: Rng,
@@ -373,7 +396,11 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     super(file, run);
     this.memory = new MapMemory(file.maps ?? null);
     const pc = loadPlayer(file.bytes);
-    const rules = FAITHFUL_RULES;
+    this.endless = file.endless ?? null;
+    // I Care How Awful is what decides which module the endless floors are in, and the character
+    // record is where that is written down.
+    const rules =
+      this.endless === null ? FAITHFUL_RULES : endlessRules({ hard: pc.hard === 1, seed: this.endless.seed });
     this.game = newGame({
       pc,
       rules,
@@ -401,6 +428,11 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
         this.timed.hold(this.game.screen, ms);
       },
     });
+    // newGame copies the record into a character of its own, so what an endless character was
+    // carrying when it was last put down goes onto that copy. It goes on before the first floor
+    // is stocked, since stocking one asks where this section's Shadow boss was last put down.
+    const carried = this.endless?.kept?.read() ?? null;
+    if (carried !== null) restoreEndlessState(this.game.pc, carried);
     // What the game says goes through print_menu_only, which is the message box; what it draws
     // with pfont is a screen. The two are kept apart here the way they are on the screen.
     const said = this.game.say;
@@ -706,6 +738,15 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   /** save_player (exe 2000:79ad): the character back into the record it came from. */
   protected override writeRecord(): Uint8Array<ArrayBuffer> {
     return savePlayer(this.game.pc, this.file.bytes);
+  }
+
+  /**
+   * The record written back, and what an endless character carries beside it written at the same
+   * moment, so that the two never describe different points in the game.
+   */
+  override save(): void {
+    super.save();
+    this.endless?.kept?.write(keptEndlessState(this.game.pc));
   }
 
   /**

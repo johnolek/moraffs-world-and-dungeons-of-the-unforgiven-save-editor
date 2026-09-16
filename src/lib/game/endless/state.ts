@@ -38,6 +38,14 @@ export interface KeptEndlessState {
   bossSquares: { section: number; x: number; y: number }[];
 }
 
+/** Where what an endless character carries is kept while it is not being played. */
+export interface EndlessStore {
+  /** What it was carrying when it was last written down, or null for a character that has never
+   *  been played. */
+  read(): KeptEndlessState | null;
+  write(state: KeptEndlessState): void;
+}
+
 const states = new WeakMap<PlayerCharacter, EndlessState>();
 
 /** The state kept beside this character, made the first time anything asks for it. */
