@@ -7,6 +7,7 @@ import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/g
 import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { journalEntry, unforgivenJournal, type JournalEntry, type JournalWords } from './journal';
 import { runPlayLoop, type PlayLoopSession } from './loop';
+import type { PlayMode } from './mode';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
 import { moraffsWorldJournal } from './mw/journal';
 import { mwTurn } from './mw/keys';
@@ -44,9 +45,9 @@ import { TICKS_A_SECOND } from './sawtooth';
  *  finds. */
 export const RUN_LOG_VERSION = 3;
 
-/** The mode a sitting in the endless dungeon is written down as (`mode.ts`), which is what tells
- *  a replay which dungeon to play it in. */
-const ENDLESS_MODE = 'endless';
+/** The mode a sitting in the endless dungeon is written down as, which is what tells a replay
+ *  which dungeon to play it in. */
+const ENDLESS_MODE: PlayMode = 'endless';
 
 /** Which of the playable games a run was played in. */
 export type RunGame = PortedGameId;
