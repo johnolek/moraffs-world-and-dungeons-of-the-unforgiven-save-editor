@@ -2,8 +2,8 @@
   import { app } from '../app-state.svelte';
   import { goToTab } from '../history';
   import { sourceFiles, type SourceFile } from '../source/ports';
+  import { helpCycleColour } from '../ui/help-colours';
   import PixelText from '../ui/PixelText.svelte';
-  import { bannerColour } from './banner';
   import { TIDBITS_FILES } from './files';
   import { parseTidbits, searchTidbits, type Inline, type LinkTarget } from './markdown';
 
@@ -12,7 +12,7 @@
   /** Each entry's banner colour, worked out from where it sits in the whole document rather than
    *  in what the search has left, so the colours do not shuffle as the box is typed in. */
   const colours = $derived(
-    new Map(all.flatMap((section) => section.entries).map((entry, index) => [entry.id, bannerColour(index)])),
+    new Map(all.flatMap((section) => section.entries).map((entry, index) => [entry.id, helpCycleColour(index)])),
   );
 
   let search = $state('');
