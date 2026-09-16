@@ -200,8 +200,9 @@ function serverSession(value: unknown): ServerSession | null {
  * character was imported from, which never leaves the device it was dropped on, and the journal,
  * which the server does not keep -- it replays a run's log for one. A session of the chain this
  * device has not played has no journal here until something replays it. What an endless character
- * carries in its world is taken from it as well: the server is not told, and a device that has
- * never played the character works it out by replaying the chain.
+ * carries in its world is taken from it as well: the server is not told what it is, because
+ * replaying the chain works it out again, which is what the run server does before passing a
+ * verdict. A device that has never played the character holds none of it.
  */
 export function entryFromServer(character: ServerCharacter, kept: RosterEntry | null): RosterEntry | null {
   const bytes = character.record === null ? null : fromBase64(character.record);
