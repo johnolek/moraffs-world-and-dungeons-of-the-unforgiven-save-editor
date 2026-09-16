@@ -457,6 +457,17 @@ describe('reading a run log out of a file', () => {
     expect(read({ ...older, leaderboard: 'debug' })).toBeNull();
   });
 
+  it('takes a sitting played in the endless dungeon, which is on no board', async () => {
+    const { leaderboard, ...run } = await unforgivenRun();
+    expect(leaderboard).toBeNull();
+    const read = (session: unknown) => readRunLog(JSON.stringify({ version: RUN_LOG_VERSION, sessions: [session] }));
+
+    const log = read({ ...run, mode: 'endless', leaderboard: 'endless' });
+
+    expect(log?.sessions[0].leaderboard).toBe('endless');
+    expect(log?.sessions[0].mode).toBe('endless');
+  });
+
   it('reads a log written before the sound flag was recorded, which simply has no field', async () => {
     const { sound, ...older } = await moraffsRevengeRun();
     expect(sound).toBe(false);

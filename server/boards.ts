@@ -14,6 +14,10 @@ import type { Queries } from './sql';
  * for life — and a character rolled for no board is on none of them. Only a run that was verified
  * and had no record written into it from outside the game is on a board at all, which is what
  * `eligible` on the verdict already says.
+ *
+ * A character can also be rolled to play the endless dungeon. Its runs are taken, replayed and
+ * given a verdict like any other, and they stand on none of the boards below: the endless dungeon
+ * has no board of its own yet.
  */
 
 /**
@@ -48,7 +52,7 @@ function highest(numbers: number[]): number {
 /** The games a board can be asked for, which are the three the site plays. */
 export const BOARD_GAMES = ['unforgiven', 'moraffsWorld', 'revenge'] as const satisfies readonly PortedGameId[];
 
-/** The two ways a character is rolled to be played, which never share a board. */
+/** The ways a character is rolled to be played that have a board, which never share one. */
 export const BOARD_LEADERBOARDS = ['faithful', 'speedrun'] as const satisfies readonly Leaderboard[];
 
 export type BoardName = 'actions' | 'clock' | 'wall' | 'deepest' | 'level' | 'deaths';

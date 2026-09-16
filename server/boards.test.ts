@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Milestone, MilestoneKind } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
-import { boardPage, deepestReach, highestLevel, RUNS_PER_PAGE, type BoardName } from './boards';
+import { boardPage, deepestReach, highestLevel, isBoardLeaderboard, RUNS_PER_PAGE, type BoardName } from './boards';
 import type { EngineStore } from './engines';
 import { endRun, takeBatch, type BatchSender } from './runs';
 import type { Sql } from './sql';
@@ -233,6 +233,14 @@ describe('which runs a board holds at all', () => {
     await keep(sql, { id: 'unchecked', status: 'unverifiable', eligible: false });
 
     expect(await ids(sql, 'deepest')).toEqual([]);
+  });
+
+  it('keeps an endless run and puts it on no board, there being none to put it on', async () => {
+    await keep(sql, { id: 'endless-run', leaderboard: 'endless' });
+
+    expect(isBoardLeaderboard('endless')).toBe(false);
+    expect(await ids(sql, 'deepest', { leaderboard: 'faithful' })).toEqual([]);
+    expect(await ids(sql, 'deepest', { leaderboard: 'speedrun' })).toEqual([]);
   });
 
   it('leaves out a character that was rolled for no board', async () => {
