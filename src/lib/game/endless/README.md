@@ -236,7 +236,7 @@ difference is a faithful gap, and it is written down as one in
 | **Rubles in pocket and in the bank**, 0x454 and 0x458, signed 32-bit | Neither has a cap of its own, so both would wrap at 2,147,483,647. | The same. | Yes. An endless character grinding long enough reaches it; nothing here lifts it. |
 | **Greater-American Dollars**, 0x470, signed 32-bit | Capped by the game at 2,000,000,000, and one find at 107,000,000 (`drop_money`, exe 4000:6aca). Both are rules somebody chose, not the field. | `DOLLARS_CAP` and `MONEY_FIND_CAP` in `src/lib/game/port/drops.ts`. | Yes. |
 | **The six characteristics, potions of healing, stones of teleportation**, signed words | A puffball moves a characteristic by one and a drop adds one item; nothing caps any of them, so 32,768 of anything wraps. | Plain numbers in play, wrapped by the save. | Yes. Out of reach in the game; an endless character could in principle reach it. Not lifted here. |
-| **Rings of regeneration, lucky charms, grenades, stones of seeing** (0x7ca to 0x7cd) **and the six potions** (0x15d), signed bytes | A drop adds one and nothing caps them, so the hundred and twenty-eighth reads as -128. | Plain numbers in play, wrapped by the save. | Yes. This is the *first* limit an endless character meets, well before any word, and it is not lifted here. |
+| **Rings of regeneration, lucky charms, grenades, stones of seeing** (0x7ca to 0x7cd) **and the six potions** (0x15d), signed bytes | A drop adds one and nothing caps them, so the hundred and twenty-eighth reads as -128. | Plain numbers in play, wrapped by the save. | Yes, and this is the *first* limit an endless character meets, well before any word: a Shadow hands over up to twenty potions at a time. **Endless lifts it**, the same way it lifts the hit points — the real counts go beside the record and the bytes get a copy pegged at 127. |
 | **The trap door keys** (0x822) and **the Shadow boss squares** (0x855, 0x8a5) | 36 key flags reaching floor 179, and eight squares a module. | Already answered beside the record rather than in it, since the endless dungeon has more floors and more sections than either table holds (`state.ts`). | Yes — the faithful rules read and write the record's own tables. |
 | **The beaten-boss flags**, 0x849, one byte a module with four bits used | One bit per section of the module, set by `kill_monster` (exe 3000:b12d) as each boss dies. | The stocking asks the rules whether a section's boss is dead rather than reading the byte itself (`GameRules.bossBeaten`), and the faithful rules read the same bit the game reads. | Yes. **Endless lifts it**: the sections past the twentieth have no bit of their own, so their kills go in the state beside the record and their bosses stay dead. |
 
@@ -259,7 +259,7 @@ numbers alone.
 
 ### What endless lifts, and how
 
-Three of these are lifted, and they are lifted two different ways.
+These are lifted two different ways.
 
 **A monster's numbers are lifted by the rules**, because a monster only ever lives in memory here.
 `GameRules` carries `monsterHpMax` and `monsterLevelWrap` beside the `monsterLevelMax` it already
@@ -267,20 +267,24 @@ had. The faithful rules answer 32,000, 256 and 210, which is exactly what the ex
 tables answer; the endless rules answer numbers nothing is ever folded back by, so a monster of
 floor 4,000 stands at the level and the hit points that floor calls for.
 
-**The character's hit points are lifted by the state beside the record**, because the record has
+**The character's own numbers are lifted by the state beside the record**, because the record has
 to stay a record. An endless character's hit points and maximum go into `KeptEndlessState`
-whenever they have grown past what the record's two words hold, and the bytes get a copy brought
-back inside them (`clampedToRecord`). The file is still a save Dungeons of the Unforgiven would
-load and make sense of — it shows a character pegged at 32,767 hit points. When the character is
-picked up again the state's numbers are put back over the record's, so the sitting carries on with
-what the character really has. A replay carries the same state from sitting to sitting, so a run
-verified on the server arrives at the same numbers the player saw.
+whenever they have grown past what the record's two words hold, and so do its rings of
+regeneration, its lucky charms, its hand grenades, its stones of seeing and its six potions
+whenever they have grown past the single byte the record keeps each of those counts in. The bytes
+get a copy brought back inside every one of those fields (`clampedToRecord`). The file is still a
+save Dungeons of the Unforgiven would load and make sense of — it shows a character pegged at
+32,767 hit points and 127 lucky charms. When the character is picked up again the state's numbers
+are put back over the record's, so the sitting carries on with what the character really has. A
+replay carries the same state from sitting to sitting, so a run verified on the server arrives at
+the same numbers the player saw.
 
 One thing the clamp cannot do is tell a player's edit apart from its own work. The save editor
-shows an endless character pegged at 32,767, and a record written back from it at that number
-reads as the character really having 32,767, so the hit points above the word are lost. Editing a
-record from outside the game already makes a sitting unverifiable, so this only ever costs a
-character nobody is putting on a board.
+shows an endless character pegged at what each field holds, and a record written back from it at
+those numbers reads as the character really having them, so whatever stood above a field is lost.
+Editing a record from outside the game already makes a sitting unverifiable, so this only ever
+costs a character nobody is putting on a board.
 
-Nothing else is lifted. The byte item counts are the limit an endless character meets first, and
-lifting them the same way would be the obvious next step.
+Nothing else is lifted. The six characteristics and the counts the record keeps in a whole word —
+potions of healing, stones of teleportation — are the next fields an endless character could run
+off the end of, and lifting them would be the same piece of work again.
