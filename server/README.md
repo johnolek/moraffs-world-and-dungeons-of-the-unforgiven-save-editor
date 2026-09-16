@@ -276,6 +276,20 @@ sitting began — so nothing here handles it specially: it is kept, put back int
 the log and handed to the engine with every other input. A run whose readings
 were altered on the way fails its replay exactly as one with an altered key does.
 
+A character may also have been rolled to play the endless dungeon, whose floors
+go on below the bottom of the module the game itself stops at. Two things about
+such a run are no part of its keys. One is the world it was rolled into, the
+number that decides which of the game's twenty sections each endless section
+borrows its monsters and its look from: it is a column on the character's row,
+sent with the character on every batch, and written into every sitting of the log
+the engine is handed, since a character plays its whole run in the world it was
+rolled into. The other is what the character carries that its 2695-byte record
+has no room for — the trap door keys found below floor 179, and the squares the
+Shadow bosses of the sections past the twentieth were left on — and that is not
+kept here at all: replaying a sitting hands back what the character was carrying
+when it ended, and the walk along the chain hands it to the next sitting the way
+it hands over the record.
+
 ### The journal
 
 The verdict keeps the run written up in words as well, in `journal`: everything
@@ -327,6 +341,12 @@ sitting holds, which is all the merge on the site's side compares: the server's
 copy stands unless the device holds keys the server has never been sent, and a
 sitting is told apart by its seed and its moment.
 `src/lib/character/server-roster.ts` is that half.
+
+A character rolled to play the endless dungeon carries the world it was rolled
+into here too, and the roster hands it back, so a player who signs in on a second
+device plays it in the same dungeon rather than in the first world. A device that
+names no world leaves the one here, the way it does with the mode a character is
+locked to: both are decided at the roll and never again.
 
 A device asks for the keys of one character at a time, and only for the two
 things that need them: playing that character on, since a new sitting sends the

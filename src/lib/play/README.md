@@ -142,7 +142,13 @@ played, so that a claimed ending can be checked by playing it again rather than 
   generator was started from, the commit the engine was built from, and every input in order,
   with the actions, the game's clock and the milestones it claims. That is the whole of one
   game: both games are turn based and every random number comes from the one generator, so the
-  same three things put through the same engine make the same game again.
+  same three things put through the same engine make the same game again. A sitting played in
+  the endless dungeon names one thing more, `worldSeed`: the endless world the character was
+  rolled into, which decides which of the game's twenty sections each endless section borrows
+  its monsters and its look from (`src/lib/game/endless/rules.ts`). It is one number for the
+  whole run rather than something that happens in it, so it is a field of the session and not an
+  input; a log written before it was recorded has no field and reads as the first world, which
+  was the only one there was.
 * **The chain** — the sessions of a character's run, oldest first, each starting from the record
   the one before it left behind. The count of actions and the game's own clock run on through the
   lot, so leaving the game and playing the character again goes on from where the count stood
@@ -211,11 +217,16 @@ played, so that a claimed ending can be checked by playing it again rather than 
   win, each with the action count and the game time it happened at. The three the ported routines
   alone know about arrive as `game.events`; the module or dungeon is read from the game itself, so
   every way of changing one is caught.
-* **`replayRun(session, before)`** builds a game from the session and presses its keys in order,
-  and hands back the place, the clock, the actions and the milestones it ended with, along with
-  the record the game itself last wrote — which is the record the roster is left holding, and so
-  the one the next session of the chain has to start from. A replay never raises the repeat-fight
-  flag, since those swings are in the log already.
+* **`replayRun(session, before, carried)`** builds a game from the session and presses its keys
+  in order, and hands back the place, the clock, the actions and the milestones it ended with,
+  along with the record the game itself last wrote — which is the record the roster is left
+  holding, and so the one the next session of the chain has to start from. A replay never raises
+  the repeat-fight flag, since those swings are in the log already. `carried` is what an endless
+  character was carrying beside its record when the session before this one ended — the trap
+  door keys and the Shadow boss squares the record has no room for
+  (`src/lib/game/endless/state.ts`) — and the replay hands back what it is carrying at its own
+  end beside the record, written at the same moment the record was. A session of the game as it
+  shipped carries null both ways.
 * **`RUN_GAMES`** is the one table of what a run needs of the game it was played in: the loop that
   replays it, the game's own words for its clock and its own name for a dungeon. A game with a
   line here can be recorded, replayed and checked, and nothing that does any of the three knows
@@ -272,7 +283,9 @@ per commit and a chain's sessions have to be replayed by the builds they were pl
 * **Verified** — every session spent the same actions, its clock reached the same number, and it
   reached the same milestones in the same order, each at the same action count, clock and floor;
   and every session started from the record the replay of the one before it ended with, byte for
-  byte. That second check is what stops a run being padded with a session of somebody else's
+  byte, carrying what that replay was carrying beside it. What an endless character carries is
+  threaded along the chain the way the record is, since a trap door key found below floor 179 in
+  one sitting is a key the character still holds in the next. That second check is what stops a run being padded with a session of somebody else's
   character, or with the same session twice. The verdict carries the run's totals and the ending
   as well: where the character stood, whether they are alive, dead or have won, and a SHA-256 of
   the record the run ended with.
