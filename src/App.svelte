@@ -44,14 +44,20 @@
     // The Admin tab shows for one player and nobody else, so the server is asked whether the
     // passphrase this browser keeps is an admin's. Everybody else is answered no and never sees
     // that there was a tab.
-    void askWhetherAdmin();
+    const admin = askWhetherAdmin();
     // Read the entry first: restoring the game rewrites it to say which tab that game is showing.
     const state = history.state;
     // The roster is read out of the database, which answers a moment later, so the site puts up
     // its default game and tab and settles on the remembered ones as soon as the answer is in.
-    void restoreRoster().then(() => {
+    void restoreRoster().then(async () => {
       restoreGame();
-      if (isAppHistoryState(state)) restore(state);
+      if (isAppHistoryState(state)) {
+        // A reload on the Admin tab waits for the server to say whether this browser is an
+        // admin's: until it has, that tab is not one the site has, and restoring would give up on
+        // it and show the fallback tab instead.
+        if (state.tab === 'admin') await admin;
+        restore(state);
+      }
       recordTab(app);
     });
   });
