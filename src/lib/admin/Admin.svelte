@@ -9,12 +9,14 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
   import Characters from './Characters.svelte';
+  import EndlessWorld from './EndlessWorld.svelte';
 </script>
 
 <div class="admin">
   <h2>Admin</h2>
   <p class="note">The run server's own controls, for {app.admin}.</p>
   <Characters />
+  <EndlessWorld />
 </div>
 
 <style>
