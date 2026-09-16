@@ -452,7 +452,10 @@ game drew them at:
   Those bands are exclusive-ORed into the screen in the palette's gradient bank, and
   `FUN_2000_2a2e` rotates that bank once for every poll of the keyboard, which sets them crawling.
   `session.plaque` says how far along that wait the screen is; the delay is a display timer like
-  the frames are and is kept in `timed.ts` with them.
+  the frames are and is kept in `timed.ts` with them. Outside debug the keyboard is not read until
+  it is out, since the original is inside `delay` for those 330 ms with the keyboard untouched: a
+  key given while the corner is empty is kept and answers the box the moment the plaque is drawn,
+  which is where a key typed at DOS would have been waiting (`GameSession.keyWithPlaque`).
 * **The crawl**, which is that rotation and is not the plaque's alone. `FUN_4000_3b44` (exe
   4000:3b44) turns palette entries 96 to 255 by one, and the game makes that turn every time it
   polls the keyboard: `movecontrol`'s own wait (exe 2000:c308), the plaque's `FUN_2000_2a2e`, and
@@ -546,12 +549,14 @@ picture reads as a tunnel with diagonals running into it. `tunnel.ts` is the dra
 `GameSession.crossToModule` the order: the tunnel, 150 turns of the gradient bank over it,
 "WELCOME TO MODULE" and the module's numeral in the big font, and the plaque's own wait. The
 tunnel then stays as the backdrop while the arrival box is read, since nothing paints over it
-until `movecontrol` comes round and draws the screen again. Two departures are on
-`crossToModule`: the original throws away everything typed while the bank turns, and the port
-lets such a key give up the rest of the tunnel the way a key gives up any held screen; and by the
-code the key that answers the welcome would answer the arrival box's wait as well, since
-`FUN_2000_4054` reads the keyboard without draining it, but the real game leaves that box standing
-with its plaque up, so the port takes a key for each. The SORRY! screen for a module that is not
+until `movecontrol` comes round and draws the screen again. Those 150 turns read no key at all —
+the loop at exe 4000:7a34 counts to 0x96 and tests nothing — so outside debug they cannot be
+hurried along either; in debug a key gives up the rest of them, the way a key gives up any held
+screen. Two departures are left on `crossToModule`: the original throws away everything typed
+while the bank turns, and the port keeps such a key and lets it answer the welcome the moment the
+turns are out; and by the code the key that answers the welcome would answer the arrival box's
+wait as well, since `FUN_2000_4054` reads the keyboard without draining it, but the real game
+leaves that box standing with its plaque up, so the port takes a key for each. The SORRY! screen for a module that is not
 installed is not built, since all five ship here.
 
 `screenTakenOver` is the rest of what was drawn, which is the help, the V screen,

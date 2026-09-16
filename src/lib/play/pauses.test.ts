@@ -1,0 +1,133 @@
+import { describe, expect, it } from 'vitest';
+import type { Rng } from '../game/port/rng';
+import { inTheTown, press, settle, standingOn, teleporterSquare } from './battle.test-support';
+import type { GameSession } from './engine';
+import { KEY } from './keys';
+import type { PlayMode } from './mode';
+import { PLAQUE_DELAY_MS } from './plaque';
+
+/**
+ * The pauses Dungeons of the Unforgiven holds a screen for, against the mode the game is being
+ * played in: the teleporter tunnel's turns and the moment the HIT ANY KEY plaque's corner is left
+ * empty. `dig.test.ts` is the same question about the DIGGING... flashes.
+ *
+ * The original reads no key while one of these is running, so a player at it could not hurry one
+ * along. Faithful and speedrun sit through them here and debug cuts them short, and either way
+ * the key itself is taken rather than thrown away.
+ */
+
+const sleep = (ms: number): Promise<unknown> => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The snake greets a character arriving in the town and waits for a key. That key is taken
+ *  before the mode under test is set, so that what the test presses afterwards answers the pause
+ *  it is about. */
+async function pastTheGreeting(session: GameSession, mode: PlayMode): Promise<void> {
+  await settle();
+  if (session.view().tablet) await press(session, KEY.escape);
+  session.mode = mode;
+}
+
+describe("the teleporter tunnel's turns", () => {
+  /** A character stepping into the town's module teleporter, with the tunnel on the screen and
+   *  the welcome still to come. */
+  async function crossing(mode: PlayMode): Promise<GameSession> {
+    const session = standingOn(0, teleporterSquare());
+    await pastTheGreeting(session, mode);
+    await press(session, KEY.arrowUp);
+    expect(session.view().tunnel).toEqual({ module: 1, welcome: false });
+    expect(session.game.pc.module).toBe(0);
+    return session;
+  }
+
+  it('go on rushing in faithful, whatever the player presses', async () => {
+    const session = await crossing('faithful');
+
+    await press(session, KEY.escape);
+
+    expect(session.view().tunnel).toEqual({ module: 1, welcome: false });
+    expect(session.game.pc.module).toBe(0);
+    session.finish();
+  });
+
+  it('go on rushing in speedrun as well, a run being timed against the original', async () => {
+    const session = await crossing('speedrun');
+
+    await press(session, KEY.escape);
+
+    expect(session.view().tunnel).toEqual({ module: 1, welcome: false });
+    expect(session.game.pc.module).toBe(0);
+    session.finish();
+  });
+
+  it('are given up on a key in debug, which is where the port is stepped through', async () => {
+    const session = await crossing('debug');
+
+    await press(session, KEY.escape);
+
+    expect(session.game.pc.module).toBe(1);
+    session.finish();
+  });
+});
+
+describe('the blank before the HIT ANY KEY plaque', () => {
+  /** The Z key says its piece and waits for a key, which is what puts a plaque up. */
+  const lowest: Rng = { random: () => 0 };
+
+  /** A box up with its plaque's corner still empty, which is the 330 ms the game counts out
+   *  before it draws the plaque. */
+  async function waiting(mode: PlayMode): Promise<GameSession> {
+    const session = inTheTown(lowest);
+    await pastTheGreeting(session, mode);
+    await press(session, KEY.zoomView);
+    expect(session.plaque).toBe('blanked');
+    return session;
+  }
+
+  it('cannot be answered while the corner is empty in faithful', async () => {
+    const session = await waiting('faithful');
+
+    await press(session, KEY.escape);
+
+    expect(session.plaque).toBe('blanked');
+    // The key was taken rather than thrown away, so it answers the box the moment the plaque is
+    // drawn, which is what a key sitting in the DOS buffer does.
+    await sleep(PLAQUE_DELAY_MS + 60);
+    expect(session.plaque).toBeNull();
+    session.finish();
+  });
+
+  it('cannot be answered while the corner is empty in speedrun either', async () => {
+    const session = await waiting('speedrun');
+
+    await press(session, KEY.escape);
+
+    expect(session.plaque).toBe('blanked');
+    await sleep(PLAQUE_DELAY_MS + 60);
+    expect(session.plaque).toBeNull();
+    session.finish();
+  });
+
+  it('is not there at all with the high speed option on, so the key answers at once', async () => {
+    const session = inTheTown(lowest);
+    await pastTheGreeting(session, 'faithful');
+    // DS:00c3, which is the one thing that shortens this pause: the plaque is drawn with the box
+    // rather than after a blank, so there is nothing to sit through.
+    session.game.highSpeed = true;
+
+    await press(session, KEY.zoomView);
+    expect(session.plaque).toBe('showing');
+    await press(session, KEY.escape);
+
+    expect(session.plaque).toBeNull();
+    session.finish();
+  });
+
+  it('is answered at once in debug', async () => {
+    const session = await waiting('debug');
+
+    await press(session, KEY.escape);
+
+    expect(session.plaque).toBeNull();
+    session.finish();
+  });
+});

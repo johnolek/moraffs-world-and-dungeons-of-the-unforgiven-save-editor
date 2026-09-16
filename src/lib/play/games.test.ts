@@ -148,10 +148,12 @@ describe('a character played again', () => {
   it('shows the milestones of the whole run and not of this sitting alone', async () => {
     const entry = rostered({ level: 0, dir: 0, ...teleporterSquare() });
     // The teleporter under the town takes the character to another module, which is a milestone;
-    // the Escape answers the welcome the crossing puts up and the Enter the box after it.
-    await playASession(entry, [KEY.arrowUp, KEY.escape, KEY.enter]);
+    // the Escape answers the welcome the crossing puts up and the Enter the box after it. It is
+    // played in debug so that the keys land without the five seconds the crossing rushes at the
+    // player for, which is `pauses.test.ts`'s business rather than this test's.
+    await playASession(entry, [KEY.arrowUp, KEY.escape, KEY.enter], 'debug');
 
-    const second = await playASession(entry, [KEY.arrowUp]);
+    const second = await playASession(entry, [KEY.arrowUp], 'debug');
 
     expect(entry.run[0].milestones.map((milestone) => milestone.kind)).toEqual(['dungeon']);
     expect(entry.run[1].milestones).toEqual([]);

@@ -74,7 +74,9 @@ export interface KeyHandler<Turn> {
  */
 export abstract class KeyedSession<Record> implements PlayLoopSession {
   /**
-   * Whether a key gives up the frames the game is holding on the screen.
+   * Whether a key gives up the pauses the game is in the middle of: both the frames it is holding
+   * on the screen and the stretches it leaves one standing for before it reads the keyboard again
+   * (`GameSession.keyWithPlaque`).
    *
    * The tab tells a session which mode it is being played in, and that settles this (`mode.ts`):
    * faithful and speedrun sit through the game's own pauses, since none of the three games reads
@@ -84,7 +86,7 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
    * A session nobody is watching is never told a mode and cuts them short: a replay, the fight
    * simulator and a test have no screen in front of them to hold anything on.
    */
-  private cutsPausesShort = true;
+  protected cutsPausesShort = true;
 
   /** The loop has come back: the character has quit or died. */
   over = false;

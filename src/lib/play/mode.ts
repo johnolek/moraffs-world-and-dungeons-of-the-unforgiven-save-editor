@@ -227,13 +227,17 @@ export function colourblindFilter(on: boolean): string | null {
 }
 
 /**
- * Whether a key cuts short a message the game is holding on the screen.
+ * Whether a key cuts short a pause of the game's own: a message it is holding on the screen, or a
+ * stretch it leaves one standing for before it reads the keyboard again.
  *
  * None of the three games reads the keyboard while one of its own delays is running, so a player
  * at the original could not hurry one along: the teleporter tunnel rushed at them for its full
- * five seconds and DIGGING... DIGGING... flashed four times whatever they pressed. Faithful and
- * speedrun both sit through them, a speedrun being run against the original's own timing, and
- * debug — which is for looking at the port rather than playing the game — still cuts them short.
+ * five seconds, DIGGING... DIGGING... flashed four times whatever they pressed, and the HIT ANY
+ * KEY plaque could not be answered before it was drawn. Faithful and speedrun both sit through
+ * them, a speedrun being run against the original's own timing, and debug — which is for looking
+ * at the port rather than playing the game — still cuts them short. Either way the key is taken
+ * as it is given: it waits the way one typed at DOS waits in the keyboard buffer, so the same
+ * keys reach the game in the same order whichever mode a run was played in.
  */
 export function waitsAreEnforced(mode: PlayMode): boolean {
   return mode !== 'debug';

@@ -552,28 +552,34 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * skips the delay, so with that on the plaque is there at once. The pause is a display timer of
    * the same kind the message delays are (`timed.ts`) and the game waits on nothing but the key.
    *
+   * Neither pause is read through outside debug ({@link sitOutThePause}): the original is inside
+   * `delay` while they run and looks at no key until it comes out, so a key given during one is
+   * taken and answers this box the moment the pause is over.
+   *
    * @param before what stands in front of that delay. The module tunnel turns the gradient bank
    *   150 times before it prints its welcome (exe 4000:771b), and the plaque goes up after the
    *   welcome rather than with the tunnel; the stone tablet has {@link tabletPause} in front of
    *   its sign and nothing to draw when that is over.
    */
   async keyWithPlaque(before?: { ms: number; then?: () => void }): Promise<number> {
-    const raisePlaque = (): void => {
-      if (this.game.highSpeed) this.plaque = 'showing';
-      else {
-        this.plaque = 'blanked';
-        this.timed.after(PLAQUE_DELAY_MS, () => {
-          this.plaque = 'showing';
-          this.changed();
-        });
+    const raisePlaque = async (): Promise<void> => {
+      if (this.game.highSpeed) {
+        this.plaque = 'showing';
+        this.changed();
+        return;
       }
+      this.plaque = 'blanked';
       this.changed();
+      await this.sitOutThePause(PLAQUE_DELAY_MS, () => {
+        this.plaque = 'showing';
+        this.changed();
+      });
     };
-    if (before === undefined) raisePlaque();
+    if (before === undefined) await raisePlaque();
     else {
-      this.timed.after(before.ms, () => {
+      await this.sitOutThePause(before.ms, async () => {
         before.then?.();
-        raisePlaque();
+        await raisePlaque();
       });
     }
     try {
@@ -592,17 +598,41 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   }
 
   /**
+   * A stretch the game leaves a screen standing for before it reads the keyboard again, with what
+   * it draws when the stretch is out.
+   *
+   * Faithful and speedrun sit through it: the keyboard is not read until `then` has run, which is
+   * where the original is too — it is inside `delay` (exe 1000:2789) with the keyboard untouched,
+   * and a key typed during one waits in the DOS buffer for the read that comes after. So the key
+   * is taken whenever the player gives it and answers whatever the pause was in front of, rather
+   * than cutting the pause short.
+   *
+   * Debug reads through it, the way the port always did: the stretch is left to a timer, the
+   * keyboard is read beside it, and a key gives up the rest of it so the port can be stepped
+   * through.
+   */
+  private sitOutThePause(ms: number, then: () => void | Promise<void>): Promise<void> {
+    if (this.cutsPausesShort) {
+      this.timed.after(ms, () => void then());
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => this.timed.after(ms, () => resolve(then())));
+  }
+
+  /**
    * FUN_4000_771b (exe 4000:771b) and the wait that follows it: the tunnel is drawn on a black
    * screen, the gradient bank is turned 150 times over it, "WELCOME TO MODULE" and the module's
    * numeral are printed on it, and FUN_4000_41e5 spins on the keyboard behind the plaque until a
    * key arrives. `tunnel.ts` is the drawing.
    *
    * Those 150 turns are a display timer of the same kind the plaque's own delay is: the original
-   * spins in a loop that reads nothing, so the game waits for the key alone and the tab counts the
-   * turns out. Two departures. `erase_message_block` (exe 4000:430e) throws away everything typed
-   * while the tunnel is on the screen; here a key given during it gives up the rest of it and
-   * answers the welcome, which is what a key does to every other screen the port holds. And that
-   * key answers the welcome only: by the code the same one would go on to answer the arrival
+   * spins in a loop that reads nothing (exe 4000:7a34, which counts to 0x96 and tests no key), so
+   * the game waits for the key alone and the tab counts the turns out. Outside debug the keyboard
+   * is not read until they are over ({@link sitOutThePause}), so the tunnel cannot be hurried
+   * along; in debug a key gives up the rest of it, the way a key gives up every other screen the
+   * port holds. Two departures are left. `erase_message_block` (exe 4000:430e) throws away
+   * everything typed while the tunnel is on the screen; here such a key is kept, and it answers
+   * the welcome the moment the turns are out. And that key answers the welcome only: by the code the same one would go on to answer the arrival
    * box's wait as well, since FUN_2000_4054 reads the keyboard without draining it, but the real
    * game leaves the arrival box standing with its plaque up, so the port takes a key for each.
    */
