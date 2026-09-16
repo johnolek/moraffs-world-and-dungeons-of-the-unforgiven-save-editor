@@ -17,6 +17,7 @@
   import MwPortrait from './MwPortrait.svelte';
   import MwScreen from './MwScreen.svelte';
   import PlayTab from '../PlayTab.svelte';
+  import { runServerUrl } from '../../run-server';
   import { bundledMwDungeon } from '../../game/mw-dungeon';
   import { experienceNeeded } from '../../game/mw-port/levels';
   import { MW_DIG_PROMPT } from './view3d/screen';
@@ -26,10 +27,13 @@
   import { mwFacingArrow, mwStepKey, mwTurn } from './keys';
   import { MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import {
+    ANNOUNCEMENTS_LABEL,
     debugDrawn,
     mapDrawn,
     monstersDrawn,
     panelVisible,
+    readPlayAnnouncements,
+    writePlayAnnouncements,
     zoomMapMonsters,
   } from '../mode';
 
@@ -70,6 +74,12 @@
    *  keeps the character clear of. */
   let hudBarHeight = $state(0);
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
+  /** Whether an announcement the run server makes while the game is being played is printed in
+   *  the game's own message box. */
+  let announcements = $state(readPlayAnnouncements(game.id));
+  /** There are no announcements to print in a build that was given no run server, so the switch
+   *  for them is not offered there. */
+  const announcementsOffered = runServerUrl() !== null;
   /**
    * The monster whose details debug mode has open, by the id the Monsters tab keys it by, which
    * for this game is its place in the monster table.
@@ -169,6 +179,13 @@
     else mwTurn(session, arrow.dir);
   }
 
+  /** The switch is picked with the mouse, and the keyboard belongs to the game rather than to a
+   *  checkbox, so the control hands it back as soon as it has been answered. */
+  function chooseAnnouncements(input: HTMLInputElement) {
+    writePlayAnnouncements(game.id, announcements);
+    input.blur();
+  }
+
   /** The style is picked with the mouse, and the arrow keys belong to the game rather than to a
    *  radio button, so the control hands the keyboard back as soon as it has been answered. */
   function chooseStyle(input: HTMLInputElement) {
@@ -177,7 +194,22 @@
   }
 </script>
 
-<PlayTab {game} {canvas} {press} {takeKey} {screen} {place} {afterModes} {sideFoot} />
+<PlayTab {game} {canvas} {press} {takeKey} {screen} {afterSwitch} {place} {afterModes} {sideFoot} />
+
+<!-- The box an announcement is printed in is drawn by the game's own screen. On the map it is one
+     of the corners laid over the map, which carries nothing of the site's, so the switch stands
+     while the screen does. -->
+{#snippet afterSwitch(stage: Stage)}
+  {#if announcementsOffered && stage.display === 'screen'}
+    <label class="side-switch">
+      <input
+        type="checkbox"
+        bind:checked={announcements}
+        onchange={(event) => chooseAnnouncements(event.currentTarget)} />
+      <span>{ANNOUNCEMENTS_LABEL}</span>
+    </label>
+  {/if}
+{/snippet}
 
 <!-- The game's own screen, which both displays draw: the stage in the screen display, and over
      the map while the game has taken the display over with a page of its own. -->
@@ -194,6 +226,8 @@
     discovered={discovered ?? { known: () => true, knownOnArrival: () => true }}
     mapMonsters={zoomMapMonsters(stage.mode, view)}
     lines={screenLines(stage)}
+    messageBox={corner(view).lines}
+    {announcements}
     cleared={screenTakesOver(view)}
     expandedMap={view.expandedMap}
     barCorners={mwMonsterViewSides(stage.session.game).map((side) => side.corner)}
@@ -306,6 +340,17 @@
 {/snippet}
 
 <style>
+  /* The small, quiet switch under the display switch, drawn the way the mode radios above it
+     draw their own controls. */
+  .side-switch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+  }
   .overlay {
     position: absolute;
     inset: 0;

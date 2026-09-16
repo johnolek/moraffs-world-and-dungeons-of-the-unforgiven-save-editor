@@ -1,5 +1,6 @@
 import { mwOnMessageLine, type MwGame } from '../../game/mw-port/state';
 import type { ScreenLine } from '../../game/port/state';
+import type { MessageBoxGrid } from '../announcement-box';
 
 /**
  * The two places Moraff's World puts text while it is being played: the eight-line message box
@@ -29,17 +30,33 @@ export const MW_MESSAGE_BOX = {
   squeezeFrom: 27,
 } as const;
 
-/** The lines of a message box, ready for the screen renderer. */
-export function mwMessageBoxLines(lines: string[]): ScreenLine[] {
-  return lines.slice(0, MW_MESSAGE_BOX.lines).map((text, index) => ({
+/** One line of a message box, on the row FUN_2000_216b would draw it on. */
+export function mwMessageBoxLine(text: string, row: number): ScreenLine {
+  return {
     text,
     x: MW_MESSAGE_BOX.x,
-    y: MW_MESSAGE_BOX.y + index * MW_MESSAGE_BOX.step,
+    y: MW_MESSAGE_BOX.y + row * MW_MESSAGE_BOX.step,
     font: 0,
     colour: MW_MESSAGE_BOX.colour,
     spreadTo: text.length >= MW_MESSAGE_BOX.squeezeFrom ? MW_MESSAGE_BOX.right : undefined,
-  }));
+  };
 }
+
+/** The lines of a message box, ready for the screen renderer. */
+export function mwMessageBoxLines(lines: string[]): ScreenLine[] {
+  return lines.slice(0, MW_MESSAGE_BOX.lines).map((text, index) => mwMessageBoxLine(text, index));
+}
+
+/**
+ * The box as a grid the tab can put a line of its own on, for the announcements the Play tab
+ * draws over it. The longest line the game prints at the font's own spacing is one character
+ * short of the length draw_text_box starts wrapping at.
+ */
+export const MW_MESSAGE_BOX_GRID: MessageBoxGrid = {
+  rows: MW_MESSAGE_BOX.lines,
+  columns: MW_MESSAGE_BOX.squeezeFrom - 1,
+  line: mwMessageBoxLine,
+};
 
 /**
  * The colour every line movecontrol draws straight onto the play screen comes out in: DS:1303,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Announcement } from '../../../server/announcing';
 import { MENU_LINE_STEP, MENU_TOP, MENU_X } from '../game/port/screens';
+import { MW_MESSAGE_BOX, MW_MESSAGE_BOX_GRID } from './mw/screens';
 import { MESSAGE_BOX_GRID } from './screens';
 import {
   announcementBoxLines,
@@ -91,6 +92,19 @@ describe("Dungeons of the Unforgiven's own box", () => {
     expect(lines.map((line) => line.text)).toEqual(['GRONDELBERT (MORAFF) BEAT', 'BOSS 3']);
     expect(lines.map((line) => line.y)).toEqual([MENU_TOP + 6 * MENU_LINE_STEP, MENU_TOP + 7 * MENU_LINE_STEP]);
     expect(lines.map((line) => line.x)).toEqual([MENU_X, MENU_X]);
+  });
+});
+
+describe("Moraff's World's own box", () => {
+  it('takes the last two of the eight lines FUN_2000_216b draws', () => {
+    const lines = announcementBoxLines(said(1, 'GRONDELBERT', 2), MW_MESSAGE_BOX_GRID);
+
+    expect(lines.map((line) => line.text)).toEqual(['GRONDELBERT (MORAFF) BEAT', 'BOSS 3']);
+    expect(lines.map((line) => line.y)).toEqual([
+      MW_MESSAGE_BOX.y + 6 * MW_MESSAGE_BOX.step,
+      MW_MESSAGE_BOX.y + 7 * MW_MESSAGE_BOX.step,
+    ]);
+    expect(lines.map((line) => line.colour)).toEqual([MW_MESSAGE_BOX.colour, MW_MESSAGE_BOX.colour]);
   });
 });
 

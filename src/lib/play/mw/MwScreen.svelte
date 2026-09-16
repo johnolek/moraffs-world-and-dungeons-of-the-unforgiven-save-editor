@@ -18,6 +18,8 @@
   import { zoomMapMonsterAt } from '../zoom-monsters';
   import { MORAFFS_WORLD_ZOOM_MAP, drawMwExpandedMap, drawMwZoomMap, mwExpandedMapWindow } from './map';
   import { mwMonsterThumbnail } from './monster-thumbnails';
+  import { messageBoxAnnouncement } from '../announcement-box.svelte';
+  import { MW_MESSAGE_BOX_GRID } from './screens';
   import {
     MW_KEY_MENU_RECT,
     MW_MESSAGE_BOX_RECT,
@@ -69,6 +71,12 @@
     /** How long a new screen takes to appear, in milliseconds, revealed from the top down the
      *  way a slow machine drew one (`../mode.ts`). Nothing at all draws it in one go. */
     redraw?: number;
+    /** The message box in the corner, out of the lines above, which is what an announcement goes
+     *  up over and what taking it off again is decided by (`../announcement-box.ts`). */
+    messageBox?: ScreenLine[];
+    /** Whether an announcement the run server makes while this screen is up is printed on the
+     *  bottom lines of that box (`../mode.ts`). */
+    announcements?: boolean;
   }
 
   let {
@@ -87,7 +95,17 @@
     barCorners = [],
     onmonster,
     redraw = 0,
+    messageBox = [],
+    announcements = false,
   }: Props = $props();
+
+  /**
+   * The announcement the message box is carrying, which the tab draws over the box and tells the
+   * game nothing about: it is in neither the run log nor anything a replay reads.
+   */
+  const announcement = messageBoxAnnouncement(() => messageBox, MW_MESSAGE_BOX_GRID);
+  /** Everything painted on the frame: what the game printed, and the announcement over it. */
+  const painted = $derived(announcements ? [...lines, ...announcement.lines] : lines);
 
   const WIDTH = MW_SCREEN_PIXELS.width;
   const HEIGHT = MW_SCREEN_PIXELS.height;
@@ -128,7 +146,7 @@
    * square readers are not either, since what they answer is settled by the floor and the dungeon.
    */
   const drawnFrom = $derived(
-    JSON.stringify({ place, lines, drawn, mapMonsters, height, cleared, zoomed, expandedMap, barCorners }),
+    JSON.stringify({ place, painted, drawn, mapMonsters, height, cleared, zoomed, expandedMap, barCorners }),
   );
 
   /** What the canvas is showing, so the effect below can tell that nothing has changed. */
@@ -162,7 +180,7 @@
     // so the views and the boxes around them are not drawn at all while it is up.
     if (expandedMap) {
       drawMwExpandedMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters, thumbnail: mwMonsterThumbnail });
-      drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
+      drawMwScreenText(frame, MW_SCREEN_PIXELS, painted);
       painter.reveal(context, frame, floorPalette(place.floor), revealed);
       return;
     }
@@ -178,7 +196,7 @@
     // A page that takes the display over (the help, the statistics) is drawn on a cleared
     // screen, so the frame goes black before its lines are painted.
     if (cleared) fillRect(frame, 0, 0, WIDTH, HEIGHT, 0);
-    drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
+    drawMwScreenText(frame, MW_SCREEN_PIXELS, painted);
     painter.reveal(context, frame, floorPalette(place.floor), revealed);
   });
 
