@@ -1,10 +1,37 @@
+import { readStored, writeStored } from '../character/storage';
+import { latestAnnouncement } from './announcement-feed.svelte';
+
 /**
  * Whether the reader has been shown the newest announcement, which is what the marker in the
  * header is on.
  *
  * The decision is a function of two moments and nothing else, so that what counts as unread can be
  * tested without a browser or a feed.
+ *
+ * How far the reader has read is kept in the browser rather than on the server: the run server
+ * knows a player by a passphrase, and somebody reading announcements has not been asked for one.
+ * That means it is per browser, and a reader on a second device starts from nothing there.
  */
+
+/** Where this browser keeps the moment of the newest announcement it has been shown. */
+const SEEN_KEY = 'moraff-tools.announcements-seen';
+
+/** Read once as the page loads, and kept here after that so that the marker goes away the moment
+ *  the timeline is opened. */
+let seenAt = $state<string | null>(readStored(SEEN_KEY));
+
+/** Whether to show the marker: the newest announcement the page is following is newer than the
+ *  newest this browser has been shown. */
+export function announcementsUnread(): boolean {
+  return somethingUnread(latestAnnouncement()?.at ?? null, seenAt);
+}
+
+/** Remember that the reader has been shown the announcement made at that moment. A browser that
+ *  will not keep it shows the marker again on the next visit, which is the harmless way round. */
+export function markAnnouncementsSeen(at: string): void {
+  seenAt = at;
+  writeStored(SEEN_KEY, at);
+}
 
 /**
  * Whether there is an announcement the reader has not been shown yet.
