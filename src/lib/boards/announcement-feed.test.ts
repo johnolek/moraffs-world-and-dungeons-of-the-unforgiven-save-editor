@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Announcement } from '../../../server/announcing';
-import { announcementsShowing, latestAnnouncement } from './announcement-feed.svelte';
+import { announcementsShowing, latestAnnouncement, latestArrival } from './announcement-feed.svelte';
 
 const SERVER = 'https://runs.example.com';
 
@@ -87,11 +87,19 @@ describe('the announcements the page follows', () => {
     expect(latestAnnouncement()?.id).toBe(8);
   });
 
+  it('has had nothing arrive while only the history has been read', () => {
+    expect(latestArrival()).toBe(null);
+  });
+
   it('puts one that arrives down the feed in front of the rest', () => {
     FakeEventSource.newest?.announce(said(9));
 
     expect(announcementsShowing().announcements.map((each) => each.id)).toEqual([9, 8, 7]);
     expect(latestAnnouncement()?.id).toBe(9);
+  });
+
+  it('says which one arrived down the feed', () => {
+    expect(latestArrival()?.id).toBe(9);
   });
 
   it('still has older ones to ask for after one has arrived', () => {

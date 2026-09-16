@@ -24,6 +24,7 @@ import { loadAnnouncements, loadOlderAnnouncements, NO_ANNOUNCEMENTS, type Loade
  */
 
 let showing = $state<LoadedAnnouncements>(NO_ANNOUNCEMENTS);
+let arrived = $state<Announcement | null>(null);
 let following = false;
 
 /** Every announcement read so far, newest first, whether there are older ones to ask for, and
@@ -39,6 +40,20 @@ export function latestAnnouncement(): Announcement | null {
   return announcementsShowing().announcements[0] ?? null;
 }
 
+/**
+ * The newest announcement that has come down the feed since the page opened, or nothing while
+ * none has.
+ *
+ * This is the half of the store that says something has just happened. The history read as the
+ * page loads is every announcement the server has ever made, most of them hours old, so anything
+ * that wants to react to news — the Play tab printing one in the game's message box — has to be
+ * able to tell the two apart.
+ */
+export function latestArrival(): Announcement | null {
+  follow();
+  return arrived;
+}
+
 /** Add the announcements behind the oldest one showing to the end of it. */
 export async function older(): Promise<void> {
   showing = await loadOlderAnnouncements(showing);
@@ -51,6 +66,7 @@ function follow(): void {
   if (server === null) return;
   followFeed(browserFeed(server), (announcement) => {
     showing = { ...showing, announcements: prepended(showing.announcements, announcement) };
+    arrived = announcement;
   });
   void loadAnnouncements().then((history) => {
     showing = { ...history, announcements: merged(showing.announcements, history.announcements) };
