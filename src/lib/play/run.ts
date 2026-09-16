@@ -1,6 +1,7 @@
 import type { Leaderboard, PortedGameId } from '../app-state.svelte';
 import { base64FromBytes, bytesFromBase64 } from '../bytes';
 import { isActionKind } from '../game/action';
+import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import { BorlandRng, SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
@@ -42,6 +43,10 @@ import { TICKS_A_SECOND } from './sawtooth';
 /** The shape of the log itself. A reader that does not know this number should not trust what it
  *  finds. */
 export const RUN_LOG_VERSION = 3;
+
+/** The mode a sitting in the endless dungeon is written down as (`mode.ts`), which is what tells
+ *  a replay which dungeon to play it in. */
+const ENDLESS_MODE = 'endless';
 
 /** Which of the playable games a run was played in. */
 export type RunGame = PortedGameId;
@@ -857,6 +862,11 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
       this.bytes = bytes;
     },
     died() {},
+    // A sitting played in the endless dungeon is replayed in it, or the floors it was played on
+    // would not be there at all. There is one endless world for now and every endless character
+    // is rolled into it; when MORF-513 starts handing worlds out, the log will have to say which
+    // one a sitting was played in, since nothing else here can tell.
+    endless: recorded.mode === ENDLESS_MODE ? { seed: ENDLESS_WORLD_SEED, kept: null } : undefined,
   };
   const session = startGame(file, run.rng, run);
   void runPlayLoop(session, runMoveControl(session));

@@ -1,10 +1,12 @@
 import type { PortedGameId, RosterEntry } from '../app-state.svelte';
 import { characterDied, replaceCharacterBytes, runSessionPlayed } from '../character/current';
+import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import type { ZipEntry } from '../zip';
 import {
   runMoveControl,
   startGame,
   type CharacterFile,
+  type EndlessPlay,
   type GameSession,
   type PlayView,
 } from './engine';
@@ -149,12 +151,37 @@ function recorder(
   });
 }
 
+/**
+ * The endless world the character on the roster plays in, or none for one playing the game as it
+ * shipped.
+ *
+ * A character is endless exactly when the roll locked it to the endless dungeon, and the world it
+ * was rolled into is on its entry. What it carries beside its record is kept on the entry too,
+ * the way the explored maps are kept beside it, and is written there wherever the record is
+ * written.
+ */
+function endlessPlay(entry: RosterEntry): EndlessPlay | undefined {
+  if (entry.lock !== 'endless') return undefined;
+  return {
+    // A character that came back from the run server without its world -- the server is not told
+    // which one it was rolled into -- plays in the one world there is.
+    seed: entry.worldSeed ?? ENDLESS_WORLD_SEED,
+    kept: {
+      read: () => entry.endless ?? null,
+      write: (state) => {
+        entry.endless = state;
+      },
+    },
+  };
+}
+
 function startUnforgiven(entry: RosterEntry, sound: boolean, mode: PlayMode): GameSession {
   const file: CharacterFile = {
     ...playedFile(entry),
     // The explored maps live beside the roster entry, the way the game's .DUN files live beside
     // the character's record.
     maps: characterMaps(entry.id),
+    endless: endlessPlay(entry),
   };
   // Dungeons of the Unforgiven is the one game of the three whose reseeds are ported, so it is
   // the one game handed a clock (`mode.ts`, and section 8 of the RE notes).

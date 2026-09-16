@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { app, type RosterEntry } from '../app-state.svelte';
 import { newEntry } from '../character/roster';
+import { ENDLESS_BOTTOM } from '../game/endless/rules';
+import { FAITHFUL_RULES } from '../game/port/rules';
 import { characterFile, floorSquare, press, settle, teleporterSquare } from './battle.test-support';
 import type { GameSession } from './engine';
 import { PLAY_GAMES } from './games';
@@ -84,6 +86,53 @@ describe('a character played again', () => {
     expect(verdict.sessions).toBe(2);
     // The turn where the character stands costs this game nothing, so four of the five keys count.
     expect(verdict.claimed.actions).toBe(4);
+  });
+});
+
+describe('a character rolled for the endless dungeon', () => {
+  const MODULE_IV = 3;
+  /** The floor a trap door is opened with the key labelled 44, which is deeper than the record's
+   *  own flags reach. */
+  const DEEP_FLOOR = 220;
+
+  /** A character on the roster locked to the endless dungeon, standing in the town. */
+  function rosteredEndless(): RosterEntry {
+    const bytes = Uint8Array.from(characterFile({ lev: 20, level: 3, dir: 0, ...floorSquare(3) }).bytes);
+    const entry = newEntry({ game: 'unforgiven', name: 'DEEPER', slot: 2, bytes, imported: false, lock: 'endless' });
+    app.roster = [entry];
+    app.characterId = entry.id;
+    return entry;
+  }
+
+  it('is played in the world it was rolled into, where a faithful character is not', () => {
+    const endless = PLAY_GAMES.unforgiven.start(rosteredEndless(), false, 'endless');
+    expect(endless.game.rules.bottomLevel(MODULE_IV)).toBe(ENDLESS_BOTTOM);
+    endless.finish();
+
+    const faithful = PLAY_GAMES.unforgiven.start(rostered(), false, 'faithful');
+    expect(faithful.game.rules.bottomLevel(MODULE_IV)).toBe(FAITHFUL_RULES.bottomLevel(MODULE_IV));
+    faithful.finish();
+  });
+
+  it('keeps what it carries beside its record on its roster entry', () => {
+    const entry = rosteredEndless();
+    const session = PLAY_GAMES.unforgiven.start(entry, false, 'endless');
+    session.game.rules.keys.take(session.game.pc, DEEP_FLOOR);
+
+    session.save();
+    session.finish();
+
+    expect(entry.endless?.keys).toEqual([DEEP_FLOOR / 5]);
+  });
+
+  it('starts again with what the sitting before it left behind', () => {
+    const entry = rosteredEndless();
+    entry.endless = { keys: [DEEP_FLOOR / 5], bossSquares: [] };
+
+    const session = PLAY_GAMES.unforgiven.start(entry, false, 'endless');
+
+    expect(session.game.rules.keys.flag(session.game.pc, DEEP_FLOOR)).toBe(1);
+    session.finish();
   });
 });
 
