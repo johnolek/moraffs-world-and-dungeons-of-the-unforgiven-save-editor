@@ -8,7 +8,9 @@ import { viewMonsters } from '../../play/view-scene';
 import { viewPictures } from '../../play/view3d/browser';
 import data from '../dotu-data.json';
 import { bundledDungeon } from '../dungeon';
+import { expValue, strike } from '../port/combat';
 import { drainerBonus } from '../port/kills';
+import { FAITHFUL_RULES } from '../port/rules';
 import { BorlandRng } from '../port/rng';
 import { monsterAt, newGame, type Game } from '../port/state';
 import { endlessRules } from './rules';
@@ -23,6 +25,15 @@ const MODULE_V = 4;
 const FLOOR = 120;
 /** A floor deep enough that the game's own key odds would never hand out a key for it. */
 const DEEP_FLOOR = 300;
+/** A floor deep enough that the stocking rolls monsters past both of the limits the game's own
+ *  six-byte monster record puts on them. */
+const VERY_DEEP_FLOOR = 4000;
+/** A monster deeper than either of those limits: a level past the byte the game keeps one in,
+ *  and hit points past the 32,000 it tops a roll off at. */
+const DEEP_MONSTER_LEVEL = 300;
+const DEEP_MONSTER_HP = 60000;
+/** What the game's own jitter counts a level round. */
+const MONSTER_LEVEL_BYTE = 256;
 const FAITHFUL_BOTTOM = 105;
 /** How far apart a section's last floor and the shallowest floor its trap doors lead to are. */
 const TRAP_DOOR_FLOORS = 80;
@@ -169,6 +180,48 @@ describe('arriving on a floor below the bottom of the game', () => {
     loadLevelMap(game, new FloorMonsters(), floorRows(FLOOR), FLOOR, game.rng);
     expect(rules.monsterLevel(MODULE_V, FLOOR)).toBe(FLOOR + 60);
     expect(game.monsters.some((monster) => monster.level > 130)).toBe(true);
+  });
+});
+
+describe('a monster of a floor below the bottom of the game', () => {
+  /** Monster kind 23 is one of the section's ordinary monsters, as the loaded table holds it. */
+  const REGULAR_KIND = 23;
+
+  it("is stocked past both the limits the game's own six bytes put on it", () => {
+    const game = gameOn(VERY_DEEP_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(VERY_DEEP_FLOOR), VERY_DEEP_FLOOR, game.rng);
+    expect(game.monsters.some((monster) => monster.level > MONSTER_LEVEL_BYTE)).toBe(true);
+    expect(game.monsters.some((monster) => monster.hp > FAITHFUL_RULES.monsterHpMax)).toBe(true);
+  });
+
+  it('carries both numbers through a swing at it', () => {
+    const game = gameOn(FLOOR);
+    // A character big enough to land a blow on something this deep, which is what it takes for
+    // the hit points to move at all.
+    Object.assign(game.pc, { lev: 500, str: 300 });
+    const monster = game.monsters[0];
+    Object.assign(monster, { type: REGULAR_KIND, level: DEEP_MONSTER_LEVEL, hp: DEEP_MONSTER_HP });
+    game.engaged = 0;
+
+    const damage = strike(game);
+
+    expect(damage).toBeGreaterThan(0);
+    expect(monster.hp).toBe(DEEP_MONSTER_HP - damage);
+    expect(monster.hp).toBeGreaterThan(FAITHFUL_RULES.monsterHpMax);
+    expect(monster.level).toBe(DEEP_MONSTER_LEVEL);
+  });
+
+  it('is worth the experience of the level it really has', () => {
+    const game = gameOn(FLOOR);
+    const monster = game.monsters[0];
+    Object.assign(monster, { type: REGULAR_KIND, level: DEEP_MONSTER_LEVEL, hp: DEEP_MONSTER_HP });
+    const deep = expValue(game, 0);
+
+    // What the game's own byte would have made of level 300.
+    monster.level = DEEP_MONSTER_LEVEL % MONSTER_LEVEL_BYTE;
+
+    expect(Number.isFinite(deep)).toBe(true);
+    expect(deep).toBeGreaterThan(expValue(game, 0));
   });
 });
 
