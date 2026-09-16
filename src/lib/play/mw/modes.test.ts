@@ -83,13 +83,13 @@ describe("the numbers debug mode prints over the game's own screen", () => {
 
 describe('the panel of numbers the game never prints', () => {
   it('is absent in faithful and in speedrun, and present in debug', () => {
-    expect(panelVisible('faithful')).toBe(false);
-    expect(panelVisible('speedrun')).toBe(false);
-    expect(panelVisible('debug')).toBe(true);
+    expect(panelVisible('faithful', null)).toBe(false);
+    expect(panelVisible('speedrun', null)).toBe(false);
+    expect(panelVisible('debug', null)).toBe(true);
   });
 
   it('is what the tab puts the panel behind', () => {
-    expect(source).toContain('{#if panelVisible(stage.mode)}');
+    expect(source).toContain('{#if panelVisible(stage.mode, stage.lock)}');
   });
 });
 

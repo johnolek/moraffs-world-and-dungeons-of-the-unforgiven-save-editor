@@ -243,7 +243,9 @@ export class RevGameSession extends KeyedSession<RevPc> {
     }
     // Debug mode's panel prints the cursor the clock walks and the two slots it has marked awake,
     // which move on every tick whether or not anything on the level did.
-    if (drawAgain || panelVisible(this.mode)) this.changed();
+    // No character of Moraff's Revenge is locked to the endless dungeon, which is the only
+    // other thing that puts the panel up.
+    if (drawAgain || panelVisible(this.mode, null)) this.changed();
   }
 
   /** The slot standing on the character's own square (1000:08F6). */

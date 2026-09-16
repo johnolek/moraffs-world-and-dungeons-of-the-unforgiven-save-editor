@@ -22,9 +22,9 @@ const TABS = [
 
 describe('the panel of numbers the game never prints', () => {
   it('is shown in debug alone, whichever of the two is on the stage', () => {
-    expect(panelVisible('faithful')).toBe(false);
-    expect(panelVisible('speedrun')).toBe(false);
-    expect(panelVisible('debug')).toBe(true);
+    expect(panelVisible('faithful', null)).toBe(false);
+    expect(panelVisible('speedrun', null)).toBe(false);
+    expect(panelVisible('debug', null)).toBe(true);
   });
 
   it('is drawn in the column beside the stage rather than on it', () => {
@@ -43,9 +43,10 @@ describe('the panel of numbers the game never prints', () => {
     it(`is what the foot of the column holds on ${tab.game}'s tab`, () => {
       const snippet = source.indexOf('{#snippet sideFoot(');
       expect(snippet).toBeGreaterThan(-1);
-      const guard = source.indexOf('{#if panelVisible(stage.mode)}', snippet);
+      const guard = source.indexOf('{#if panelVisible(stage.mode, stage.lock)}', snippet);
       expect(guard).toBeGreaterThan(snippet);
-      // The mode is the whole of what the panel waits on: it is drawn right behind that guard.
+      // The mode and the lock are the whole of what the panel waits on: it is drawn right behind
+      // that guard.
       // The tag alone is looked for, since a panel with props enough to wrap opens on its own
       // line.
       expect(source.slice(guard, source.indexOf('{/if}', guard))).toContain(tab.panel);

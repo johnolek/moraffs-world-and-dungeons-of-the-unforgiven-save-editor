@@ -1,4 +1,4 @@
-import type { PortedGameId, RosterEntry } from '../app-state.svelte';
+import type { Leaderboard, PortedGameId, RosterEntry } from '../app-state.svelte';
 import { characterDied, replaceCharacterBytes, runSessionPlayed } from '../character/current';
 import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import type { ZipEntry } from '../zip';
@@ -74,6 +74,10 @@ export interface PlayStage<Session, View> {
   session: Session;
   view: View;
   mode: PlayMode;
+  /** What the character being played is locked to, or null for one that is locked to nothing. It
+   *  is the dungeon rather than the mode that the endless lock names, so the panel asks for it
+   *  separately from `mode`. */
+  lock: Leaderboard | null;
   display: PlayDisplay;
   /** How long the game's screen takes to appear, from the switch's slider. */
   redraw: number;

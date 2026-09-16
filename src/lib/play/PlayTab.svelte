@@ -469,7 +469,7 @@
       </Overlay>
     {/if}
   {:else}
-    {@const stage = { session, view, mode, display, redraw, tick }}
+    {@const stage = { session, view, mode, lock, display, redraw, tick }}
     <div class="stage">
       <div class="map" bind:this={mapElement} style:filter={colourblindFilter(colourblind)}>
         {@render screen(stage)}

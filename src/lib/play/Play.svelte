@@ -37,6 +37,7 @@
     debugDrawn,
     mapDrawn,
     monstersDrawn,
+    dungeonNumbersVisible,
     panelVisible,
     readPlayAnnouncements,
     readPlayClockReseed,
@@ -435,10 +436,11 @@
 {/snippet}
 
 {#snippet sideFoot(stage: Stage)}
-  {#if panelVisible(stage.mode)}
+  {#if panelVisible(stage.mode, stage.lock)}
     <Panel
       game={stage.session.game}
       view={stage.view}
+      dungeonNumbers={dungeonNumbersVisible(stage.mode)}
       bind:highlighted={highlightedMonsterId}
       bind:routing={routingToTeleporter}
       bind:routePassWall

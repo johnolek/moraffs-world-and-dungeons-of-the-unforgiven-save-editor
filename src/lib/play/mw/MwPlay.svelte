@@ -326,7 +326,7 @@
 {/snippet}
 
 {#snippet sideFoot(stage: Stage)}
-  {#if panelVisible(stage.mode)}
+  {#if panelVisible(stage.mode, stage.lock)}
     <MwPanel game={stage.session.game} view={stage.view} />
   {/if}
 {/snippet}

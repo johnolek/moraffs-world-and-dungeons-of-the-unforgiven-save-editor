@@ -251,7 +251,7 @@ describe('a character rolled for the endless dungeon', () => {
 
     expect(entry.leaderboard).toBeNull();
     expect(modeIsChosen(entry.lock, entry.leaderboard !== null)).toBe(true);
-    expect(panelVisible(session.mode)).toBe(true);
+    expect(panelVisible(session.mode, entry.lock)).toBe(true);
     expect(discoveredMapOnly(session.mode)).toBe(false);
   });
 

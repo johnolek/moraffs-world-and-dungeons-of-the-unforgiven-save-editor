@@ -59,8 +59,10 @@ function isPlayMode(value: unknown): value is PlayMode {
  *
  * Two of the three locks are modes and answer for themselves. The endless lock is not: it names
  * the dungeon the character plays in and says nothing about how much of it is shown, and a
- * character on the endless board is shown what faithful shows, so that every run on that board is
- * a run of the same game.
+ * character on the endless board is shown the floor and the monsters faithful shows, so that
+ * every run on that board is a run of the same game. What it is shown on top of that is the
+ * bookkeeping about its own things, which every endless character is shown alike
+ * ({@link panelVisible}).
  */
 export function lockedPlayMode(lock: Leaderboard): PlayMode {
   return lock === 'endless' ? 'faithful' : lock;
@@ -244,12 +246,34 @@ export function waitsAreEnforced(mode: PlayMode): boolean {
 }
 
 /**
- * Whether the column of numbers the game keeps and never prints is shown — the engaged monster's
- * hit points and the chance a swing lands, the charges on every wand and scroll, the turns left
- * on every spell, the odds the square underfoot holds a trap door, how many monsters are left
- * alive and which are nearest.
+ * Whether the column of numbers the game keeps and never prints is shown at all.
+ *
+ * Debug shows the whole column. An endless character is shown the part of it that is about the
+ * character — the charges on every wand, scroll and sheet of paper, the turns left on every
+ * spell, the poison and disease it is carrying, the time it has spent down here — whatever mode
+ * it is being played in. The rest of the column is about the dungeon and stays debug's own
+ * ({@link dungeonNumbersVisible}).
+ *
+ * An endless character is meant to be picked up again after days away, often on another machine,
+ * and the 1993 game kept all of that bookkeeping to itself: a player who wanted it wrote it on
+ * paper between sittings. Handing it back tells them nothing about the dungeon, and every run on
+ * the endless board is handed the same, so the board goes on comparing like with like (John,
+ * 2026-09-16).
  */
-export function panelVisible(mode: PlayMode): boolean {
+export function panelVisible(mode: PlayMode, lock: Leaderboard | null): boolean {
+  return mode === 'debug' || lock === 'endless';
+}
+
+/**
+ * Whether the part of that column which is about the dungeon rather than the character is shown:
+ * the engaged monster's level and hit points and the chance a swing lands, the odds the square
+ * underfoot holds a trap door, how many monsters are left alive on the floor and which kinds they
+ * are and how far off the nearest of each is, and the way to the nearest teleporter.
+ *
+ * Debug alone. The endless dungeon is the game with no bottom rather than an easier game, so what
+ * is waiting down there stays hidden.
+ */
+export function dungeonNumbersVisible(mode: PlayMode): boolean {
   return mode === 'debug';
 }
 

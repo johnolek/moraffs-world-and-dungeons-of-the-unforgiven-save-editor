@@ -11,6 +11,7 @@ import {
   mapDrawn,
   modeIsChosen,
   monstersDrawn,
+  dungeonNumbersVisible,
   panelVisible,
   PLAY_DISPLAYS,
   PLAY_MODES,
@@ -103,10 +104,27 @@ describe('the control on the Play tab', () => {
 });
 
 describe('the panel of numbers the game never prints', () => {
-  it('is shown in debug alone', () => {
-    expect(panelVisible('faithful')).toBe(false);
-    expect(panelVisible('speedrun')).toBe(false);
-    expect(panelVisible('debug')).toBe(true);
+  it('is shown in debug whatever the character is locked to', () => {
+    expect(panelVisible('faithful', null)).toBe(false);
+    expect(panelVisible('speedrun', null)).toBe(false);
+    expect(panelVisible('debug', null)).toBe(true);
+  });
+
+  it('is shown to an endless character in every mode', () => {
+    expect(panelVisible('faithful', 'endless')).toBe(true);
+    expect(panelVisible('speedrun', 'endless')).toBe(true);
+    expect(panelVisible('debug', 'endless')).toBe(true);
+  });
+
+  it('is not shown to a character locked to a mode rather than to the endless dungeon', () => {
+    expect(panelVisible('faithful', 'faithful')).toBe(false);
+    expect(panelVisible('speedrun', 'speedrun')).toBe(false);
+  });
+
+  it('keeps what the dungeon is doing to debug, endless or not', () => {
+    expect(dungeonNumbersVisible('debug')).toBe(true);
+    expect(dungeonNumbersVisible('faithful')).toBe(false);
+    expect(dungeonNumbersVisible('speedrun')).toBe(false);
   });
 });
 

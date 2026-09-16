@@ -552,7 +552,7 @@
           {/each}
         </section>
 
-        <Panel game={playing.game} view={showing} />
+        <Panel game={playing.game} view={showing} dungeonNumbers />
       </aside>
     </div>
   {/if}

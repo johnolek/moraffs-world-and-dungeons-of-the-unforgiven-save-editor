@@ -32,6 +32,14 @@
     /** The route that button found, null when there is none to be had, and undefined while the
      *  button is off. */
     route?: Route | null | undefined;
+    /**
+     * Whether the sections about the dungeon are drawn beside the ones about the character
+     * ({@link dungeonNumbersVisible}).
+     *
+     * An endless character is shown what it is carrying and what it has running, so that it can
+     * be put down for a week and picked up again, and none of what is waiting on the floor.
+     */
+    dungeonNumbers: boolean;
   }
 
   let {
@@ -41,6 +49,7 @@
     routing = $bindable(false),
     routePassWall = $bindable(false),
     route = undefined,
+    dungeonNumbers,
   }: Props = $props();
 
   // A route of no steps at all is the character standing beside the teleporter, which is the
@@ -49,20 +58,35 @@
     if (route && route.steps === 0) routing = false;
   });
 
-  const numbers = $derived.by(() => {
-    const place = view.place;
+  /** What the game keeps to itself about the character: what it is carrying, what it has running,
+   *  what is wrong with it, and how long it has been down here. */
+  const own = $derived.by(() => {
     const pc = game.pc;
     return {
       timers: spellTimers(pc),
       untimed: untimedSpells(pc),
       ailing: ailments(pc),
       items: magicItems(pc).filter((group) => group.lines.length > 0),
+      seconds: Math.round(view.seconds),
+    };
+  });
+
+  /**
+   * What the game keeps to itself about the dungeon, or null where it is not being shown.
+   *
+   * It is worked out only when it is drawn. Reading the floor costs something on every action —
+   * `floorMonsterKinds` walks every monster standing on it — and a mode that is not shown any of
+   * this should not be paying for it, nor holding it anywhere it could be shown by accident.
+   */
+  const dungeon = $derived.by(() => {
+    if (!dungeonNumbers) return null;
+    const place = view.place;
+    return {
       engaged: engagedMonster(game),
       square: squareFacts(game, view.rows[place.y][place.x]),
       kinds: floorMonsterKinds(game, view.monsters),
       onTheFloor: view.monsters.length,
       chase: chaseDistance(place.floor),
-      seconds: Math.round(view.seconds),
     };
   });
 
@@ -90,102 +114,105 @@
     </dl>
   {/snippet}
 
-  {#if numbers.engaged}
-    {@const engaged = numbers.engaged}
+  {#if dungeon}
+    {#if dungeon.engaged}
+      {@const engaged = dungeon.engaged}
+      <section>
+        <h3>What you are up against</h3>
+        <p class="name">{engaged.name}</p>
+        {@render rows([
+          { label: 'Level', value: String(engaged.level) },
+          { label: 'Hit points', value: `${engaged.hp} of at most ${engaged.mostHp}` },
+          { label: 'Your next swing lands', value: percent(engaged.hitChance) },
+        ])}
+        <p class="note">
+          The chance counts out the eighty rolls a swing makes, and calls a swing that gets past
+          the monster but rolls no damage a miss, the way the game does.
+        </p>
+      </section>
+    {/if}
+
     <section>
-      <h3>What you are up against</h3>
-      <p class="name">{engaged.name}</p>
-      {@render rows([
-        { label: 'Level', value: String(engaged.level) },
-        { label: 'Hit points', value: `${engaged.hp} of at most ${engaged.mostHp}` },
-        { label: 'Your next swing lands', value: percent(engaged.hitChance) },
-      ])}
+      <h3>This square</h3>
+      {#if dungeon.square.length > 0}
+        {@render rows(dungeon.square)}
+      {:else}
+        <p class="empty">Nothing but floor.</p>
+      {/if}
+      <p class="note">{SQUARE_NOTE}</p>
+    </section>
+
+    <section>
+      <h3>This floor</h3>
+      {@render rows([{ label: 'Monsters left alive', value: String(dungeon.onTheFloor) }])}
+      <div class="route">
+        <button type="button" class:picked={routing} onclick={() => (routing = !routing)}>
+          Path to nearest teleporter
+        </button>
+        <label class="toggle">
+          <input type="checkbox" bind:checked={routePassWall} />
+          <span>Allow Pass Wall</span>
+        </label>
+      </div>
+      {#if route}
+        <p class="note">{routeWords(route)}</p>
+      {:else if route === null}
+        <p class="note">No teleporter reachable from here.</p>
+      {/if}
+      {#if dungeon.kinds.length > 0}
+        <h4>Every monster on this floor</h4>
+        <ol class="kinds">
+          {#each dungeon.kinds as kind}
+            <li>
+              <button
+                type="button"
+                class:picked={highlighted === kind.monsterId}
+                onclick={() => (highlighted = highlighted === kind.monsterId ? null : kind.monsterId)}>
+                <span class="kind-name">{kind.name}</span>
+                <span class="kind-facts">
+                  {kind.count} on the floor &middot; {levels(kind.lowestLevel, kind.highestLevel)} &middot;
+                  nearest {kind.nearest} away
+                </span>
+              </button>
+            </li>
+          {/each}
+        </ol>
+        <p class="note">Click a kind to ring every one of them on both maps.</p>
+      {/if}
       <p class="note">
-        The chance counts out the eighty rolls a swing makes, and calls a swing that gets past the
-        monster but rolls no damage a miss, the way the game does.
+        A monster within {dungeon.chase} squares walks towards you; further off it stays where it
+        is.
       </p>
     </section>
   {/if}
 
-  <section>
-    <h3>This square</h3>
-    {#if numbers.square.length > 0}
-      {@render rows(numbers.square)}
-    {:else}
-      <p class="empty">Nothing but floor.</p>
-    {/if}
-    <p class="note">{SQUARE_NOTE}</p>
-  </section>
-
-  <section>
-    <h3>This floor</h3>
-    {@render rows([{ label: 'Monsters left alive', value: String(numbers.onTheFloor) }])}
-    <div class="route">
-      <button type="button" class:picked={routing} onclick={() => (routing = !routing)}>
-        Path to nearest teleporter
-      </button>
-      <label class="toggle">
-        <input type="checkbox" bind:checked={routePassWall} />
-        <span>Allow Pass Wall</span>
-      </label>
-    </div>
-    {#if route}
-      <p class="note">{routeWords(route)}</p>
-    {:else if route === null}
-      <p class="note">No teleporter reachable from here.</p>
-    {/if}
-    {#if numbers.kinds.length > 0}
-      <h4>Every monster on this floor</h4>
-      <ol class="kinds">
-        {#each numbers.kinds as kind}
-          <li>
-            <button
-              type="button"
-              class:picked={highlighted === kind.monsterId}
-              onclick={() => (highlighted = highlighted === kind.monsterId ? null : kind.monsterId)}>
-              <span class="kind-name">{kind.name}</span>
-              <span class="kind-facts">
-                {kind.count} on the floor &middot; {levels(kind.lowestLevel, kind.highestLevel)} &middot;
-                nearest {kind.nearest} away
-              </span>
-            </button>
-          </li>
-        {/each}
-      </ol>
-      <p class="note">Click a kind to ring every one of them on both maps.</p>
-    {/if}
-    <p class="note">
-      A monster within {numbers.chase} squares walks towards you; further off it stays where it is.
-    </p>
-  </section>
-
-  {#if numbers.ailing.length > 0}
+  {#if own.ailing.length > 0}
     <section>
       <h3>Poison and disease</h3>
-      {@render rows(numbers.ailing, true)}
+      {@render rows(own.ailing, true)}
     </section>
   {/if}
 
   <section>
     <h3>Spells with a timer</h3>
-    {#if numbers.timers.length > 0}
-      {@render rows(numbers.timers)}
+    {#if own.timers.length > 0}
+      {@render rows(own.timers)}
     {:else}
       <p class="empty">None running.</p>
     {/if}
   </section>
 
-  {#if numbers.untimed.length > 0}
+  {#if own.untimed.length > 0}
     <section>
       <h3>Spells with no timer</h3>
-      {@render rows(numbers.untimed)}
+      {@render rows(own.untimed)}
     </section>
   {/if}
 
   <section>
     <h3>Charges you carry</h3>
-    {#if numbers.items.length > 0}
-      {#each numbers.items as group}
+    {#if own.items.length > 0}
+      {#each own.items as group}
         <h4>{group.title}</h4>
         {@render rows(group.lines)}
       {/each}
@@ -197,7 +224,7 @@
   <section>
     <h3>Game time</h3>
     {@render rows([
-      { label: 'Spent down here', value: `${numbers.seconds} second${numbers.seconds === 1 ? '' : 's'}` },
+      { label: 'Spent down here', value: `${own.seconds} second${own.seconds === 1 ? '' : 's'}` },
     ])}
   </section>
 </div>
