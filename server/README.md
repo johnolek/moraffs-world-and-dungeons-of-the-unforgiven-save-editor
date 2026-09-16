@@ -346,7 +346,11 @@ A character rolled to play the endless dungeon carries the world it was rolled
 into here too, and the roster hands it back, so a player who signs in on a second
 device plays it in the same dungeon rather than in the first world. A device that
 names no world leaves the one here, the way it does with the mode a character is
-locked to: both are decided at the roll and never again.
+locked to: both are decided at the roll and never again. What the character
+carries beside its record is not here to hand back, so the device works it out
+the way this server does: it replays the chain of keys it has just been given
+before it plays the character on, and the sitting it then plays starts holding
+what the sittings before it left.
 
 A device asks for the keys of one character at a time, and only for the two
 things that need them: playing that character on, since a new sitting sends the
