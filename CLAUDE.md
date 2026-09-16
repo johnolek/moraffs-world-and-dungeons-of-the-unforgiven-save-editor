@@ -59,6 +59,9 @@ pnpm dev:all       # the site and the server together on the local Postgres
   a run server address (`VITE_RUN_SERVER`); `server/boards.ts` is the only server module the
   site may import a value from. The run server serves the built page at `/` when the image
   carries one (`server/site.ts`); a checkout that has not built the site leaves that a 404.
+- The Admin tab (`src/lib/admin/`) is the run server's own controls, and it shows only for the
+  player the server answers `GET /admin/me` as an admin, which is asked once a page load with the
+  passphrase the browser keeps. Nobody else is told there is a tab.
 - The Tidbits tab follows the game switch: a game has one when
   `src/lib/tidbits/files.ts` names a file for it and `src/lib/tabs.ts` lists the
   tab for it.
