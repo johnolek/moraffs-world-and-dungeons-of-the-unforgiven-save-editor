@@ -277,6 +277,42 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
   return verdict;
 }
 
+/**
+ * Replay a chain and hand back what an endless character is carrying at the end of it: the trap
+ * door keys and the Shadow boss squares its record has no room for, and the hit points past what
+ * the record's own field holds (`src/lib/game/endless/state.ts`).
+ *
+ * Nothing keeps that state but the device that played it. A second device signing in gets the
+ * record, the world and the keys that were pressed, so working the state out again is replaying
+ * the chain — which is what the run server does before it passes a verdict, and what a device
+ * does here before it plays the character on. A chain of the game as it shipped carries nothing
+ * and comes back null.
+ *
+ * Nothing is judged here: whether the chain is what it claims to be is {@link verifyRun}'s
+ * answer. A replay that stops part-way hands back null, which leaves the character carrying
+ * nothing, because a chain the engine cannot play through says nothing about what the character
+ * holds.
+ */
+export async function carriedAtTheEnd(sessions: readonly RunSession[]): Promise<KeptEndlessState | null> {
+  let before: RunTotals = { actions: 0, time: 0, milestones: [] };
+  let carried: KeptEndlessState | null = null;
+  try {
+    for (const session of sessions) {
+      const replay = await replayRun(session, before, carried);
+      before = {
+        actions: replay.actions,
+        time: replay.time,
+        milestones: [...before.milestones, ...replay.milestones],
+      };
+      carried = replay.endless;
+    }
+  } catch (thrown) {
+    console.warn('The chain could not be replayed for what it carries', thrown);
+    return null;
+  }
+  return carried;
+}
+
 /** Every engine the sessions of a run were played on, oldest first and each named once. */
 function enginesPlayedOn(sessions: readonly RunSession[]): string[] {
   return [...new Set(sessions.map((session) => session.engine))];
