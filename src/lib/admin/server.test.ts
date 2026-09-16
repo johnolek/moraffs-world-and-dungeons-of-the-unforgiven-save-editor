@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { forgetCharacter, loadCharacters, openNewEndlessWorld, whoAmI } from './server';
+import { flagAnotherAdmin, forgetCharacter, loadCharacters, openNewEndlessWorld, whoAmI } from './server';
 
 /** A browser holding the words, or holding none. `player.ts` reads them straight out of the
  *  store, so the store is the whole of what has to stand in for a browser here. */
@@ -139,5 +139,28 @@ describe('opening a new endless world', () => {
 
     expect(await openNewEndlessWorld(null)).toEqual({ ok: true, body: { world: 512 } });
     expect(calls[0].init.body).toBe('{}');
+  });
+});
+
+describe('making another player an admin', () => {
+  it('sends the name and answers with the one that stands', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { admin: 'Moraff' });
+
+    expect(await flagAnotherAdmin('moraff')).toEqual({ ok: true, body: { admin: 'Moraff' } });
+    expect(calls[0].url).toBe('https://runs.example.com/admin/admins');
+    expect(calls[0].init.body).toBe('{"name":"moraff"}');
+  });
+
+  it('hands back the words the server refused a name nobody holds with', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(404, { error: 'Nobody here has that name.' });
+
+    expect(await flagAnotherAdmin('Nobody At All')).toEqual({
+      ok: false,
+      message: 'Nobody here has that name.',
+    });
   });
 });

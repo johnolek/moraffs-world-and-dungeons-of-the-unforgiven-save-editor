@@ -60,6 +60,17 @@ export async function openNewEndlessWorld(seed: number | null): Promise<AdminAns
   return await askTheServer('POST', '/admin/worlds/endless', seed === null ? {} : { seed });
 }
 
+/**
+ * Makes another player an admin, and says the name that now stands.
+ *
+ * They are named rather than picked out of a list because the name is the only thing anybody here
+ * knows about a player. The player has to have claimed the name already: this flags a row and does
+ * not make one.
+ */
+export async function flagAnotherAdmin(name: string): Promise<AdminAnswer<{ admin: string }>> {
+  return await askTheServer('POST', '/admin/admins', { name });
+}
+
 /** One call to an admin endpoint carrying the words this browser keeps. */
 async function askTheServer<Body>(method: string, path: string, body?: unknown): Promise<AdminAnswer<Body>> {
   const server = runServerUrl();
