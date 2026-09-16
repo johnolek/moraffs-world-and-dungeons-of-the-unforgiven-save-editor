@@ -1,0 +1,87 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { whoAmI } from './server';
+
+/** A browser holding the words, or holding none. `player.ts` reads them straight out of the
+ *  store, so the store is the whole of what has to stand in for a browser here. */
+function browserKeeping(passphrase: string | null): void {
+  const items = new Map<string, string>();
+  if (passphrase !== null) items.set('moraff-tools.passphrase', passphrase);
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: {
+      get length() {
+        return items.size;
+      },
+      clear: () => items.clear(),
+      getItem: (key: string) => items.get(key) ?? null,
+      key: (index: number) => [...items.keys()][index] ?? null,
+      removeItem: (key: string) => void items.delete(key),
+      setItem: (key: string, value: string) => void items.set(key, value),
+    },
+    configurable: true,
+    writable: true,
+  });
+}
+
+/** A server that answers every call the same way, and the calls it was handed. */
+function fakeServer(status: number, body: unknown): { calls: { url: string; init: RequestInit }[] } {
+  const calls: { url: string; init: RequestInit }[] = [];
+  vi.stubGlobal('fetch', (url: string, init: RequestInit = {}) => {
+    calls.push({ url, init });
+    return Promise.resolve(new Response(JSON.stringify(body), { status }));
+  });
+  return { calls };
+}
+
+afterEach(() => {
+  Object.defineProperty(globalThis, 'localStorage', { value: undefined, configurable: true, writable: true });
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+describe('whoAmI', () => {
+  it('says the name the server knows the admin by, and says the words in a header', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { admin: true, name: 'John' });
+
+    expect(await whoAmI()).toBe('John');
+    expect(calls[0].url).toBe('https://runs.example.com/admin/me');
+    expect((calls[0].init.headers as Record<string, string>).Authorization).toBe(
+      'Bearer acid acorn acre afar affix aged',
+    );
+  });
+
+  it('is nobody when the words are nobody’s, which the server answers as no such endpoint', async () => {
+    browserKeeping('these six words are not anybody');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(404, { error: 'No such endpoint: /admin/me' });
+
+    expect(await whoAmI()).toBeNull();
+  });
+
+  it('is nobody, and asks nobody, when the browser keeps no words', async () => {
+    browserKeeping(null);
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { admin: true, name: 'John' });
+
+    expect(await whoAmI()).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it('is nobody, and asks nobody, in a build with no run server', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', '');
+    const { calls } = fakeServer(200, { admin: true, name: 'John' });
+
+    expect(await whoAmI()).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it('is nobody when the server cannot be reached', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
+
+    expect(await whoAmI()).toBeNull();
+  });
+});
