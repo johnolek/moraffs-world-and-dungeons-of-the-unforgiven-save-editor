@@ -85,3 +85,15 @@ describe("the details a click on a monster's picture opens", () => {
   });
 });
 
+describe("the bar of the sawtooth a swing's roll climbs", () => {
+  it('is what the tab puts under the picture, and only while a monster is engaged', () => {
+    expect(source).toContain(
+      'underCloseUp={stage.tick === null || view.engaged === null ? undefined : clockBar}',
+    );
+  });
+
+  it("stands over the game's own screen behind the same monster the HIT percentage does", () => {
+    const screen = readFileSync('src/lib/play/Screen.svelte', 'utf8');
+    expect(screen).toMatch(/\{#if liveHit\}\s*<ClockBar \{tick\} overScreen \/>/);
+  });
+});

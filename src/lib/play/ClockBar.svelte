@@ -6,7 +6,8 @@
   moment is settled before the swing is made, and it climbs by about 0.85 of its eighty every tick
   and drops back every 95 of them — five and a bit seconds (`sawtooth.ts`). The bar fills as the
   roll climbs and empties when it wraps, so a player can see when a good moment to swing is
-  coming. It takes no clicks and changes nothing: the game, the run log and a replay run exactly
+  coming. It stands only while a monster is engaged, which is when a swing has something to land
+  on. It takes no clicks and changes nothing: the game, the run log and a replay run exactly
   as they do without it.
 -->
 <script lang="ts">

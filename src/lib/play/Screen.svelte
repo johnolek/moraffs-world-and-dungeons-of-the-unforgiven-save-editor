@@ -795,7 +795,9 @@
       style:height="{(hitBox.height / SCREEN_PIXELS.height) * 100}%"
     ></canvas>
   {/if}
-  {#if debug}
+  <!-- The bar stands with the HIT percentage: while a monster is engaged, and not over the tablet
+       or a fade. -->
+  {#if liveHit}
     <ClockBar {tick} overScreen />
   {/if}
 </div>

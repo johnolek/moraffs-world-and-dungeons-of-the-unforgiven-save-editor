@@ -316,7 +316,8 @@
         killed={view.killed}
         viewsDrawn={view.viewsDrawn} />
     {/snippet}
-    <!-- The sawtooth a swing's to-hit roll climbs, under the picture, in debug mode alone. -->
+    <!-- The sawtooth a swing's to-hit roll climbs, under the picture, in debug mode alone, and
+         only while a monster is engaged. -->
     {#snippet clockBar()}
       <ClockBar tick={stage.tick} />
     {/snippet}
@@ -325,7 +326,7 @@
       closeUp={forwardView ? forward : facing ? closeUp : undefined}
       closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
       closeUpLines={debugDrawn(stage.mode) ? debugMonsterLines(stage.session.game, stage.tick).map((line) => line.text) : []}
-      underCloseUp={stage.tick === null ? undefined : clockBar}
+      underCloseUp={stage.tick === null || view.engaged === null ? undefined : clockBar}
       spells={spellsRunning(stage)}
       afflictions={afflictions(stage)}
       hp={view.hp}
