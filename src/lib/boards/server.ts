@@ -3,7 +3,15 @@ import { runServerUrl } from '../run-server';
 // The shapes the server answers with, and nothing but the shapes: these are types, so none of the
 // server's code comes along with them.
 import type { Announcement } from '../../../server/announcing';
-import type { BoardName, BoardPage, BoardRow, LivingPage, LivingRow, LivingSort } from '../../../server/boards';
+import type {
+  BoardName,
+  BoardPage,
+  BoardRow,
+  EndlessWorlds,
+  LivingPage,
+  LivingRow,
+  LivingSort,
+} from '../../../server/boards';
 import type { EveryoneAnswer, EveryoneRow } from '../../../server/everyone';
 import type { RunAnswer } from '../../../server/http';
 
@@ -20,19 +28,22 @@ import type { RunAnswer } from '../../../server/http';
  * (`src/lib/tabs.ts`); nothing here is called in such a build.
  */
 
-/** Which board is being read: the game, one of the two leaderboards, and one of the six. */
+/** Which board is being read: the game, one of the ways of playing it, one of that way's boards,
+ *  and the endless world it is read for, which only the endless boards have. */
 export interface BoardAsked {
   game: PortedGameId;
   leaderboard: Leaderboard;
   board: BoardName;
+  world: number | null;
 }
 
-/** Which board of the living is being read: the game, one of the two leaderboards, and whether
- *  the characters still being played are ranked by level or by depth. */
+/** Which board of the living is being read: the game, one of the ways of playing it, whether the
+ *  characters still being played are ranked by level or by depth, and the endless world. */
 export interface LivingAsked {
   game: PortedGameId;
   leaderboard: Leaderboard;
   sort: LivingSort;
+  world: number | null;
 }
 
 /** A board as the page holds it: every row read so far, the last page read, and whether the
@@ -86,13 +97,27 @@ function nextPageRead<Row>(showing: Loaded<Row>, page: OnePage<Row> | null): Loa
 }
 
 async function readBoardPage(asked: BoardAsked, page: number): Promise<BoardPage | null> {
-  return await readJson<BoardPage>(`/boards/${asked.game}/${asked.leaderboard}/${asked.board}?page=${page}`);
+  return await readJson<BoardPage>(
+    `/boards/${asked.game}/${asked.leaderboard}/${asked.board}?page=${page}${inWorld(asked.world)}`,
+  );
 }
 
 async function readLivingPage(asked: LivingAsked, page: number): Promise<LivingPage | null> {
   return await readJson<LivingPage>(
-    `/boards/${asked.game}/${asked.leaderboard}/living?sort=${asked.sort}&page=${page}`,
+    `/boards/${asked.game}/${asked.leaderboard}/living?sort=${asked.sort}&page=${page}${inWorld(asked.world)}`,
   );
+}
+
+/** The world a board is asked for, and nothing for a board that is one dungeon: the server reads
+ *  a request that names no world as the world being played now. */
+function inWorld(world: number | null): string {
+  return world === null ? '' : `&world=${world}`;
+}
+
+/** The endless worlds of one game there are boards for, or null when the server could not be
+ *  reached, which leaves the picker showing whatever it already had. */
+export async function loadEndlessWorlds(game: PortedGameId): Promise<EndlessWorlds | null> {
+  return await readJson<EndlessWorlds>(`/boards/${game}/endless/worlds`);
 }
 
 /** Everyone of one game as the page holds it. There is no paging: the whole table comes at once,

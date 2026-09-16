@@ -4,6 +4,7 @@ import type { EveryoneRow } from '../../../server/everyone';
 import {
   loadAnnouncements,
   loadBoard,
+  loadEndlessWorlds,
   loadEveryone,
   loadLiving,
   loadMore,
@@ -15,8 +16,8 @@ import {
   type LivingAsked,
 } from './server';
 
-const ASKED: BoardAsked = { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions' };
-const ALIVE: LivingAsked = { game: 'unforgiven', leaderboard: 'speedrun', sort: 'level' };
+const ASKED: BoardAsked = { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', world: null };
+const ALIVE: LivingAsked = { game: 'unforgiven', leaderboard: 'speedrun', sort: 'level', world: null };
 
 function row(name: string): BoardRow {
   return {
@@ -99,6 +100,31 @@ describe('reading a board', () => {
     expect(server.asked).toEqual(['https://runs.example.com/boards/unforgiven/speedrun/actions?page=1']);
     expect(board).toMatchObject({ page: 1, more: true, failed: false });
     expect(board.rows.map((each) => each.name)).toEqual(['Grond']);
+  });
+
+  it('asks for the world an endless board is read for', async () => {
+    const server = answering({ rows: [], page: 1, more: false });
+
+    await loadBoard({ game: 'unforgiven', leaderboard: 'endless', board: 'kills', world: 9 });
+
+    expect(server.asked).toEqual(['https://runs.example.com/boards/unforgiven/endless/kills?page=1&world=9']);
+  });
+
+  it('asks for no world at all on a board of the game as it shipped', async () => {
+    const server = answering({ rows: [], page: 1, more: false });
+
+    await loadLiving(ALIVE);
+
+    expect(server.asked).toEqual([
+      'https://runs.example.com/boards/unforgiven/speedrun/living?sort=level&page=1',
+    ]);
+  });
+
+  it('asks which endless worlds there are boards for', async () => {
+    const server = answering({ game: 'unforgiven', current: 1, worlds: [1, 9] });
+
+    expect(await loadEndlessWorlds('unforgiven')).toEqual({ game: 'unforgiven', current: 1, worlds: [1, 9] });
+    expect(server.asked).toEqual(['https://runs.example.com/boards/unforgiven/endless/worlds']);
   });
 
   it('adds the next page to the end of what is showing', async () => {

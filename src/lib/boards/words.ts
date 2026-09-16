@@ -18,11 +18,13 @@ export const BOARDS_PAGE = {
   leaderboard: 'Leaderboard:',
   bothLeaderboards: 'Both',
   board: 'Board:',
+  world: 'World:',
   rank: '#',
   player: 'Player',
   character: 'Character',
   reach: 'How far',
   level: 'Level',
+  kills: 'Kills',
   actions: 'Actions',
   playTime: 'Play time',
   finished: 'Finished',
@@ -139,12 +141,21 @@ export function gameName(game: string): string {
 }
 
 /**
- * How far a run got, which is not the same number in all three games: Moraff's Revenge has one
- * dungeon and seventy floors of it, so a run of it is measured by how deep it got, and the other
- * two by the module or the dungeon reached.
+ * How far a run got, which is not the same number in all three games or on all the boards:
+ * Moraff's Revenge has one dungeon and seventy floors of it, so a run of it is measured by how
+ * deep it got, and the other two by the module or the dungeon reached. A run of the endless
+ * dungeon is measured by the deepest floor it killed a Shadow monster on, and one that has killed
+ * none has no floor to show.
  */
-export function reachWords(game: string, deepest: number): string {
+export function reachWords(game: string, leaderboard: string | null, deepest: number): string {
+  if (leaderboard === 'endless') return deepest === 0 ? NOTHING_TO_SHOW : `Floor ${deepest}`;
   return game === 'revenge' ? `Floor ${deepest}` : dungeonName(game, deepest);
+}
+
+/** One endless world, as the picker over the boards names it. The world being played now is the
+ *  one anybody arriving is looking for, and says so. */
+export function worldWords(world: number, current: number): string {
+  return world === current ? `World ${world} (now)` : `World ${world}`;
 }
 
 /**

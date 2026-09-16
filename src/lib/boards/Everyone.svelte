@@ -169,7 +169,7 @@
           {#each STAT_SORT_KEYS as key, index (key)}
             <td>{row.now?.stats[index] ?? NOTHING_TO_SHOW}</td>
           {/each}
-          <td>{reachWords(game, row.deepest)}</td>
+          <td>{reachWords(game, row.leaderboard, row.deepest)}</td>
           <td>{row.actions}</td>
           <td>{row.clock}</td>
           <td>{playTimeWords(row.playMs, row.timed)}</td>

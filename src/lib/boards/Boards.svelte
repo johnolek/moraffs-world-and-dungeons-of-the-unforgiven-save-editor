@@ -6,15 +6,19 @@
   the two halves never disagree about a board. Nothing of the server's code comes with it: the
   lists are tables of names and words.
 
-  The six boards of finished runs and the two of the living share the picker and nothing else:
+  The boards of finished runs and the two of the living share the picker and nothing else:
   a row of one is a run that has ended and a row of the other is a character still being played,
   so each has its own table.
 
   The picker opens on everyone rather than on a board, because a ranked board is an answer to a
   question a reader has to have already: seeing who is playing the game at all comes first, and
-  the eight boards are behind it. One leaderboard picker stands over the lot: everyone can be read
-  across both leaderboards at once, while a ranked board is a ranking of runs played the same way
-  and so is one leaderboard or the other.
+  the boards are behind it. One leaderboard picker stands over the lot: everyone can be read
+  across the two ways of playing the game as it shipped at once, while a ranked board is a ranking
+  of runs played the same way and so is one leaderboard alone.
+
+  The endless dungeon is the third way of playing, and its boards are its own: no wins, since it
+  has no bottom, and one world at a time, since two worlds stand different monsters on the same
+  floor. So picking it changes the boards on offer and puts a world picker up beside them.
 -->
 <script lang="ts">
   import { app, type Leaderboard } from '../app-state.svelte';
@@ -26,6 +30,7 @@
   import RunPage from './RunPage.svelte';
   import {
     loadBoard,
+    loadEndlessWorlds,
     loadLiving,
     loadMore,
     loadMoreLiving,
@@ -41,25 +46,35 @@
     playTimeWords,
     reachWords,
     whenWords,
+    worldWords,
   } from './words';
-  import { BOARDS, BOARD_LEADERBOARDS, isBoardName, LIVING_BOARDS, type BoardName } from '../../../server/boards';
+  import {
+    boardsOf,
+    BOARD_LEADERBOARDS,
+    CURRENT_ENDLESS_WORLD,
+    hasBoard,
+    isBoardName,
+    LIVING_BOARDS,
+    type BoardName,
+  } from '../../../server/boards';
 
-  /** What the picker is showing: everyone, one of the six board names, or one of the two living
-   *  boards. */
+  /** What the picker is showing: everyone, one of the ranked board names, or one of the two
+   *  living boards. */
   type Picked = 'everyone' | BoardName | (typeof LIVING_BOARDS)[number]['name'];
 
-  /** The picker's choices, in the shape the segmented control takes. Everyone comes first and is
-   *  what the tab opens on; the rest are the boards, whose words are the server's. */
-  const PICKS: { id: Picked; label: string }[] = [
-    { name: 'everyone', sorts: EVERYONE.pick },
-    ...BOARDS,
-    ...LIVING_BOARDS,
-  ].map(({ name, sorts }) => ({ id: name as Picked, label: sorts }));
-
-  /** Which leaderboard is being read: one of them, or both at once. */
+  /** Which leaderboard is being read: one of them, or the two of the game as it shipped at
+   *  once. */
   type LeaderboardPick = Leaderboard | 'both';
 
-  /** The two leaderboards and both together, as the picker offers them. */
+  /**
+   * What "both" holds: the two ways of playing the game as it shipped.
+   *
+   * An endless character is playing another dungeon altogether and is read on its own, so it is
+   * not one of them.
+   */
+  const BOTH_LEADERBOARDS: Leaderboard[] = BOARD_LEADERBOARDS.filter((name) => name !== 'endless');
+
+  /** The leaderboards and both together, as the picker offers them. */
   const LEADERBOARD_CHOICES: { id: LeaderboardPick; label: string }[] = [
     ...BOARD_LEADERBOARDS.map((name) => ({ id: name as LeaderboardPick, label: leaderboardLabel(name) })),
     { id: 'both', label: BOARDS_PAGE.bothLeaderboards },
@@ -67,6 +82,9 @@
 
   let leaderboard = $state<LeaderboardPick>('both');
   let picked = $state<Picked>('everyone');
+  let world = $state(CURRENT_ENDLESS_WORLD);
+  let worlds = $state<number[]>([CURRENT_ENDLESS_WORLD]);
+  let currentWorld = $state(CURRENT_ENDLESS_WORLD);
   let showing = $state<LoadedBoard>(NO_BOARD);
   let alive = $state<LoadedLiving>(NO_BOARD);
   let reading = $state(false);
@@ -82,15 +100,42 @@
    *  both, so this only stands in for a state the page does not stay in. */
   const ranked = $derived<Leaderboard>(leaderboard === 'both' ? 'faithful' : leaderboard);
 
-  /** The leaderboards the table of everyone is cut down to. */
-  const leaderboards = $derived<Leaderboard[]>(leaderboard === 'both' ? [...BOARD_LEADERBOARDS] : [leaderboard]);
+  /** The boards on offer, which are the boards of the leaderboard being read. Everyone comes
+   *  first and is what the tab opens on; the rest are the boards, whose words are the server's. */
+  const picks = $derived<{ id: Picked; label: string }[]>(
+    [{ name: 'everyone', sorts: EVERYONE.pick }, ...boardsOf(ranked), ...LIVING_BOARDS].map(({ name, sorts }) => ({
+      id: name as Picked,
+      label: sorts,
+    })),
+  );
 
-  const asked = $derived({ game: app.game, leaderboard: ranked, board: picked });
+  /** The worlds on offer, which only the endless boards have. */
+  const worldChoices = $derived(
+    worlds.map((seed) => ({ id: String(seed), label: worldWords(seed, currentWorld) })),
+  );
+
+  /** The leaderboards the table of everyone is cut down to. */
+  const leaderboards = $derived<Leaderboard[]>(leaderboard === 'both' ? BOTH_LEADERBOARDS : [leaderboard]);
+
+  const asked = $derived({
+    game: app.game,
+    leaderboard: ranked,
+    board: picked,
+    // A board of the game as it shipped is one dungeon and has no world to be read for.
+    world: ranked === 'endless' ? world : null,
+  });
 
   /** Pick a board, off both leaderboards, since a ranked board is of one of them. */
   function pickBoard(id: Picked): void {
     picked = id;
     if (id !== 'everyone' && leaderboard === 'both') leaderboard = 'faithful';
+  }
+
+  /** Pick a leaderboard. A board the leaderboard picked does not have — one of the wins, where
+   *  the endless dungeon is picked — is no board at all, so the reader lands back on everyone. */
+  function pickLeaderboard(id: LeaderboardPick): void {
+    leaderboard = id;
+    if (id !== 'both' && isBoardName(picked) && !hasBoard(id, picked)) picked = 'everyone';
   }
 
   /** Which order the living are ranked in, and null when a board of finished runs is showing. */
@@ -102,6 +147,20 @@
    */
   let latest = 0;
 
+  // The worlds there are boards to read, asked for while the endless dungeon is the one being
+  // read. A server that did not answer leaves the picker offering the world being played now,
+  // which is the world anybody arriving is looking for.
+  $effect(() => {
+    const game = app.game;
+    if (ranked !== 'endless') return;
+    void loadEndlessWorlds(game).then((read) => {
+      if (read === null || game !== app.game) return;
+      worlds = read.worlds;
+      currentWorld = read.current;
+      if (!read.worlds.includes(world)) world = read.current;
+    });
+  });
+
   $effect(() => {
     const now = asked;
     const sort = livingSort;
@@ -110,13 +169,15 @@
     alive = NO_BOARD;
     openRun = null;
     if (sort !== null) {
-      void loadLiving({ game: now.game, leaderboard: now.leaderboard, sort }).then((read) => {
+      void loadLiving({ game: now.game, leaderboard: now.leaderboard, sort, world: now.world }).then((read) => {
         if (mine === latest) alive = read;
       });
     } else if (isBoardName(now.board)) {
-      void loadBoard({ game: now.game, leaderboard: now.leaderboard, board: now.board }).then((read) => {
-        if (mine === latest) showing = read;
-      });
+      void loadBoard({ game: now.game, leaderboard: now.leaderboard, board: now.board, world: now.world }).then(
+        (read) => {
+          if (mine === latest) showing = read;
+        },
+      );
     }
   });
 
@@ -124,8 +185,15 @@
    * The number the board is in order of, where the table has no column of its own for it. The
    * boards of wins are ordered by numbers every row already shows.
    */
-  const sortedOn = $derived(BOARDS.find((each) => each.name === picked)?.sortedOn ?? null);
-  const extra = $derived(sortedOn === 'deepest' || sortedOn === 'level' ? sortedOn : null);
+  const sortedOn = $derived(boardsOf(ranked).find((each) => each.name === picked)?.sortedOn ?? null);
+  const extra = $derived(
+    sortedOn === 'deepest' || sortedOn === 'level' || sortedOn === 'kills' ? sortedOn : null,
+  );
+
+  /** The heading over that column. */
+  const extraHeading = $derived(
+    extra === 'deepest' ? BOARDS_PAGE.reach : extra === 'level' ? BOARDS_PAGE.level : BOARDS_PAGE.kills,
+  );
 
   async function more(): Promise<void> {
     const now = asked;
@@ -133,10 +201,15 @@
     reading = true;
     const mine = latest;
     if (sort !== null) {
-      const read = await loadMoreLiving(alive, { game: now.game, leaderboard: now.leaderboard, sort });
+      const read = await loadMoreLiving(alive, { game: now.game, leaderboard: now.leaderboard, sort, world: now.world });
       if (mine === latest) alive = read;
     } else if (isBoardName(now.board)) {
-      const read = await loadMore(showing, { game: now.game, leaderboard: now.leaderboard, board: now.board });
+      const read = await loadMore(showing, {
+        game: now.game,
+        leaderboard: now.leaderboard,
+        board: now.board,
+        world: now.world,
+      });
       if (mine === latest) showing = read;
     }
     reading = false;
@@ -156,13 +229,24 @@
             label={BOARDS_PAGE.leaderboard}
             choices={leaderboardChoices}
             value={leaderboard}
-            onpick={(id) => (leaderboard = id)}
+            onpick={pickLeaderboard}
             wrap />
         </div>
         <div class="pick">
           <span class="label">{BOARDS_PAGE.board}</span>
-          <Segmented label={BOARDS_PAGE.board} choices={PICKS} value={picked} onpick={pickBoard} wrap />
+          <Segmented label={BOARDS_PAGE.board} choices={picks} value={picked} onpick={pickBoard} wrap />
         </div>
+        {#if ranked === 'endless'}
+          <div class="pick">
+            <span class="label">{BOARDS_PAGE.world}</span>
+            <Segmented
+              label={BOARDS_PAGE.world}
+              choices={worldChoices}
+              value={String(world)}
+              onpick={(id) => (world = Number(id))}
+              wrap />
+          </div>
+        {/if}
       </div>
       {#if picked === 'everyone'}
         <Everyone game={app.game} {leaderboards} onopen={(id) => (openRun = id)} />
@@ -193,7 +277,7 @@
                     <button type="button" class="link" onclick={() => (openRun = row.characterId)}>{row.name}</button>
                   </td>
                   <td>{row.level}</td>
-                  <td>{reachWords(asked.game, row.deepest)}</td>
+                  <td>{reachWords(asked.game, asked.leaderboard, row.deepest)}</td>
                   <td>{row.actions}</td>
                   <td>{row.clock}</td>
                   <td>{row.playing ? BOARDS_PAGE.beingPlayed : NOTHING_TO_SHOW}</td>
@@ -219,7 +303,7 @@
               <th>{BOARDS_PAGE.player}</th>
               <th>{BOARDS_PAGE.character}</th>
               {#if extra !== null}
-                <th>{extra === 'deepest' ? BOARDS_PAGE.reach : BOARDS_PAGE.level}</th>
+                <th>{extraHeading}</th>
               {/if}
               <th>{BOARDS_PAGE.actions}</th>
               <th>{clockHeading(asked.game)}</th>
@@ -236,7 +320,15 @@
                   <button type="button" class="link" onclick={() => (openRun = row.characterId)}>{row.name}</button>
                 </td>
                 {#if extra !== null}
-                  <td>{extra === 'deepest' ? reachWords(asked.game, row.deepest) : row.level}</td>
+                  <td>
+                    {#if extra === 'deepest'}
+                      {reachWords(asked.game, asked.leaderboard, row.deepest)}
+                    {:else if extra === 'level'}
+                      {row.level}
+                    {:else}
+                      {row.kills}
+                    {/if}
+                  </td>
                 {/if}
                 <td>{row.actions}</td>
                 <td>{row.clock}</td>
