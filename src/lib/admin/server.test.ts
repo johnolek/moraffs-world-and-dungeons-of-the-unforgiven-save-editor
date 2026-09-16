@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { forgetCharacter, loadCharacters, whoAmI } from './server';
+import { forgetCharacter, loadCharacters, openNewEndlessWorld, whoAmI } from './server';
 
 /** A browser holding the words, or holding none. `player.ts` reads them straight out of the
  *  store, so the store is the whole of what has to stand in for a browser here. */
@@ -117,5 +117,27 @@ describe('forgetting a character', () => {
       ok: false,
       message: 'No character here has that name.',
     });
+  });
+});
+
+describe('opening a new endless world', () => {
+  it('says the number the admin chose', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { world: 77 });
+
+    expect(await openNewEndlessWorld(77)).toEqual({ ok: true, body: { world: 77 } });
+    expect(calls[0].url).toBe('https://runs.example.com/admin/worlds/endless');
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].init.body).toBe('{"seed":77}');
+  });
+
+  it('asks the server to draw one when the admin chose no number', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { world: 512 });
+
+    expect(await openNewEndlessWorld(null)).toEqual({ ok: true, body: { world: 512 } });
+    expect(calls[0].init.body).toBe('{}');
   });
 });

@@ -49,6 +49,17 @@ export async function forgetCharacter(characterId: string): Promise<AdminAnswer<
   return await askTheServer('DELETE', `/admin/characters/${encodeURIComponent(characterId)}`);
 }
 
+/**
+ * Opens a new endless world, which every endless character rolled from now on is rolled into and
+ * which every character already rolled is left out of.
+ *
+ * A seed of null asks the server to draw a number, for an admin who wants a fresh dungeon and does
+ * not mind which. Either way the answer says the world that now stands.
+ */
+export async function openNewEndlessWorld(seed: number | null): Promise<AdminAnswer<{ world: number }>> {
+  return await askTheServer('POST', '/admin/worlds/endless', seed === null ? {} : { seed });
+}
+
 /** One call to an admin endpoint carrying the words this browser keeps. */
 async function askTheServer<Body>(method: string, path: string, body?: unknown): Promise<AdminAnswer<Body>> {
   const server = runServerUrl();
