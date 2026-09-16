@@ -5,10 +5,9 @@ import type { ServerConfig } from './config';
 import { adminFor, allCharacters, flagAdminPlayer, logAdminAction, type AdminPlayer } from './admins';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { openSignInAttempts, type SignInAttempts } from './attempts';
+import { boardWorld, endlessWorlds } from './board-worlds';
 import {
   boardPage,
-  boardWorld,
-  endlessWorlds,
   hasBoard,
   isBoardGame,
   isBoardLeaderboard,

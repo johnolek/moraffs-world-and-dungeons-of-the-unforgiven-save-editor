@@ -3,9 +3,9 @@ import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone, MilestoneKind } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
 import { ENDLESS_WORLD_SEED } from '../src/lib/game/endless/rules';
+import { boardWorld } from './board-worlds';
 import {
   boardPage,
-  boardWorld,
   deepestReach,
   deepestShadowKilled,
   hasBoard,

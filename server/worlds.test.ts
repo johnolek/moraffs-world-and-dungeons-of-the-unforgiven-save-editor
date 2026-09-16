@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ENDLESS_WORLD_SEED } from '../src/lib/game/endless/rules';
 import { flagAdminPlayer } from './admins';
-import { endlessWorlds } from './boards';
+import { endlessWorlds } from './board-worlds';
 import { createRunServer } from './http';
 import { claimPlayerName } from './players';
 import type { Sql } from './sql';
