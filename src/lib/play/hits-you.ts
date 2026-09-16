@@ -6,7 +6,7 @@
  * years apart, so one calculation serves both: a d80 added to what the monster brings and less
  * everything the character wears, carries and is, one damage die per full 40 points the result is
  * over 32, a bonus point drawn against the floor, and one attack in four that throws the whole
- * thing away for a small roll of its own. A wizard's Intelligence is rolled into the total as
+ * thing away for a small roll of its own. A monk's Intelligence is rolled into the total as
  * well, which each game does in a direction of its own.
  *
  * Nothing in any of that is random except those rolls, and each of them is a flat die, so the
@@ -45,10 +45,10 @@ export interface MonsterAttackOdds {
   /** What the d80 is added to: everything the monster brings, less everything the character
    *  wears, carries and is, and plus whatever the floor's own depth is worth. */
   total: number;
-  /** The Intelligence a wizard has rolled into that total, signed the way the game applies it —
+  /** The Intelligence a monk has rolled into that total, signed the way the game applies it —
    *  Dungeons of the Unforgiven takes it off, Moraff's World puts it on — and 0 for every other
-   *  class. */
-  wizardIq: number;
+   *  class. It is the monk who dodges on Intelligence in both games, not the wizard. */
+  monkIq: number;
   /** The die the monster's kind does its damage with. */
   damageDie: number;
   /** The floor the character stands on, which the bonus point and the small roll are both drawn
@@ -66,10 +66,10 @@ export function monsterHitsYouChance(odds: MonsterAttackOdds): number {
   return (odds.breath + (BREATHES_IN - 1) * swing) / BREATHES_IN;
 }
 
-/** The mean over the d80, and over a wizard's Intelligence roll where there is one. */
+/** The mean over the d80, and over a monk's Intelligence roll where there is one. */
 function swingChance(odds: MonsterAttackOdds): number {
-  const intelligence = Math.max(1, Math.abs(odds.wizardIq));
-  const direction = Math.sign(odds.wizardIq);
+  const intelligence = Math.max(1, Math.abs(odds.monkIq));
+  const direction = Math.sign(odds.monkIq);
   let hitting = 0;
   for (let roll = 0; roll < ROLL_VALUES; roll++) {
     for (let iq = 0; iq < intelligence; iq++) {

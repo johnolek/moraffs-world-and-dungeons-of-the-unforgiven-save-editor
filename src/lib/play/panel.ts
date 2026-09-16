@@ -301,8 +301,9 @@ const PUFFBALL_SPECIAL = 6;
 /** The floor past which defend adds half of however far below it the character is standing. */
 const DEEP_FLOOR = 75;
 
-/** The class number of a wizard, whose Intelligence comes off the monster's roll. */
-const WIZARD_CLASS = 2;
+/** The class number of a monk, whose Intelligence comes off the monster's roll. The game really
+ *  does give this dodge to the monk and not to the wizard, so nobody should "correct" the 2. */
+const MONK_CLASS = 2;
 
 /** Where the eight weapons end and the four Power Weapon rows of the weapon table begin. */
 const FIRST_POWER_WEAPON_ROW = 8;
@@ -399,8 +400,8 @@ export function engagedMonster(game: Game, tick: number | null = null): EngagedM
     hitsYouChance: monsterHitsYouChance({
       attacks: kind.special !== PUFFBALL_SPECIAL && pc.sleepTimer < 1 && pc.holdMonsterTimer < 1,
       total: defendTotal(game, monster.level),
-      // defend takes the wizard's Intelligence off the roll, so it makes a wizard harder to hit.
-      wizardIq: pc.cls === WIZARD_CLASS ? -pc.iq : 0,
+      // defend takes the monk's Intelligence off the roll, so it makes a monk harder to hit.
+      monkIq: pc.cls === MONK_CLASS ? -pc.iq : 0,
       damageDie: stats.damageDie,
       floor: pc.level,
       breath: kind.breath === 0 ? null : breathDamageChance(monster.level, breathResisted(kind.breath, pc)),

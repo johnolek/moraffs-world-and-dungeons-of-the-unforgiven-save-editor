@@ -151,8 +151,9 @@ const PUFFBALL_KIND = 6;
 /** The floor past which monster_turn adds half of however far below it the character stands. */
 const DEEP_FLOOR = 75;
 
-/** The class number of a wizard, whose Intelligence goes onto the monster's roll. */
-const WIZARD_CLASS = 2;
+/** The class number of a monk, whose Intelligence goes onto the monster's roll. The game really
+ *  does give this to the monk and not to the wizard, so nobody should "correct" the 2. */
+const MONK_CLASS = 2;
 
 export function mwEngagedMonster(game: MwGame): MwEngagedMonster | null {
   if (game.engaged === -1) return null;
@@ -178,9 +179,9 @@ export function mwEngagedMonster(game: MwGame): MwEngagedMonster | null {
     hitsYouChance: monsterHitsYouChance({
       attacks: kind.kind !== PUFFBALL_KIND && pc.sleepTimer < 1 && pc.holdMonsterTimer < 1,
       total: monsterTurnTotal(game, monster.depth, kind.attack + kind.defenceAndAttack),
-      // monster_turn puts the wizard's Intelligence onto the roll, so it makes a wizard easier to
+      // monster_turn puts the monk's Intelligence onto the roll, so it makes a monk easier to
       // hit; Dungeons of the Unforgiven takes the same number off instead.
-      wizardIq: pc.cls === WIZARD_CLASS ? pc.iq : 0,
+      monkIq: pc.cls === MONK_CLASS ? pc.iq : 0,
       damageDie: kind.damageDie,
       floor: pc.floor,
       breath: kind.breath === 0 ? null : breathDamageChance(monster.depth, breathResisted(kind.breath, pc)),

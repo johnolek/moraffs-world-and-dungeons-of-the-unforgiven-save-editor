@@ -9,7 +9,7 @@ import {
 
 /**
  * The same attack run out over every combination its rolls can take, counted rather than reasoned
- * about: the d80, a wizard's Intelligence, every face of every damage die the roll earns, the
+ * about: the d80, a monk's Intelligence, every face of every damage die the roll earns, the
  * five hundred values the bonus point is drawn from, the four the small roll is chosen by and the
  * faces of the small roll's own die.
  *
@@ -17,8 +17,8 @@ import {
  * space: every roll is counted on its own and the shares are averaged.
  */
 function countedOut(odds: Omit<MonsterAttackOdds, 'attacks' | 'breath'>): number {
-  const intelligence = Math.max(1, Math.abs(odds.wizardIq));
-  const direction = Math.sign(odds.wizardIq);
+  const intelligence = Math.max(1, Math.abs(odds.monkIq));
+  const direction = Math.sign(odds.monkIq);
   const smallDie = Math.trunc(odds.floor / 2) + 3;
   let shares = 0;
   let rolls = 0;
@@ -62,13 +62,13 @@ const attacking = (odds: Omit<MonsterAttackOdds, 'attacks' | 'breath'>): Monster
 describe("the chance the monster's attack takes hit points off you", () => {
   const cases: Omit<MonsterAttackOdds, 'attacks' | 'breath'>[] = [
     // A fighter deep enough that most rolls earn one die.
-    { total: 20, wizardIq: 0, damageDie: 2, floor: 4 },
-    // A wizard, whose Intelligence is another roll in the total.
-    { total: 20, wizardIq: -3, damageDie: 2, floor: 4 },
+    { total: 20, monkIq: 0, damageDie: 2, floor: 4 },
+    // A monk, whose Intelligence is another roll in the total.
+    { total: 20, monkIq: -3, damageDie: 2, floor: 4 },
     // High enough up that some rolls earn a second die.
-    { total: 60, wizardIq: 0, damageDie: 3, floor: 4 },
-    // Moraff's World's wizard, whose Intelligence goes on rather than off.
-    { total: 10, wizardIq: 3, damageDie: 3, floor: 4 },
+    { total: 60, monkIq: 0, damageDie: 3, floor: 4 },
+    // Moraff's World's monk, whose Intelligence goes on rather than off.
+    { total: 10, monkIq: 3, damageDie: 3, floor: 4 },
   ];
 
   for (const odds of cases) {
@@ -84,8 +84,8 @@ describe("the chance the monster's attack takes hit points off you", () => {
   it('never leaves the small roll out, so even a hopeless attack lands sometimes', () => {
     // A total nothing can carry past 32 earns no dice at all, so the whole chance is the bonus
     // point and the one attack in four.
-    const hopeless = attacking({ total: -400, wizardIq: 0, damageDie: 6, floor: 4 });
-    expect(monsterHitsYouChance(hopeless)).toBeCloseTo(countedOut({ total: -400, wizardIq: 0, damageDie: 6, floor: 4 }), 12);
+    const hopeless = attacking({ total: -400, monkIq: 0, damageDie: 6, floor: 4 });
+    expect(monsterHitsYouChance(hopeless)).toBeCloseTo(countedOut({ total: -400, monkIq: 0, damageDie: 6, floor: 4 }), 12);
     expect(monsterHitsYouChance(hopeless)).toBeGreaterThan(0);
   });
 
