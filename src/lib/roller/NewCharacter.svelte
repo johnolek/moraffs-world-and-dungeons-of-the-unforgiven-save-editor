@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app, currentEntry, type GameId, type Leaderboard, type Tab } from '../app-state.svelte';
   import { keepRolledCharacter } from '../character/current';
-  import { CHARACTER_TYPES, FREE_PLAY_OFF_A_BOARD } from '../character/leaderboard';
+  import { characterTypes, FREE_PLAY_OFF_A_BOARD } from '../character/leaderboard';
   import { downloadBytes } from '../download';
   import { goToTab } from '../history';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
@@ -193,12 +194,20 @@
     return { text: name, x: 0, y: 1000, spreadTo: Math.round((0x44c / 18) * name.length), font: 2, colour: 4 };
   }
 
+  /** The types this game's roll can lock a character to, which is one fewer outside Dungeons of
+   *  the Unforgiven: the endless dungeon is that game's alone. */
+  const types = $derived(characterTypes(rolling));
+
   // A roll is one game's questions and one game's dice, so the switch in the header starts over.
   $effect(() => {
     void rolling;
     session = null;
     view = null;
     note = '';
+    // A game that does not offer the type the last one was going to be rolled as puts the choice
+    // back to the one the roller opens on.
+    const chosen = untrack(() => lock);
+    if (!types.some((type) => type.id === chosen)) lock = 'faithful';
   });
 
   function start() {
@@ -369,7 +378,7 @@
       <section>
         <h3><PixelText text="Character type" /></h3>
         <div class="boards">
-          {#each CHARACTER_TYPES as choice}
+          {#each types as choice}
             {@const barred = onBoard && choice.id === null}
             <label class:barred>
               <input type="radio" value={choice.id} bind:group={lock} disabled={barred} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { characterTypeWords, leaderboardEditWarning, lockedPlayNote } from './leaderboard';
+import { characterTypes, characterTypeWords, leaderboardEditWarning, lockedPlayNote } from './leaderboard';
 
 describe('what the roster says a character is', () => {
   it('names the board for one whose runs go on one', () => {
@@ -36,5 +36,17 @@ describe('what the Play tab says in place of the mode radios', () => {
   it('puts the article the endless character wants in front of its name', () => {
     expect(lockedPlayNote('endless', false)).toContain('rolled as an endless character');
     expect(leaderboardEditWarning('endless')).toContain('stays an endless character');
+  });
+});
+
+describe('the types the roller offers', () => {
+  it('offers the endless dungeon in Dungeons of the Unforgiven alone', () => {
+    expect(characterTypes('unforgiven').map((type) => type.id)).toEqual([null, 'faithful', 'speedrun', 'endless']);
+    expect(characterTypes('moraffsWorld').map((type) => type.id)).toEqual([null, 'faithful', 'speedrun']);
+    expect(characterTypes('revenge').map((type) => type.id)).toEqual([null, 'faithful', 'speedrun']);
+  });
+
+  it('says what each of them is', () => {
+    expect(characterTypes('unforgiven').every((type) => type.label !== '' && type.how !== '')).toBe(true);
   });
 });

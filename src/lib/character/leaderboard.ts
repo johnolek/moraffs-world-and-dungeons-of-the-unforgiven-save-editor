@@ -1,4 +1,4 @@
-import type { Leaderboard } from '../app-state.svelte';
+import type { GameId, Leaderboard } from '../app-state.svelte';
 
 /**
  * The two things a roll decides about a character and never decides again: the mode it is locked
@@ -23,16 +23,28 @@ export function leaderboardLabel(board: Leaderboard): string {
   return 'Endless';
 }
 
+/** One of the types the roller offers. */
+export interface CharacterType {
+  /** The mode a character of this type is locked to, or null for one that can be played any
+   *  way. */
+  id: Leaderboard | null;
+  label: string;
+  /** The line under the label, which says what the choice costs and what it gives. */
+  how: string;
+  /** The one game that offers this type, for a type not every game has. */
+  game?: GameId;
+}
+
 /**
  * What the roller offers under its second question: a character that can be played any way, or one
- * locked to one of the two modes for good.
+ * locked to a mode for good.
  *
  * The choice is made once, because that is the whole point of a lock: a board is a set of runs
  * played the same way, and a character that could change the way it plays is not on one. A locked
  * character need not be on a board — the leaderboard is the roller's other question — but a board
  * character is always locked.
  */
-export const CHARACTER_TYPES: { id: Leaderboard | null; label: string; how: string }[] = [
+export const CHARACTER_TYPES: CharacterType[] = [
   {
     id: null,
     label: 'Free play',
@@ -48,11 +60,28 @@ export const CHARACTER_TYPES: { id: Leaderboard | null; label: string; how: stri
     label: 'Speedrun',
     how: 'Locked to speedrun for good: the whole floor, so a route can be planned.',
   },
+  {
+    id: 'endless',
+    label: 'Endless',
+    how: 'Locked to endless for good: the dungeon goes on past the bottom of the last module.',
+    game: 'unforgiven',
+  },
 ];
+
+/**
+ * The types on offer for a game.
+ *
+ * The endless dungeon is Dungeons of the Unforgiven's own rules carried on below the floor its
+ * last module ends at (`src/lib/game/endless/rules.ts`), and the other two games have nothing of
+ * the sort, so they are not offered it.
+ */
+export function characterTypes(game: GameId): CharacterType[] {
+  return CHARACTER_TYPES.filter((type) => type.game === undefined || type.game === game);
+}
 
 /** Why free play is not on offer while the leaderboard is on. */
 export const FREE_PLAY_OFF_A_BOARD =
-  'A leaderboard compares runs played the same way, so a leaderboard character is faithful or speedrun.';
+  'A leaderboard compares runs played the same way, so a leaderboard character is locked to the mode it was rolled in.';
 
 /**
  * What the Play tab says where the mode radios would be for a character locked to a mode.
