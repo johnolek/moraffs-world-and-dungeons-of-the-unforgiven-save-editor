@@ -9,7 +9,7 @@
   import type { Point } from '../map/viewport';
   import { ARROW_FLASH_MS, facingArrowCells } from '../map/you';
   import ClockBar from './ClockBar.svelte';
-  import { debugMonsterLines } from './debug-screen';
+  import { framedMonsterLines, liveHitBox, liveHitLine, paintLiveHit } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
   import { drawnSmaller } from '../ui/drawn-smaller.svelte';
   import { onScreen } from '../ui/on-screen.svelte';
@@ -209,6 +209,11 @@
   const plaqueFrame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
   let markerCanvas = $state.raw<HTMLCanvasElement | null>(null);
+  let hitCanvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** What the live HIT line is drawn on and what its layer is painted out of, both made the first
+   *  time a game is played on the clock in debug mode and kept from then on. */
+  let hitScratch: Frame | null = null;
+  let hitPixels: ImageData | null = null;
   /** The screen as it was last painted, for the palette crawl and the fades to work from, with
    *  whether anything on it is drawn out of the gradient bank the crawl turns. */
   let painted = $state.raw<{ frame: Frame; palette: Rgb[]; crawls: boolean } | null>(null);
@@ -335,8 +340,21 @@
   const text = $derived([
     ...(cleared === null ? standing : standing.filter((line) => !inRect(cleared, line))),
     ...screen,
-    ...(debug ? debugMonsterLines(game, tick) : []),
+    ...(debug ? framedMonsterLines(game, tick) : []),
   ]);
+
+  /**
+   * The HIT percentage drawn on a layer of its own, or null when there is none to draw.
+   *
+   * While the game is played on the clock that line is a reading of the tick counter and moves
+   * about eighteen times a second, which is why it is not in the frame above (`debug-screen.ts`).
+   * The stone tablet is the one screen that carries none of the game's own lines, so nothing debug
+   * prints stands over it either.
+   */
+  const liveHit = $derived(debug && !tablet ? liveHitLine(game, tick) : null);
+  /** The pixels the layer covers, which never move: the box holds the longest reading the line
+   *  can take. */
+  const hitBox = liveHitBox(SCREEN_PIXELS);
 
   const drawn = $derived(viewMonsters(monsters));
   const skull = $derived(killedMonster(killed));
@@ -629,6 +647,26 @@
   });
 
   /**
+   * The live HIT percentage, on a layer of its own over the screen.
+   *
+   * It is a canvas of its own for the reason the arrow's flash is: the reading moves with the tick
+   * counter and nothing else on the screen moves with it, so rebuilding a 1024 by 768 frame — the
+   * four 3-D views among them — to print one line again is work for nothing. The layer is clear
+   * everywhere but where the strokes fell, so the screen underneath shows through it.
+   */
+  $effect(() => {
+    const target = hitCanvas;
+    const line = liveHit;
+    if (!target || !line) return;
+    const context = target.getContext('2d');
+    if (!context) return;
+    hitScratch ??= newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    hitPixels ??= new ImageData(hitBox.width, hitBox.height);
+    paintLiveHit(hitScratch, SCREEN_PIXELS, line, palette[line.colour] ?? [255, 255, 255], hitPixels.data);
+    context.putImageData(hitPixels, 0, 0);
+  });
+
+  /**
    * A screen fading in or out (`fade.ts`), which is the same repaint the plaque's crawl is: the
    * frame is drawn again in a palette stepped toward or away from black. The step is worked out
    * from the clock rather than counted per animation frame, so the fade takes the time the
@@ -733,6 +771,18 @@
       style:height="{(marker.size / SCREEN_PIXELS.height) * 100}%"
     ></canvas>
   {/if}
+  {#if liveHit}
+    <canvas
+      class="live-hit"
+      bind:this={hitCanvas}
+      width={hitBox.width}
+      height={hitBox.height}
+      style:left="{(hitBox.x / SCREEN_PIXELS.width) * 100}%"
+      style:top="{(hitBox.y / SCREEN_PIXELS.height) * 100}%"
+      style:width="{(hitBox.width / SCREEN_PIXELS.width) * 100}%"
+      style:height="{(hitBox.height / SCREEN_PIXELS.height) * 100}%"
+    ></canvas>
+  {/if}
   {#if debug}
     <ClockBar {tick} overScreen />
   {/if}
@@ -760,11 +810,18 @@
     width: 100%;
     height: 100%;
   }
-  /* The two little canvases over the screen: the arrow on the map in the corner, and the
-     character's own square on the map the X key fills the screen with. Each is placed by the
-     pixels it stands in, as fractions of the same box the screen's own canvas fills. */
+  /* The little canvases over the screen: the arrow on the map in the corner, the character's own
+     square on the map the X key fills the screen with, and debug mode's live HIT percentage. Each
+     is placed by the pixels it stands in, as fractions of the same box the screen's own canvas
+     fills. */
   canvas.arrow,
-  canvas.marker {
+  canvas.marker,
+  canvas.live-hit {
     position: absolute;
+  }
+  /* A click on the HIT line is a click on the screen under it, which is how the monsters on the
+     map are opened. */
+  canvas.live-hit {
+    pointer-events: none;
   }
 </style>
