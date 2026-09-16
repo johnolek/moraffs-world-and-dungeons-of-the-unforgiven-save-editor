@@ -336,6 +336,12 @@ describe("an endless section's theme", () => {
     }
   });
 
+  it("leaves the twenty sections the game has to be stocked on the game's own odds", () => {
+    for (let section = 1; section <= 20; section += 1) {
+      expect(tough.monsterTypeOdds(section), `section ${section}`).toEqual(FAITHFUL_RULES.monsterTypeOdds(section));
+    }
+  });
+
   it('draws every theme there is', () => {
     const drawn = new Set(sweep());
     for (const theme of ['plain', 'fire', 'ice', 'drainers', 'afflictions', 'elites'] as const) {
