@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { UNFORGIVEN_MAP, type MapSquare } from '../../map/game';
 import { monsterById } from '../../map/stocking';
-import { BOSS_KIND, FloorMonsters, loadLevelMap } from '../../play/floor';
+import { BOSS_KIND, drawnMonsters, FloorMonsters, loadLevelMap } from '../../play/floor';
+import { viewMonsters } from '../../play/view-scene';
+import { viewPictures } from '../../play/view3d/browser';
 import { bundledDungeon } from '../dungeon';
 import { killMonster } from '../port/kills';
 import { BorlandRng } from '../port/rng';
@@ -300,6 +302,17 @@ describe('arriving on a floor a Shadow is wandering', () => {
     expect(again.type).toBe(BOSS_KIND);
     expect(Math.abs(again.x - first.x)).toBeLessThanOrEqual(7);
     expect(Math.abs(again.y - first.y)).toBeLessThanOrEqual(7);
+  });
+
+  it('has a picture for it, which lives in the file of the section it was borrowed from', () => {
+    const game = gameOn(WANDERED_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(WANDERED_FLOOR), WANDERED_FLOOR, game.rng);
+    const pictures = viewPictures(rules.pictureFiles(rules.sectionOf(MODULE_V, WANDERED_FLOOR)));
+
+    for (const monster of viewMonsters(drawnMonsters(game))) {
+      const where = `picture ${monster.picnum} of section ${monster.section}`;
+      expect(pictures.monster(monster.picnum, monster.builtin, monster.section), where).not.toBeNull();
+    }
   });
 
   it('leaves the record itself carrying nothing about it', () => {
