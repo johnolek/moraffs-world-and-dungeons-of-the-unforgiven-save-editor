@@ -1,4 +1,5 @@
 import type { Rng } from '../game/port/rng';
+import type { WanderingShadow } from '../game/port/rules';
 import type { Game, Monster, MonsterKind } from '../game/port/state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from '../game/port/state';
 import { WIDTH } from '../game/unfmap.js';
@@ -43,14 +44,25 @@ export function monsterTypeOf(monsterId: string): number {
 export const BOSS_KIND = BUILTIN_KINDS;
 
 /**
- * stock_level (exe 2000:671e, unf.c "stock_level"): the square the Shadow boss has just been put
- * down on is written back where the rules keep it, which is where the next roll of his floor puts
- * him within seven squares of. A roll that did not place a boss leaves it alone.
+ * stock_level (exe 2000:671e, unf.c "stock_level"): the square the Shadow just put down in slot 0
+ * is written back where the rules keep it, which is where the next roll of that floor puts him
+ * within seven squares of. A roll that did not place one leaves it alone.
+ *
+ * A section's own boss is remembered by his section and a Shadow wandering a floor by its floor,
+ * since the wandering one is not any section's.
  */
-function rememberBossSquare(game: Game, section: number): void {
-  const boss = game.monsters[0];
-  if (boss.type !== BOSS_KIND) return;
-  game.rules.bossSquares.remember(game.pc, section, { x: boss.x, y: boss.y });
+function rememberShadowSquare(game: Game, section: number, level: number, wanderer: WanderingShadow | null): void {
+  const shadow = game.monsters[0];
+  if (shadow.type !== BOSS_KIND) return;
+  const square = { x: shadow.x, y: shadow.y };
+  if (wanderer) game.rules.deepShadows?.putDown(game.pc, level, square);
+  else game.rules.bossSquares.remember(game.pc, section, square);
+}
+
+/** The Shadow wandering a floor beside the section's own monsters, or null for a floor that has
+ *  none, which is every floor of a game played by the rules the 1993 game shipped with. */
+function wanderingShadowOn(game: Game, level: number): WanderingShadow | null {
+  return game.rules.deepShadows?.on(game.pc, game.pc.module, level) ?? null;
 }
 
 /** One of the game's 145 monster slots, empty. */
@@ -125,6 +137,7 @@ export class FloorMonsters {
       setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
       if (level !== 0) {
         const section = game.rules.sectionOf(game.pc.module, level);
+        const wanderer = wanderingShadowOn(game, level);
         const stocked = stockFloor(
           game.rules,
           rows,
@@ -135,10 +148,11 @@ export class FloorMonsters {
           game.rules.bossBeaten(game.pc, section),
           game.rules.bossSquares.of(game.pc, section),
           clockedStocking(game, rng),
+          wanderer,
         );
         fill(table.monsters, stocked, game.monsterKinds);
         for (const monster of stocked) table.fullHp[monster.slot] = monster.hp;
-        rememberBossSquare(game, section);
+        rememberShadowSquare(game, section, level, wanderer);
       }
     }
     for (let slot = 0; slot < table.monsters.length; slot++) {
@@ -219,6 +233,10 @@ function clockedStocking(game: Game, rng: Rng): ClockedStocking | null {
  */
 export function loadLevelMap(game: Game, floors: FloorMonsters, rows: MapSquare[][], level: number, rng: Rng): void {
   game.monsterKinds = game.rules.monsterKinds(game.rules.sectionOf(game.pc.module, level));
+  // A Shadow wandering this floor takes the row the section's own boss fills, since a floor of
+  // its own is not his floor and nothing else on it is a Shadow.
+  const wanderer = wanderingShadowOn(game, level);
+  if (wanderer) game.monsterKinds[BOSS_KIND] = wanderer.kind;
   floors.stock(game, rows, level, rng);
 }
 

@@ -2,13 +2,14 @@ import {
   FAITHFUL_RULES,
   keyIndex,
   type BossSquares,
+  type DeepShadows,
   type GameRules,
   type SectionPlace,
   type TrapDoorKeys,
 } from '../port/rules';
 import type { PlayerCharacter } from '../port/state';
 import { endlessMonsterKinds, endlessSection } from './monsters';
-import { shadowKilled } from './shadows';
+import { shadowKilled, wanderingShadow } from './shadows';
 import { endlessStateOf } from './state';
 
 /**
@@ -151,6 +152,21 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     };
   };
 
+  /** The Shadows of the floors below the bottom of the game: the one wandering a floor, where it
+   *  was left, and what killing one of them is worth. */
+  const deepShadows: DeepShadows = {
+    on: (pc, module, floor) => {
+      if (module !== endlessModule || floor < firstEndlessFloor) return null;
+      // The last floor of a section has its own Shadow boss standing on it already.
+      if (floor === sectionPlace(sectionOf(module, floor))?.bossFloor) return null;
+      return wanderingShadow(endlessStateOf(pc), seed, floor);
+    },
+    putDown: (pc, floor, square) => {
+      endlessStateOf(pc).wanderer = { floor, x: square.x, y: square.y };
+    },
+    killed: (game) => shadowKilled(game, seed),
+  };
+
   const sectionSource = (section: number): number =>
     section <= LAST_OWN_SECTION ? section : endlessSection(seed, section).source;
 
@@ -175,7 +191,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
       section <= LAST_OWN_SECTION
         ? FAITHFUL_RULES.bossBeaten(pc, section)
         : endlessStateOf(pc).bossesKilled.has(section),
-    deepShadows: { killed: (game) => shadowKilled(game, seed) },
+    deepShadows,
     // stock_level's own base level rolls back round to 1 at 221, which no floor of the game is
     // deep enough to reach; an endless floor is, and a dungeon that got easier the deeper it went
     // would be no dungeon at all.

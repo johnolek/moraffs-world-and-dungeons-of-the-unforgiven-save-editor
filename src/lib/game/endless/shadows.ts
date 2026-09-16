@@ -1,16 +1,55 @@
+import { BOSS_NEVER_PLACED } from '../../map/stocking';
 import { POTION_NAMES, WEAPON_NAMES } from '../port/drops';
 import { SeededRng } from '../port/rng';
-import type { Game, PlayerCharacter } from '../port/state';
-import { endlessStateOf } from './state';
+import { FAITHFUL_RULES, type WanderingShadow } from '../port/rules';
+import type { Game, MonsterKind, PlayerCharacter } from '../port/state';
+import { endlessStateOf, type EndlessState } from './state';
 
 /**
  * The Shadows of the endless dungeon: the boss standing on the last floor of every section past
- * the twentieth, and what killing one of them is worth.
+ * the twentieth, the ones that wander the floors between them, and what killing one of them is
+ * worth.
  *
  * kill_monster (exe 3000:b12d) has a reward written for each of the twenty sections the game has
  * and nothing at all for a twenty-first, so a Shadow this deep is handed over to here instead
  * (`GameRules.deepShadows`).
  */
+
+/** One floor in a hundred below the bottom of the game has a Shadow wandering it (John,
+ *  MORF-504). */
+const SHADOW_FLOORS = 100;
+
+/** The twenty Shadow bosses the game has, one to a section, which a wandering Shadow is drawn
+ *  from. */
+const OWN_SECTIONS = 20;
+
+/** The row of a section's loaded monster table its Shadow boss fills, which a wandering Shadow
+ *  takes on the floor it stands on. */
+const BOSS_SLOT = 22;
+
+/**
+ * The Shadow wandering a floor for this character, or null for a floor that stands none.
+ *
+ * Which floors have one at all is the world's answer and the same for everybody, and which of
+ * them this character meets is its own: while one is alive nothing else stands up, so arriving on
+ * its floor again finds it where it was left and every other floor's draw is passed over, and
+ * once it is dead only the floors below the one it died on can stand another.
+ */
+export function wanderingShadow(state: EndlessState, seed: number, floor: number): WanderingShadow | null {
+  const kind = shadowOfFloor(seed, floor);
+  if (kind === null) return null;
+  const alive = state.wanderer;
+  if (alive !== null) return alive.floor === floor ? { kind, lastSeen: { x: alive.x, y: alive.y } } : null;
+  return floor > state.shadowKilledOn ? { kind, lastSeen: BOSS_NEVER_PLACED } : null;
+}
+
+/** Whether this floor of this world has a Shadow wandering it, and which of the game's twenty
+ *  Shadow bosses it is. */
+function shadowOfFloor(seed: number, floor: number): MonsterKind | null {
+  const rng = floorDraws(seed, floor, WHICH_SHADOW);
+  if (rng.random(SHADOW_FLOORS) !== 0) return null;
+  return FAITHFUL_RULES.monsterKinds(rng.random(OWN_SECTIONS) + 1)[BOSS_SLOT];
+}
 
 /**
  * The two draws one floor of a world makes: which Shadow stands on it, and what that Shadow is
@@ -30,6 +69,7 @@ const GOLDEN_RATIO = 0x9e3779b1;
 
 /** Which of a floor's draws is being made. */
 const DRAWS_A_FLOOR = 2;
+const WHICH_SHADOW = 0;
 const WHAT_IT_CARRIES = 1;
 
 /**
@@ -43,7 +83,13 @@ const WHAT_IT_CARRIES = 1;
  */
 export function shadowKilled(game: Game, seed: number): void {
   const pc = game.pc;
-  endlessStateOf(pc).bossesKilled.add(game.rules.sectionOf(pc.module, pc.level));
+  const state = endlessStateOf(pc);
+  if (state.wanderer?.floor === pc.level) {
+    state.wanderer = null;
+    state.shadowKilledOn = pc.level;
+  } else {
+    state.bossesKilled.add(game.rules.sectionOf(pc.module, pc.level));
+  }
   handOverLoot(game, shadowLoot(seed, pc.level));
 }
 

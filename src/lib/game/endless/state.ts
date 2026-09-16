@@ -25,6 +25,23 @@ export interface EndlessState {
    *  off his floor for good. The record's own byte has one bit per section of a module and the
    *  game has four in each, so it has no room for these. */
   bossesKilled: Set<number>;
+  /**
+   * The Shadow wandering the dungeon now: the floor it stands on, and the square it was last put
+   * down on there. Null when none is alive, which is when a floor's own draw is allowed to stand
+   * one up.
+   */
+  wanderer: WanderingShadowAt | null;
+  /** The floor the last wandering Shadow was killed on, and 0 for a character who has killed
+   *  none. A new one only ever stands up deeper than this. */
+  shadowKilledOn: number;
+}
+
+/** Where the Shadow now wandering the dungeon is: its floor, and the square of that floor it was
+ *  last put down on. */
+export interface WanderingShadowAt {
+  floor: number;
+  x: number;
+  y: number;
 }
 
 /**
@@ -44,6 +61,10 @@ export interface KeptEndlessState {
   /** {@link EndlessState.bossesKilled}, and absent for a character who has killed none of
    *  them. */
   bossesKilled?: number[];
+  /** {@link EndlessState.wanderer}, and absent while no Shadow is wandering. */
+  wanderer?: WanderingShadowAt;
+  /** {@link EndlessState.shadowKilledOn}, and absent for a character who has killed none. */
+  shadowKilledOn?: number;
   /**
    * The character's hit points, for a character who has more of them than the record's own
    * signed 16-bit field at 0x31 holds, and absent for one who has not.
@@ -73,6 +94,8 @@ export function endlessStateOf(pc: PlayerCharacter): EndlessState {
     keys: new Set<number>(),
     bossSquares: new Map<number, BossSquare>(),
     bossesKilled: new Set<number>(),
+    wanderer: null,
+    shadowKilledOn: 0,
   };
   states.set(pc, state);
   return state;
@@ -92,6 +115,8 @@ export function keptEndlessState(pc: PlayerCharacter): KeptEndlessState {
     bossSquares: [...state.bossSquares].map(([section, square]) => ({ section, x: square.x, y: square.y })),
   };
   if (state.bossesKilled.size > 0) kept.bossesKilled = [...state.bossesKilled];
+  if (state.wanderer !== null) kept.wanderer = { ...state.wanderer };
+  if (state.shadowKilledOn > 0) kept.shadowKilledOn = state.shadowKilledOn;
   if (pc.hp > RECORD_HP_MAX) kept.hp = pc.hp;
   if (pc.maxHp > RECORD_HP_MAX) kept.maxHp = pc.maxHp;
   return kept;
@@ -103,6 +128,8 @@ export function restoreEndlessState(pc: PlayerCharacter, kept: KeptEndlessState)
   state.keys = new Set(kept.keys);
   state.bossSquares = new Map(kept.bossSquares.map((boss) => [boss.section, { x: boss.x, y: boss.y }]));
   state.bossesKilled = new Set(kept.bossesKilled ?? []);
+  state.wanderer = kept.wanderer ? { ...kept.wanderer } : null;
+  state.shadowKilledOn = kept.shadowKilledOn ?? 0;
   if (kept.hp !== undefined) pc.hp = kept.hp;
   if (kept.maxHp !== undefined) pc.maxHp = kept.maxHp;
 }
@@ -138,9 +165,18 @@ export function isKeptEndlessState(value: unknown): value is KeptEndlessState {
   if (!Array.isArray(state.keys) || !state.keys.every((key) => Number.isInteger(key))) return false;
   if (!Array.isArray(state.bossSquares) || !state.bossSquares.every(isBossSquare)) return false;
   if (state.bossesKilled !== undefined && !isSections(state.bossesKilled)) return false;
+  if (state.wanderer !== undefined && !isWanderingShadowAt(state.wanderer)) return false;
+  if (state.shadowKilledOn !== undefined && !Number.isInteger(state.shadowKilledOn)) return false;
   if (state.hp !== undefined && !Number.isInteger(state.hp)) return false;
   if (state.maxHp !== undefined && !Number.isInteger(state.maxHp)) return false;
   return true;
+}
+
+/** Whether this is where a wandering Shadow stands: the floor it is on and its square of it. */
+function isWanderingShadowAt(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  const at = value as Record<string, unknown>;
+  return Number.isInteger(at.floor) && Number.isInteger(at.x) && Number.isInteger(at.y);
 }
 
 /** Whether this is a list of section numbers, which is how the sections of a dungeon deeper than

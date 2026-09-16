@@ -128,10 +128,34 @@ export interface BossSquares {
  */
 export interface DeepShadows {
   /**
+   * The Shadow wandering this floor, or null for a floor with none — which is every floor whose
+   * section has its own boss standing on it, and every floor of a game whose dungeon stops where
+   * the game's does.
+   */
+  on(pc: PlayerCharacter, module: number, floor: number): WanderingShadow | null;
+  /** The Shadow wandering this floor has just been put down on this square. */
+  putDown(pc: PlayerCharacter, floor: number, square: BossSquare): void;
+  /**
    * A Shadow below the bottom of the game has just been killed on the floor the character is
    * standing on: the kill written down, and whatever it was carrying handed over.
    */
   killed(game: Game): void;
+}
+
+/**
+ * A Shadow standing on a floor that is not the last of its section, which the endless dungeon
+ * puts on one floor in a hundred.
+ *
+ * It stands where a section's own Shadow boss stands: slot 0 of the floor's monster table, in
+ * row 22, on a square of the middle of the floor that is remembered for the next time the floor
+ * is rolled.
+ */
+export interface WanderingShadow {
+  /** The row 22 it fills, which is one of the twenty Shadow bosses the game has. */
+  kind: MonsterKind;
+  /** The square it was last put down on, which it is put back within seven squares of, and both
+   *  zero for one nobody has put down yet. */
+  lastSeen: BossSquare;
 }
 
 /** Where a section sits in the dungeon, which is what a floor is stocked from. */

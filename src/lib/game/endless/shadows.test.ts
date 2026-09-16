@@ -8,7 +8,8 @@ import { BorlandRng } from '../port/rng';
 import { FAITHFUL_RULES } from '../port/rules';
 import { newGame, setMonsterMap, type Game, type PlayerCharacter } from '../port/state';
 import { endlessRules } from './rules';
-import { shadowLoot } from './shadows';
+import { shadowLoot, wanderingShadow } from './shadows';
+import { endlessStateOf, type EndlessState } from './state';
 
 /** The Shadow boss of section 21, the first section below the bottom of the game, and the floor
  *  he stands on. */
@@ -181,5 +182,181 @@ describe('what a Shadow of the endless dungeon is carrying', () => {
     expect(orbs.length).toBeGreaterThan(piles.length / 5);
     expect(orbs.length).toBeLessThan(piles.length / 2);
     expect(new Set(orbs.map((pile) => pile.weaponPlus))).toEqual(new Set([200, 300, 500]));
+  });
+});
+
+/** A floor of {@link SEED}'s Module V that the world stands a wandering Shadow on, and one of
+ *  the hundred floors under it that it does not. */
+const WANDERED_FLOOR = 505;
+const PLAIN_FLOOR = 506;
+
+/** What an endless character carries before anything has happened to it. */
+function carryingNothing(): EndlessState {
+  return {
+    keys: new Set(),
+    bossSquares: new Map(),
+    bossesKilled: new Set(),
+    wanderer: null,
+    shadowKilledOn: 0,
+  };
+}
+
+describe('the Shadows wandering the floors below the bottom of the game', () => {
+  /** Five thousand floors of one world, which is two hundred sections' worth. */
+  const floors = Array.from({ length: 5000 }, (unused, index) => 106 + index);
+  const drawn = floors.map((floor) => wanderingShadow(carryingNothing(), SEED, floor));
+
+  it('stand on about one floor in a hundred', () => {
+    const standing = drawn.filter((shadow) => shadow !== null).length;
+    expect(standing).toBeGreaterThan(floors.length / 150);
+    expect(standing).toBeLessThan(floors.length / 60);
+  });
+
+  it("are the twenty Shadow bosses the game has, and a floor's own is one world's answer for all", () => {
+    for (const shadow of drawn) {
+      if (shadow === null) continue;
+      expect(monsterById(shadow.kind.id).isBoss, shadow.kind.id).toBe(true);
+    }
+    expect(wanderingShadow(carryingNothing(), SEED, WANDERED_FLOOR)?.kind).toEqual(
+      wanderingShadow(carryingNothing(), SEED, WANDERED_FLOOR)?.kind,
+    );
+    expect(wanderingShadow(carryingNothing(), SEED + 1, WANDERED_FLOOR)?.kind).not.toEqual(
+      wanderingShadow(carryingNothing(), SEED, WANDERED_FLOOR)?.kind,
+    );
+  });
+
+  it('are one at a time: a floor whose own draw stands one keeps it to itself', () => {
+    const state = carryingNothing();
+    expect(wanderingShadow(state, SEED, WANDERED_FLOOR)).not.toBeNull();
+
+    state.wanderer = { floor: WANDERED_FLOOR - 1, x: 40, y: 50 };
+
+    expect(wanderingShadow(state, SEED, WANDERED_FLOOR)).toBeNull();
+  });
+
+  it('are found where they were left while they are alive', () => {
+    const state = carryingNothing();
+    state.wanderer = { floor: WANDERED_FLOOR, x: 40, y: 50 };
+
+    expect(wanderingShadow(state, SEED, WANDERED_FLOOR)?.lastSeen).toEqual({ x: 40, y: 50 });
+  });
+
+  it('stand up again only below the floor the last one was killed on', () => {
+    const state = carryingNothing();
+    state.shadowKilledOn = WANDERED_FLOOR;
+
+    expect(wanderingShadow(state, SEED, WANDERED_FLOOR)).toBeNull();
+    expect(drawn.filter((shadow, index) => shadow !== null && floors[index] > WANDERED_FLOOR).length).toBeGreaterThan(0);
+  });
+
+  it('leave the floors the game itself has, and the modules it turns the character back out of, alone', () => {
+    const pc = newGame({ rules }).pc;
+    for (const floor of [5, 50, 100, 105]) expect(rules.deepShadows?.on(pc, MODULE_V, floor), `floor ${floor}`).toBeNull();
+    for (const module of [0, 1, 2, 3]) expect(rules.deepShadows?.on(pc, module, WANDERED_FLOOR), `module ${module}`).toBeNull();
+  });
+
+  it("pass over a section's last floor, where its own Shadow boss is standing", () => {
+    const pc = newGame({ rules }).pc;
+    const bossFloors = Array.from({ length: 200 }, (unused, index) => BOSS_FLOOR + index * 25);
+    for (const floor of bossFloors) {
+      expect(rules.deepShadows?.on(pc, MODULE_V, floor), `floor ${floor}`).toBeNull();
+    }
+  });
+});
+
+describe('arriving on a floor a Shadow is wandering', () => {
+  it('stands it in slot 0 in the Shadow row, in the middle of the floor', () => {
+    const game = gameOn(WANDERED_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(WANDERED_FLOOR), WANDERED_FLOOR, game.rng);
+
+    const shadow = game.monsters[0];
+    expect(shadow.type).toBe(BOSS_KIND);
+    expect(standingOn(game)).toBe(true);
+    expect(shadow.x).toBeGreaterThanOrEqual(25);
+    expect(shadow.x).toBeLessThanOrEqual(74);
+    // The hit points carry a Shadow boss's bonus of twenty times the level the floor rolls its
+    // monsters around, and the level is that level, nudged a step or two.
+    const baseLevel = rules.monsterLevel(MODULE_V, WANDERED_FLOOR);
+    expect(shadow.hp).toBeGreaterThan(20 * baseLevel);
+    expect(Math.abs(shadow.level - baseLevel)).toBeLessThan(50);
+  });
+
+  it('leaves the floor under it to its own monsters', () => {
+    const game = gameOn(PLAIN_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(PLAIN_FLOOR), PLAIN_FLOOR, game.rng);
+
+    expect(standingOn(game)).toBe(false);
+  });
+
+  it('remembers where it was put down, and puts it back within seven squares next time', () => {
+    const game = gameOn(WANDERED_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(WANDERED_FLOOR), WANDERED_FLOOR, game.rng);
+    const first = { x: game.monsters[0].x, y: game.monsters[0].y };
+    expect(endlessStateOf(game.pc).wanderer).toEqual({ floor: WANDERED_FLOOR, ...first });
+
+    loadLevelMap(game, new FloorMonsters(), floorRows(WANDERED_FLOOR), WANDERED_FLOOR, game.rng);
+
+    const again = game.monsters[0];
+    expect(again.type).toBe(BOSS_KIND);
+    expect(Math.abs(again.x - first.x)).toBeLessThanOrEqual(7);
+    expect(Math.abs(again.y - first.y)).toBeLessThanOrEqual(7);
+  });
+
+  it('leaves the record itself carrying nothing about it', () => {
+    const game = gameOn(WANDERED_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(WANDERED_FLOOR), WANDERED_FLOOR, game.rng);
+
+    expect(game.pc.bossX.every((x) => x === 0)).toBe(true);
+    expect(game.pc.bossY.every((y) => y === 0)).toBe(true);
+  });
+});
+
+describe('killing the Shadow wandering a floor', () => {
+  /** A monk standing over the Shadow wandering its floor, the floor rolled around him. */
+  function facingTheWanderer(): Game {
+    const game = gameOn(WANDERED_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(WANDERED_FLOOR), WANDERED_FLOOR, game.rng);
+    expect(game.monsters[0].type).toBe(BOSS_KIND);
+    game.engaged = 0;
+    return game;
+  }
+
+  it('writes down the floor it fell on and lets the next one stand up below that', async () => {
+    const game = facingTheWanderer();
+
+    await killMonster(game);
+
+    const state = endlessStateOf(game.pc);
+    expect(state.wanderer).toBeNull();
+    expect(state.shadowKilledOn).toBe(WANDERED_FLOOR);
+    expect(rules.deepShadows?.on(game.pc, MODULE_V, WANDERED_FLOOR)).toBeNull();
+  });
+
+  it('leaves the section it was standing in with its own Shadow boss still to kill', async () => {
+    const game = facingTheWanderer();
+
+    await killMonster(game);
+
+    expect([...endlessStateOf(game.pc).bossesKilled]).toEqual([]);
+    expect(rules.bossBeaten(game.pc, rules.sectionOf(MODULE_V, WANDERED_FLOOR))).toBe(false);
+  });
+
+  it('tells the journal a Shadow was killed, which is what the deepest-Shadow board reads', async () => {
+    const game = facingTheWanderer();
+
+    await killMonster(game);
+
+    const killed = game.events.find((event) => event.kind === 'killed');
+    expect(killed).toMatchObject({ kind: 'killed', monster: { type: BOSS_KIND } });
+  });
+
+  it('hands over the pile that floor was worth', async () => {
+    const game = facingTheWanderer();
+    const loot = shadowLoot(SEED, WANDERED_FLOOR);
+
+    await killMonster(game);
+
+    expect(potionsFound(game)).toBe(counted(loot.potions));
+    expect(game.messages).toContain('  THE SHADOW LEAVES BEHIND:');
   });
 });

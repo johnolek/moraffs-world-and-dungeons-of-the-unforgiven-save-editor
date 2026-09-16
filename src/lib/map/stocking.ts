@@ -1,7 +1,13 @@
 import { allMonsters, isPuffball, readRecolouredId, type Monster } from '../bestiary/monsters';
 import { renderMonster } from '../bestiary/pictures';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
-import { FAITHFUL_RULES, type BossSquare, type GameRules, type SectionPlace } from '../game/port/rules';
+import {
+  FAITHFUL_RULES,
+  type BossSquare,
+  type GameRules,
+  type SectionPlace,
+  type WanderingShadow,
+} from '../game/port/rules';
 import type { MonsterKind } from '../game/port/state';
 import { sectionInfo } from '../game/sections';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
@@ -142,6 +148,8 @@ const TRIES_BEFORE_THE_FIRST = 10;
  * @param bossLastSeen the square this section's Shadow boss was last put down on, which he is
  *   put back within seven squares of.
  * @param clocked {@link ClockedStocking}, or null to leave the generator alone.
+ * @param wanderer a Shadow wandering a floor that is not its section's last, which takes slot 0
+ *   the same way a section's own boss does.
  */
 export function stockFloor(
   rules: GameRules,
@@ -153,12 +161,14 @@ export function stockFloor(
   bossBeaten: boolean = false,
   bossLastSeen: BossSquare = BOSS_NEVER_PLACED,
   clocked: ClockedStocking | null = null,
+  wanderer: WanderingShadow | null = null,
 ): StockedMonster[] {
   const section = stockingSection(rules, moduleIndex, floor);
   if (!section) return [];
   const kinds = rules.monsterKinds(section.section);
   const baseLevel = rules.monsterLevel(moduleIndex, floor);
   const taken = new Set<number>(occupied);
+  const shadow = shadowOfSlotZero(kinds, section, floor, bossBeaten, bossLastSeen, wanderer);
   const monsters: StockedMonster[] = [];
   let tries = TRIES_BEFORE_THE_FIRST;
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) {
@@ -166,12 +176,12 @@ export function stockFloor(
     let { x, y } = freeSquare(rows, taken, rnd, beforeTry);
     taken.add(y * WIDTH + x);
     let entry = rollKind(kinds, rnd, clocked);
-    if (slot === 0 && floor === section.bossFloor && !bossBeaten) {
-      entry = kindAt(kinds, BOSS_SLOT);
+    if (slot === 0 && shadow) {
+      entry = shadow.entry;
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
       // down in the middle of the floor instead.
       taken.delete(y * WIDTH + x);
-      ({ x, y } = bossSquare(rows, taken, rnd, bossLastSeen));
+      ({ x, y } = bossSquare(rows, taken, rnd, shadow.lastSeen));
       taken.add(y * WIDTH + x);
     }
     // The hit points are rolled from the floor's base level and the stored level is jittered
@@ -180,6 +190,25 @@ export function stockFloor(
     monsters.push({ slot, x, y, monsterId: entry.id, level: nudgeLevel(baseLevel, rnd, rules), hp });
   }
   return monsters;
+}
+
+/**
+ * The Shadow slot 0 of this floor belongs to, or null for a floor that stands an ordinary monster
+ * there: the section's own boss on the last of its floors while he is still alive, and otherwise
+ * whichever Shadow is wandering the floor.
+ */
+function shadowOfSlotZero(
+  kinds: MonsterKind[],
+  section: StockedSection,
+  floor: number,
+  bossBeaten: boolean,
+  bossLastSeen: BossSquare,
+  wanderer: WanderingShadow | null,
+): { entry: Monster; lastSeen: BossSquare } | null {
+  if (floor === section.bossFloor) {
+    return bossBeaten ? null : { entry: kindAt(kinds, BOSS_SLOT), lastSeen: bossLastSeen };
+  }
+  return wanderer && { entry: monsterById(wanderer.kind.id), lastSeen: wanderer.lastSeen };
 }
 
 export function monsterAt(monsters: StockedMonster[], x: number, y: number): StockedMonster | null {
