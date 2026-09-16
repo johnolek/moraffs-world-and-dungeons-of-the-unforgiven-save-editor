@@ -4,7 +4,8 @@ The site's pages over the run server: one game's characters, either all of them
 at once or on whichever ranked board is picked — the boards of runs that have
 ended and the two of the characters still being played — a page for any run on
 them, and the announcements the server has made, with each new one arriving as
-it happens.
+it happens. The announcements are the one part of this that is not the tab's
+alone: the newest one shows in the footer on every tab, off the same feed.
 
 Which boards there are depends on the way of playing: the game as it shipped has
 six, and the endless dungeon has three of its own and no boards of wins, since a
@@ -52,10 +53,17 @@ Everything else about the tab follows the game switch the way the others do.
   the site's own wherever it is read. A run of a game this build has never heard
   of came from a newer server and has no words to fold it into, so it shows the
   rest of the page and no journal.
-- **`Announcements.svelte`** — the panel down the side. It opens the feed first
-  and asks for the history second, so that a run announced while the history is
-  on its way is not missed; the two overlap for that moment and an announcement
-  is shown once.
+- **`Announcements.svelte`** — the panel down the side, which draws what the
+  store below is holding and asks it for the older ones.
+- **`announcement-feed.svelte.ts`** — the announcements the whole page is
+  following, in one module store. It opens the feed the first time anything
+  reads it, asks for the history second so that a run announced while the
+  history is on its way is not missed, and is never closed: the footer
+  (`src/lib/character/CharacterPanel.svelte`) shows the newest announcement on
+  every tab, and the Boards tab is not kept mounted, so a feed that closed with
+  this panel would leave the footer deaf for the rest of the visit. One feed for
+  the page also means the footer and the panel cannot disagree about what the
+  newest announcement is.
 - **`server.ts`** — every call to the run server, each one a shape a page can
   draw. A call that could not be made leaves what is on screen where it is and
   says so, so an unreachable server does not empty a board.
@@ -70,8 +78,9 @@ Everything else about the tab follows the game switch the way the others do.
   other people's runs.
 - **`words.ts`** — every fixed word these pages show, and the few turns of
   phrase they put the server's numbers into: how long a run was played, what the
-  game's clock counts in, when something happened, how far a run got in the
-  currency of the board it stands on, and how one endless world is named.
+  game's clock counts in, when something happened, how long ago it was said
+  where there is only room for that, how far a run got in the currency of the
+  board it stands on, and how one endless world is named.
 
 ## What comes from the server
 
