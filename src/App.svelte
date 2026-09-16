@@ -4,10 +4,13 @@
   import { rememberNow, restoreGame, restoreRoster, switchGame } from './lib/character/current';
   import { GAME_CHOICES } from './lib/game-choice';
   import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
+  import { runServerUrl } from './lib/run-server';
   import { tabGroupsFor, tabsFor } from './lib/tabs';
   import { whoAmI } from './lib/admin/server';
   import Admin from './lib/admin/Admin.svelte';
   import Monsters from './lib/bestiary/Monsters.svelte';
+  import AnnouncementsMarker from './lib/boards/AnnouncementsMarker.svelte';
+  import AnnouncementTimeline from './lib/boards/AnnouncementTimeline.svelte';
   import Boards from './lib/boards/Boards.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
@@ -31,6 +34,11 @@
 
   const tabs = $derived(tabsFor(app.game));
   const tabGroups = $derived(tabGroupsFor(app.game));
+
+  /** A build with no run server hears no announcements, so there is neither a marker nor a
+   *  timeline to open. */
+  const announcing = runServerUrl() !== null;
+  let readingAnnouncements = $state(false);
 
   onMount(() => {
     // The Admin tab shows for one player and nobody else, so the server is asked the once whether
@@ -66,7 +74,10 @@
 
 <div class="app">
   <header>
-    <h1><PixelText text="Moraff Tools" scale={2} /></h1>
+    <div class="title">
+      {#if announcing}<AnnouncementsMarker onopen={() => (readingAnnouncements = true)} />{/if}
+      <h1><PixelText text="Moraff Tools" scale={2} /></h1>
+    </div>
     <nav>
       {#each tabGroups as group}
         <div class="group">
@@ -156,6 +167,11 @@
   </main>
   <!-- The game keeps its status block along the bottom of the screen, so the character does too. -->
   <CharacterPanel />
+  <!-- The timeline is read from whatever tab the reader is on, so it lies over the whole page
+       rather than inside one of them. -->
+  {#if readingAnnouncements}
+    <AnnouncementTimeline onclose={() => (readingAnnouncements = false)} />
+  {/if}
 </div>
 
 <style>
@@ -173,6 +189,14 @@
     gap: 12px 28px;
     padding: 14px 24px;
     border-bottom: 1px solid var(--line);
+  }
+  /* The unread marker sits with the title rather than as a header item of its own, so that the
+     wide gaps between the header's parts do not leave it stranded. */
+  .title {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
   }
   h1 {
     margin: 0;
