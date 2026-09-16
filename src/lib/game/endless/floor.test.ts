@@ -108,7 +108,7 @@ describe('the trap doors of a floor below the bottom of the game', () => {
 });
 
 describe('arriving on a floor below the bottom of the game', () => {
-  it('loads the monsters of the section the endless section borrowed', () => {
+  it('loads the 27 rows the rules keep for the section', () => {
     const game = gameOn(FLOOR);
     loadLevelMap(game, new FloorMonsters(), floorRows(FLOOR), FLOOR, game.rng);
     const section = rules.sectionOf(MODULE_V, FLOOR);
@@ -128,17 +128,22 @@ describe('arriving on a floor below the bottom of the game', () => {
     }
   });
 
-  it('stocks monsters the bestiary knows, named for the section they came from', () => {
+  it("stocks nothing but the monsters the section has loaded, all of them the bestiary's", () => {
     const game = gameOn(FLOOR);
     loadLevelMap(game, new FloorMonsters(), floorRows(FLOOR), FLOOR, game.rng);
-    const source = rules.sectionSource(rules.sectionOf(MODULE_V, FLOOR));
+    const loaded = new Set(rules.monsterKinds(rules.sectionOf(MODULE_V, FLOOR)).map((kind) => kind.id));
     const drawn = drawnMonsters(game);
     expect(drawn.length).toBeGreaterThan(0);
     for (const monster of drawn) {
-      expect(() => monsterById(monster.monsterId)).not.toThrow();
-      const origin = monsterById(monster.monsterId).origin;
-      if (origin.kind === 'section') expect(origin.section).toBe(source);
+      expect(loaded.has(monster.monsterId), monster.monsterId).toBe(true);
+      expect(() => monsterById(monster.monsterId), monster.monsterId).not.toThrow();
     }
+  });
+
+  it('stands monsters gathered from more than the one section it is drawn as', () => {
+    const five = rules.monsterKinds(rules.sectionOf(MODULE_V, FLOOR)).slice(BOSS_KIND);
+    const came = five.map((kind) => monsterById(kind.id).origin).map((origin) => (origin.kind === 'section' ? origin.section : 0));
+    expect(new Set(came).size).toBeGreaterThan(1);
   });
 
   it('rolls its monsters around the level the floor is deep rather than back round to 1', () => {

@@ -425,17 +425,18 @@ describe('verifying a run of the endless dungeon', () => {
   it('replays a sitting in the endless world its log names', async () => {
     const log = await endlessRun(RUN_WORLD);
     expect(log.worldSeed).toBe(RUN_WORLD);
-    // The endless sections borrow their monsters from the game's own twenty, and which one a
-    // section borrows from is the world's answer alone.
-    expect(endlessRules({ ...NORMAL, seed: RUN_WORLD }).sectionSource(RUN_SECTION)).not.toBe(
-      endlessRules({ ...NORMAL, seed: ENDLESS_WORLD_SEED }).sectionSource(RUN_SECTION),
+    // Which five monsters stand in an endless section is the world's answer alone, so the same
+    // run replayed in another world meets other monsters.
+    const OTHER_WORLD = 4;
+    expect(endlessRules({ ...NORMAL, seed: RUN_WORLD }).monsterKinds(RUN_SECTION)).not.toEqual(
+      endlessRules({ ...NORMAL, seed: OTHER_WORLD }).monsterKinds(RUN_SECTION),
     );
 
     const here = await replayRun(log);
-    const elsewhere = await replayRun({ ...log, worldSeed: ENDLESS_WORLD_SEED });
+    const elsewhere = await replayRun({ ...log, worldSeed: OTHER_WORLD });
 
-    expect(here.journal[0].text).toBe('Came face to face with a Level 165 SHADOW KHAGISTOLL');
-    expect(elsewhere.journal[0].text).toBe('Came face to face with a Level 165 SHADOW HEAD HUNTER');
+    expect(here.journal[0].text).toBe('Came face to face with a Level 165 SHADOW CENTIPEDE');
+    expect(elsewhere.journal[0].text).toBe('Came face to face with a Level 165 SHADOW WARRIOR');
   });
 
   it('hands back what the character was carrying when the sitting ended', async () => {

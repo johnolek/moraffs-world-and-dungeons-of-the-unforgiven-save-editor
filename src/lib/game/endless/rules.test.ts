@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { readRecolouredId } from '../../bestiary/monsters';
+import { monsterById } from '../../map/stocking';
 import { expValue } from '../port/combat';
 import { FAITHFUL_RULES } from '../port/rules';
 import { newGame } from '../port/state';
 import { BOTTOM_LEVEL } from '../unfmap.js';
 import { endlessRules, ENDLESS_BOTTOM } from './rules';
+
+/** The hundred sections under the bottom of the game, and one far deeper than anybody will
+ *  walk. */
+const ENDLESS_SECTIONS = [...Array.from({ length: 100 }, (unused, index) => 21 + index), 1200];
 
 const SEED = 20260915;
 const MODULE_IV = 3;
@@ -91,12 +97,11 @@ describe('the endless section numbering', () => {
 });
 
 describe('an endless section', () => {
-  it("borrows one of the game's own twenty for its monsters, pictures and words", () => {
-    for (const section of [21, 22, 30, 400]) {
+  it("borrows one of the game's own twenty for its pictures and its words", () => {
+    for (const section of ENDLESS_SECTIONS) {
       const source = tough.sectionSource(section);
       expect(source, `section ${section}`).toBeGreaterThanOrEqual(1);
       expect(source, `section ${section}`).toBeLessThanOrEqual(20);
-      expect(tough.monsterKinds(section)).toEqual(FAITHFUL_RULES.monsterKinds(source));
       expect(tough.pictureFiles(section)).toEqual(FAITHFUL_RULES.pictureFiles(source));
     }
   });
@@ -116,6 +121,80 @@ describe('an endless section', () => {
 
   it('is its own source for the twenty the game describes itself', () => {
     for (let section = 1; section <= 20; section += 1) expect(tough.sectionSource(section)).toBe(section);
+  });
+});
+
+describe("an endless section's five monsters", () => {
+  /** The rows of the loaded table the five fill, and the two marks the game's own rules go
+   *  looking for: special 100 is a Shadow boss, and a level drainer is the one of the five that
+   *  takes a level or an armful of experience off the character when it hits. */
+  const BOSS_SLOT = 22;
+  const REGULAR_SLOTS = [23, 24, 25];
+  const DRAINER_SLOT = 26;
+  const BOSS_SPECIAL = 100;
+
+  const rowOf = (section: number, slot: number) => tough.monsterKinds(section)[slot];
+
+  it('stand after the 22 the game keeps loaded whatever section you are in', () => {
+    for (const section of ENDLESS_SECTIONS) {
+      expect(tough.monsterKinds(section), `section ${section}`).toHaveLength(27);
+      expect(tough.monsterKinds(section).slice(0, BOSS_SLOT), `section ${section}`).toEqual(
+        FAITHFUL_RULES.monsterKinds(1).slice(0, BOSS_SLOT),
+      );
+    }
+  });
+
+  it('are a Shadow boss, three regulars and one level drainer', () => {
+    for (const section of ENDLESS_SECTIONS) {
+      expect(rowOf(section, BOSS_SLOT).special, `section ${section} boss`).toBe(BOSS_SPECIAL);
+      expect(rowOf(section, DRAINER_SLOT).levelDrain, `section ${section} drainer`).not.toBe(0);
+      for (const slot of REGULAR_SLOTS) {
+        expect(rowOf(section, slot).special, `section ${section} slot ${slot}`).not.toBe(BOSS_SPECIAL);
+        expect(rowOf(section, slot).levelDrain, `section ${section} slot ${slot}`).toBe(0);
+      }
+    }
+  });
+
+  it('never stand the same regular in the section twice', () => {
+    for (const section of ENDLESS_SECTIONS) {
+      const regulars = REGULAR_SLOTS.map((slot) => rowOf(section, slot).id);
+      expect(new Set(regulars).size, `section ${section}`).toBe(REGULAR_SLOTS.length);
+    }
+  });
+
+  it('are the same five for everybody playing the same world', () => {
+    const again = endlessRules({ hard: true, seed: SEED });
+    for (const section of ENDLESS_SECTIONS) {
+      expect(again.monsterKinds(section), `section ${section}`).toEqual(tough.monsterKinds(section));
+    }
+  });
+
+  it('are other monsters in a world seeded differently', () => {
+    const elsewhere = endlessRules({ hard: true, seed: SEED + 1 });
+    expect(elsewhere.monsterKinds(22)).not.toEqual(tough.monsterKinds(22));
+  });
+
+  it('are painted in a colour set other than the one the game paints them in', () => {
+    for (const section of ENDLESS_SECTIONS) {
+      for (const slot of [...REGULAR_SLOTS, DRAINER_SLOT]) {
+        const id = rowOf(section, slot).id;
+        const painted = readRecolouredId(id);
+        expect(painted, `section ${section} slot ${slot}`).not.toBeNull();
+        expect(monsterById(id).colorSet, id).not.toBe(monsterById(painted!.id).colorSet);
+      }
+    }
+  });
+
+  it('leave the Shadow boss the colours that make him a shadow', () => {
+    for (const section of ENDLESS_SECTIONS) {
+      expect(readRecolouredId(rowOf(section, BOSS_SLOT).id), `section ${section}`).toBeNull();
+    }
+  });
+
+  it("are the game's own five, byte for byte, in the twenty sections the game has", () => {
+    for (let section = 1; section <= 20; section += 1) {
+      expect(tough.monsterKinds(section), `section ${section}`).toEqual(FAITHFUL_RULES.monsterKinds(section));
+    }
   });
 });
 

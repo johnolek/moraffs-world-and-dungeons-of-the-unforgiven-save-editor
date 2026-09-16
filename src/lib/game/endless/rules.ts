@@ -1,4 +1,3 @@
-import { SeededRng } from '../port/rng';
 import {
   FAITHFUL_RULES,
   keyIndex,
@@ -8,6 +7,7 @@ import {
   type TrapDoorKeys,
 } from '../port/rules';
 import type { PlayerCharacter } from '../port/state';
+import { endlessMonsterKinds, endlessSection } from './monsters';
 import { endlessStateOf } from './state';
 
 /**
@@ -53,10 +53,6 @@ const LEVELS_PER_MODULE = 15;
  */
 const ENDLESS_EXPERIENCE_CAP = 3407;
 
-/** The odd multiplier a 32-bit hash spreads its input with: two to the 32 over the golden
- *  ratio. */
-const GOLDEN_RATIO = 0x9e3779b1;
-
 /**
  * The floor an endless trap door's roll must name to be a door at all, which is Module V's own
  * number.
@@ -101,6 +97,10 @@ export interface EndlessWorld {
 /**
  * The rules of one endless world.
  *
+ * Each new section has five monsters of its own, drawn from the hundred the game has
+ * (`monsters.ts`), and is drawn and described as one of the game's own twenty, which
+ * `sectionSource` names.
+ *
  * The endless floors are the ones below the deepest module the character can reach, and the
  * sections that hold them are the game's own section numbering carried on past the twentieth:
  * `section_number3` counts a section every `5 * (module + 1)` floors and stops counting at the
@@ -134,7 +134,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
   };
 
   const sectionSource = (section: number): number =>
-    section <= LAST_OWN_SECTION ? section : borrowedSection(seed, section);
+    section <= LAST_OWN_SECTION ? section : endlessSection(seed, section).source;
 
   return {
     // How far down a ladder or a chute off a floor may lead. The map generator works a trap
@@ -149,7 +149,8 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     },
     sectionPlace,
     sectionSource,
-    monsterKinds: (section) => FAITHFUL_RULES.monsterKinds(sectionSource(section)),
+    monsterKinds: (section) =>
+      section <= LAST_OWN_SECTION ? FAITHFUL_RULES.monsterKinds(section) : endlessMonsterKinds(seed, section),
     experienceCap: ENDLESS_EXPERIENCE_CAP,
     keys: endlessKeys(FAITHFUL_RULES.bottomLevel(endlessModule)),
     bossSquares: ENDLESS_BOSS_SQUARES,
@@ -163,21 +164,6 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     monsterLevelMax: ENDLESS_BOTTOM + LEVELS_PER_MODULE * endlessModule,
     pictureFiles: (section) => FAITHFUL_RULES.pictureFiles(sectionSource(section)),
   };
-}
-
-/**
- * Which of the game's own twenty sections an endless section takes its monsters, its pictures and
- * its words from.
- *
- * This is a stand-in until each endless section is given a set of its own drawn from the whole
- * bestiary: the bestiary's catalogue has the five monsters of sections 1 to 20 and nothing else,
- * so a floor of section 21 has to be stocked from one of those twenty tables or from nothing at
- * all. Which one is drawn from the world's seed and the section number alone, and nothing of the
- * character reaches the roll, so the same section is the same section for everyone playing that
- * world.
- */
-function borrowedSection(seed: number, section: number): number {
-  return new SeededRng(Math.imul(section, GOLDEN_RATIO) ^ seed).random(LAST_OWN_SECTION) + 1;
 }
 
 /**

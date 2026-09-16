@@ -68,7 +68,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_2000_59c0` | 2000:59c0 |  | `map/you.ts`, `play/display.ts` |
 | `select_player` | 2000:5c0d |  | `game/port/state.ts` |
 | `decode_quit_message` | 2000:5f78 |  | `play/quit.ts` |
-| `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/port/rules.ts`, `play/manual.ts` |
+| `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/endless/monsters.ts`, `game/port/rules.ts`, `play/manual.ts` |
 | `main` | 2000:620f |  | `game/port/state.ts`, `play/view3d/views.ts` |
 | `which_monster` | 2000:6573 |  | `play/floor.ts` |
 | `monster_at` | 2000:65b0 | `game/port/state.ts` |  |
@@ -248,7 +248,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `erase_menu_block` | 4000:42b4 |  | `game/port/state.ts`, `play/Screen.svelte`, `play/boss-office.ts`, `play/office.ts`, `play/town.ts` |
 | `erase_message_block` | 4000:430e |  | `game/port/kills.ts`, `game/port/screens.ts`, `play/chute.ts`, `play/engine.ts`, `play/town.ts`, `play/tunnel.ts` |
 | `FUN_4000_433e` | 4000:433e |  | `play/boss-office.ts` |
-| `scale_image2` | 4000:4818 |  | `game/dotu-pic.js`, `play/section-screen.ts`, `play/view3d/render.ts`, `play/view3d/scale.ts` |
+| `scale_image2` | 4000:4818 |  | `game/dotu-pic.js`, `game/endless/monsters.ts`, `play/section-screen.ts`, `play/view3d/render.ts`, `play/view3d/scale.ts` |
 | `FUN_4000_4f8f` | 4000:4f8f |  | `play/plaque.ts`, `play/view3d/pictures.ts`, `play/view3d/texture.ts` |
 | `typed_name` | 4000:55b2 | `game/port/character.ts` | `play/keys.ts`, `play/town.ts`, `roller/NewCharacter.svelte` |
 | `FUN_4000_593f` | 4000:593f |  | `game/port/screens.ts` |

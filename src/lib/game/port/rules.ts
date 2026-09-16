@@ -32,8 +32,8 @@ export interface GameRules {
   /** Where a section sits, or null when there is no section of that number. */
   sectionPlace(section: number): SectionPlace | null;
   /**
-   * Which of the game's own twenty sections a section's monsters, pictures and words are taken
-   * from. A section the game itself has is its own source; a section beyond them borrows one.
+   * Which of the game's own twenty sections a section's pictures and words are taken from. A
+   * section the game itself has is its own source; a section beyond them borrows one.
    */
   sectionSource(section: number): number;
   /** The 27 monster descriptions the game keeps loaded while the character is in a section. */
@@ -131,8 +131,8 @@ type GameData = typeof data;
  * `sectionPlace` is the twenty-row section table of `dotu-data.json`, which counts four sections
  * to a module and puts each section's Shadow boss on the last of its floors, and
  * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005).
- * `sectionSource` is every section's own number: the game has a row of MD.BIN for each of the
- * twenty, so none of them borrows another's. `keys` and `bossSquares` are the two tables of the
+ * `sectionSource` is every section's own number: the game has a wall file, a palette and a row
+ * of MD.BIN for each of the twenty, so none of them borrows another's. `keys` and `bossSquares` are the two tables of the
  * character record that a dungeon deeper than the game's own would run off the end of.
  */
 export function faithfulRules(data: GameData): GameRules {
