@@ -48,6 +48,9 @@ export interface PlaySession<View> extends PlayLoopSession {
   readonly run: RunRecorder | null;
   press(key: number): void;
   recordEdited(bytes: Uint8Array): void;
+  /** The record back into the roster with the run beside it, so the two never disagree about how
+   *  far the game got. */
+  save(): void;
   /** Nothing is going to draw this session again, so anything of its own still running stops. */
   finish(): void;
   view(): View;

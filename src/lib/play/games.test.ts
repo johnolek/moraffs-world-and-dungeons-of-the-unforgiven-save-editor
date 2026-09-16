@@ -175,6 +175,32 @@ describe('a character played again', () => {
   });
 });
 
+describe('a turn the player left in the middle of', () => {
+  it('reaches the roster only when the game is written down', async () => {
+    // A poison timer at two ticks down to one on the first move, which is where pass_moment puts
+    // its hint on the screen and waits for a key (`src/lib/game/port/moment.ts`). The loop is
+    // then parked behind that key with the move already in the log and nothing written back.
+    const entry = rostered({ level: 3, dir: 0, poison: 2, ...floorSquare(3) });
+    const game = PLAY_GAMES.unforgiven;
+    const session = game.start(entry, false, 'faithful');
+    session.mode = 'faithful';
+    void runPlayLoop(session, game.loop(session));
+    await settle();
+
+    await press(session, KEY.arrowUp);
+
+    expect(session.run!.log().inputs).toContain(KEY.arrowUp);
+    expect(entry.run[0]?.inputs ?? []).not.toContain(KEY.arrowUp);
+
+    // What the Play tab does before it stops the sender, so that the boards are never given a
+    // key the roster here does not hold.
+    session.save();
+
+    expect(entry.run[0].inputs).toEqual(session.run!.log().inputs);
+    session.finish();
+  });
+});
+
 describe('a character rolled for the endless dungeon', () => {
   it('is played in the world it was rolled into, where a faithful character is not', () => {
     const endless = PLAY_GAMES.unforgiven.start(rosteredEndless(), false, 'faithful');

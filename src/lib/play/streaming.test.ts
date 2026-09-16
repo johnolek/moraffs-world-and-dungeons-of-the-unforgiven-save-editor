@@ -85,6 +85,7 @@ function sender(
     earlier: [],
     mode: () => 'faithful',
     onMark: (mark) => marks.push(mark),
+    writeTheGameDown: () => undefined,
     movedOn: () => (told.movedOn += 1),
     ...over,
   });
@@ -128,6 +129,46 @@ describe('sending a character that is on no board', () => {
     await settled();
 
     expect(run.posts).toEqual(['https://runs.example.com/runs/k3p9x1-ab12cd/batches']);
+  });
+});
+
+describe('keeping the roster level with the server', () => {
+  it('writes the game down before it reads the log for a batch', async () => {
+    browser();
+    setOffTheBoards(false);
+    const order: string[] = [];
+    vi.stubGlobal('fetch', (url: string) => {
+      order.push(`posted ${url}`);
+      return Promise.resolve(TAKEN());
+    });
+    const streamer = streamRun({
+      characterId: 'k3p9x1-ab12cd',
+      session: sitting(),
+      earlier: [],
+      mode: () => 'faithful',
+      onMark: () => undefined,
+      writeTheGameDown: () => order.push('wrote the game down'),
+      movedOn: () => undefined,
+    })!;
+
+    streamer.stop();
+    await settled();
+
+    expect(order).toEqual(['wrote the game down', 'posted https://runs.example.com/runs/k3p9x1-ab12cd/batches']);
+  });
+
+  it('writes the game down even where the player has opted out and nothing is sent', async () => {
+    browser();
+    setOffTheBoards(true);
+    let wrote = 0;
+
+    const run = sender(TAKEN, { writeTheGameDown: () => (wrote += 1) });
+    run.stop();
+    await settled();
+    setOffTheBoards(false);
+
+    expect(run.posts).toEqual([]);
+    expect(wrote).toBeGreaterThan(0);
   });
 });
 

@@ -154,6 +154,15 @@ export interface StreamRun {
   mode: () => PlayMode;
   onMark: (mark: RunMark) => void;
   /**
+   * Write the character and the run down as they stand, for a game still being played.
+   *
+   * The roster is written at the end of a turn and the sender reads the run log as it stands, so
+   * a turn that has not finished has already put its key in the log and nowhere else. Sending
+   * that key without keeping it would leave the server holding a run the device cannot carry on
+   * from, and the server refuses every later sitting of such a character.
+   */
+  writeTheGameDown: () => void;
+  /**
    * The server holds a newer run of this character than the one being played: another device
    * carried it on while this one was away. The tab takes the server's copy over.
    */
@@ -236,6 +245,11 @@ class Streamer implements RunStreamer {
       this.leaving = false;
       return;
     }
+    // Everything the game has done goes into the roster before the log is read for a batch, so
+    // that the device never holds less of a sitting than the server does. It goes in whether or
+    // not anything is sent, since it is also the only thing that writes down a turn the player
+    // left in the middle of.
+    this.run.writeTheGameDown();
     // The player has opted out, so nothing about the character leaves the device. The keys are
     // still written down, and coming back on to the boards sends the lot from then on.
     if (offTheBoards()) {

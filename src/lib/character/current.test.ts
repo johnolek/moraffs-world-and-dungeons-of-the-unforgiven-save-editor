@@ -737,6 +737,7 @@ describe('the characters the server is keeping for this player', () => {
       earlier: [],
       mode: () => 'faithful',
       onMark: () => undefined,
+      writeTheGameDown: () => undefined,
       movedOn: () => undefined,
     })!;
 

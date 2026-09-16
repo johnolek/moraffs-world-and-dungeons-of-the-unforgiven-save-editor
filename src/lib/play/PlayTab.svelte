@@ -246,6 +246,7 @@
         earlier,
         mode: () => mode,
         onMark: (mark) => (runMark = mark),
+        writeTheGameDown,
         movedOn: () => void catchUpWithTheServer(),
       });
     }
@@ -300,7 +301,19 @@
     void start();
   });
 
+  /**
+   * The record and the run as they stand, for a game still being played.
+   *
+   * A turn that has not finished has put its key in the run log and nowhere else, since the
+   * roster is written at the end of one. A game that is over has been written down already —
+   * by the loop coming back (`runPlayLoop`) — and a character that died is not written over.
+   */
+  function writeTheGameDown() {
+    if (session && !session.over) session.save();
+  }
+
   function leave() {
+    writeTheGameDown();
     session?.finish();
     streamer?.stop();
     streamer = null;
@@ -312,8 +325,12 @@
     view = null;
   }
 
-  /** A tab closed or switched away from leaves whatever was played last unsent otherwise. */
-  onDestroy(() => streamer?.stop());
+  /** A tab closed or switched away from leaves whatever was played last unwritten and unsent
+   *  otherwise. */
+  onDestroy(() => {
+    writeTheGameDown();
+    streamer?.stop();
+  });
 
   /** The end of a run, which is a death or a win: the last batch goes and the server replays the
    *  whole chain. Quitting is not an end -- the character is played again from where it stood. */
