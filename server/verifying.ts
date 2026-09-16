@@ -201,15 +201,27 @@ export async function verifyKeptRun(
   if (!forTheBoards(sessions[sessions.length - 1])) return [];
   const batches = await batchesOf(sql, characterId);
   const timing = runTiming(batches);
-  const log = runLogFrom(sessions, batches);
-  const edits = sessions.reduce((count, session) => count + session.edits, 0);
-  const verdict = await replayChain(engines, log);
-  // A record written from outside the game is not in the log, so a replay has no way of putting
-  // the character back into it. The verifier says as much on its own; this says it again here so
-  // that a board never has to trust an engine build about it.
-  const eligible = verdict.status === 'verified' && edits === 0;
+  const verdict = await replayChain(engines, runLogFrom(sessions, batches));
+  const eligible = mayGoOnABoard(verdict, sessions);
   await keepVerdict(sql, characterId, verdict, timing, eligible);
   return eligible ? announceVerifiedRun(sql, characterId, verdict, timing) : [];
+}
+
+/**
+ * Whether a replayed chain may go on a board, which is also whether anything about it is
+ * announced.
+ *
+ * A record written into the character from outside the game is not in the log, so a replay has no
+ * way of putting the character back into it. The verifier says as much on its own; this counts
+ * the edits the sittings own up to as well, so that a board never has to trust an engine build
+ * about it.
+ *
+ * A run that has ended and a character still being played are judged by this one rule, so that
+ * what is announced mid-run and what is announced at the end cannot come apart.
+ */
+function mayGoOnABoard(verdict: RunVerdict, sessions: readonly KeptSession[]): boolean {
+  const edits = sessions.reduce((count, session) => count + session.edits, 0);
+  return verdict.status === 'verified' && edits === 0;
 }
 
 /**
