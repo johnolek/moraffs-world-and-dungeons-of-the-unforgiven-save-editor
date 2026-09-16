@@ -72,6 +72,16 @@ export interface GameRules {
   readonly monsterLevelWrap: number | null;
   /** The most hit points a stocked monster may be rolled with. */
   readonly monsterHpMax: number;
+  /**
+   * The deepest floor Autokill works on, and null for rules that let it work anywhere.
+   *
+   * Autokill is the one attack in the game that never looks at a monster's hit points: it rolls
+   * the character's mind against the monster's and, winning, declares the monster dead. That
+   * makes it worth exactly as much against a monster with a million hit points as against a rat,
+   * which is a problem only for a dungeon deep enough to stock the million. The game's own
+   * dungeon is not, so the faithful rules answer null and the limit never comes up.
+   */
+  readonly autokillDeepestFloor: number | null;
   /** The two picture files a section's corridors and monsters are drawn from. */
   pictureFiles(section: number): SectionPictures;
 }
@@ -215,7 +225,8 @@ type GameData = typeof data;
  * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005),
  * `monsterHpMax` the 32,000 the same routine tops a hit point roll off at, which keeps the roll
  * inside the two bytes the monster's record holds it in, and `monsterLevelWrap` the 256 its nudge
- * counts round, the level being one byte of that record.
+ * counts round, the level being one byte of that record. `autokillDeepestFloor` is null, the
+ * game putting no depth at all between the caster and the spell.
  * `sectionSource` is every section's own number: the game has a wall file, a palette and a row
  * of MD.BIN for each of the twenty, so none of them borrows another's. `monsterTypeOdds` is the
  * four rolls get_mtype (exe 2000:65f8) picks a stocked monster's type with, which are the same
@@ -242,6 +253,7 @@ export function faithfulRules(data: GameData): GameRules {
     monsterLevelMax: data.constants.monsterLevelMax,
     monsterHpMax: data.constants.monsterHpMax,
     monsterLevelWrap: MONSTER_LEVEL_BYTE,
+    autokillDeepestFloor: null,
     pictureFiles: sectionPictures,
   };
 }

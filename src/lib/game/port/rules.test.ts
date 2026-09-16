@@ -165,6 +165,10 @@ describe('the faithful rules', () => {
     expect(rules.monsterLevelWrap).toBe(256);
   });
 
+  it('puts no depth between Autokill and the monster in front of you', () => {
+    expect(rules.autokillDeepestFloor).toBeNull();
+  });
+
   it("rolls every floor's monsters around the level dotu-mech works out", () => {
     for (const module of MODULES) {
       for (const floor of floorsOf(module)) {
