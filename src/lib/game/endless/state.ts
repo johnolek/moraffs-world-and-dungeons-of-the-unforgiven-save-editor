@@ -77,6 +77,26 @@ export interface KeptEndlessState {
   hp?: number;
   /** The same for the maximum, which the record keeps at 0x33. */
   maxHp?: number;
+  /**
+   * The character's rings of regeneration, for a character carrying more of them than the
+   * record's signed byte at 0x7ca holds, and absent for one who is not.
+   *
+   * These counts are the first limit of the record an endless character meets: a Shadow hands
+   * over piles of loot, and the hundred and twenty-eighth of any of them reads as -128. They are
+   * kept the way the hit points are — a clamped copy in the bytes, the real number here.
+   */
+  regenRings?: number;
+  /** The same for the lucky charms, which the record keeps at 0x7cb. */
+  luckyCharms?: number;
+  /** The same for the hand grenades, which the record keeps at 0x7cc. */
+  grenades?: number;
+  /** The same for the stones of seeing, which the record keeps at 0x7cd. */
+  seeingStones?: number;
+  /**
+   * The same for the six potions the record keeps at 0x15d, all six of them together, and absent
+   * unless the character carries more of one of them than that byte holds.
+   */
+  potions?: number[];
 }
 
 /** Where what an endless character carries is kept while it is not being played. */
@@ -108,6 +128,13 @@ export function endlessStateOf(pc: PlayerCharacter): EndlessState {
  */
 const RECORD_HP_MAX = 32767;
 
+/**
+ * The largest number one of the record's item counts holds. The rings of regeneration, the lucky
+ * charms, the hand grenades and the stones of seeing at 0x7ca to 0x7cd, and the six potions at
+ * 0x15d, are each one signed byte.
+ */
+const RECORD_ITEM_MAX = 127;
+
 /** What this character is carrying now, ready to be written down. */
 export function keptEndlessState(pc: PlayerCharacter): KeptEndlessState {
   const state = endlessStateOf(pc);
@@ -120,6 +147,11 @@ export function keptEndlessState(pc: PlayerCharacter): KeptEndlessState {
   if (state.shadowKilledOn > 0) kept.shadowKilledOn = state.shadowKilledOn;
   if (pc.hp > RECORD_HP_MAX) kept.hp = pc.hp;
   if (pc.maxHp > RECORD_HP_MAX) kept.maxHp = pc.maxHp;
+  if (pc.regenRings > RECORD_ITEM_MAX) kept.regenRings = pc.regenRings;
+  if (pc.luckyCharms > RECORD_ITEM_MAX) kept.luckyCharms = pc.luckyCharms;
+  if (pc.grenades > RECORD_ITEM_MAX) kept.grenades = pc.grenades;
+  if (pc.seeingStones > RECORD_ITEM_MAX) kept.seeingStones = pc.seeingStones;
+  if (pc.potions.some((count) => count > RECORD_ITEM_MAX)) kept.potions = [...pc.potions];
   return kept;
 }
 
@@ -133,23 +165,56 @@ export function restoreEndlessState(pc: PlayerCharacter, kept: KeptEndlessState)
   state.shadowKilledOn = kept.shadowKilledOn ?? 0;
   if (kept.hp !== undefined) pc.hp = kept.hp;
   if (kept.maxHp !== undefined) pc.maxHp = kept.maxHp;
+  if (kept.regenRings !== undefined) pc.regenRings = kept.regenRings;
+  if (kept.luckyCharms !== undefined) pc.luckyCharms = kept.luckyCharms;
+  if (kept.grenades !== undefined) pc.grenades = kept.grenades;
+  if (kept.seeingStones !== undefined) pc.seeingStones = kept.seeingStones;
+  // The record has six potions and no more, and what arrives here may have come over the open
+  // internet, so the counts are put into the six the character already has rather than replacing
+  // them with whatever list turned up.
+  const potions = kept.potions;
+  if (potions !== undefined) pc.potions = pc.potions.map((count, colour) => potions[colour] ?? count);
 }
 
 /**
  * The character as the record is able to hold it: the hit points and the maximum brought back
- * inside the two signed 16-bit words the record keeps them in.
+ * inside the two signed 16-bit words the record keeps them in, and the counts of the items it
+ * keeps in one signed byte each brought back inside those.
  *
- * An endless character can heal past 32,767, and the record written for one has to stay a record
- * — a file the 1993 game would load and make sense of, showing a character pegged at the largest
- * number its field holds. The real numbers travel beside it in {@link keptEndlessState}, so
- * nothing is lost; what the record loses is only the part it never had room for.
+ * An endless character can heal past 32,767 and can carry more than 127 of a thing a Shadow hands
+ * over, and the record written for one has to stay a record — a file the 1993 game would load and
+ * make sense of, showing a character pegged at the largest number each field holds. The real
+ * numbers travel beside it in {@link keptEndlessState}, so nothing is lost; what the record loses
+ * is only the part it never had room for.
  *
  * The copy is what goes to `savePlayer`. The character being played is left alone, because the
  * sitting carries on with the numbers it really has.
  */
 export function clampedToRecord(pc: PlayerCharacter): PlayerCharacter {
-  if (pc.hp <= RECORD_HP_MAX && pc.maxHp <= RECORD_HP_MAX) return pc;
-  return { ...pc, hp: Math.min(pc.hp, RECORD_HP_MAX), maxHp: Math.min(pc.maxHp, RECORD_HP_MAX) };
+  if (!pastTheRecord(pc)) return pc;
+  return {
+    ...pc,
+    hp: Math.min(pc.hp, RECORD_HP_MAX),
+    maxHp: Math.min(pc.maxHp, RECORD_HP_MAX),
+    regenRings: Math.min(pc.regenRings, RECORD_ITEM_MAX),
+    luckyCharms: Math.min(pc.luckyCharms, RECORD_ITEM_MAX),
+    grenades: Math.min(pc.grenades, RECORD_ITEM_MAX),
+    seeingStones: Math.min(pc.seeingStones, RECORD_ITEM_MAX),
+    potions: pc.potions.map((count) => Math.min(count, RECORD_ITEM_MAX)),
+  };
+}
+
+/** Whether any of the character's numbers has grown past the field the record keeps it in. */
+function pastTheRecord(pc: PlayerCharacter): boolean {
+  return (
+    pc.hp > RECORD_HP_MAX ||
+    pc.maxHp > RECORD_HP_MAX ||
+    pc.regenRings > RECORD_ITEM_MAX ||
+    pc.luckyCharms > RECORD_ITEM_MAX ||
+    pc.grenades > RECORD_ITEM_MAX ||
+    pc.seeingStones > RECORD_ITEM_MAX ||
+    pc.potions.some((count) => count > RECORD_ITEM_MAX)
+  );
 }
 
 /**
@@ -157,8 +222,9 @@ export function clampedToRecord(pc: PlayerCharacter): PlayerCharacter {
  * body or off a roster answer.
  *
  * A state travels with the character between devices, so it arrives over the open internet and
- * every field is checked here before anything is done with it. The hit points are the two the
- * record has no room for, and a character whose hit points fit the record carries neither.
+ * every field is checked here before anything is done with it. The hit points and the item counts
+ * are the numbers the record has no room for, and a character whose numbers all fit the record
+ * carries none of them.
  */
 export function isKeptEndlessState(value: unknown): value is KeptEndlessState {
   if (typeof value !== 'object' || value === null) return false;
@@ -170,7 +236,18 @@ export function isKeptEndlessState(value: unknown): value is KeptEndlessState {
   if (state.shadowKilledOn !== undefined && !Number.isInteger(state.shadowKilledOn)) return false;
   if (state.hp !== undefined && !Number.isInteger(state.hp)) return false;
   if (state.maxHp !== undefined && !Number.isInteger(state.maxHp)) return false;
+  if (state.regenRings !== undefined && !Number.isInteger(state.regenRings)) return false;
+  if (state.luckyCharms !== undefined && !Number.isInteger(state.luckyCharms)) return false;
+  if (state.grenades !== undefined && !Number.isInteger(state.grenades)) return false;
+  if (state.seeingStones !== undefined && !Number.isInteger(state.seeingStones)) return false;
+  if (state.potions !== undefined && !isCounts(state.potions)) return false;
   return true;
+}
+
+/** Whether this is a list of how many of something the character carries, which is how the six
+ *  potions travel. */
+function isCounts(value: unknown): boolean {
+  return Array.isArray(value) && value.every((count) => Number.isInteger(count));
 }
 
 /** Whether this is where a wandering Shadow stands: the floor it is on and its square of it. */
