@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Announcement } from '../../../server/announcing';
+import { MENU_LINE_STEP, MENU_TOP, MENU_X } from '../game/port/screens';
+import { MESSAGE_BOX_GRID } from './screens';
 import {
   announcementBoxLines,
   announcementCarried,
@@ -79,6 +81,16 @@ describe('an announcement as message box lines', () => {
     expect(line.x).toBe(100);
     expect(line.font).toBe(0);
     expect(line.colour).toBe(6);
+  });
+});
+
+describe("Dungeons of the Unforgiven's own box", () => {
+  it('takes the last two of the eight lines mset_gmenu draws', () => {
+    const lines = announcementBoxLines(said(1, 'GRONDELBERT', 2), MESSAGE_BOX_GRID);
+
+    expect(lines.map((line) => line.text)).toEqual(['GRONDELBERT (MORAFF) BEAT', 'BOSS 3']);
+    expect(lines.map((line) => line.y)).toEqual([MENU_TOP + 6 * MENU_LINE_STEP, MENU_TOP + 7 * MENU_LINE_STEP]);
+    expect(lines.map((line) => line.x)).toEqual([MENU_X, MENU_X]);
   });
 });
 

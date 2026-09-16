@@ -1,5 +1,6 @@
-import { BATTLE_HP_Y, BLOW_Y, menuLine } from '../game/port/screens';
+import { BATTLE_HP_Y, BLOW_Y, MENU_SPREAD_LENGTH, menuLine } from '../game/port/screens';
 import type { ScreenLine, ScreenRect } from '../game/port/state';
+import type { MessageBoxGrid } from './announcement-box';
 import { BATTLE_SPELLS_BOX } from './display';
 
 /**
@@ -55,6 +56,17 @@ export function onMessageBox(line: ScreenLine): boolean {
 export function messageBoxLines(lines: string[]): ScreenLine[] {
   return lines.slice(0, MESSAGE_BOX_LINES).map((text, index) => menuLine(text, index));
 }
+
+/**
+ * The box as a grid the tab can put a line of its own on, for the announcements the Play tab
+ * draws over it. The longest line the game prints at the font's own spacing is one character
+ * short of the length it starts squeezing at.
+ */
+export const MESSAGE_BOX_GRID: MessageBoxGrid = {
+  rows: MESSAGE_BOX_LINES,
+  columns: MENU_SPREAD_LENGTH - 1,
+  line: menuLine,
+};
 
 /** What the game has drawn and where it stands, for {@link messageBoxScreen}. */
 export interface MessageBoxShowing {
