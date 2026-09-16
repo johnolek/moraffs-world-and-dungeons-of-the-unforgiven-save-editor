@@ -39,6 +39,19 @@ const LETTER_BLOCKS = [0, 2, 3, 4, 1];
 /** The first and last of the five letters the manual reads. */
 const FIRST_LETTER = 0x41;
 
+/**
+ * What the screen says about a section the game has no words for, which is a section past the
+ * twenty MD.BIN describes: it says which section it is and which one's monsters it was given,
+ * since the five standing under the letters are that section's.
+ */
+function borrowedIntro(section: number, source: number): string[] {
+  return [
+    `SECTION ${section}`,
+    'Nobody mapped this far down. Its monsters',
+    `are the ones that live in section ${source}.`,
+  ];
+}
+
 /** The line across the bottom (exe DS:3598), as psfont draws it when there is no mouse. */
 const PROMPT = {
   text: 'PRESS A, B, C, D, OR E FOR MORE INFORMATION OR HIT A KEY TO CONTINUE',
@@ -59,10 +72,13 @@ export interface ManualHost {
 /** The S key, until the reader leaves it. */
 export async function readTheMonsterManual(turn: Turn): Promise<void> {
   const game = turn.game;
-  const section = data.sections[game.rules.sectionOf(game.pc.module, game.pc.level) - 1];
-  let shown: string[] = section.intro;
+  const standingIn = game.rules.sectionOf(game.pc.module, game.pc.level);
+  const source = game.rules.sectionSource(standingIn);
+  const section = data.sections[source - 1];
+  const part = game.rules.sectionPlace(standingIn)?.part ?? section.part;
+  let shown: string[] = source === standingIn ? section.intro : borrowedIntro(standingIn, source);
   for (;;) {
-    drawManualPage(turn.session, section.section, section.part - 1, shown);
+    drawManualPage(turn.session, source, part - 1, shown);
     const block = letterPressed(await game.key());
     if (block === null) break;
     shown = section.descriptions.slice(block * BLOCK_LINES, (block + 1) * BLOCK_LINES);
@@ -87,6 +103,10 @@ function letterPressed(key: number): number | null {
  * The original draws the letters and the stamp once and leaves them standing while it turns the
  * pages, redrawing only the tablet and the line across the bottom; the port draws every line of
  * the screen again for each page, which comes out the same picture.
+ *
+ * @param section the section the five monsters come from.
+ * @param part which of its module's sections the character is standing in, counted from 0, which
+ *   is what says whether its Shadow boss has been killed.
  */
 export function drawManualPage(session: ManualHost, section: number, part: number, lines: string[]): void {
   const game = session.game;

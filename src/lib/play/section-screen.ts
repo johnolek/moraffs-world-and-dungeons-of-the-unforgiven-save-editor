@@ -177,7 +177,7 @@ export function sectionSlabTint(section: number): number {
 
 /** What the S key's screen is showing, which is what the tab needs to draw it. */
 export interface SectionScreen {
-  /** The section the character is standing in, 1 to 20. */
+  /** The section the five monsters in the panels come from, 1 to 20. */
   section: number;
   /** The four lines standing on the slab: the section's introduction, or one monster's. */
   lines: string[];
