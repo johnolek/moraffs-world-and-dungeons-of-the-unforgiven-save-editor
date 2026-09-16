@@ -34,8 +34,8 @@ const chuteLine = (text: string, index: number): ScreenLine => ({
  * to, or the floor the character is already on when the square has no chute.
  */
 export function chuteUnder(game: Game): number {
-  const chute = bundledDungeon.chute(game.pc.x, game.pc.y, game.pc.level, game.pc.module);
-  return chute;
+  const module = game.pc.module;
+  return bundledDungeon.chute(game.pc.x, game.pc.y, game.pc.level, module, game.rules.bottomLevel(module));
 }
 
 /**

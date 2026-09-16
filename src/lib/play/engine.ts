@@ -423,7 +423,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     // copies the record into a character of its own, so the cursor goes on that one.
     this.game.pc.mapCursorX = MAP_VIEW_COLUMNS >> 1;
     this.game.pc.mapCursorY = MAP_VIEW_ROWS >> 1;
-    this.rows = UNFORGIVEN_MAP.floor(pc.level, pc.module);
+    this.rows = this.floorRows(pc.level);
     loadLevelMap(this.game, this.floors, this.rows, pc.level, this.game.rng);
     this.memory.enterFloor(pc.module, pc.level);
     this.memory.markArrival(this.rows, pc.x, pc.y);
@@ -664,6 +664,18 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     this.flushKeys();
   }
 
+  /**
+   * A floor of the module the character is in.
+   *
+   * The ladders, trap doors and chutes on it reach down to the bottom the game's rules give that
+   * module, which is the module's own everywhere the game itself can be played and deeper for a
+   * game played past it.
+   */
+  private floorRows(level: number): MapSquare[][] {
+    const module = this.game.pc.module;
+    return UNFORGIVEN_MAP.floor(level, module, this.game.rules.bottomLevel(module));
+  }
+
   /** Arriving on a floor: the floor itself, then its monsters. */
   enterFloor(level: number): void {
     const game = this.game;
@@ -672,7 +684,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     const leaving = sectionNumber(game.rules, game.pc.module, game.pc.level);
     game.engaged = -1;
     game.pc.level = level;
-    this.rows = UNFORGIVEN_MAP.floor(level, game.pc.module);
+    this.rows = this.floorRows(level);
     loadLevelMap(game, this.floors, this.rows, level, game.rng);
     this.memory.enterFloor(game.pc.module, level);
     this.memory.markArrival(this.rows, game.pc.x, game.pc.y);

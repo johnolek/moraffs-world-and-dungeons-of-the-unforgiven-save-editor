@@ -20,7 +20,8 @@ const NO_LADDER = 0x67;
  * square goes, down being positive and up negative, and 0 for a square with no ladder.
  */
 export function ladderUnder(game: Game): number {
-  return bundledDungeon.ladder(game.pc.x, game.pc.y, game.pc.level, game.pc.module);
+  const module = game.pc.module;
+  return bundledDungeon.ladder(game.pc.x, game.pc.y, game.pc.level, module, game.rules.bottomLevel(module));
 }
 
 /**

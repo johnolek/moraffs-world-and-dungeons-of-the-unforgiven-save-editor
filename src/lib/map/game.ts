@@ -118,7 +118,14 @@ export interface MapGame {
   dungeonStorageKey: string | null;
   /** The deepest floor one dungeon has. */
   bottomFloor(dungeon: number): number;
-  floor(level: number, dungeon: number): MapSquare[][];
+  /**
+   * A whole floor.
+   *
+   * `bottom` is how deep the ways down off it may lead, for a game played past the deepest floor
+   * the dungeon itself has; without one they stop where the game stops them. Only Dungeons of the
+   * Unforgiven can be asked for a floor below its own bottom, so the other two ignore it.
+   */
+  floor(level: number, dungeon: number, bottom?: number): MapSquare[][];
   /** One square of any floor, without generating the rest of it. */
   squareOn(x: number, y: number, level: number, dungeon: number): MapSquare;
   /** The square every trap door leading to a floor lands on, or null for a game with none. */
@@ -188,7 +195,7 @@ export const UNFORGIVEN_MAP: MapGame = {
   defaultDungeon: 0,
   dungeonStorageKey: null,
   bottomFloor: (dungeon) => BOTTOM_LEVEL[dungeon],
-  floor: (level, dungeon) => bundledDungeon.floor(level, dungeon),
+  floor: (level, dungeon, bottom) => bundledDungeon.floor(level, dungeon, true, bottom),
   squareOn(x, y, level, dungeon) {
     const square: MapSquare = {
       ...bundledDungeon.sides(x, y, level, dungeon),
