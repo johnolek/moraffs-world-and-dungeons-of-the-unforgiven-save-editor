@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
+import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import { markDead, markEdited, newEntry, restoreImport, voidLeaderboard, withEntry, withoutEntry } from './roster';
 
 const ROLLED_AT = new Date('2026-09-06T12:00:00Z');
@@ -35,6 +36,19 @@ describe('a character put on the roster', () => {
 
   it('has no import to go back to when it was rolled here', () => {
     expect(rolled().importedBytes).toBeNull();
+  });
+});
+
+describe('the endless world a character is rolled into', () => {
+  it('is given to a character locked to the endless dungeon', () => {
+    expect(rolledLockedOffTheBoard('endless').worldSeed).toBe(ENDLESS_WORLD_SEED);
+    expect(rolledForTheBoard('endless').worldSeed).toBe(ENDLESS_WORLD_SEED);
+  });
+
+  it('is nothing at all for a character that plays the game as it shipped', () => {
+    expect(rolled().worldSeed).toBeUndefined();
+    expect(rolledLockedOffTheBoard('faithful').worldSeed).toBeUndefined();
+    expect(imported().worldSeed).toBeUndefined();
   });
 });
 

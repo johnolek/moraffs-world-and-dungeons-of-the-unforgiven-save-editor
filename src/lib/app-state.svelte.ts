@@ -86,6 +86,17 @@ export interface RosterEntry extends CurrentCharacter {
    */
   rolledAt: number | null;
   /**
+   * The number the endless world this character plays in is built from
+   * (`src/lib/game/endless/rules.ts`), for a character locked to the endless dungeon, and
+   * undefined for every other character.
+   *
+   * It is decided at the roll and never again: the world is what says which of the game's twenty
+   * sections each endless section borrows its monsters and its look from, so a character whose
+   * world changed under it would be playing a different dungeon from the one its run was played
+   * in.
+   */
+  worldSeed?: number;
+  /**
    * The character's run: every sitting at the game it has been played in, oldest first.
    *
    * The game being played now is the last of them, written again after every key, so that a tab

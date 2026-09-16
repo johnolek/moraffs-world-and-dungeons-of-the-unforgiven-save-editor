@@ -43,6 +43,9 @@ interface CharacterRow {
   lock?: Leaderboard | null;
   /** Rows written before the roller was given a wall clock have none. */
   rolledAt?: number | null;
+  /** The endless world the character was rolled into, for one locked to the endless dungeon;
+   *  every other character has none. */
+  worldSeed?: number;
 }
 
 /**
@@ -206,6 +209,7 @@ function characterRow(entry: RosterEntry): CharacterRow {
     leaderboard: entry.leaderboard,
     lock: entry.lock,
     rolledAt: entry.rolledAt,
+    worldSeed: entry.worldSeed,
   };
 }
 
@@ -302,6 +306,7 @@ function entryOf(row: CharacterRow, run: RunSession[], journal: JournalEntry[][]
     leaderboard: row.leaderboard,
     lock: row.lock ?? row.leaderboard,
     rolledAt: row.rolledAt ?? null,
+    worldSeed: row.worldSeed,
     run,
     journal,
   };

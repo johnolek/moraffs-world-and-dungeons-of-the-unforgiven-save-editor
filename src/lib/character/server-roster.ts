@@ -213,8 +213,10 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     lock: isLeaderboard(character.lock) ? character.lock : isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     // The second a roll was started in stays on the device that rolled it: the server keeps the
-    // record and the run, and a roll is neither.
+    // record and the run, and a roll is neither. The endless world the character was rolled into
+    // stays with it for the same reason.
     rolledAt: kept?.rolledAt ?? null,
+    worldSeed: kept?.worldSeed,
     run: character.run.map((session, at) => sittingWithKeys(session, kept?.run[at])),
     journal: kept?.journal ?? [],
   };

@@ -1,4 +1,5 @@
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
+import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
 
 /**
  * A character on the roster: what one is made of and what happens to it. Where the roster is
@@ -48,6 +49,7 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     lock,
     leaderboard: lock !== null && character.onBoard === true ? lock : null,
     rolledAt: character.imported ? null : (character.rolledAt ?? null),
+    worldSeed: lock === 'endless' ? ENDLESS_WORLD_SEED : undefined,
     run: [],
     journal: [],
   };

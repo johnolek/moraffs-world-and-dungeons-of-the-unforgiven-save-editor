@@ -73,6 +73,15 @@ const ENDLESS_TRAP_DOOR_LIMIT = 84;
  *  character's section, so the doors of a floor lead to the eighty floors ending there. */
 const ENDLESS_TRAP_DOOR_DEEPEST = 80;
 
+/**
+ * The endless world every endless character is rolled into for now.
+ *
+ * A world is one number, and two characters rolled into the same one meet the same monsters on
+ * the same floor. MORF-513 is where the run server hands the number out, so that everybody
+ * playing at the same time is playing the same dungeon; until it lands there is this one world.
+ */
+export const ENDLESS_WORLD_SEED = 1;
+
 /** One endless world. */
 export interface EndlessWorld {
   /**
