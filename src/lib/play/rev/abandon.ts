@@ -7,7 +7,7 @@ import type { RevGame } from './state';
 /** 1000:1938: what a character carrying nothing is told. */
 export const REV_NO_TREASURE = 'You have no treasure.';
 
-/** 1000:194D: the question, which keeps the cursor on the row (1000:1950). */
+/** 1000:194D: the question, trailing space and all. */
 export const REV_DROP_ALL_COINS = 'Do you want to drop all of your coins? ';
 
 const YES_KEYS = ['Y'.charCodeAt(0), 'y'.charCodeAt(0)];
