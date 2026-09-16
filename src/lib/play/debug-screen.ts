@@ -1,8 +1,11 @@
+import type { Rgb } from '../game/dotu-pic.js';
 import type { Game, ScreenLine } from '../game/port/state';
 import { dropOdds, type DropChance } from './drop-odds';
 import { engagedMonster } from './panel';
+import { fillRect, type Frame } from './view3d/frame';
 import { AHEAD_VIEW } from './view3d/geometry';
-import { strokeAdvance } from './view3d/stroke-font';
+import { strokeAdvance, strokeLineHeight, UNITS_X, UNITS_Y } from './view3d/stroke-font';
+import { drawDotuScreenLine, type TextScreen } from './view3d/text';
 
 /**
  * What debug mode prints over the game's own screen: what the monster in the big forward view is
@@ -27,6 +30,10 @@ const LINE_STEP = 0x25;
 
 /** White, which is what Moraff's World prints the same numbers in. */
 const NUMBER_COLOUR = 15;
+
+/** Which of the lines the HIT percentage is. It is the one line of them that moves on its own,
+ *  so it is drawn apart from the rest while the tick it is read from is live. */
+const HIT_LINE = 1;
 
 /** How many characters fit between the corner the lines start at and the right-hand edge of the
  *  view they are printed over, which is where the effect lines are broken. */
@@ -97,11 +104,108 @@ export function debugMonsterLines(game: Game, tick: number | null = null): Scree
     `DROPS SPECIAL: ${killsPer(drops.special)}`,
     ...wrapToWidth(engaged.effects, LINE_CHARACTERS),
   ];
-  return texts.map((text, at) => ({
-    text,
-    x: CORNER.x,
-    y: CORNER.y + at * LINE_STEP,
-    font: 0,
-    colour: NUMBER_COLOUR,
-  }));
+  return texts.map((text, at) => placed(text, at));
+}
+
+/** One of the lines, where its place in the list puts it. */
+function placed(text: string, at: number): ScreenLine {
+  return { text, x: CORNER.x, y: CORNER.y + at * LINE_STEP, font: 0, colour: NUMBER_COLOUR };
+}
+
+/**
+ * The lines the game's own screen carries, which are all of them but the HIT percentage while the
+ * tick is live.
+ *
+ * A live tick moves that one line about eighteen times a second, and the screen is one 1024 by 768
+ * frame built in one go, so leaving it in means rebuilding the whole frame — the four 3-D views
+ * among them — on every reading of a counter. It is drawn on a layer of its own over the frame
+ * instead ({@link liveHitLine}), and the frame is built only when the game draws.
+ */
+export function framedMonsterLines(game: Game, tick: number | null): ScreenLine[] {
+  const lines = debugMonsterLines(game, tick);
+  return tick === null ? lines : lines.filter((_line, at) => at !== HIT_LINE);
+}
+
+/**
+ * The HIT percentage while the tick is live, in the place it stands in among the lines, or null
+ * where the tick is not live or nothing is being faced.
+ */
+export function liveHitLine(game: Game, tick: number | null): ScreenLine | null {
+  if (tick === null) return null;
+  const engaged = engagedMonster(game, tick);
+  if (engaged === null) return null;
+  return placed(`HIT:${hitPercent(engaged.hitChance)}`, HIT_LINE);
+}
+
+/** A box of the screen's own pixels: where it starts, and how far it reaches. */
+export interface ScreenBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** The longest reading the HIT line can hold, which is what its box is sized for. */
+const LONGEST_HIT = 'HIT:100.0%';
+
+/** How many pixels of room the box leaves around the line, since the strokes are drawn with a pen
+ *  a few pixels wide that runs a little past the box the font places a glyph in. */
+const HIT_SLACK = 4;
+
+/** Where the pixel column or row a place in the 1600 by 1200 grid falls in, the way the stroke
+ *  font works it out. */
+const acrossScreen = (grid: number, pixels: number): number => Math.trunc((grid * (pixels - 1)) / UNITS_X + 0.5);
+const downScreen = (grid: number, pixels: number): number => Math.trunc((grid * (pixels - 1)) / UNITS_Y + 0.5);
+
+/**
+ * The box the live HIT line stands in, in the screen's own pixels, which is where the layer
+ * carrying it is placed and how big it is.
+ *
+ * It reaches a whole line above the place the line is given as well as a line below it, because
+ * the game's own percent sign is drawn rising out of the top of its box.
+ */
+export function liveHitBox(screen: TextScreen): ScreenBox {
+  const left = CORNER.x;
+  const top = CORNER.y + HIT_LINE * LINE_STEP;
+  const height = strokeLineHeight(0);
+  const x = acrossScreen(left, screen.width) - HIT_SLACK;
+  const y = downScreen(top - height, screen.height) - HIT_SLACK;
+  const right = acrossScreen(left + strokeAdvance('dotu', 0) * LONGEST_HIT.length, screen.width) + HIT_SLACK;
+  const bottom = downScreen(top + height, screen.height) + HIT_SLACK;
+  return { x, y, width: right - x + 1, height: bottom - y + 1 };
+}
+
+/** The colour of a pixel nothing has been drawn on, which is what the game clears a screen to. */
+const NOTHING_DRAWN = 0;
+
+/**
+ * The live HIT line as the pixels of its own box: its own colour wherever a stroke fell, and
+ * nothing at all everywhere else, so that a layer carrying them hides no part of the screen but
+ * the line itself.
+ *
+ * `scratch` is a frame the size of the whole screen because the game's font places a line by the
+ * whole screen's pixels rather than by the box it lands in. Only the box is read back out of it,
+ * and only the box is cleared, so the frame is written once and kept.
+ */
+export function paintLiveHit(
+  scratch: Frame,
+  screen: TextScreen,
+  line: ScreenLine,
+  colour: Rgb,
+  into: Uint8ClampedArray,
+): ScreenBox {
+  const box = liveHitBox(screen);
+  fillRect(scratch, box.x, box.y, box.x + box.width - 1, box.y + box.height - 1, NOTHING_DRAWN);
+  drawDotuScreenLine(scratch, screen, line);
+  let at = 0;
+  for (let y = box.y; y < box.y + box.height; y++) {
+    for (let x = box.x; x < box.x + box.width; x++) {
+      into[at] = colour[0];
+      into[at + 1] = colour[1];
+      into[at + 2] = colour[2];
+      into[at + 3] = scratch.pixels[y * scratch.width + x] === NOTHING_DRAWN ? 0 : 255;
+      at += 4;
+    }
+  }
+  return box;
 }

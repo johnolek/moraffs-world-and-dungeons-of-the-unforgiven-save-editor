@@ -20,8 +20,8 @@ import { drawLine, plot, type Frame } from './frame';
 export type StrokeGame = 'dotu' | 'mw';
 
 /** The whole screen the game places everything in, whatever the video mode. */
-const UNITS_X = 1600;
-const UNITS_Y = 1200;
+export const UNITS_X = 1600;
+export const UNITS_Y = 1200;
 
 /** Above this many pixels across, `print_text` draws strokes rather than bitmap glyphs. */
 export const STROKE_ABOVE_WIDTH = 730;

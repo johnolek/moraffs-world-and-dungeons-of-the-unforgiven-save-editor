@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { newGame, type Game } from '../game/port/state';
 import { describeEffects } from '../bestiary/monsters';
-import { debugMonsterLines, wrapToWidth } from './debug-screen';
+import {
+  debugMonsterLines,
+  framedMonsterLines,
+  liveHitBox,
+  liveHitLine,
+  paintLiveHit,
+  wrapToWidth,
+} from './debug-screen';
+import { SCREEN_PIXELS } from './display';
+import { newFrame } from './view3d/frame';
+import { drawDotuScreenLine } from './view3d/text';
 import { dropOdds } from './drop-odds';
 import { engagedMonster } from './panel';
 import { swingRoll } from './sawtooth';
@@ -129,5 +139,82 @@ describe('a sentence too long for the line it is printed on', () => {
 
   it('breaks each sentence on its own, so two never share a line', () => {
     expect(wrapToWidth(['one', 'two'], 20)).toEqual(['one', 'two']);
+  });
+});
+
+describe('the HIT line while the tick is live', () => {
+  const TICK = 5000;
+
+  it('leaves the frame the other lines, each where it stood', () => {
+    const game = facing();
+    const whole = debugMonsterLines(game, TICK);
+
+    const framed = framedMonsterLines(game, TICK);
+
+    expect(framed.map((line) => line.text)).not.toContain(whole[1].text);
+    expect(framed).toEqual(whole.filter((_line, at) => at !== 1));
+  });
+
+  it('is in the frame like any other line when nothing is read off the clock', () => {
+    const game = facing();
+
+    expect(framedMonsterLines(game, null)).toEqual(debugMonsterLines(game));
+  });
+
+  it('reads the swing of this very tick, in the place the line stands', () => {
+    const game = facing();
+    const standing = debugMonsterLines(game, TICK)[1];
+
+    const live = liveHitLine(game, TICK);
+
+    expect(live).toEqual(standing);
+    expect(live!.text).toBe(`HIT:${(engagedMonster(game, TICK)!.hitChance * 100).toFixed(1)}%`);
+    expect(liveHitLine(game, TICK + 40)!.text).not.toBe(live!.text);
+  });
+
+  it('is nothing at all with no clock and nothing at all with nothing faced', () => {
+    expect(liveHitLine(facing(), null)).toBeNull();
+    expect(liveHitLine(newGame(), TICK)).toBeNull();
+  });
+
+  it('draws the whole line, and nothing but the line, inside the box the layer covers', () => {
+    const game = facing();
+    const line = liveHitLine(game, TICK)!;
+    const box = liveHitBox(SCREEN_PIXELS);
+    // The line as the frame itself would have drawn it, which is what the layer has to match.
+    const onScreen = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawDotuScreenLine(onScreen, SCREEN_PIXELS, line);
+
+    const painted = new Uint8ClampedArray(box.width * box.height * 4);
+    paintLiveHit(newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height), SCREEN_PIXELS, line, [255, 255, 255], painted);
+
+    let drawn = 0;
+    for (let y = 0; y < SCREEN_PIXELS.height; y++) {
+      for (let x = 0; x < SCREEN_PIXELS.width; x++) {
+        const onFrame = onScreen.pixels[y * SCREEN_PIXELS.width + x] !== 0;
+        const inside = x >= box.x && x < box.x + box.width && y >= box.y && y < box.y + box.height;
+        if (onFrame) drawn += 1;
+        expect(onFrame && !inside).toBe(false);
+        if (!inside) continue;
+        const at = ((y - box.y) * box.width + (x - box.x)) * 4;
+        expect(painted[at + 3] === 255).toBe(onFrame);
+      }
+    }
+    expect(drawn).toBeGreaterThan(0);
+  });
+
+  it('leaves room for the longest reading the line can take', () => {
+    const wide = liveHitBox(SCREEN_PIXELS);
+    const line = { text: 'HIT:100.0%', x: 314, y: 48, font: 0, colour: 15 };
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawDotuScreenLine(frame, SCREEN_PIXELS, line);
+
+    for (let y = 0; y < SCREEN_PIXELS.height; y++) {
+      for (let x = 0; x < SCREEN_PIXELS.width; x++) {
+        if (frame.pixels[y * SCREEN_PIXELS.width + x] === 0) continue;
+        expect(x >= wide.x && x < wide.x + wide.width).toBe(true);
+        expect(y >= wide.y && y < wide.y + wide.height).toBe(true);
+      }
+    }
   });
 });
