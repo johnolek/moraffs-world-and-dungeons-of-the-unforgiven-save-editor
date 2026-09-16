@@ -76,11 +76,11 @@ async function askTheServer<Body>(method: string, path: string, body?: unknown):
   const server = runServerUrl();
   const passphrase = myPassphrase();
   if (server === null || passphrase === null) return { ok: false, message: NOTHING_TO_ASK };
-  const said = { Authorization: `Bearer ${passphrase}` };
+  const words = { Authorization: `Bearer ${passphrase}` };
   try {
     const response = await fetch(`${server}${path}`, {
       method,
-      headers: body === undefined ? said : { 'Content-Type': 'application/json', ...said },
+      headers: body === undefined ? words : { 'Content-Type': 'application/json', ...words },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const answered: unknown = await response.json();
