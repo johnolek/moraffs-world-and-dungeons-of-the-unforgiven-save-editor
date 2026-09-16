@@ -186,7 +186,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `post_kill_heal` | 3000:afc5 | `game/port/drops.ts` |  |
 | `post_kill_sp` | 3000:b063 | `game/port/drops.ts` | `play/zoom-map.ts` |
 | `FUN_3000_b0ea` | 3000:b0ea | `game/port/sound.ts` |  |
-| `kill_monster` | 3000:b12d | `game/port/kills.ts` | `formulas/formulas.ts`, `game/port/drops.ts`, `game/port/rules.ts`, `game/port/screens.ts`, `game/port/state.ts`, `play/boxes.ts`, `play/drop-odds.ts` |
+| `kill_monster` | 3000:b12d | `game/port/kills.ts` | `formulas/formulas.ts`, `game/endless/shadows.ts`, `game/port/drops.ts`, `game/port/rules.ts`, `game/port/screens.ts`, `game/port/state.ts`, `play/boxes.ts`, `play/drop-odds.ts` |
 | `go_up_level` | 3000:bd9a | `game/port/levels.ts` |  |
 | `go_down_level` | 3000:c093 | `game/port/combat.ts` |  |
 | `monster_manual` | 3000:c39d |  | `game/dotu-pic.js`, `play/Screen.svelte`, `play/manual.ts`, `play/section-screen.ts`, `play/tablet.ts` |

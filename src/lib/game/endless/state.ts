@@ -21,6 +21,10 @@ export interface EndlessState {
   /** Where each section's Shadow boss was last put down, by section number, for the sections
    *  the record's own table has no place for. */
   bossSquares: Map<number, BossSquare>;
+  /** The sections past the twentieth whose Shadow boss has been killed, which is what keeps him
+   *  off his floor for good. The record's own byte has one bit per section of a module and the
+   *  game has four in each, so it has no room for these. */
+  bossesKilled: Set<number>;
 }
 
 /**
@@ -37,6 +41,9 @@ export interface KeptEndlessState {
   keys: number[];
   /** {@link EndlessState.bossSquares}, each square with the section it belongs to. */
   bossSquares: { section: number; x: number; y: number }[];
+  /** {@link EndlessState.bossesKilled}, and absent for a character who has killed none of
+   *  them. */
+  bossesKilled?: number[];
   /**
    * The character's hit points, for a character who has more of them than the record's own
    * signed 16-bit field at 0x31 holds, and absent for one who has not.
@@ -62,7 +69,11 @@ const states = new WeakMap<PlayerCharacter, EndlessState>();
 
 /** The state kept beside this character, made the first time anything asks for it. */
 export function endlessStateOf(pc: PlayerCharacter): EndlessState {
-  const state = states.get(pc) ?? { keys: new Set<number>(), bossSquares: new Map<number, BossSquare>() };
+  const state = states.get(pc) ?? {
+    keys: new Set<number>(),
+    bossSquares: new Map<number, BossSquare>(),
+    bossesKilled: new Set<number>(),
+  };
   states.set(pc, state);
   return state;
 }
@@ -80,6 +91,7 @@ export function keptEndlessState(pc: PlayerCharacter): KeptEndlessState {
     keys: [...state.keys],
     bossSquares: [...state.bossSquares].map(([section, square]) => ({ section, x: square.x, y: square.y })),
   };
+  if (state.bossesKilled.size > 0) kept.bossesKilled = [...state.bossesKilled];
   if (pc.hp > RECORD_HP_MAX) kept.hp = pc.hp;
   if (pc.maxHp > RECORD_HP_MAX) kept.maxHp = pc.maxHp;
   return kept;
@@ -90,6 +102,7 @@ export function restoreEndlessState(pc: PlayerCharacter, kept: KeptEndlessState)
   const state = endlessStateOf(pc);
   state.keys = new Set(kept.keys);
   state.bossSquares = new Map(kept.bossSquares.map((boss) => [boss.section, { x: boss.x, y: boss.y }]));
+  state.bossesKilled = new Set(kept.bossesKilled ?? []);
   if (kept.hp !== undefined) pc.hp = kept.hp;
   if (kept.maxHp !== undefined) pc.maxHp = kept.maxHp;
 }
@@ -124,9 +137,16 @@ export function isKeptEndlessState(value: unknown): value is KeptEndlessState {
   const state = value as Record<string, unknown>;
   if (!Array.isArray(state.keys) || !state.keys.every((key) => Number.isInteger(key))) return false;
   if (!Array.isArray(state.bossSquares) || !state.bossSquares.every(isBossSquare)) return false;
+  if (state.bossesKilled !== undefined && !isSections(state.bossesKilled)) return false;
   if (state.hp !== undefined && !Number.isInteger(state.hp)) return false;
   if (state.maxHp !== undefined && !Number.isInteger(state.maxHp)) return false;
   return true;
+}
+
+/** Whether this is a list of section numbers, which is how the sections of a dungeon deeper than
+ *  the game's own travel. */
+function isSections(value: unknown): boolean {
+  return Array.isArray(value) && value.every((section) => Number.isInteger(section));
 }
 
 /** Whether this is one of a state's Shadow boss squares: the section it belongs to and where in

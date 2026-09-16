@@ -3,7 +3,7 @@ import { bossIndex, sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
 import { trapdoorReach, type TrapdoorReach } from '../unfmap.js';
 import { sectionPictures, type SectionPictures } from './pictures';
-import type { MonsterKind, PlayerCharacter } from './state';
+import type { Game, MonsterKind, PlayerCharacter } from './state';
 
 /**
  * The tables the engine looks a floor up in, gathered behind one object so that a game can be
@@ -50,6 +50,9 @@ export interface GameRules {
    * game's own.
    */
   bossBeaten(pc: PlayerCharacter, section: number): boolean;
+  /** The Shadows of a dungeon deeper than the game's own, or null for rules whose dungeon stops
+   *  where the game's does. */
+  readonly deepShadows: DeepShadows | null;
   /** The level the monsters of a floor are rolled around. */
   monsterLevel(module: number, floor: number): number;
   /** The highest level a stocked monster may be nudged to; one nudged past it is put back to 1. */
@@ -118,6 +121,19 @@ export interface BossSquares {
   remember(pc: PlayerCharacter, section: number, square: BossSquare): void;
 }
 
+/**
+ * The Shadows below the bottom of the game, which a faithful game has none of: it stops at the
+ * Shadow Ogeroth on floor 100 of Module V, and kill_monster (exe 3000:b12d) has a reward written
+ * for each of the twenty sections and nothing to say about a twenty-first.
+ */
+export interface DeepShadows {
+  /**
+   * A Shadow below the bottom of the game has just been killed on the floor the character is
+   * standing on: the kill written down, and whatever it was carrying handed over.
+   */
+  killed(game: Game): void;
+}
+
 /** Where a section sits in the dungeon, which is what a floor is stocked from. */
 export interface SectionPlace {
   /** The module the section belongs to, 0 to 4, the way the port counts modules. */
@@ -163,6 +179,7 @@ export function faithfulRules(data: GameData): GameRules {
     keys: RECORD_KEYS,
     bossSquares: RECORD_BOSS_SQUARES,
     bossBeaten: recordBossBeaten,
+    deepShadows: null,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
     monsterLevelMax: data.constants.monsterLevelMax,
     monsterHpMax: data.constants.monsterHpMax,

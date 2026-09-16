@@ -375,6 +375,10 @@ export async function killMonster(game: Game): Promise<void> {
       game.events.push({ kind: 'bossKilled', boss: section });
       if (section === SECTIONS - 1) game.events.push({ kind: 'gameWon' });
       await bossReward(game, section);
+    } else {
+      // A Shadow standing deeper than the game itself goes, which none of the twenty rewards was
+      // written for. Rules whose dungeon stops where the game's does never get here.
+      game.rules.deepShadows?.killed(game);
     }
   }
   // DS:2519: whatever the kill left in the box goes with the character's next step.

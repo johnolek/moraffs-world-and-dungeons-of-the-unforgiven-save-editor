@@ -34,6 +34,17 @@ describe('the state kept beside an endless character', () => {
     expect(endlessStateOf(started).bossSquares.get(23)).toEqual({ x: 12, y: 34 });
   });
 
+  it('carries the Shadow bosses a character has killed, and none for one who has killed none', () => {
+    const played = newGame().pc;
+    expect(keptEndlessState(played).bossesKilled).toBeUndefined();
+    endlessStateOf(played).bossesKilled.add(23);
+
+    const started = newGame().pc;
+    restoreEndlessState(started, keptEndlessState(played));
+
+    expect([...endlessStateOf(started).bossesKilled]).toEqual([23]);
+  });
+
   it('leaves the character it was read into carrying nothing else', () => {
     const started = newGame().pc;
     endlessStateOf(started).keys.add(7);
@@ -130,6 +141,7 @@ describe('a state read off a request or a roster answer', () => {
   });
 
   it('refuses hit points that are not a number', () => {
+    expect(isKeptEndlessState({ keys: [], bossSquares: [], bossesKilled: ['23'] })).toBe(false);
     expect(isKeptEndlessState({ keys: [], bossSquares: [], hp: '40000' })).toBe(false);
     expect(isKeptEndlessState({ keys: [], bossSquares: [], maxHp: null })).toBe(false);
   });

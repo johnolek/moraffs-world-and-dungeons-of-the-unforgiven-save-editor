@@ -8,6 +8,7 @@ import {
 } from '../port/rules';
 import type { PlayerCharacter } from '../port/state';
 import { endlessMonsterKinds, endlessSection } from './monsters';
+import { shadowKilled } from './shadows';
 import { endlessStateOf } from './state';
 
 /**
@@ -170,10 +171,11 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     experienceCap: ENDLESS_EXPERIENCE_CAP,
     keys: endlessKeys(FAITHFUL_RULES.bottomLevel(endlessModule)),
     bossSquares: ENDLESS_BOSS_SQUARES,
-    // The record keeps one bit per section of a module and the game has four of them, so a
-    // section past the twentieth has nowhere to say its Shadow boss is dead and he stands on his
-    // floor again every time the floor is rolled.
-    bossBeaten: (pc, section) => section <= LAST_OWN_SECTION && FAITHFUL_RULES.bossBeaten(pc, section),
+    bossBeaten: (pc, section) =>
+      section <= LAST_OWN_SECTION
+        ? FAITHFUL_RULES.bossBeaten(pc, section)
+        : endlessStateOf(pc).bossesKilled.has(section),
+    deepShadows: { killed: shadowKilled },
     // stock_level's own base level rolls back round to 1 at 221, which no floor of the game is
     // deep enough to reach; an endless floor is, and a dungeon that got easier the deeper it went
     // would be no dungeon at all.
