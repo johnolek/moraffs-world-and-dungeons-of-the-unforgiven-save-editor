@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UNFORGIVEN_MAP, type MapSquare } from '../../map/game';
 import { monsterById, MONSTER_SLOTS } from '../../map/stocking';
-import { drawnMonsters, FloorMonsters, loadLevelMap } from '../../play/floor';
+import { BOSS_KIND, drawnMonsters, FloorMonsters, loadLevelMap } from '../../play/floor';
 import { manualOpening } from '../../play/manual';
 import { explainTrapdoor } from '../../play/trapdoor';
 import data from '../dotu-data.json';
@@ -97,6 +97,26 @@ describe('arriving on a floor below the bottom of the game', () => {
     loadLevelMap(game, new FloorMonsters(), floorRows(FLOOR), FLOOR, game.rng);
     expect(rules.monsterLevel(MODULE_V, FLOOR)).toBe(FLOOR + 60);
     expect(game.monsters.some((monster) => monster.level > 130)).toBe(true);
+  });
+});
+
+describe('the Shadow boss of a section below the bottom of the game', () => {
+  const BOSS_FLOOR = 125;
+
+  it('stands on the last floor of his section', () => {
+    expect(rules.sectionPlace(21)?.bossFloor).toBe(BOSS_FLOOR);
+    const game = gameOn(BOSS_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(BOSS_FLOOR), BOSS_FLOOR, game.rng);
+    expect(game.monsters[0].type).toBe(BOSS_KIND);
+  });
+
+  it('has the square he was put down on remembered beside the record', () => {
+    const game = gameOn(BOSS_FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(BOSS_FLOOR), BOSS_FLOOR, game.rng);
+    const boss = game.monsters[0];
+    expect(rules.bossSquares.of(game.pc, 21)).toEqual({ x: boss.x, y: boss.y });
+    expect(game.pc.bossX.every((x) => x === 0)).toBe(true);
+    expect(game.pc.bossY.every((y) => y === 0)).toBe(true);
   });
 });
 
