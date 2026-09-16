@@ -4,6 +4,8 @@ import { monsterById, MONSTER_SLOTS } from '../../map/stocking';
 import { BOSS_KIND, drawnMonsters, FloorMonsters, loadLevelMap } from '../../play/floor';
 import { manualOpening } from '../../play/manual';
 import { explainTrapdoor } from '../../play/trapdoor';
+import { viewMonsters } from '../../play/view-scene';
+import { viewPictures } from '../../play/view3d/browser';
 import data from '../dotu-data.json';
 import { bundledDungeon } from '../dungeon';
 import { drainerBonus } from '../port/kills';
@@ -14,7 +16,7 @@ import { endlessRules } from './rules';
 /**
  * A floor a hundred below the deepest the game itself has, played by the rules of one endless
  * world: the map generates it, the ways off it lead deeper, and the stocking fills it with the
- * monsters of the section it borrowed.
+ * five monsters that section drew.
  */
 const SEED = 20260915;
 const MODULE_V = 4;
@@ -138,6 +140,22 @@ describe('arriving on a floor below the bottom of the game', () => {
       expect(loaded.has(monster.monsterId), monster.monsterId).toBe(true);
       expect(() => monsterById(monster.monsterId), monster.monsterId).not.toThrow();
     }
+  });
+
+  it('has a picture for every monster standing on it', () => {
+    const game = gameOn(FLOOR);
+    loadLevelMap(game, new FloorMonsters(), floorRows(FLOOR), FLOOR, game.rng);
+    const section = rules.sectionOf(MODULE_V, FLOOR);
+    const pictures = viewPictures(rules.pictureFiles(section));
+    const drawn = viewMonsters(drawnMonsters(game));
+    expect(drawn.length).toBeGreaterThan(0);
+    for (const monster of drawn) {
+      const where = `picture ${monster.picnum} of section ${monster.section}`;
+      expect(pictures.monster(monster.picnum, monster.builtin, monster.section), where).not.toBeNull();
+    }
+    expect(drawn.some((monster) => monster.section !== null && monster.section !== rules.sectionSource(section))).toBe(
+      true,
+    );
   });
 
   it('stands monsters gathered from more than the one section it is drawn as', () => {
