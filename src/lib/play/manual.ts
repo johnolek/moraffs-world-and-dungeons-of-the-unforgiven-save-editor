@@ -41,14 +41,16 @@ const FIRST_LETTER = 0x41;
 
 /**
  * What the screen says about a section the game has no words for, which is a section past the
- * twenty MD.BIN describes: it says which section it is and which one's monsters it was given,
- * since the five standing under the letters are that section's.
+ * twenty MD.BIN describes: it says which section it is and whose pages the reader is about to
+ * turn, since the five monsters under the letters are that section's and not the ones standing
+ * on the floor.
  */
 function borrowedIntro(section: number, source: number): string[] {
   return [
     `SECTION ${section}`,
-    'Nobody mapped this far down. Its monsters',
-    `are the ones that live in section ${source}.`,
+    'Nobody mapped this far down. The pages',
+    `below are section ${source}'s. Its monsters`,
+    'are not the ones standing here.',
   ];
 }
 

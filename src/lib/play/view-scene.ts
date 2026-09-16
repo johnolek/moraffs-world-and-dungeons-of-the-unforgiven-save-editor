@@ -37,9 +37,9 @@ export interface SectionDrawn {
  * the look of the section that floor's section borrowed.
  *
  * There are twenty sections' worth of pictures and twenty sections' worth of palettes, and an
- * endless section is past all of them, so it is drawn in the look of the one it takes its
- * monsters from (`src/lib/game/endless/rules.ts`). A game played by the rules the game shipped
- * with borrows nothing, and every floor of it comes out in its own section's look.
+ * endless section is past all of them, so it is drawn in the look of the one it borrows
+ * (`src/lib/game/endless/rules.ts`). A game played by the rules the game shipped with borrows
+ * nothing, and every floor of it comes out in its own section's look.
  */
 export function sectionDrawn(rules: GameRules, module: number, floor: number): SectionDrawn {
   const section = rules.sectionSource(rules.sectionOf(module, floor));
