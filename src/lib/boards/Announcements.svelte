@@ -5,12 +5,23 @@
   The feed itself is `announcement-feed.svelte.ts`, which the footer reads as well, so the page
   follows one feed however many places on it are showing announcements. It goes on being followed
   after this panel has gone away with the tab.
+
+  It is also the whole of what the slide-out timeline shows (`AnnouncementTimeline.svelte`), which
+  is what `fills` is for: one list, drawn beside the boards or filling a panel laid over the page.
 -->
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { announcementWords } from './announce';
   import { announcementsShowing, older } from './announcement-feed.svelte';
   import { BOARDS_PAGE, whenWords } from './words';
+
+  interface Props {
+    /** Fill whatever this is in rather than standing as a column of a fixed width down the side
+     *  of the page. */
+    fills?: boolean;
+  }
+
+  let { fills = false }: Props = $props();
 
   const showing = $derived(announcementsShowing());
   let reading = $state(false);
@@ -22,7 +33,7 @@
   }
 </script>
 
-<aside class="announcements">
+<aside class="announcements" class:fills>
   <SectionHeading title={BOARDS_PAGE.announcements} />
   {#if showing.announcements.length === 0}
     <p class="empty">{showing.failed ? BOARDS_PAGE.announcementsUnreachable : BOARDS_PAGE.nothingAnnounced}</p>
@@ -56,6 +67,15 @@
     border-left: 1px solid var(--line);
     background: var(--panel);
     overflow-y: auto;
+  }
+  /* In a panel of its own there is no board beside it to be divided from, and the panel decides
+     how wide the list is. */
+  .announcements.fills {
+    width: auto;
+    flex: 1;
+    min-height: 0;
+    border-left: none;
+    background: none;
   }
   ul {
     list-style: none;
