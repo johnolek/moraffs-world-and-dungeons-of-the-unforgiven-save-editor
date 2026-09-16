@@ -55,6 +55,8 @@ export class RevHeldScreens {
   private queue: RevHeldFrame[] = [];
   private current: RevHeldFrame | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** Everything waiting for the screen to come back to the game: see {@link drained}. */
+  private waiting: (() => void)[] = [];
 
   /** @param changed tell the tab to draw, which is how a frame reaches the screen. */
   constructor(private readonly changed: () => void) {}
@@ -69,6 +71,15 @@ export class RevHeldScreens {
     if (ms <= 0) return;
     this.queue.push({ screen, ms, box: box.slice(), banner: banner.slice() });
     if (this.current === null) this.next();
+  }
+
+  /**
+   * Resolved once no frame is being held, which is where the game can look at the keyboard
+   * again. It is what a key read waits on outside debug (`KeyedSession.key`).
+   */
+  drained(): Promise<void> {
+    if (this.current === null) return Promise.resolve();
+    return new Promise((wake) => this.waiting.push(wake));
   }
 
   /** The frame the tab is to draw, or null when the screen is the game's own as it stands. */
@@ -98,6 +109,7 @@ export class RevHeldScreens {
     this.timer = null;
     this.current = null;
     this.queue = [];
+    this.wakeWhoeverIsWaiting();
   }
 
   /** Show the next frame, or hand the screen back to the game when there are none left. */
@@ -105,10 +117,19 @@ export class RevHeldScreens {
     this.current = this.queue.shift() ?? null;
     if (this.current === null) {
       this.timer = null;
+      this.wakeWhoeverIsWaiting();
       this.changed();
       return;
     }
     this.timer = setTimeout(() => this.next(), this.current.ms);
     this.changed();
+  }
+
+  /** The screen is the game's own again, so every key read held behind it goes on. A session
+   *  that was stopped wakes them too, or a loop it dropped would wait for ever. */
+  private wakeWhoeverIsWaiting(): void {
+    const waiting = this.waiting;
+    this.waiting = [];
+    for (const wake of waiting) wake();
   }
 }

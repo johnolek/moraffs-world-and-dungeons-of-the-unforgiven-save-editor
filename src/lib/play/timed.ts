@@ -53,6 +53,8 @@ export class TimedScreens {
   private timer: ReturnType<typeof setTimeout> | null = null;
   /** The one pause that is not a frame: see {@link after}. */
   private pause: ReturnType<typeof setTimeout> | null = null;
+  /** Everything waiting for the screen to come back to the game: see {@link drained}. */
+  private waiting: (() => void)[] = [];
 
   /** @param changed tell the tab to draw, which is how a frame reaches the screen. */
   constructor(private readonly changed: () => void) {}
@@ -74,6 +76,18 @@ export class TimedScreens {
       fade: extras.fade,
     });
     if (this.current === null) this.next();
+  }
+
+  /**
+   * Resolved once no frame is being held, which is where the original comes out of `delay` (exe
+   * 1000:2789) and can look at the keyboard again.
+   *
+   * It is what a key read waits on outside debug (`KeyedSession.key`), so that a player cannot
+   * take a turn the screen has not caught up with yet.
+   */
+  drained(): Promise<void> {
+    if (this.current === null) return Promise.resolve();
+    return new Promise((wake) => this.waiting.push(wake));
   }
 
   /** What the tab draws: the frame being shown, or the screen the game has now. */
@@ -160,6 +174,7 @@ export class TimedScreens {
     this.current = null;
     this.queue = [];
     this.cancelAfter();
+    this.wakeWhoeverIsWaiting();
   }
 
   /** Show the next frame, or hand the screen back to the game when there are none left. */
@@ -167,10 +182,19 @@ export class TimedScreens {
     this.current = this.queue.shift() ?? null;
     if (this.current === null) {
       this.timer = null;
+      this.wakeWhoeverIsWaiting();
       this.changed();
       return;
     }
     this.timer = setTimeout(() => this.next(), this.current.ms);
     this.changed();
+  }
+
+  /** The screen is the game's own again, so every key read held behind it goes on. A session
+   *  that was stopped wakes them too, or a loop it dropped would wait for ever. */
+  private wakeWhoeverIsWaiting(): void {
+    const waiting = this.waiting;
+    this.waiting = [];
+    for (const wake of waiting) wake();
   }
 }

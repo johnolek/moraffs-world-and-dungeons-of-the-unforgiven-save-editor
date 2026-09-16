@@ -97,6 +97,20 @@ describe('the pauses a mode sits through', () => {
     session.finish();
   });
 
+  it('takes no turn from a key pressed while it is still flashing', async () => {
+    const session = await digIn('faithful');
+    await sleep(PAST_THE_BLANK_MS);
+    const facing = session.game.pc.dir;
+
+    await press(session, KEY.pageUpTurnRight);
+
+    // The whole dig is some seven seconds of flashing, and the original spends every one of them
+    // inside `delay` with the keyboard untouched. A turn taken here would be a turn the player
+    // never saw the result of, and the screen would fall further behind with every one.
+    expect(session.game.pc.dir).toBe(facing);
+    session.finish();
+  });
+
   it('goes on flashing in speedrun as well, a run being timed against the original', async () => {
     const session = await digIn('speedrun');
     await sleep(PAST_THE_BLANK_MS);

@@ -25,7 +25,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `rand` | 1000:18b6 |  | `game/port/rng.ts` |
 | `FUN_1000_1d12` | 1000:1d12 |  | `game/port/state.ts`, `roller/session.ts` |
 | `FUN_1000_1d8b` | 1000:1d8b | `game/port/screens.ts` |  |
-| `FUN_1000_2789` | 1000:2789 |  | `game/port/sound.ts`, `game/port/state.ts`, `play/engine.ts`, `play/fade.ts`, `play/plaque.ts`, `play/timed.ts` |
+| `FUN_1000_2789` | 1000:2789 |  | `game/port/sound.ts`, `game/port/state.ts`, `play/engine.ts`, `play/fade.ts`, `play/plaque.ts`, `play/session.ts`, `play/timed.ts` |
 | `FUN_1000_3385` | 1000:3385 |  | `play/session.ts` |
 | `FUN_1000_3c34` | 1000:3c34 |  | `game/port/sound.ts`, `speaker.ts` |
 | `FUN_1000_3c60` | 1000:3c60 |  | `game/port/sound.ts`, `speaker.ts` |

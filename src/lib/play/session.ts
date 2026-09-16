@@ -56,6 +56,8 @@ export interface CharacterFile {
 export interface HeldFrames {
   release(): void;
   stop(): void;
+  /** Resolved once nothing is being held on the screen. */
+  drained(): Promise<void>;
 }
 
 /** One key a loop dispatches on, in whatever a game works its turn out into. */
@@ -183,13 +185,26 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
     return this.queued.length > 0;
   }
 
-  /** getch (exe 4000:417b, WORLD.EXE 1000:28b4, DUNSMALL.EXE 1000:2F71): the next key, once
-   *  there is one. */
-  key(): Promise<number> {
+  /**
+   * getch (exe 4000:417b, WORLD.EXE 1000:28b4, DUNSMALL.EXE 1000:2F71): the next key, once there
+   * is one and once the game is ready to read it.
+   *
+   * Each original sits inside `delay` (exe 1000:2789) while it holds a message on the screen and
+   * looks at no key until it comes out, so the keyboard cannot be answered ahead of what the
+   * player has been shown. Here the game runs straight past those delays and the frames are
+   * shown on a timer beside it ({@link HeldFrames}), so the wait the original gets for free is
+   * taken here instead. Without it a player could walk on while the last dig or the last blow
+   * was still being read out, and the screen would fall further behind every turn.
+   *
+   * A key given during a held frame is kept and answers whatever comes after it, which is where
+   * DOS kept one too. Debug reads through the frames, the way it reads through every other pause.
+   */
+  async key(): Promise<number> {
+    if (!this.cutsPausesShort) await this.frames.drained();
     const queued = this.queued.shift();
     if (queued !== undefined) {
       this.took(queued);
-      return Promise.resolve(queued);
+      return queued;
     }
     this.changed();
     return new Promise((resolve) => {

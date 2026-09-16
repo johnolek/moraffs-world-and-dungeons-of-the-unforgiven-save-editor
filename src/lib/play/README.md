@@ -964,7 +964,12 @@ only.
   happens while the player thinks, and the seconds `call_check_eng` counts are game time and are
   kept exactly. The `delay` calls the original busy-waits in are about the screen alone, so those
   the port has are kept as a display timer (`timed.ts`); the flashes while a hole is dug are kept
-  as well, on the one line above the message box the original draws them on.
+  as well, on the one line above the message box the original draws them on. The game runs
+  straight past those timers, so one thing the original gets for free is taken back by hand:
+  outside debug the keyboard is not read while a frame is up (`KeyedSession.key`), since the
+  original is inside `delay` and looks at no key until it comes out. Without that a player could
+  take the next turn while the last one was still being read out, and the screen would fall
+  further behind with every turn — seven seconds of it for one dig.
 * **The coin flip that mirrors the monster ahead is the number of the drawing.** `draw_3d_view`
   mirrors the picture of the monster being fought on `rand() * 2 / 0x8000` (exe 3000:2323), drawn
   fresh for every view of every drawing. The tab draws the screen again whenever anything about

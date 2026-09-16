@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Rng } from '../game/port/rng';
 import { characterFile, inTheTown, press, settle, standingOn, teleporterSquare, townSquare } from './battle.test-support';
-import { runMoveControl, startGame, type GameSession } from './engine';
+import { KEY_HANDLERS, runMoveControl, startGame, type GameSession } from './engine';
 import { KEY } from './keys';
 import type { PlayMode } from './mode';
 import { PLAQUE_DELAY_MS } from './plaque';
@@ -29,6 +29,55 @@ async function pastTheGreeting(session: GameSession, mode: PlayMode): Promise<vo
   if (session.view().tablet) await press(session, KEY.escape);
   session.mode = mode;
 }
+
+describe('a key given while a message is still on the screen', () => {
+  /** How long the screen is held for, and long enough after it for the hold to be over. */
+  const HELD_MS = 80;
+  const PAST_IT_MS = 150;
+
+  /** A character standing in the town, with a key of the test's own that holds the screen the way
+   *  `digging` and every other run of `delay` calls does, and then ends its turn. */
+  async function holdingTheScreen(mode: PlayMode): Promise<{ session: GameSession; held: number }> {
+    const session = standingOn(0, townSquare());
+    await pastTheGreeting(session, mode);
+    const held = 0x62;
+    KEY_HANDLERS[held] = {
+      c: 'a handler that exists only in this test',
+      run: (turn) => turn.game.delay(HELD_MS),
+    };
+    await press(session, held);
+    return { session, held };
+  }
+
+  it('is not read until the game comes out of its delay, in faithful', async () => {
+    const { session, held } = await holdingTheScreen('faithful');
+    const facing = session.game.pc.dir;
+    try {
+      await press(session, KEY.pageUpTurnRight);
+      expect(session.game.pc.dir).toBe(facing);
+
+      await sleep(PAST_IT_MS);
+    } finally {
+      delete KEY_HANDLERS[held];
+    }
+
+    expect(session.game.pc.dir).not.toBe(facing);
+    session.finish();
+  });
+
+  it('is read at once in debug, which reads through every pause', async () => {
+    const { session, held } = await holdingTheScreen('debug');
+    const facing = session.game.pc.dir;
+    try {
+      await press(session, KEY.pageUpTurnRight);
+    } finally {
+      delete KEY_HANDLERS[held];
+    }
+
+    expect(session.game.pc.dir).not.toBe(facing);
+    session.finish();
+  });
+});
 
 describe("the teleporter tunnel's turns", () => {
   /** A character stepping into the town's module teleporter, with the tunnel on the screen and
