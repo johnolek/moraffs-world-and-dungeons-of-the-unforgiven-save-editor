@@ -2,8 +2,8 @@
 
 One Node process that answers HTTP on a port, keeps everything in Postgres, and
 allows the site's origin. It answers `GET /health`, the players endpoints, the
-two runs endpoints, the player's characters, the boards, the boards of the
-living, everyone and the announcements below, which is
+two runs endpoints, the player's characters, the admin's own endpoints, the
+boards, the boards of the living, everyone and the announcements below, which is
 [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
 
 It also serves the tools themselves at `GET /`, so its domain is somewhere to
@@ -68,6 +68,7 @@ is, and what the tests are.
 | `DATABASE_URL`      | none, and it must be set     | The Postgres to keep everything in, e.g. `postgres://moraff:something@127.0.0.1:5432/moraff_runs` |
 | `RUN_SERVER_PORT`   | `3580`                       | The port to answer on, behind the proxy          |
 | `RUN_SERVER_ORIGIN` | `https://johnolek.github.io` | The site's origin, which browsers are told may read the answers |
+| `ADMIN_PLAYER`      | none, and then nobody is an admin | The name of the player to make an admin at start, e.g. `John` |
 
 There is no default for `DATABASE_URL`: a server with nowhere to keep anything
 says so and stops, rather than starting and connecting to whatever is nearest.
@@ -363,6 +364,50 @@ ones before it, and exporting the run. Asked for that way the chain comes back
 as the log the site wrote, put back together out of the sittings and the
 stretches of keys that arrived.
 
+## The admin
+
+One player may look at every character here and delete anybody's. That is a flag on their row
+and nothing else: an admin is a player like any other, with a name, characters and a passphrase.
+
+`ADMIN_PLAYER` names them, and the server flags that player's row every time it starts, so John
+is recognised on a database nobody has opened by hand and on one restored from a backup. The
+player has to have claimed the name first — this flags a row and does not make one — and a start
+that finds nobody by that name says so in the log and flags nobody. Setting it up is two steps:
+
+1. Claim the name in the Play tab, if it has not been claimed on this server already.
+2. Set `ADMIN_PLAYER` to that name in the application's configuration and redeploy.
+
+A second admin is flagged by the first, through the endpoint below, and nothing takes the flag off
+again but the database.
+
+| Endpoint                      | What it does                                                     |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `GET /admin/characters`       | Every character here, whoever's it is, the newest first, fifty to a page: the player's name and the character's, the game, the board or the mode it was rolled for, whether it is alive, dead or has won, and when the server last heard from it. `?page=` for the ones after the first, counting from one. |
+| `DELETE /admin/characters/:id` | Forgets one for good, whoever it belongs to: its run, the verdict on it and whatever was announced about it go with it. 404 when no character here has that id. |
+| `POST /admin/admins`          | `{ "name": "..." }` makes that player an admin as well. 404 when nobody here has the name. |
+
+An admin says their **passphrase** and nothing else:
+
+```bash
+curl -H 'Authorization: Bearer six little words go here' https://runs.example.com/admin/characters
+```
+
+The six words are something to read off a piece of paper into curl on any machine, where the
+secret a player is otherwise recognised by lives in one browser's storage and is nothing anybody
+can type. Which admin is asking is worked out from the words themselves, so there is no name to
+say. Drawing a new passphrase in the Play tab retires the admin's as well as their sign-in's.
+
+Everything under `/admin/` answers a caller who is not an admin exactly what a path this server
+does not know answers: `404 No such endpoint: …`. Nothing there says that these endpoints exist,
+that a character exists, or that the words said were nearly right. Guesses are slowed down the way
+guesses at a sign-in are and counted with them, and the admin endpoints share one name to be
+counted against, so five wrong tries from anywhere leave them unreachable for a quarter of an
+hour — John's own tries included.
+
+Every admin action is written into `admin_actions` as it is done: who did it, what they did, and
+what they did it to, named the way the action names it — the character's id, the player's name. An
+admin deletes other people's characters for good, and that row is what is left to say so.
+
 ## The boards
 
 | Endpoint                               | What it does                                      |
@@ -629,13 +674,14 @@ The application, made once:
 - **No volume**, no persistent storage, no command to run after a deploy.
 
 The variables. `VITE_RUN_SERVER` is a **build** variable, because the page is
-built here; the other three are read when the server starts:
+built here; the other four are read when the server starts:
 
 | Variable            | What to set it to                                  |
 | ------------------- | -------------------------------------------------- |
 | `DATABASE_URL`      | The Postgres, as the container reaches it (below)  |
 | `RUN_SERVER_PORT`   | `3580`, or leave it out for the same thing         |
 | `RUN_SERVER_ORIGIN` | `https://johnolek.github.io`                       |
+| `ADMIN_PLAYER`      | The name John claimed in the Play tab               |
 | `VITE_RUN_SERVER`   | The domain, `https://runs.example.com`             |
 
 `RUN_SERVER_ORIGIN` is the GitHub Pages copy of the site and not this domain.
