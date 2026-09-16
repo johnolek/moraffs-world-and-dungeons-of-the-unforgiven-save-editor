@@ -45,7 +45,7 @@
 {#if tick !== null}
   <div class="clock-bar" class:over-screen={overScreen} title="The roll a swing made now would get, out of 80">
     <div class="track"><div class="fill" style:width="{filled.current}%"></div></div>
-    <div class="reading">SWING ROLL {roll} · {secondsLeft}s TO THE DROP</div>
+    <div class="reading">SWING ROLL <span class="roll">{roll}</span> · <span class="seconds">{secondsLeft}</span>s TO THE DROP</div>
   </div>
 {/if}
 
@@ -73,6 +73,20 @@
   .reading {
     margin-top: 2px;
     letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  /* The roll is two digits at most and the seconds three characters, and each stands in a slot
+     that wide so that the line keeps its width as they change. */
+  .roll,
+  .seconds {
+    display: inline-block;
+    text-align: right;
+  }
+  .roll {
+    width: 2ch;
+  }
+  .seconds {
+    width: 3ch;
   }
   /* Over the game's own screen it stands in a corner of a 4:3 picture that is scaled to whatever
      room the page has, so it is sized in that picture's own terms rather than in pixels. */
