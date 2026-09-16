@@ -58,21 +58,19 @@ export const RUN_BOSS_SQUARE = { x: 39, y: 63 };
 const FACING_THE_BOSS = { x: RUN_BOSS_SQUARE.x, y: RUN_BOSS_SQUARE.y + 1 };
 
 /** When each of the two sittings began. */
-const SITTINGS = ['2026-09-07T00:00:00.000Z', '2026-09-07T01:00:00.000Z'];
+const STARTED_AT = ['2026-09-07T00:00:00.000Z', '2026-09-07T01:00:00.000Z'];
 
 /** The keys of a sitting: swing, answer the box the swing puts up, and again. */
 const SWINGS = [KEY.fight, KEY.enter, KEY.fight, KEY.enter, KEY.fight, KEY.enter];
 
 /** Where what the character carries between sittings is kept while these runs are played, which
  *  is the roster entry's job on the site. */
-function heldBetweenSittings(): EndlessStore & { kept: KeptEndlessState | null } {
+function heldBetweenSittings(): EndlessStore {
+  let kept: KeptEndlessState | null = null;
   return {
-    kept: null,
-    read() {
-      return this.kept;
-    },
-    write(state) {
-      this.kept = state;
+    read: () => kept,
+    write: (state) => {
+      kept = state;
     },
   };
 }
@@ -91,11 +89,11 @@ function endlessCharacter(): Uint8Array {
   }).bytes;
 }
 
-/** One sitting in the endless dungeon: the log it wrote, the record it left and what the
- *  character was carrying when it was put down. */
+/** One sitting in the endless dungeon: the log it wrote and the record it left. What the
+ *  character was carrying when it was put down stays in `kept`. */
 async function playOneSitting(
   record: Uint8Array,
-  kept: EndlessStore & { kept: KeptEndlessState | null },
+  kept: EndlessStore,
   seed: number,
   startedAt: string,
   before: RunSession[],
@@ -130,7 +128,7 @@ async function playOneSitting(
  * same keys in two worlds meet two different monsters.
  */
 export async function endlessRun(world = RUN_WORLD): Promise<RunSession> {
-  const played = await playOneSitting(endlessCharacter(), heldBetweenSittings(), FIRST_SEED, SITTINGS[0], [], world);
+  const played = await playOneSitting(endlessCharacter(), heldBetweenSittings(), FIRST_SEED, STARTED_AT[0], [], world);
   return played.log;
 }
 
@@ -147,7 +145,7 @@ export async function endlessRun(world = RUN_WORLD): Promise<RunSession> {
  */
 export async function endlessChain(): Promise<RunSession[]> {
   const kept = heldBetweenSittings();
-  const first = await playOneSitting(endlessCharacter(), kept, FIRST_SEED, SITTINGS[0], [], RUN_WORLD);
-  const second = await playOneSitting(first.record, kept, SECOND_SEED, SITTINGS[1], [first.log], RUN_WORLD);
+  const first = await playOneSitting(endlessCharacter(), kept, FIRST_SEED, STARTED_AT[0], [], RUN_WORLD);
+  const second = await playOneSitting(first.record, kept, SECOND_SEED, STARTED_AT[1], [first.log], RUN_WORLD);
   return [first.log, second.log];
 }
