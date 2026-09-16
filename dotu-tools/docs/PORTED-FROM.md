@@ -68,7 +68,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_2000_59c0` | 2000:59c0 |  | `map/you.ts`, `play/display.ts` |
 | `select_player` | 2000:5c0d |  | `game/port/state.ts` |
 | `decode_quit_message` | 2000:5f78 |  | `play/quit.ts` |
-| `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/endless/monsters.ts`, `game/port/rules.ts`, `play/manual.ts` |
+| `load_md_bin` | 2000:5fec |  | `bestiary/monsters.ts`, `game/endless/monsters.ts`, `game/port/rules.ts`, `play/manual.ts`, `play/section-screen.ts` |
 | `main` | 2000:620f |  | `game/port/state.ts`, `play/view3d/views.ts` |
 | `which_monster` | 2000:6573 |  | `play/floor.ts` |
 | `monster_at` | 2000:65b0 | `game/port/state.ts` |  |

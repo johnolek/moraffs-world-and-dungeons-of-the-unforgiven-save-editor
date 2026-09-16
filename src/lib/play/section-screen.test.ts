@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { drawSectionScreen, PANEL_IMAGE, sectionSlabTint, type SectionScreen } from './section-screen';
+import data from '../game/dotu-data.json';
+import {
+  drawSectionScreen,
+  PANEL_IMAGE,
+  sectionMonsterRecords,
+  sectionSlabTint,
+  type SectionScreen,
+} from './section-screen';
 import { newFrame, pixelAt, type Frame } from './view3d/frame';
 import type { ViewPictures } from './view3d/pictures';
 import type { PicRowImage } from './view3d/texture';
@@ -87,6 +94,19 @@ describe('the S key screen', () => {
     expect(pixelAt(frame, 800, 5)).toBe(WALL_BODY + SLAB_BASE);
     expect(pixelAt(frame, 800, 620)).toBe(WALL_BODY + SLAB_BASE);
     expect(pixelAt(frame, 800, 660)).toBe(0);
+  });
+
+  it("stands each of the game's own sections on the five monsters of its own table", () => {
+    for (const section of data.sections) {
+      expect(sectionMonsterRecords(section.section), `section ${section.section}`).toEqual(
+        section.monsters.map((monster) => ({
+          picnum: monster.picnum,
+          colorSet: monster.colorSet,
+          color: monster.color,
+          section: section.section,
+        })),
+      );
+    }
   });
 
   it('takes the slab tint from the monster drawn just before it', () => {

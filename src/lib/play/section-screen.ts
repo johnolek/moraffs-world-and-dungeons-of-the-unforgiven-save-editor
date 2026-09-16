@@ -1,4 +1,6 @@
-import data from '../game/dotu-data.json';
+import { FAITHFUL_RULES, type GameRules } from '../game/port/rules';
+import type { MonsterKind } from '../game/port/state';
+import { monsterById } from '../map/stocking';
 import { drawTabletSlab, TABLET_RAISED } from './tablet';
 import { fillRect, type Frame } from './view3d/frame';
 import type { ViewPictures } from './view3d/pictures';
@@ -149,19 +151,49 @@ const PANEL_BASE = 0x10;
  */
 const PANEL_TINT = 12;
 
+/**
+ * The slot of the first of the five rows load_md_bin (exe 2000:5fec) reads for a section. They
+ * follow the 22 monsters every section has loaded, so the boss's slot number is also how many
+ * rows come before him.
+ */
+export const FIRST_SECTION_MONSTER = 22;
+
 /** One monster's record, as far as the drawer needs it. */
 interface PanelMonster {
   picnum: number;
   colorSet: number;
   color: number;
+  /**
+   * The section whose `ufmon<N>.pic` the picture is in, and null for a monster drawn out of the
+   * file of the section being read about.
+   */
+  section: number | null;
 }
 
 /**
  * The section's five monsters, in the order their records sit in the section's table: the Shadow
  * boss first and then the four ordinary ones.
+ *
+ * The rules say what a section stands, because a section below the bottom of the game stands five
+ * monsters borrowed from sections all over the game and repainted
+ * (`src/lib/game/endless/README.md`). Each of them keeps the picture of the section it came from,
+ * so the record says which section that is. A screen drawn without rules is a faithful one, whose
+ * five monsters are the section's own.
  */
-export function sectionMonsterRecords(section: number): PanelMonster[] {
-  return data.sections[section - 1]?.monsters ?? [];
+export function sectionMonsterRecords(section: number, rules: GameRules = FAITHFUL_RULES): PanelMonster[] {
+  if (rules.sectionPlace(section) === null) return [];
+  return rules.monsterKinds(section).slice(FIRST_SECTION_MONSTER).map(panelMonster);
+}
+
+/** What the drawer needs of one loaded row, out of the catalogue entry its id names. */
+function panelMonster(kind: MonsterKind): PanelMonster {
+  const entry = monsterById(kind.id);
+  return {
+    picnum: entry.picnum,
+    colorSet: entry.colorSet,
+    color: entry.color,
+    section: entry.origin.kind === 'section' ? entry.origin.section : null,
+  };
 }
 
 /**
@@ -171,13 +203,17 @@ export function sectionMonsterRecords(section: number): PanelMonster[] {
  * fifth panel's monster (exe 3000:c4a4), so DS:4fbd still holds that monster's own colour byte —
  * which is the section table's second record, the first of the four ordinary monsters.
  */
-export function sectionSlabTint(section: number): number {
-  return sectionMonsterRecords(section)[1]?.color ?? 0;
+export function sectionSlabTint(section: number, rules: GameRules = FAITHFUL_RULES): number {
+  return sectionMonsterRecords(section, rules)[1]?.color ?? 0;
 }
 
 /** What the S key's screen is showing, which is what the tab needs to draw it. */
 export interface SectionScreen {
-  /** The section the five monsters in the panels come from, 1 to 20. */
+  /**
+   * The section the character is standing in, which is the section the five monsters in the
+   * panels belong to. It is 1 to 20 in the game itself, and past 20 on a floor below the bottom
+   * of it.
+   */
   section: number;
   /** The four lines standing on the slab: the section's introduction, or one monster's. */
   lines: string[];
@@ -198,6 +234,7 @@ export function drawSectionScreen(
   screen: SectionScreenPixels,
   showing: SectionScreen,
   pictures: ViewPictures,
+  rules: GameRules = FAITHFUL_RULES,
 ): void {
   fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, 0);
   const wall = pictures.wall?.[PANEL_IMAGE] ?? null;
@@ -207,11 +244,11 @@ export function drawSectionScreen(
       scaleImage(frame, panel.x1, panel.y1, panel.x2, panel.y2, wall, 0, 0xff, options);
     }
   }
-  const monsters = sectionMonsterRecords(showing.section);
+  const monsters = sectionMonsterRecords(showing.section, rules);
   SECTION_PANEL_MONSTERS.forEach((slot, panel) => {
     const monster = monsters[slot];
     if (!monster) return;
-    const picture = pictures.monster(monster.picnum, false);
+    const picture = pictures.monster(monster.picnum, false, monster.section);
     if (!picture) return;
     const box = SECTION_PICTURES[panel];
     scaleImage(frame, box.x1, box.y1, box.x2, box.y2, picture, 0, 0xff, {
@@ -223,6 +260,6 @@ export function drawSectionScreen(
     drawStrokeLine(frame, screen, 'dotu', text, box.x, box.y, box.spreadTo, box.strokeBottom, pass.colour, pass.pen);
   shadow(MANUAL_LETTERS.text, MANUAL_LETTERS.box, MANUAL_LETTERS.shadow);
   if (showing.bossDead) shadow(MANUAL_DEAD.text, MANUAL_DEAD.box, MANUAL_DEAD.shadow);
-  drawTabletSlab(frame, screen, pictures.wall, TABLET_RAISED, sectionSlabTint(showing.section));
+  drawTabletSlab(frame, screen, pictures.wall, TABLET_RAISED, sectionSlabTint(showing.section, rules));
   showing.lines.forEach((line, index) => shadow(line, manualTextBox(index), MANUAL_TEXT.shadow));
 }
