@@ -39,23 +39,6 @@ const BOSS_STEP_BACK = 7;
  *  no character, so it has nothing to remember. */
 export const BOSS_NEVER_PLACED: BossSquare = { x: 0, y: 0 };
 
-/** The kill flags of a module whose four Shadow bosses are all still alive, which is every roll
- *  the map explorer asks for: it has no character, so it shows a dungeon nobody has beaten. */
-export const NO_BOSS_BEATEN = 0;
-
-/**
- * Whether the section's Shadow boss stands on this floor: it is his floor, and the bit for his
- * section is still clear.
- *
- * `bossesBeaten` is the module's byte at DS:c0c9, which the save calls `objective`; bits 1, 2, 4
- * and 8 are the four sections of the module, and kill_monster (exe 3000:b12d) sets one when its
- * boss dies.
- */
-function bossStandsOn(section: StockedSection, floor: number, bossesBeaten: number): boolean {
-  if (floor !== section.bossFloor) return false;
-  return (bossesBeaten & (1 << (section.part - 1))) === 0;
-}
-
 export interface StockedMonster {
   /** Position in the floor's monster table; the Shadow boss is always slot 0. */
   slot: number;
@@ -154,8 +137,8 @@ const TRIES_BEFORE_THE_FIRST = 10;
  *
  * @param rules the tables the floor is stocked from: its section, and the level its monsters are
  *   rolled around.
- * @param bossesBeaten the module's kill flags, which keep a Shadow boss who has already been
- *   killed off his floor for good.
+ * @param bossBeaten whether this section's Shadow boss has already been killed, which keeps him
+ *   off his floor for good.
  * @param bossLastSeen the square this section's Shadow boss was last put down on, which he is
  *   put back within seven squares of.
  * @param clocked {@link ClockedStocking}, or null to leave the generator alone.
@@ -167,7 +150,7 @@ export function stockFloor(
   floor: number,
   rnd: () => number,
   occupied: Iterable<number> = [],
-  bossesBeaten: number = NO_BOSS_BEATEN,
+  bossBeaten: boolean = false,
   bossLastSeen: BossSquare = BOSS_NEVER_PLACED,
   clocked: ClockedStocking | null = null,
 ): StockedMonster[] {
@@ -183,7 +166,7 @@ export function stockFloor(
     let { x, y } = freeSquare(rows, taken, rnd, beforeTry);
     taken.add(y * WIDTH + x);
     let entry = rollKind(kinds, rnd, clocked);
-    if (slot === 0 && bossStandsOn(section, floor, bossesBeaten)) {
+    if (slot === 0 && floor === section.bossFloor && !bossBeaten) {
       entry = kindAt(kinds, BOSS_SLOT);
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
       // down in the middle of the floor instead.

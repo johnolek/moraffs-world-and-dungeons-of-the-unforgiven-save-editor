@@ -57,10 +57,10 @@ describe('stockFloor', () => {
 
   it('leaves a Shadow boss who has been killed off his floor', () => {
     const section = sectionInfo(0, 5)!;
-    const beaten = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(13), [], 1 << (section.part - 1));
+    const beaten = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(13), [], true);
     expect(beaten.some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
 
-    const anotherSectionsBoss = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(13), [], 2);
+    const anotherSectionsBoss = stockFloor(FAITHFUL_RULES, floorOf(0, 5), 0, 5, seeded(13), [], false);
     expect(monsterById(anotherSectionsBoss[0].monsterId).name).toBe(section.bossName);
   });
 

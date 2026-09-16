@@ -132,7 +132,7 @@ export class FloorMonsters {
           level,
           fractions(rng),
           [squareIndex(game.pc.x, game.pc.y)],
-          game.pc.objective[game.pc.module],
+          game.rules.bossBeaten(game.pc, section),
           game.rules.bossSquares.of(game.pc, section),
           clockedStocking(game, rng),
         );

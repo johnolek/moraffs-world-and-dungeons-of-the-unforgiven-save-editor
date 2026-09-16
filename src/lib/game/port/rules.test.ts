@@ -127,6 +127,17 @@ describe('the faithful rules', () => {
     expect(rules.bossSquares.of(pc, section)).toEqual({ x: 31, y: 44 });
   });
 
+  it("reads a Shadow boss's kill off the module's own byte, one bit per section", () => {
+    const pc = newGame({ pc: { module: 2 } }).pc;
+    expect(rules.bossBeaten(pc, 11)).toBe(false);
+    pc.objective[pc.module] = 4;
+    expect(rules.bossBeaten(pc, 11)).toBe(true);
+    expect(rules.bossBeaten(pc, 10)).toBe(false);
+    // The bit belongs to the third section of every module, so the module the character is in is
+    // what says which boss it is.
+    expect(rules.bossBeaten(pc, 19)).toBe(true);
+  });
+
   it('stops paying for a monster where exp_value stops', () => {
     expect(rules.experienceCap).toBe(130);
   });

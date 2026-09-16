@@ -44,6 +44,12 @@ export interface GameRules {
   readonly keys: TrapDoorKeys;
   /** Where each section's Shadow boss was last put down. */
   readonly bossSquares: BossSquares;
+  /**
+   * Whether this section's Shadow boss has already been killed, which keeps him off his floor
+   * for good. `section` is 1 to 20, and past 20 for a section of a dungeon deeper than the
+   * game's own.
+   */
+  bossBeaten(pc: PlayerCharacter, section: number): boolean;
   /** The level the monsters of a floor are rolled around. */
   monsterLevel(module: number, floor: number): number;
   /** The highest level a stocked monster may be nudged to; one nudged past it is put back to 1. */
@@ -156,6 +162,7 @@ export function faithfulRules(data: GameData): GameRules {
     experienceCap: data.constants.expValueLevelCap,
     keys: RECORD_KEYS,
     bossSquares: RECORD_BOSS_SQUARES,
+    bossBeaten: recordBossBeaten,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
     monsterLevelMax: data.constants.monsterLevelMax,
     monsterHpMax: data.constants.monsterHpMax,
@@ -213,6 +220,17 @@ const RECORD_BOSS_SQUARES: BossSquares = {
 
 function recordBossIndex(pc: PlayerCharacter, section: number): number {
   return bossIndex(pc.module, (section - 1) % 4);
+}
+
+/**
+ * Whether the record says this section's Shadow boss is dead: his section's bit of the module's
+ * byte at 0x849, which the save calls `objective` and the game keeps at DS:c0c9.
+ *
+ * Bits 1, 2, 4 and 8 are the module's four sections, and kill_monster (exe 3000:b12d) sets one as
+ * each boss dies.
+ */
+function recordBossBeaten(pc: PlayerCharacter, section: number): boolean {
+  return (pc.objective[pc.module] & (1 << ((section - 1) % 4))) !== 0;
 }
 
 /** The section's row of `dotu-data.json`, which numbers modules from 1 where the port numbers
