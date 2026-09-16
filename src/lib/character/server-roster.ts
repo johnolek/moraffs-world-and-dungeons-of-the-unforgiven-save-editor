@@ -202,7 +202,8 @@ function serverSession(value: unknown): ServerSession | null {
  * device has not played has no journal here until something replays it. What an endless character
  * carries in its world is taken from it as well: the server is not told what it is, because
  * replaying the chain works it out again, which is what the run server does before passing a
- * verdict. A device that has never played the character holds none of it.
+ * verdict. A device that has never played the character holds none of it until it replays the
+ * chain itself, which `bringRunKeysHere` (`current.ts`) does before the character is played on.
  */
 export function entryFromServer(character: ServerCharacter, kept: RosterEntry | null): RosterEntry | null {
   const bytes = character.record === null ? null : fromBase64(character.record);

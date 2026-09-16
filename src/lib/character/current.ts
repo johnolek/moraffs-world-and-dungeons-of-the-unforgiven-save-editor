@@ -12,6 +12,7 @@ import {
 import { recordTab } from '../history';
 import { revCharacterMap } from '../play/rev/memory';
 import { runIsBeingSent } from '../play/streaming';
+import { carriedAtTheEnd } from '../play/verify';
 import type { JournalEntry } from '../play/journal';
 import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
@@ -292,13 +293,24 @@ export async function catchUpWithTheServer(): Promise<void> {
  * The keys already here are never written over: the sitting being played is one this device holds
  * and the server's copy of it is behind. Says whether the chain in hand holds every sitting's
  * keys now; a server that did not answer leaves it exactly as it was.
+ *
+ * An endless character needs one thing more, which is why this is asked before a game as well as
+ * before an export: what it carries beside its record is worked out from those keys
+ * ({@link bringCarriedStateHere}).
  */
 export async function bringRunKeysHere(id: string): Promise<boolean> {
   const entry = entryById(id);
   if (entry === null) return false;
-  if (everyKeyIsHere(entry)) return true;
-  const chain = await readServerRun(id);
-  if (chain === null) return false;
+  if (!everyKeyIsHere(entry)) await askForTheKeys(entry);
+  await bringCarriedStateHere(entry);
+  return everyKeyIsHere(entry);
+}
+
+/** The keys of the sittings this device holds none of, off the server and onto the chain in
+ *  hand. A server that did not answer leaves the chain exactly as it was. */
+async function askForTheKeys(entry: RosterEntry): Promise<void> {
+  const chain = await readServerRun(entry.id);
+  if (chain === null) return;
   const filled: PlayedSession[] = [];
   for (let at = 0; at < entry.run.length; at++) {
     const here = entry.run[at];
@@ -308,10 +320,36 @@ export async function bringRunKeysHere(id: string): Promise<boolean> {
     entry.run[at] = { ...here, inputs: there.inputs };
     filled.push({ entry, at });
   }
-  if (filled.length === 0) return everyKeyIsHere(entry);
+  if (filled.length === 0) return;
   app.characterVersion++;
   await keeping(keepPlayed([], filled));
-  return everyKeyIsHere(entry);
+}
+
+/**
+ * Work out what an endless character is carrying beside its record, where this device does not
+ * know.
+ *
+ * The trap door keys and the Shadow boss squares of the sections past the record's reach are not
+ * in the record and the server is not told about them, so a device that has never played the
+ * character has the record, the world and the keys that were pressed and nothing else. Playing on
+ * from there would drop the character's keys and stand the Shadow bosses somewhere else, and the
+ * run would fail the verdict the server gives it, since the server's own replay does carry them.
+ * So the chain is replayed here first and the character starts the sitting holding what it really
+ * holds.
+ *
+ * It needs every sitting's keys, so it comes after them. A character this device has played holds
+ * its state already, a faithful character carries nothing at all, and a chain no replay could get
+ * through leaves the character as it was.
+ */
+async function bringCarriedStateHere(entry: RosterEntry): Promise<void> {
+  if (entry.lock !== 'endless' || entry.endless !== undefined) return;
+  if (entry.run.length === 0 || !everyKeyIsHere(entry)) return;
+  const carried = await carriedAtTheEnd(entry.run);
+  if (carried === null) return;
+  // Nothing is written to the store here: the game about to be played writes what the character
+  // carries wherever it writes the record, and a visit that puts the character down without
+  // playing it works this out again next time.
+  entry.endless = carried;
 }
 
 /** Whether every sitting of the character's run holds keys. A sitting nobody ever pressed a key

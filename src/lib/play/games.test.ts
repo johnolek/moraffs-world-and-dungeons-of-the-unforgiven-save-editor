@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { app, type RosterEntry } from '../app-state.svelte';
+import { app, entryById, type RosterEntry } from '../app-state.svelte';
+import { base64FromBytes } from '../bytes';
+import { bringRunKeysHere } from '../character/current';
 import { newEntry } from '../character/roster';
+import { entryFromServer, type ServerCharacter } from '../character/server-roster';
 import { endlessRules, ENDLESS_BOTTOM, ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import { FAITHFUL_RULES } from '../game/port/rules';
 import { UNFORGIVEN_MAP } from '../map/game';
@@ -42,6 +45,45 @@ async function playASession(entry: RosterEntry, keys: number[], mode: PlayMode =
   for (const key of keys) await press(session, key);
   session.finish();
   return session;
+}
+
+/** The module a character rolled under the normal difficulty bottoms out in, and so the one
+ *  whose floors go on for ever. */
+const MODULE_IV = 3;
+/** A floor below the bottom of Module IV, which the game itself has no map of. */
+const ENDLESS_FLOOR = 120;
+/** The floor a trap door is opened with the key labelled 44, which is deeper than the record's
+ *  own flags reach. */
+const DEEP_FLOOR = 220;
+
+/** A character on the roster locked to the endless dungeon. */
+function rosteredEndless(where: Parameters<typeof characterFile>[0] = { level: 3, dir: 0, ...floorSquare(3) }): RosterEntry {
+  const bytes = Uint8Array.from(characterFile({ lev: 99, hp: 30000, maxHp: 30000, ...where }).bytes);
+  const entry = newEntry({ game: 'unforgiven', name: 'DEEPER', slot: 2, bytes, imported: false, lock: 'endless' });
+  app.roster = [entry];
+  app.characterId = entry.id;
+  return entry;
+}
+
+/** An open square of a floor below the bottom of the module, which only the endless rules
+ *  generate. */
+function endlessSquare(module: number, floor: number): { x: number; y: number } {
+  const rules = endlessRules({ hard: false, seed: ENDLESS_WORLD_SEED });
+  const rows = UNFORGIVEN_MAP.floor(floor, module, rules.bottomLevel(module), rules.trapdoorReach(module, floor));
+  for (let y = 1; y < rows.length; y++) {
+    for (let x = 1; x < rows[y].length; x++) if (!rows[y][x].solid) return { x, y };
+  }
+  throw new Error(`no open square on floor ${floor} of module ${module}`);
+}
+
+/** A character standing on a floor the game itself stops short of. */
+function standingDeep(): RosterEntry {
+  return rosteredEndless({
+    module: MODULE_IV,
+    level: ENDLESS_FLOOR,
+    dir: 0,
+    ...endlessSquare(MODULE_IV, ENDLESS_FLOOR),
+  });
 }
 
 afterEach(() => {
@@ -94,45 +136,6 @@ describe('a character played again', () => {
 });
 
 describe('a character rolled for the endless dungeon', () => {
-  /** The module a character rolled under the normal difficulty bottoms out in, and so the one
-   *  whose floors go on for ever. */
-  const MODULE_IV = 3;
-  /** A floor below the bottom of Module IV, which the game itself has no map of. */
-  const ENDLESS_FLOOR = 120;
-  /** The floor a trap door is opened with the key labelled 44, which is deeper than the record's
-   *  own flags reach. */
-  const DEEP_FLOOR = 220;
-
-  /** A character on the roster locked to the endless dungeon. */
-  function rosteredEndless(where: Parameters<typeof characterFile>[0] = { level: 3, dir: 0, ...floorSquare(3) }): RosterEntry {
-    const bytes = Uint8Array.from(characterFile({ lev: 99, hp: 30000, maxHp: 30000, ...where }).bytes);
-    const entry = newEntry({ game: 'unforgiven', name: 'DEEPER', slot: 2, bytes, imported: false, lock: 'endless' });
-    app.roster = [entry];
-    app.characterId = entry.id;
-    return entry;
-  }
-
-  /** An open square of a floor below the bottom of the module, which only the endless rules
-   *  generate. */
-  function endlessSquare(module: number, floor: number): { x: number; y: number } {
-    const rules = endlessRules({ hard: false, seed: ENDLESS_WORLD_SEED });
-    const rows = UNFORGIVEN_MAP.floor(floor, module, rules.bottomLevel(module), rules.trapdoorReach(module, floor));
-    for (let y = 1; y < rows.length; y++) {
-      for (let x = 1; x < rows[y].length; x++) if (!rows[y][x].solid) return { x, y };
-    }
-    throw new Error(`no open square on floor ${floor} of module ${module}`);
-  }
-
-  /** A character standing on a floor the game itself stops short of. */
-  function standingDeep(): RosterEntry {
-    return rosteredEndless({
-      module: MODULE_IV,
-      level: ENDLESS_FLOOR,
-      dir: 0,
-      ...endlessSquare(MODULE_IV, ENDLESS_FLOOR),
-    });
-  }
-
   it('is played in the world it was rolled into, where a faithful character is not', () => {
     const endless = PLAY_GAMES.unforgiven.start(rosteredEndless(), false, 'endless');
     expect(endless.game.rules.bottomLevel(MODULE_IV)).toBe(ENDLESS_BOTTOM);
@@ -278,5 +281,73 @@ describe('which games are played on the clock', () => {
     const session = PLAY_GAMES.moraffsWorld.start(entry, false);
     expect(playedOnTheClock(session)).toBe(false);
     session.finish();
+  });
+});
+
+describe('an endless character picked up on a second device', () => {
+  /**
+   * The character as the run server hands it back to another device of the same player: the
+   * newest record any device sent and the sittings of its run with their keys, and nothing about
+   * what it carries beside the record, which the server is never told.
+   */
+  function asTheServerHoldsIt(entry: RosterEntry): ServerCharacter {
+    return {
+      id: entry.id,
+      game: entry.game,
+      name: entry.name,
+      slot: entry.slot,
+      dead: entry.dead,
+      leaderboard: entry.leaderboard,
+      lock: entry.lock,
+      worldSeed: entry.worldSeed ?? null,
+      createdAt: entry.createdAt,
+      editedAt: entry.editedAt,
+      record: base64FromBytes(entry.bytes),
+      maps: null,
+      savedAt: entry.editedAt,
+      run: entry.run.map((sitting) => ({ ...sitting, inputCount: sitting.inputs.length })),
+      leasedElsewhere: false,
+    };
+  }
+
+  /** The character on the roster of a device that has never played it, which is what signing in
+   *  somewhere else leaves. */
+  function onTheOtherDevice(entry: RosterEntry): RosterEntry {
+    const taken = entryFromServer(asTheServerHoldsIt(entry), null);
+    app.roster = [taken!];
+    app.characterId = taken!.id;
+    return entryById(taken!.id)!;
+  }
+
+  it('works out what it carries from the chain and plays on holding it', async () => {
+    const played = standingDeep();
+    const first = await playASession(played, [KEY.enter], 'endless');
+    first.save();
+    // The Shadow boss of a section past the twentieth is put down where the record has no square
+    // for him, so this is a sitting with something to carry.
+    expect(played.endless?.bossSquares).toHaveLength(1);
+
+    const elsewhere = onTheOtherDevice(played);
+    expect(elsewhere.endless).toBeUndefined();
+
+    await bringRunKeysHere(elsewhere.id);
+
+    expect(elsewhere.endless).toEqual(played.endless);
+
+    await playASession(elsewhere, [KEY.enter], 'endless');
+    const verdict = await verifyRun(runLogOf(elsewhere.run));
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+  });
+
+  it('leaves a character playing the game as it shipped carrying nothing', async () => {
+    const played = rostered();
+    await playASession(played, [KEY.enter]);
+
+    const elsewhere = onTheOtherDevice(played);
+    await bringRunKeysHere(elsewhere.id);
+
+    expect(elsewhere.endless).toBeUndefined();
   });
 });
