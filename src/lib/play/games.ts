@@ -12,7 +12,7 @@ import { dotuMapFiles, mwMapFiles, revMapFile } from './export-maps';
 import { gameKey } from './keys';
 import type { PlayLoopSession } from './loop';
 import { characterMaps } from './memory';
-import type { PlayMode, PlayDisplay } from './mode';
+import { clockReseeds, readPlayClockReseed, type PlayMode, type PlayDisplay } from './mode';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './mw/engine';
 import { mwGameKey } from './mw/keys';
 import { revCharacterMap } from './rev/memory';
@@ -24,7 +24,7 @@ import {
   type RevPlayView,
 } from './rev/engine';
 import { revGameKey } from './rev/keys';
-import { RunRecorder, runTotals, type RunTotals } from './run';
+import { RunRecorder, runTotals, sittingClock, type RunTotals } from './run';
 
 /**
  * What the Play tab needs of the game it is playing.
@@ -87,8 +87,10 @@ export interface PlayGame<Session extends PlaySession<View>, View extends PlayVi
   hint: string;
   /** How many pixels a square is drawn at when the map is centred on the character. */
   cell: number;
-  /** A character off the roster, started: the file, the run log and the session in one. */
-  start(entry: RosterEntry, sound: boolean): Session;
+  /** A character off the roster, started: the file, the run log and the session in one. `mode`
+   *  is the mode the tab is set to, which is what decides whether the game is played on the
+   *  clock. */
+  start(entry: RosterEntry, sound: boolean, mode: PlayMode): Session;
   /** The loop `runPlayLoop` runs for this game. */
   loop(session: Session): Promise<void>;
   /** A browser key event as the byte the game's own loop dispatches on, or null. */
@@ -121,8 +123,15 @@ function playedFile(entry: RosterEntry): CharacterFile {
  *
  * The board the character is locked to goes in as play begins, since nothing in a game changes
  * it.
+ *
+ * `tickCounter` is the clock the run is played on, for the one game that reseeds from one.
  */
-function recorder(game: PortedGameId, entry: RosterEntry, sound?: boolean): RunRecorder {
+function recorder(
+  game: PortedGameId,
+  entry: RosterEntry,
+  sound?: boolean,
+  tickCounter: (() => number) | null = null,
+): RunRecorder {
   return new RunRecorder({
     game,
     name: entry.name,
@@ -130,17 +139,21 @@ function recorder(game: PortedGameId, entry: RosterEntry, sound?: boolean): RunR
     sound,
     leaderboard: entry.leaderboard,
     before: runTotals(entry.run),
+    tickCounter,
   });
 }
 
-function startUnforgiven(entry: RosterEntry, sound: boolean): GameSession {
+function startUnforgiven(entry: RosterEntry, sound: boolean, mode: PlayMode): GameSession {
   const file: CharacterFile = {
     ...playedFile(entry),
     // The explored maps live beside the roster entry, the way the game's .DUN files live beside
     // the character's record.
     maps: characterMaps(entry.id),
   };
-  const run = recorder('unforgiven', entry);
+  // Dungeons of the Unforgiven is the one game of the three whose reseeds are ported, so it is
+  // the one game handed a clock (`mode.ts`, and section 8 of the RE notes).
+  const clocked = clockReseeds(mode, readPlayClockReseed('unforgiven'));
+  const run = recorder('unforgiven', entry, undefined, clocked ? sittingClock() : null);
   const session = startGame(file, run.rng, run);
   // DS:022b starts at 0, sound on; the tab's choice stands in for that (`mode.ts`).
   session.game.sound = sound;

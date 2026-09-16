@@ -6,7 +6,9 @@ import type { GameSession } from './engine';
 import { PLAY_GAMES } from './games';
 import { KEY } from './keys';
 import { runPlayLoop } from './loop';
-import { runLogOf } from './run';
+import { mwCharacterFile } from './mw/test-engine';
+import { writePlayClockReseed } from './mode';
+import { runLogOf, type RunRecorder } from './run';
 import { verifyRun } from './verify';
 
 /**
@@ -26,7 +28,7 @@ function rostered(where: Parameters<typeof characterFile>[0] = { level: 3, dir: 
 /** One sitting at the game, played to the end of the keys and left. */
 async function playASession(entry: RosterEntry, keys: number[]): Promise<GameSession> {
   const game = PLAY_GAMES.unforgiven;
-  const session = game.start(entry, false);
+  const session = game.start(entry, false, 'faithful');
   void runPlayLoop(session, game.loop(session));
   await settle();
   // The snake's stone tablet greets a character standing in the town and takes a key of its own.
@@ -82,5 +84,72 @@ describe('a character played again', () => {
     expect(verdict.sessions).toBe(2);
     // The turn where the character stands costs this game nothing, so four of the five keys count.
     expect(verdict.claimed.actions).toBe(4);
+  });
+});
+
+describe('which games are played on the clock', () => {
+  /** A store the tab's memory can be pointed at, so a test's choice is not the browser's. */
+  function fakeStorage(): Storage {
+    const items = new Map<string, string>();
+    return {
+      get length() {
+        return items.size;
+      },
+      clear: () => items.clear(),
+      getItem: (key: string) => items.get(key) ?? null,
+      key: (index: number) => [...items.keys()][index] ?? null,
+      removeItem: (key: string) => void items.delete(key),
+      setItem: (key: string, value: string) => void items.set(key, value),
+    };
+  }
+
+  function useStorage(storage: Storage | undefined): void {
+    Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true, writable: true });
+  }
+
+  afterEach(() => useStorage(undefined));
+
+  /** Whether the run this session is writing down reseeds from the machine's tick counter, which
+   *  is what puts the readings in its log. */
+  function playedOnTheClock(session: { run: RunRecorder | null }): boolean {
+    return session.run!.gameClock() !== null;
+  }
+
+  it('plays Dungeons of the Unforgiven on the clock in the two modes a run is played in', () => {
+    const entry = rostered();
+    for (const mode of ['faithful', 'speedrun'] as const) {
+      const session = PLAY_GAMES.unforgiven.start(entry, false, mode);
+      expect(playedOnTheClock(session)).toBe(true);
+      expect(session.game.clock).not.toBeNull();
+      expect(session.game.seconds).not.toBeNull();
+      session.finish();
+    }
+  });
+
+  it('leaves debug mode the switch, which starts on', () => {
+    const entry = rostered();
+    useStorage(fakeStorage());
+    const on = PLAY_GAMES.unforgiven.start(entry, false, 'debug');
+    expect(playedOnTheClock(on)).toBe(true);
+    on.finish();
+
+    writePlayClockReseed('unforgiven', false);
+    const off = PLAY_GAMES.unforgiven.start(entry, false, 'debug');
+    expect(playedOnTheClock(off)).toBe(false);
+    expect(off.game.clock).toBeNull();
+    off.finish();
+  });
+
+  it("plays Moraff's World off the clock, since none of its reseeds is ported", () => {
+    const entry = newEntry({
+      game: 'moraffsWorld',
+      name: 'GRIMWALD',
+      slot: 1,
+      bytes: Uint8Array.from(mwCharacterFile().bytes),
+      imported: false,
+    });
+    const session = PLAY_GAMES.moraffsWorld.start(entry, false);
+    expect(playedOnTheClock(session)).toBe(false);
+    session.finish();
   });
 });

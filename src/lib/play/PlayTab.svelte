@@ -202,7 +202,7 @@
     // this sitting as soon as a key is pressed.
     const at = entry.run.length;
     const earlier = [...entry.run];
-    const started = game.start(entry, sound);
+    const started = game.start(entry, sound, mode);
     started.onChange = () => (view = started.view());
     centredFloor = null;
     session = started;

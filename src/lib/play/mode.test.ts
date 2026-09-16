@@ -11,6 +11,8 @@ import {
   PLAY_DISPLAYS,
   PLAY_MODES,
   INSTANT_REDRAW_MS,
+  clockReseeds,
+  readPlayClockReseed,
   readPlayColourblind,
   readPlayForwardView,
   readPlaySound,
@@ -19,6 +21,7 @@ import {
   readPlayRedraw,
   redrawWords,
   SLOWEST_REDRAW_MS,
+  writePlayClockReseed,
   writePlayColourblind,
   writePlayForwardView,
   writePlaySound,
@@ -221,6 +224,33 @@ describe('the 3-D view over the map', () => {
     useStorage(undefined);
     writePlayForwardView('unforgiven', true);
     expect(readPlayForwardView('unforgiven')).toBe(false);
+  });
+});
+
+describe('reseeding from the clock', () => {
+  it('is on until it has been turned off', () => {
+    useStorage(fakeStorage());
+    expect(readPlayClockReseed('unforgiven')).toBe(true);
+  });
+
+  it('remembers the choice for one game without touching the other', () => {
+    useStorage(fakeStorage());
+    writePlayClockReseed('unforgiven', false);
+    expect(readPlayClockReseed('unforgiven')).toBe(false);
+    expect(readPlayClockReseed('moraffsWorld')).toBe(true);
+  });
+
+  it('is on where there is nowhere to remember anything, the way the game is', () => {
+    useStorage(undefined);
+    writePlayClockReseed('unforgiven', false);
+    expect(readPlayClockReseed('unforgiven')).toBe(true);
+  });
+
+  it('is the switch in debug and nothing but on in the two modes a run is played in', () => {
+    expect(clockReseeds('faithful', false)).toBe(true);
+    expect(clockReseeds('speedrun', false)).toBe(true);
+    expect(clockReseeds('debug', true)).toBe(true);
+    expect(clockReseeds('debug', false)).toBe(false);
   });
 });
 

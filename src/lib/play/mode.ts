@@ -136,6 +136,42 @@ export function writePlaySound(game: PortedGameId, on: boolean): void {
 }
 
 /** Where the choice is kept, one key per game, beside the mode and the display. */
+const CLOCK_RESEED_SUFFIX = '.clock-reseed';
+
+/**
+ * Whether the game starts its random number generator again from the machine's clock wherever the
+ * original starts it again from the PC's, which is what makes a swing's to-hit roll climb a
+ * sawtooth in real time and lays a fresh floor's monsters in diagonal stripes (section 8 of
+ * `dotu-tools/docs/UNFORGIVEN-RE-NOTES.md`).
+ *
+ * Only debug mode offers the choice, and only Dungeons of the Unforgiven has the switch: faithful
+ * and speedrun always reseed, since a game that does not is not the game. Off, the run draws its
+ * numbers from one generator seeded once, which is the port's third departure.
+ */
+export function readPlayClockReseed(game: PortedGameId): boolean {
+  return readStored(PREFIX + game + CLOCK_RESEED_SUFFIX) !== 'off';
+}
+
+export function writePlayClockReseed(game: PortedGameId, on: boolean): void {
+  writeStored(PREFIX + game + CLOCK_RESEED_SUFFIX, on ? 'on' : 'off');
+}
+
+/** The switch's label and the line under it, which says when a change to it takes hold. */
+export const CLOCK_RESEED_LABEL = 'Reseed from the clock, as the game does';
+export const CLOCK_RESEED_NOTE =
+  'Read when a game starts, so changing it now takes effect the next time this character is played.';
+
+/**
+ * Whether this game is played on the clock: always in faithful and speedrun, and in debug
+ * whichever way the switch above was left.
+ *
+ * @param switchedOn {@link readPlayClockReseed}, which only debug mode is asked for.
+ */
+export function clockReseeds(mode: PlayMode, switchedOn: boolean): boolean {
+  return mode === 'debug' ? switchedOn : true;
+}
+
+/** Where the choice is kept, one key per game, beside the mode and the display. */
 const FORWARD_VIEW_SUFFIX = '.forward-view';
 
 /**

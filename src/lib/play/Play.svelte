@@ -28,11 +28,15 @@
   import { compassKeys } from './keys';
   import { MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import {
+    CLOCK_RESEED_LABEL,
+    CLOCK_RESEED_NOTE,
     debugDrawn,
     mapDrawn,
     monstersDrawn,
     panelVisible,
+    readPlayClockReseed,
     readPlayForwardView,
+    writePlayClockReseed,
     writePlayForwardView,
     zoomMapMonsters,
     type PlayMode,
@@ -50,6 +54,9 @@
   /** Whether the map draws the game's forward-facing 3-D view where the picture of the monster
    *  being fought stands. */
   let forwardView = $state(readPlayForwardView(game.id));
+  /** Whether a game started from here reseeds from the clock the way the original does. Faithful
+   *  and speedrun always do; this is debug mode's own switch. */
+  let clockReseed = $state(readPlayClockReseed(game.id));
   /** The kind of monster picked out of the debug panel's list, which both maps ring until it is
    *  clicked again. */
   let highlightedMonsterId = $state.raw<string | null>(null);
@@ -198,6 +205,12 @@
   /** The same for the switch that puts the 3-D view over the map. */
   function chooseForwardView(input: HTMLInputElement) {
     writePlayForwardView(game.id, forwardView);
+    input.blur();
+  }
+
+  /** And for debug mode's switch over the clock, which the next game started reads. */
+  function chooseClockReseed(input: HTMLInputElement) {
+    writePlayClockReseed(game.id, clockReseed);
     input.blur();
   }
 </script>
@@ -362,7 +375,14 @@
   {/if}
 {/snippet}
 
-{#snippet afterModes()}
+{#snippet afterModes(stage: Stage)}
+  {#if debugDrawn(stage.mode)}
+    <label class="switch">
+      <input type="checkbox" bind:checked={clockReseed} onchange={(event) => chooseClockReseed(event.currentTarget)} />
+      <span>{CLOCK_RESEED_LABEL}</span>
+      <span class="how">{CLOCK_RESEED_NOTE}</span>
+    </label>
+  {/if}
   <div class="key-note">Arrow keys:</div>
   <div class="styles">
     {#each MOVEMENT_STYLES as choice}
@@ -396,6 +416,27 @@
 {/snippet}
 
 <style>
+  /* Debug mode's switch over the clock, laid out the way the mode radios above it are: the box,
+     its label, and the line about it under both. */
+  .switch {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0 8px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .switch input {
+    margin: 0;
+    accent-color: var(--accent);
+  }
+  .switch .how {
+    grid-column: 2;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
   /* The same small, quiet control the switch above it draws its own checkbox as. */
   .forward {
     display: flex;
