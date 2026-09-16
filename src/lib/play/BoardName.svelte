@@ -9,6 +9,7 @@
   address has no boards to be on, so there is nothing here to show.
 -->
 <script lang="ts">
+  import { askWhetherAdmin } from '../admin/server';
   import { claimName, myName, newPassphrase, offTheBoards, setOffTheBoards, signIn } from '../player';
   import { runServerUrl } from '../run-server';
 
@@ -63,6 +64,9 @@
     name = answer.name;
     mine = answer.name;
     if (answer.passphrase !== null) show(answer.passphrase);
+    // The browser now keeps different words from the ones the page load asked the server about,
+    // so whether they are an admin's is asked again: the Admin tab comes or goes with the answer.
+    void askWhetherAdmin();
   }
 
   async function useAnotherDevicesName() {
@@ -76,14 +80,19 @@
     name = answer.name;
     mine = answer.name;
     said = 'Signed in.';
+    void askWhetherAdmin();
   }
 
   async function drawANewOne() {
     saving = true;
     const answer = await newPassphrase();
     saving = false;
-    if (answer.ok) show(answer.passphrase);
-    else said = answer.message;
+    if (!answer.ok) {
+      said = answer.message;
+      return;
+    }
+    show(answer.passphrase);
+    void askWhetherAdmin();
   }
 
   async function copy() {

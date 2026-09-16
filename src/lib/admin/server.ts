@@ -1,3 +1,4 @@
+import { app } from '../app-state.svelte';
 import { myPassphrase } from '../player';
 import { runServerUrl } from '../run-server';
 // The shape the server answers with, and nothing but the shape: this is a type, so none of the
@@ -28,14 +29,26 @@ const NO_ANSWER = 'The server did not answer. Try again in a moment.';
  * The name the run server knows this browser's player by, when the words this browser keeps are
  * an admin's, and null for everybody else.
  *
- * It is what the Admin tab is shown on, so it is asked once as the page loads and the answer is
- * held in `app.admin` from then on. A browser that signs in as an admin part-way through a visit
- * gets the tab on the next load.
+ * It is what the Admin tab is shown on, and `askWhetherAdmin` is what holds the answer where the
+ * tabs read it.
  */
 export async function whoAmI(): Promise<string | null> {
   const answer = await askTheServer<{ name?: unknown }>('GET', '/admin/me');
   if (!answer.ok || typeof answer.body.name !== 'string') return null;
   return answer.body.name;
+}
+
+/**
+ * Asks the question above and holds the answer in `app.admin`, which is where `src/lib/tabs.ts`
+ * reads whether to draw the Admin tab.
+ *
+ * It is asked as the page loads, and again whenever this browser learns a passphrase: claiming a
+ * name, signing in as one claimed elsewhere, and drawing a new passphrase all leave the browser
+ * keeping different words from the ones the page load asked about. An answer of nobody takes the
+ * tab away again, which is what a browser holding words that have stopped being an admin's gets.
+ */
+export async function askWhetherAdmin(): Promise<void> {
+  app.admin = await whoAmI();
 }
 
 /** One page of every character here, whoever's it is, the newest first. Pages count from one. */

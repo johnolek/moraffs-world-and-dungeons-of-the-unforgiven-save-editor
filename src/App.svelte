@@ -6,7 +6,7 @@
   import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
   import { runServerUrl } from './lib/run-server';
   import { tabGroupsFor, tabsFor } from './lib/tabs';
-  import { whoAmI } from './lib/admin/server';
+  import { askWhetherAdmin } from './lib/admin/server';
   import Admin from './lib/admin/Admin.svelte';
   import Monsters from './lib/bestiary/Monsters.svelte';
   import AnnouncementsMarker from './lib/boards/AnnouncementsMarker.svelte';
@@ -41,10 +41,10 @@
   let readingAnnouncements = $state(false);
 
   onMount(() => {
-    // The Admin tab shows for one player and nobody else, so the server is asked the once whether
-    // the passphrase this browser keeps is an admin's. Everybody else is answered no and never
-    // sees that there was a tab.
-    void whoAmI().then((admin) => (app.admin = admin));
+    // The Admin tab shows for one player and nobody else, so the server is asked whether the
+    // passphrase this browser keeps is an admin's. Everybody else is answered no and never sees
+    // that there was a tab.
+    void askWhetherAdmin();
     // Read the entry first: restoring the game rewrites it to say which tab that game is showing.
     const state = history.state;
     // The roster is read out of the database, which answers a moment later, so the site puts up

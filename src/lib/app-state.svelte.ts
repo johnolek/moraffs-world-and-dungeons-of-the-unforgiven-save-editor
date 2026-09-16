@@ -180,9 +180,9 @@ export interface AppState {
    * The name the run server knows this player by, when the passphrase this browser keeps is an
    * admin's, and null for everybody else.
    *
-   * It is what the Admin tab is shown on, and it is asked once as the page loads
-   * (`src/lib/admin/server.ts`). Nothing about it is kept in the browser: a browser whose words
-   * have stopped being an admin's is answered no on the next visit and has no tab.
+   * It is what the Admin tab is shown on, and it is asked as the page loads and again whenever
+   * this browser learns a passphrase (`src/lib/admin/server.ts`). Nothing about it is kept in the
+   * browser: a browser whose words have stopped being an admin's is answered no and has no tab.
    */
   admin: string | null;
   /**

@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { flagAnotherAdmin, forgetCharacter, loadCharacters, openNewEndlessWorld, whoAmI } from './server';
+import { app } from '../app-state.svelte';
+import {
+  askWhetherAdmin,
+  flagAnotherAdmin,
+  forgetCharacter,
+  loadCharacters,
+  openNewEndlessWorld,
+  whoAmI,
+} from './server';
 
 /** A browser holding the words, or holding none. `player.ts` reads them straight out of the
  *  store, so the store is the whole of what has to stand in for a browser here. */
@@ -36,6 +44,7 @@ afterEach(() => {
   Object.defineProperty(globalThis, 'localStorage', { value: undefined, configurable: true, writable: true });
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+  app.admin = null;
 });
 
 describe('whoAmI', () => {
@@ -83,6 +92,29 @@ describe('whoAmI', () => {
     vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
 
     expect(await whoAmI()).toBeNull();
+  });
+});
+
+describe('holding the answer where the tabs read it', () => {
+  it('names the admin, so the Admin tab is drawn without the page being loaded again', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(200, { admin: true, name: 'John' });
+
+    await askWhetherAdmin();
+
+    expect(app.admin).toBe('John');
+  });
+
+  it('takes the name away again when the words have stopped being an admin’s', async () => {
+    browserKeeping('acid acorn acre afar affix aged');
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(404, { error: 'No such endpoint: /admin/me' });
+    app.admin = 'John';
+
+    await askWhetherAdmin();
+
+    expect(app.admin).toBeNull();
   });
 });
 
