@@ -170,6 +170,8 @@ export function themeLevels(theme: SectionTheme): number {
  * is the four tests the game itself makes with the one the theme is about made likelier.
  */
 export function themeTypeOdds(theme: SectionTheme): MonsterTypeOdds {
+  // The game asks the same four of every section it has, so which one is asked for here is
+  // neither here nor there.
   const game = FAITHFUL_RULES.monsterTypeOdds(1);
   if (theme === 'drainers') return { ...game, levelDrainer: DRAINERS_THEME_ODDS };
   if (theme === 'afflictions') return { ...game, poisonDisease: AFFLICTIONS_THEME_ODDS };
