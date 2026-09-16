@@ -6,10 +6,20 @@ import type { Queries } from './sql';
 /**
  * What the server says about a run once it has been checked.
  *
- * A verified run that may go on a board is announced: that the character won or died, and the few
- * things of its whole run worth stopping to read that have not been announced before. The chain
- * carries every milestone the character has ever reached, so a run of a character that has been
- * played before repeats most of them, and saying a thing once is the index on the table.
+ * A verified run that may go on a board is announced: the few things of its whole run worth
+ * stopping to read that have not been announced before. Those are a boss beaten, the twentieth
+ * level and every fifth past it, the kill counts in {@link ANNOUNCED_KILLS}, one of the rare finds
+ * in `ANNOUNCED_FINDS` (`server/boards.ts`), a floor an endless character has taken a Shadow
+ * deeper than it ever had before, and how the run ended. A module, a dungeon and a floor reached
+ * are not among them: a character reaches dozens of those, and the feed is read on every page of
+ * the site.
+ *
+ * The chain carries every milestone the character has ever reached and the journal is its whole
+ * run, so a run checked again repeats most of them, and saying a thing once is the index on the
+ * table.
+ *
+ * A character still being played has no outcome yet, and what it has reached is announced without
+ * one: the feed is read live rather than only after a character dies or wins.
  *
  * The rows carry fields and no sentence: how an announcement reads is the site's, in
  * `src/lib/boards/announce.ts`, so that the feed and the history read the same way and neither is

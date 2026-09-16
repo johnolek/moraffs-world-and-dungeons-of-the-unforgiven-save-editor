@@ -81,7 +81,9 @@ playing has; the two of the living are `LIVING_BOARDS` beside them. All of it is
 imported straight from there, so that the two halves never disagree about what a
 board holds or what it is called, and so are `hasBoard`, which says whether a
 leaderboard has a board, and `CURRENT_ENDLESS_WORLD`, the world the picker opens
-on before the server has answered with the worlds there are. The row shapes come
+on before the server has answered with the worlds there are. `ANNOUNCED_FINDS`
+comes from there too: it is the finds a `find` announcement can name, and its
+order is what such an announcement's `which` counts in. The row shapes come
 the same way. None of the server's code comes with them: the board lists are
 tables of names and words, and everything else is a type, which is gone by the
 time anything is built.

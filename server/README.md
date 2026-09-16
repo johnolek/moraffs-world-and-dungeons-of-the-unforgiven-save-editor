@@ -606,14 +606,23 @@ like, and half a table cannot be sorted.
 
 ## The announcements
 
-When a run comes out verified and may go on a board, the server announces it:
-one row for how it ended, and one for every milestone of the character's whole
-run that has not been announced for it before — a boss beaten, a module or a
-dungeon reached, a level, a floor of Moraff's Revenge. A chain carries every
-milestone the character has ever reached, so a second run of the same character
-repeats most of them and only what is new is said. Nothing is announced about a
-run that could not be checked or that had a record written into it from outside
-the game: that is the player's own business and not news.
+When a run comes out verified and may go on a board, the server announces the
+few things about it worth stopping to read that have not been announced for
+that character before: a boss beaten, the twentieth level and every fifth past
+it, the hundredth kill and then the five hundredth, the thousandth, the two
+thousand five hundredth and the five thousandth, one of the twelve rare things
+`find_item` turns up, a floor an endless character has taken a Shadow deeper
+than it ever had before, and how the run ended. A chain carries every milestone
+the character has ever reached and the journal is the whole run written up, so
+a run checked again repeats most of them and only what is new is said.
+
+Nothing is announced any more for a module, a dungeon or a floor reached: a
+character reaches dozens of those over a run, and the feed is read on every
+page of the site. A character still being played has no outcome yet, and what
+it has reached is announced without one rather than being held back until it
+dies or wins. Nothing at all is announced about a run that could not be checked
+or that had a record written into it from outside the game: that is the
+player's own business and not news.
 
 | Endpoint                             | What it does                                      |
 | ------------------------------------ | ------------------------------------------------- |
@@ -624,13 +633,16 @@ The history is paged by id rather than by a page number, because announcements
 are made while somebody is reading and a page number would show one twice or
 skip one as they arrive. `more` says whether there is anything behind the page.
 
-A row carries fields and no sentence: `kind` (`win`, `death`, `boss`,
-`dungeon`, `level` or `floor`), `which` — which boss, level, module or floor —
-the game and the board, the player's name and the character's, the actions, the
-game's clock, where the character stood and what it had reached, and the run's
-play time. How an announcement reads is the site's, in
-`src/lib/boards/announce.ts`, so that changing the words is a change to the site
-and not to what is already stored here.
+A row carries fields and no sentence: `kind` (`win`, `death`, `boss`, `level`,
+`kills`, `find` or `shadow`), `which` — which boss, which level, which kill
+count, a find's place in `ANNOUNCED_FINDS` in `server/boards.ts`, which floor a
+Shadow was killed on — the game and the board, the player's name and the
+character's, the actions, the game's clock, where the character stood and what
+it had reached, and the run's play time. `dungeon` and `floor` are two more
+kinds the table holds rows of, from when they were still written. How an
+announcement reads is the site's, in `src/lib/boards/announce.ts`, so that
+changing the words is a change to the site and not to what is already stored
+here.
 
 A page is left open for hours, which is longer than anything in between will
 hold a silent connection for, so a comment goes down every feed every 25

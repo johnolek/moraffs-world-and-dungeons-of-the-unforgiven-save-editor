@@ -9,9 +9,13 @@
 -- was said at the moment a run ended, and a player who renames themselves afterwards does not
 -- rewrite it.
 --
--- `which` is which boss, which level, which module or dungeon, which floor, and 0 for a win or a
--- death, which have nothing to count. `floor`, `dungeon` and `level` are where the character stood
--- and what it had reached by then, which is what the sentence about a death is made of.
+-- `which` is which boss, which level, which kill count, which find, which floor a Shadow was
+-- killed on, and 0 for a win or a death, which have nothing to count. Two more kinds, a module or
+-- dungeon reached and a floor reached, were written when this table was made and are not written
+-- any more; the rows of them are still here.
+--
+-- `floor`, `dungeon` and `level` are where the character stood and what it had reached by then,
+-- which is what the sentence about a death is made of.
 --
 -- `play_ms` is the run's play time rather than the moment's: it is only there for the sentence
 -- about a win, and a run is timed as a whole.
