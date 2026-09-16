@@ -277,9 +277,10 @@ export async function keepCharacterSave(
   await sql.query(
     `UPDATE characters
      SET record = $1, maps = CASE WHEN $2::boolean THEN $3::text ELSE maps END, slot = $4, dead = $5,
-         leaderboard = $6, play_lock = coalesce($7, play_lock), edited_at = $8,
-         saved_at = to_timestamp($9::double precision / 1000.0)
-     WHERE id = $10`,
+         leaderboard = $6, play_lock = coalesce($7, play_lock),
+         world_seed = coalesce($8, world_seed), edited_at = $9,
+         saved_at = to_timestamp($10::double precision / 1000.0)
+     WHERE id = $11`,
     [
       Buffer.from(save.record, 'base64'),
       save.maps !== undefined,
@@ -290,6 +291,9 @@ export async function keepCharacterSave(
       // A save that names no lock leaves the one here: a character's lock is decided at the roll
       // and never again, and a device on an older build names none.
       save.lock,
+      // The endless world is decided at the roll and never again as well, so a save that names
+      // none leaves the one here.
+      save.worldSeed,
       save.editedAt,
       savedAt,
       characterId,
@@ -639,6 +643,9 @@ export function readCharacterSave(value: unknown): CharacterSave | undefined {
   // A device running a build from before the lock was a question of its own names none, which is
   // not a reason to turn the batch away.
   if (save.lock !== undefined && save.lock !== null && typeof save.lock !== 'string') return undefined;
+  // A device on a build from before the endless world was recorded names none, which is not a
+  // reason to turn the batch away either.
+  if (save.worldSeed !== undefined && save.worldSeed !== null && !Number.isInteger(save.worldSeed)) return undefined;
   // The moments are the device's own, and `created_at` is kept as a timestamp rather than as the
   // text it arrived as, so one that is not a moment at all would stop the whole batch.
   if (!isInstant(save.createdAt) || !isInstant(save.editedAt)) return undefined;
@@ -649,6 +656,7 @@ export function readCharacterSave(value: unknown): CharacterSave | undefined {
     dead: save.dead,
     leaderboard: save.leaderboard,
     lock: typeof save.lock === 'string' ? save.lock : null,
+    worldSeed: typeof save.worldSeed === 'number' ? save.worldSeed : null,
     createdAt: save.createdAt,
     editedAt: save.editedAt,
   };

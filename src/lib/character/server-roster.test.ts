@@ -73,6 +73,7 @@ describe('a character as it comes back from the server', () => {
     dead: false,
     leaderboard: 'faithful',
     lock: 'faithful',
+    worldSeed: null,
     createdAt: '2026-09-08T09:00:00.000Z',
     editedAt: '2026-09-09T12:00:00.000Z',
     record: 'AAECAw==',
@@ -109,6 +110,18 @@ describe('a character as it comes back from the server', () => {
     const kept = { run: [sitting(0, 5)], journal: [] } as unknown as RosterEntry;
 
     expect(entryFromServer(character, kept)!.run[0].inputs).toHaveLength(5);
+  });
+
+  it('plays in the endless world the server names, which is where it was rolled', () => {
+    const endless: ServerCharacter = { ...character, lock: 'endless', worldSeed: 7 };
+
+    expect(entryFromServer(endless, null)!.worldSeed).toBe(7);
+  });
+
+  it('keeps the world this device holds where the server names none', () => {
+    const kept = { worldSeed: 7, run: [], journal: [] } as unknown as RosterEntry;
+
+    expect(entryFromServer(character, kept)!.worldSeed).toBe(7);
   });
 
   it('comes with no keys where the sitting here is another one of the same character', () => {

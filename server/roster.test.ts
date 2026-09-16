@@ -37,6 +37,7 @@ const save: CharacterSave = {
   dead: false,
   leaderboard: 'speedrun',
   lock: 'speedrun',
+  worldSeed: null,
   createdAt: '2026-09-08T09:00:00.000Z',
   editedAt: '2026-09-09T12:00:00.000Z',
 };
@@ -112,6 +113,33 @@ describe("a player's characters", () => {
     const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
 
     expect(character.lock).toBe('speedrun');
+  });
+
+  it('hands back the endless world a device sent, so its next device plays the same dungeon', async () => {
+    const endless = { ...save, leaderboard: null, lock: 'endless', worldSeed: 7 };
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: endless }), 1000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character).toMatchObject({ lock: 'endless', worldSeed: 7 });
+  });
+
+  it('keeps the world it holds when a batch names none, the way an older build sends one', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: { ...save, worldSeed: 7 } }), 1000);
+    const { worldSeed: _seed, ...older } = save;
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, save: older as CharacterSave }), 6000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character.worldSeed).toBe(7);
+  });
+
+  it('hands back no world for a character that plays the game as it shipped', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character.worldSeed).toBeNull();
   });
 
   it('carries the chain without its keys, counting them instead', async () => {

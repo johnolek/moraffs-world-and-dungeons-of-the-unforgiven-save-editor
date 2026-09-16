@@ -51,6 +51,9 @@ export interface RosterCharacter {
    *  way. A character kept here before this was a question of its own has none, and the board it
    *  names is what it was locked to. */
   lock: string | null;
+  /** The number the endless world it plays in is built from, for a character locked to the
+   *  endless dungeon, and null for every other character. */
+  worldSeed: number | null;
   createdAt: string;
   /** When the device last changed it, and null for a character whose device has sent none. */
   editedAt: string | null;
@@ -77,6 +80,7 @@ interface RosterRow extends LeasedCharacter {
   dead: boolean;
   leaderboard: string | null;
   play_lock: string | null;
+  world_seed: number | null;
   created_at: Date;
   edited_at: string | null;
   record: Uint8Array | null;
@@ -98,8 +102,8 @@ export async function rosterOf(
   now: number,
 ): Promise<RosterCharacter[]> {
   const rows = await sql.query<RosterRow>(
-    `SELECT id, game, name, slot, dead, leaderboard, play_lock, created_at, edited_at, record, maps,
-            saved_at, leased_to, leased_until
+    `SELECT id, game, name, slot, dead, leaderboard, play_lock, world_seed, created_at, edited_at,
+            record, maps, saved_at, leased_to, leased_until
      FROM characters WHERE player_id = $1 ORDER BY created_at, id`,
     [playerId],
   );
@@ -119,6 +123,7 @@ async function characterOf(sql: Queries, row: RosterRow, device: string, now: nu
     dead: row.dead,
     leaderboard: row.leaderboard,
     lock: row.play_lock ?? row.leaderboard,
+    worldSeed: row.world_seed,
     createdAt: row.created_at.toISOString(),
     editedAt: row.edited_at,
     record: row.record === null ? null : Buffer.from(row.record).toString('base64'),

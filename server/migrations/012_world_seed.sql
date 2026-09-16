@@ -1,0 +1,11 @@
+-- The number the endless world a character plays in is built from, for a character rolled to play
+-- the endless dungeon, and null for every other character. The world decides which of the game's
+-- twenty sections each endless section borrows its monsters and its look from, so a character
+-- whose world was forgotten would be playing a different dungeon from the one its run was played
+-- in.
+--
+-- It is decided at the roll and never again, so a device that names none leaves whatever is here,
+-- the way `play_lock` does. What the character carries in that world -- the trap door keys and the
+-- Shadow boss squares its record has no room for -- is not kept here: a replay of the chain works
+-- it out again from the keys that were pressed.
+ALTER TABLE characters ADD COLUMN world_seed bigint;

@@ -58,6 +58,16 @@ export interface CharacterSave {
   /** The mode the character is played in for the rest of its life, or null for one that can be
    *  played any way. A character on a board is always locked to that board's mode. */
   lock: string | null;
+  /**
+   * The number the endless world the character plays in is built from, for one locked to the
+   * endless dungeon, and null for every other character
+   * (`src/lib/game/endless/rules.ts`).
+   *
+   * What the character carries in that world — the trap door keys and the Shadow boss squares its
+   * record has no room for — does not travel with it: a replay of its chain works those out again
+   * from the keys that were pressed (`src/lib/game/endless/state.ts`).
+   */
+  worldSeed: number | null;
   /** When the character was rolled or imported, as the device stamped it. */
   createdAt: string;
   /** When the character was last changed, as the device stamped it. */

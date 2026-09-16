@@ -727,6 +727,7 @@ describe('the characters the server is keeping for this player', () => {
           dead: false,
           leaderboard: null,
           lock: null,
+          worldSeed: null,
           createdAt: entry.createdAt,
           editedAt: entry.editedAt,
         }),

@@ -43,6 +43,9 @@ export interface ServerCharacter {
   /** The mode the character is locked to for life. A server that has not been told about a
    *  character's lock names none, and the board it names is that character's lock. */
   lock: string | null;
+  /** The number the endless world it plays in is built from, for a character locked to the
+   *  endless dungeon, and null for every other character. */
+  worldSeed: number | null;
   createdAt: string;
   editedAt: string | null;
   /** The newest record any device of this player's sent, base64. */
@@ -162,6 +165,7 @@ function serverCharacter(value: unknown): ServerCharacter | null {
     dead: character.dead === true,
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     lock: isLeaderboard(character.lock) ? character.lock : null,
+    worldSeed: typeof character.worldSeed === 'number' ? character.worldSeed : null,
     createdAt,
     editedAt: typeof character.editedAt === 'string' ? character.editedAt : null,
     record: typeof character.record === 'string' ? character.record : null,
@@ -196,7 +200,8 @@ function serverSession(value: unknown): ServerSession | null {
  * character was imported from, which never leaves the device it was dropped on, and the journal,
  * which the server does not keep -- it replays a run's log for one. A session of the chain this
  * device has not played has no journal here until something replays it. What an endless character
- * carries beside its record is taken from it for the first reason: the server is not told.
+ * carries in its world is taken from it as well: the server is not told, and a device that has
+ * never played the character works it out by replaying the chain.
  */
 export function entryFromServer(character: ServerCharacter, kept: RosterEntry | null): RosterEntry | null {
   const bytes = character.record === null ? null : fromBase64(character.record);
@@ -214,10 +219,12 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     lock: isLeaderboard(character.lock) ? character.lock : isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     // The second a roll was started in stays on the device that rolled it: the server keeps the
-    // record and the run, and a roll is neither. The endless world the character was rolled into
-    // stays with it for the same reason.
+    // record and the run, and a roll is neither.
     rolledAt: kept?.rolledAt ?? null,
-    worldSeed: kept?.worldSeed,
+    // The endless world does travel, so that a character rolled on one device plays in the same
+    // dungeon on the next. A server that has not been told which world it was rolled into leaves
+    // the one this device holds.
+    worldSeed: character.worldSeed ?? kept?.worldSeed,
     endless: kept?.endless,
     run: character.run.map((session, at) => sittingWithKeys(session, kept?.run[at])),
     journal: kept?.journal ?? [],

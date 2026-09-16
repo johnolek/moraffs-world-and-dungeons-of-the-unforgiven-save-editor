@@ -53,6 +53,7 @@ function playing(recorded: RunSession): { sitting: StreamedSession; play(keys: n
         dead: false,
         leaderboard: recorded.leaderboard,
         lock: recorded.leaderboard,
+        worldSeed: null,
         createdAt: recorded.startedAt,
         editedAt: recorded.startedAt,
       }),

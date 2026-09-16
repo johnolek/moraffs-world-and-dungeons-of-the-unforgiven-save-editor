@@ -130,6 +130,7 @@ export function characterSave(entry: RosterEntry): CharacterSave {
     dead: entry.dead,
     leaderboard: entry.leaderboard,
     lock: entry.lock,
+    worldSeed: entry.worldSeed ?? null,
     createdAt: entry.createdAt,
     editedAt: entry.editedAt,
   };
