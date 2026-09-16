@@ -1,7 +1,7 @@
 import { recolouredId } from '../../bestiary/monsters';
 import data from '../dotu-data.json';
 import { SeededRng } from '../port/rng';
-import { FAITHFUL_RULES } from '../port/rules';
+import { FAITHFUL_RULES, type MonsterTypeOdds } from '../port/rules';
 import type { MonsterKind } from '../port/state';
 
 /**
@@ -54,6 +54,15 @@ const DRAINER_SLOT = 26;
  *  monster with any breath at all breathes it instead of striking about half the time. */
 const FIRE_BREATH = 1;
 const ICE_BREATH = 2;
+
+/**
+ * How often the type roll reaches for the section's level drainer in a drainers section, where the
+ * game's own answer is one roll in fifteen.
+ *
+ * With the second drainer standing in one of the three regular slots as well, about a third of
+ * what such a floor stands takes a level off the character when it hits.
+ */
+const DRAINERS_THEME_ODDS = 5;
 
 /** The odd multiplier a 32-bit hash spreads its input with: two to the 32 over the golden
  *  ratio. */
@@ -110,7 +119,17 @@ export function endlessSection(seed: number, section: number): EndlessSection {
   // The theme comes out of the generator after the five monsters, so which five a section
   // stands does not depend on which theme it drew.
   const theme = THEME_DRAW[rng.random(THEME_DRAW.length)];
-  return { source, theme, monsters: themed(monsters, theme) };
+  return { source, theme, monsters: themed(monsters, theme, drainer, rng) };
+}
+
+/**
+ * How often the type roll reaches for each kind of monster on a floor of a themed section, which
+ * is the four tests the game itself makes with the one the theme is about made likelier.
+ */
+export function themeTypeOdds(theme: SectionTheme): MonsterTypeOdds {
+  const game = FAITHFUL_RULES.monsterTypeOdds(1);
+  if (theme === 'drainers') return { ...game, levelDrainer: DRAINERS_THEME_ODDS };
+  return game;
 }
 
 /**
@@ -120,11 +139,33 @@ export function endlessSection(seed: number, section: number): EndlessSection {
  * blow reads its breath from (exe 2000:8817): a borrowed monster breathes here whatever the row
  * says, rather than what it breathed in the section it came from. Everything else about it is
  * untouched, and the picture is the picture either way.
+ *
+ * @param drainer the monster of slot 26, which a second drainer is drawn to be a different
+ *   monster from.
  */
-function themed(monsters: MonsterKind[], theme: SectionTheme): MonsterKind[] {
+function themed(monsters: MonsterKind[], theme: SectionTheme, drainer: Borrowed, rng: SeededRng): MonsterKind[] {
   if (theme === 'fire') return monsters.map((row) => ({ ...row, breath: FIRE_BREATH }));
   if (theme === 'ice') return monsters.map((row) => ({ ...row, breath: ICE_BREATH }));
+  if (theme === 'drainers') return withSecondDrainer(monsters, drainer, rng);
   return monsters;
+}
+
+/**
+ * The five with one of the three regulars stood down for another of the game's twenty level
+ * drainers.
+ *
+ * It takes the regular's slot, so the type roll reaches for it as often as it reached for the
+ * regular, and it takes a level off the character when it hits because the draining is the row's
+ * rather than the slot's (`gain_or_drain`, exe 2000:8189). A drainer killed on a floor is also
+ * what carries that floor's trap door key, so a drainers section is where the keys are.
+ */
+function withSecondDrainer(monsters: MonsterKind[], drainer: Borrowed, rng: SeededRng): MonsterKind[] {
+  let second = borrow(rng, DRAINER_SLOT);
+  while (second.section === drainer.section) second = borrow(rng, DRAINER_SLOT);
+  const five = [...monsters];
+  // The five rows are the boss and then the four of slots 23 to 26, so the regulars are 1 to 3.
+  five[1 + rng.random(REGULAR_SLOTS.length)] = repainted(second, rng);
+  return five;
 }
 
 /** The 27 rows an endless section keeps loaded: the 22 monsters every section has, then its own

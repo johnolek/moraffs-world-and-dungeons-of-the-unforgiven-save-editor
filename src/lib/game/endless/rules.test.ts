@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { readRecolouredId } from '../../bestiary/monsters';
 import { nudgeLevel, rollHp } from '../../bestiary/roll';
-import { monsterById } from '../../map/stocking';
+import { UNFORGIVEN_MAP } from '../../map/game';
+import { monsterById, stockFloor } from '../../map/stocking';
 import { expValue } from '../port/combat';
 import { FAITHFUL_RULES } from '../port/rules';
 import { newGame } from '../port/state';
@@ -24,6 +25,15 @@ const BUILT_IN_SLOT = 0;
 /** A generator whose every roll lands in the middle, so a roll of the same floor is the same
  *  number every time. */
 const half = () => 0.5;
+
+/** A repeatable stand-in for Math.random, so a floor that came out oddly can be rolled again. */
+function seeded(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+}
 
 const normal = endlessRules({ hard: false, seed: SEED });
 const tough = endlessRules({ hard: true, seed: SEED });
@@ -163,10 +173,11 @@ describe("an endless section's five monsters", () => {
     for (const section of ENDLESS_SECTIONS) {
       expect(rowOf(section, BOSS_SLOT).special, `section ${section} boss`).toBe(BOSS_SPECIAL);
       expect(rowOf(section, DRAINER_SLOT).levelDrain, `section ${section} drainer`).not.toBe(0);
-      for (const slot of REGULAR_SLOTS) {
-        expect(rowOf(section, slot).special, `section ${section} slot ${slot}`).not.toBe(BOSS_SPECIAL);
-        expect(rowOf(section, slot).levelDrain, `section ${section} slot ${slot}`).toBe(0);
-      }
+      const regulars = REGULAR_SLOTS.map((slot) => rowOf(section, slot));
+      for (const row of regulars) expect(row.special, `section ${section} ${row.name}`).not.toBe(BOSS_SPECIAL);
+      // A drainers section is the one that stands a second drainer among its three regulars.
+      const draining = regulars.filter((row) => row.levelDrain !== 0).length;
+      expect(draining, `section ${section}`).toBe(endlessSection(SEED, section).theme === 'drainers' ? 1 : 0);
     }
   });
 
@@ -237,6 +248,17 @@ describe("an endless section's theme", () => {
   const FIRE = 1;
   const ICE = 2;
 
+  /** What share of a floor of this section takes a level off the character when it hits. The
+   *  floor is the section's second last, so no Shadow boss stands on it. */
+  const drainerShareOf = (section: number): number => {
+    const rows = new Map(tough.monsterKinds(section).map((kind) => [kind.id, kind]));
+    const floor = (tough.sectionPlace(section)?.bossFloor ?? 0) - 1;
+    const map = UNFORGIVEN_MAP.floor(floor, MODULE_V, tough.bottomLevel(MODULE_V), tough.trapdoorReach(MODULE_V, floor));
+    const monsters = stockFloor(tough, map, MODULE_V, floor, seeded(11));
+    const draining = monsters.filter((monster) => (rows.get(monster.monsterId)?.levelDrain ?? 0) !== 0);
+    return draining.length / monsters.length;
+  };
+
   it('is the same theme for everybody playing the same world', () => {
     expect(themesOf(SEED, ENDLESS_SECTIONS)).toEqual(themesOf(SEED, ENDLESS_SECTIONS));
   });
@@ -264,6 +286,10 @@ describe("an endless section's theme", () => {
     const plain = sectionWith('plain');
     expect(fiveOf(plain).every((row) => row.breath === FIRE)).toBe(false);
     expect(fiveOf(plain).every((row) => row.breath === ICE)).toBe(false);
+  });
+
+  it('stands far more level drainers in a drainers section than in a plain one', () => {
+    expect(drainerShareOf(sectionWith('drainers'))).toBeGreaterThan(3 * drainerShareOf(sectionWith('plain')));
   });
 
   it('draws every theme there is', () => {
