@@ -313,6 +313,7 @@ function breathe(game: Game, slot: number): number {
   }
   if (breath === 4 && pc.resistDiseaseTimer < 1) {
     if (pc.disease < 1) pc.disease = 450;
+    game.events.push({ kind: 'afflicted', what: 'disease', monster: monsterSeen(game, slot) });
     game.events.push({ kind: 'playerSaved' });
     // DS:145f 147c
     lines[3] = 'YOU FEEL VERY SICK. YOU NEED';
@@ -320,6 +321,7 @@ function breathe(game: Game, slot: number): number {
   }
   if (breath === 5 && pc.resistPoisonTimer < 1) {
     if (pc.poison < 1) pc.poison = 450;
+    game.events.push({ kind: 'afflicted', what: 'poison', monster: monsterSeen(game, slot) });
     game.events.push({ kind: 'playerSaved' });
     // DS:1494 14af
     lines[3] = 'YOU FEEL KIND OF WEAK. YOU';
@@ -395,7 +397,8 @@ function drainsAndAilments(game: Game, slot: number): void {
       );
       game.reprintBattleInfo = true;
       if (pc.poison < 1) pc.poison = 450;
-      }
+      game.events.push({ kind: 'afflicted', what: 'poison', monster: monsterSeen(game, slot) });
+    }
     if (kind.special === 2 && pc.resistDiseaseTimer < 1) {
       // DS:15d8 15f1 15fc 1596 1617 15cf 06f0 152a
       game.say(
@@ -410,7 +413,8 @@ function drainsAndAilments(game: Game, slot: number): void {
       );
       game.reprintBattleInfo = true;
       if (pc.disease < 1) pc.disease = 450;
-      }
+      game.events.push({ kind: 'afflicted', what: 'disease', monster: monsterSeen(game, slot) });
+    }
   }
 }
 

@@ -604,6 +604,7 @@ describe('defend, poison and disease', () => {
     expect(game.messages).toContain('  POISONED!');
     expect(game.messages).toContain('HIT ANY KEY');
     expect(game.reprintBattleInfo).toBe(true);
+    expect(game.events).toContainEqual({ kind: 'afflicted', what: 'poison', monster: { type: 23, level: 40, name: 'GARGALON' } });
   });
 
   it('diseases the player for 450 moves', () => {
@@ -613,6 +614,7 @@ describe('defend, poison and disease', () => {
     expect(game.pc.disease).toBe(450);
     expect(game.messages).toContain('OH NO! YOU HAVE CAUGHT A');
     expect(game.messages).toContain('  DISEASE!');
+    expect(game.events).toContainEqual({ kind: 'afflicted', what: 'disease', monster: { type: 23, level: 40, name: 'GARGALON' } });
   });
 
   it('leaves a poison already running alone', () => {
@@ -679,6 +681,7 @@ describe('defend, the breath weapons', () => {
     expect(messages[3]).toBe('YOU FEEL VERY SICK. YOU NEED');
     expect(messages[4]).toBe('  A CURE DISEASE SPELL.');
     expect(game.pc.disease).toBe(450);
+    expect(game.events).toContainEqual({ kind: 'afflicted', what: 'disease', monster: { type: 23, level: 40, name: 'GARGALON' } });
   });
 
   it('has black slime bring the poison', () => {
@@ -688,6 +691,7 @@ describe('defend, the breath weapons', () => {
     expect(messages[3]).toBe('YOU FEEL KIND OF WEAK. YOU');
     expect(messages[4]).toBe('  MIGHT GET A CURE POISON.');
     expect(game.pc.poison).toBe(450);
+    expect(game.events).toContainEqual({ kind: 'afflicted', what: 'poison', monster: { type: 23, level: 40, name: 'GARGALON' } });
   });
 
   it('swings normally about half the time', () => {

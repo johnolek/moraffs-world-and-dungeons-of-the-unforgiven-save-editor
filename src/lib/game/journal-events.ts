@@ -40,6 +40,7 @@ export const JOURNAL_KINDS = [
   'met',
   'hit',
   'killed',
+  'afflicted',
   'statChanged',
   'found',
   'pillFound',
@@ -133,6 +134,8 @@ export type JournalEvent =
   | { kind: 'killed'; monster: MonsterSeen; experience: number }
   /** Hit points a battle spell took off the monster being fought. */
   | { kind: 'spellDamaged'; monster: MonsterSeen; damage: number }
+  /** A poisoning or a disease a blow or a breath brought with it. */
+  | { kind: 'afflicted'; what: 'poison' | 'disease'; monster: MonsterSeen }
   /**
    * One of the six characteristics moved by a point, which a life drainer's blow and a puffball
    * both do. `stat` is the game's own name for it, and `by` is 1 for a raise and -1 for a drain,
