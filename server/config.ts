@@ -9,6 +9,8 @@ export interface ServerConfig {
   databaseUrl: string;
   /** The deployed site's origin, which the browser has to be told may read the answers. */
   allowedOrigin: string;
+  /** The player to flag as an admin at start, or null when the box names none. */
+  adminPlayer: string | null;
 }
 
 /** Claude's own range is 3500-3599; John assigns the port the server really runs on. */
@@ -22,7 +24,15 @@ export function configFromEnvironment(environment: NodeJS.ProcessEnv = process.e
     port: portFrom(environment.RUN_SERVER_PORT),
     databaseUrl: databaseUrlFrom(environment.DATABASE_URL),
     allowedOrigin: environment.RUN_SERVER_ORIGIN ?? DEFAULT_ALLOWED_ORIGIN,
+    adminPlayer: adminPlayerFrom(environment.ADMIN_PLAYER),
   };
+}
+
+/** The player the box calls its admin, or null where it names none, which leaves the server with
+ *  no admin at all and every admin endpoint answering as if it were not there. */
+function adminPlayerFrom(value: string | undefined): string | null {
+  const named = value?.trim() ?? '';
+  return named === '' ? null : named;
 }
 
 function portFrom(value: string | undefined): number {
