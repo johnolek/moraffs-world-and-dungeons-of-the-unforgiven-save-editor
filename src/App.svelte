@@ -29,6 +29,7 @@
   import SourceViewer from './lib/source/SourceViewer.svelte';
   import MwSpellReference from './lib/mw-spells/MwSpellReference.svelte';
   import SpellReference from './lib/spells/SpellReference.svelte';
+  import Endless from './lib/game/endless/Endless.svelte';
   import Tidbits from './lib/tidbits/Tidbits.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
   import Segmented from './lib/ui/Segmented.svelte';
@@ -171,6 +172,9 @@
   </main>
   <main class:hidden={app.tab !== 'formulas'}>
     {#if built('formulas')}<Formulas />{/if}
+  </main>
+  <main class:hidden={app.tab !== 'endless'}>
+    {#if built('endless')}<Endless />{/if}
   </main>
   <main class:hidden={app.tab !== 'tidbits'}>
     {#if built('tidbits')}<Tidbits />{/if}

@@ -26,6 +26,7 @@ export const TABS: TabEntry[] = [
   { id: 'fight', label: 'Fight', group: 'reference' },
   { id: 'calculators', label: 'Calculators', group: 'reference' },
   { id: 'formulas', label: 'Formulas', group: 'reference' },
+  { id: 'endless', label: 'Endless', group: 'reference' },
   { id: 'tidbits', label: 'Tidbits', group: 'extras' },
   { id: 'snake', label: 'Snake', group: 'extras' },
   { id: 'source', label: 'Source', group: 'extras' },
@@ -33,7 +34,8 @@ export const TABS: TabEntry[] = [
 ];
 
 /** The tabs each game other than Dungeons of the Unforgiven has, which has them all: the fight
- *  simulator, the calculators, the formulas and the snake are that game's alone. A game listing
+ *  simulator, the calculators, the formulas, the endless dungeon and the snake are that game's
+ *  alone. A game listing
  *  `tidbits` here needs a file of its own in `src/lib/tidbits/files.ts` to show on it. */
 const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
   moraffsWorld: ['map', 'play', 'boards', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source', 'admin'],

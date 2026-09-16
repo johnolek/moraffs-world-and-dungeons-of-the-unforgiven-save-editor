@@ -94,7 +94,7 @@ describe('the groups the tabs are drawn in', () => {
 
     expect(tabGroupsFor('unforgiven').map((group) => group.map((tab) => tab.id))).toEqual([
       ['play', 'boards', 'roller', 'editor'],
-      ['map', 'monsters', 'spells', 'fight', 'calculators', 'formulas'],
+      ['map', 'monsters', 'spells', 'fight', 'calculators', 'formulas', 'endless'],
       ['tidbits', 'snake', 'source', 'admin'],
     ]);
   });
