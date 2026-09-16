@@ -34,6 +34,18 @@ function found(item: string): JournalEntry {
   };
 }
 
+/** A Shadow of the endless dungeon killed on the floor named. It stands in row 22 of the five a
+ *  section loads, which is how a Shadow is told from anything else that died. */
+function killedAShadow(floor: number): JournalEntry {
+  return {
+    at: floor,
+    floor,
+    module: 0,
+    text: 'Killed a SHADOW CENTIPEDE',
+    event: { kind: 'killed', monster: { type: 22, level: 300, name: 'SHADOW CENTIPEDE' }, experience: 900 },
+  };
+}
+
 /** A journal of nothing but kills, one an action. */
 function kills(count: number): JournalEntry[] {
   return Array.from({ length: count }, (ignored, index) => killed(index + 1));
@@ -151,6 +163,26 @@ describe('announcing a run that has been checked', () => {
       sql,
       run({ journal: [found('LONG SWORD'), found('ORANGE POTION'), found('PLUS 3 MACE')] }),
     );
+
+    expect(made.map((announcement) => announcement.kind)).toEqual(['death']);
+  });
+
+  it('announces every floor an endless run has taken a Shadow deeper than the one before', async () => {
+    const made = await announceRun(
+      sql,
+      run({
+        leaderboard: 'endless',
+        journal: [killedAShadow(120), killedAShadow(60), killedAShadow(460), killedAShadow(305)],
+      }),
+    );
+
+    expect(made.filter((announcement) => announcement.kind === 'shadow').map((announcement) => announcement.which)).toEqual(
+      [120, 460],
+    );
+  });
+
+  it('leaves a Shadow of a run that is on no endless board to its boss milestone', async () => {
+    const made = await announceRun(sql, run({ leaderboard: 'speedrun', journal: [killedAShadow(120)] }));
 
     expect(made.map((announcement) => announcement.kind)).toEqual(['death']);
   });

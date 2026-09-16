@@ -48,6 +48,10 @@ describe('what an announcement says', () => {
     expect(said({ kind: 'boss', which: 2 })).toBe('Grond (Moraff) beat Boss 3');
   });
 
+  it('says how deep an endless run took a Shadow', () => {
+    expect(said({ kind: 'shadow', which: 460 })).toBe('Grond (Moraff) killed the Shadow on floor 460');
+  });
+
   it('says how many monsters a run has killed', () => {
     expect(said({ kind: 'kills', which: 500 })).toBe('Grond (Moraff) has killed 500 monsters');
   });

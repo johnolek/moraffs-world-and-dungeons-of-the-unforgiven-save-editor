@@ -56,7 +56,7 @@ export function highestLevel(milestones: readonly Milestone[]): number {
  * (`src/lib/game/endless/monsters.ts`). A kill in the journal names the row its monster was
  * standing in, so this is how a Shadow is told from anything else that died.
  */
-const SHADOW_ROW = 22;
+export const SHADOW_ROW = 22;
 
 /**
  * The deepest floor a run killed a Shadow monster on.

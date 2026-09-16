@@ -1,6 +1,6 @@
 import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone } from '../src/lib/play/run';
-import { ANNOUNCED_FINDS } from './boards';
+import { ANNOUNCED_FINDS, SHADOW_ROW } from './boards';
 import type { Queries } from './sql';
 
 /**
@@ -22,15 +22,24 @@ import type { Queries } from './sql';
  * `dungeon` and `floor` are kinds nothing writes any more. They are here because the table still
  * holds rows of them from when it did, and a row nobody can name is a row nobody can read.
  */
-export type AnnouncementKind = 'win' | 'death' | 'boss' | 'kills' | 'find' | 'dungeon' | 'level' | 'floor';
+export type AnnouncementKind =
+  | 'win'
+  | 'death'
+  | 'boss'
+  | 'shadow'
+  | 'kills'
+  | 'find'
+  | 'dungeon'
+  | 'level'
+  | 'floor';
 
 /** One announcement, as it is kept and as it goes out over the feed. */
 export interface Announcement {
   id: number;
   characterId: string;
   kind: AnnouncementKind;
-  /** Which boss, which level, which kill count, which find, which module or dungeon, which
-   *  floor. */
+  /** Which boss, which floor a Shadow was killed on, which level, which kill count, which find,
+   *  which module or dungeon, which floor. */
   which: number;
   game: string;
   leaderboard: string | null;
@@ -58,8 +67,8 @@ export interface AnnouncedRun {
   outcome: 'win' | 'death';
   /** Every milestone of the whole chain, oldest first. */
   milestones: readonly Milestone[];
-  /** The whole run written up by the replay, oldest first, which is what the kills and the finds
-   *  are read out of. */
+  /** The whole run written up by the replay, oldest first, which is what the kills, the finds and
+   *  the Shadows are read out of. */
   journal: readonly JournalEntry[];
   actions: number;
   time: number;
@@ -145,17 +154,30 @@ function momentsOf(run: AnnouncedRun): AnnouncementMoment[] {
   return moments;
 }
 
-/** What the journal the replay wrote has to announce: the kill counts the run passed, and the
- *  rare things it turned up. */
+/**
+ * What the journal the replay wrote has to announce: the kill counts the run passed, the rare
+ * things it turned up, and how deep an endless character has taken a Shadow.
+ *
+ * The endless dungeon has no bottom and no winning, so what a run of it is measured by is the
+ * deepest floor it has killed the Shadow of -- `deepestShadowKilled` in `server/boards.ts` is the
+ * same reading, for the board. Every floor that beats the deepest before it is worth saying, so
+ * the walk keeps the running deepest as it goes. The other two ways of playing stop where the
+ * game does, and their Shadows are the `boss` milestones the run already carries.
+ */
 function journalMoments(run: AnnouncedRun): AnnouncementMoment[] {
   const moments: AnnouncementMoment[] = [];
   let kills = 0;
+  let deepestShadow = 0;
   for (const entry of run.journal) {
     const event = entry.event;
     if (event === null) continue;
     if (event.kind === 'killed') {
       kills += 1;
       if (ANNOUNCED_KILLS.includes(kills)) moments.push(momentAt(run, entry, 'kills', kills));
+      if (run.leaderboard === 'endless' && event.monster.type === SHADOW_ROW && entry.floor > deepestShadow) {
+        deepestShadow = entry.floor;
+        moments.push(momentAt(run, entry, 'shadow', entry.floor));
+      }
     }
     // A spellbook, a trap door key and a purse of money have no name to match, and the finds that
     // do are matched by the name the game's own line gives them.
