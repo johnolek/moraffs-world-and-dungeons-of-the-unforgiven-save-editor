@@ -353,3 +353,28 @@ export function writePlayRedraw(game: PortedGameId, ms: number): void {
 export function redrawWords(ms: number): string {
   return ms <= 0 ? 'Instant' : `${(ms / 1000).toFixed(1)} s`;
 }
+
+/** Where the choice is kept, one key per game, beside the mode and the display. */
+const ANNOUNCEMENTS_SUFFIX = '.announcements';
+
+/**
+ * Whether an announcement the run server makes while this game is being played is printed in the
+ * game's own message box.
+ *
+ * The footer and the timeline both show announcements, and a player at the game's screen is
+ * looking at neither of them. This puts the newest one where their eyes already are. It is drawn
+ * by the tab over the box and never reaches the game, so a run played with it on is the same run
+ * as one played with it off.
+ *
+ * Off until the player asks for it: it is the site writing in a box the game owns.
+ */
+export function readPlayAnnouncements(game: PortedGameId): boolean {
+  return readStored(PREFIX + game + ANNOUNCEMENTS_SUFFIX) === 'on';
+}
+
+export function writePlayAnnouncements(game: PortedGameId, on: boolean): void {
+  writeStored(PREFIX + game + ANNOUNCEMENTS_SUFFIX, on ? 'on' : 'off');
+}
+
+/** What the switch for it says. */
+export const ANNOUNCEMENTS_LABEL = 'Announcements in the message box';

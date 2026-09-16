@@ -16,6 +16,7 @@ import {
   PLAY_MODES,
   INSTANT_REDRAW_MS,
   clockReseeds,
+  readPlayAnnouncements,
   readPlayClockReseed,
   readPlayColourblind,
   readPlayForwardView,
@@ -25,6 +26,7 @@ import {
   readPlayRedraw,
   redrawWords,
   SLOWEST_REDRAW_MS,
+  writePlayAnnouncements,
   writePlayClockReseed,
   writePlayColourblind,
   writePlayForwardView,
@@ -275,6 +277,26 @@ describe('the 3-D view over the map', () => {
     useStorage(undefined);
     writePlayForwardView('unforgiven', true);
     expect(readPlayForwardView('unforgiven')).toBe(false);
+  });
+});
+
+describe('announcements in the message box', () => {
+  it('is off until it has been asked for', () => {
+    useStorage(fakeStorage());
+    expect(readPlayAnnouncements('unforgiven')).toBe(false);
+  });
+
+  it('remembers the choice for one game without touching the other', () => {
+    useStorage(fakeStorage());
+    writePlayAnnouncements('unforgiven', true);
+    expect(readPlayAnnouncements('unforgiven')).toBe(true);
+    expect(readPlayAnnouncements('moraffsWorld')).toBe(false);
+  });
+
+  it('is off where there is nowhere to remember anything', () => {
+    useStorage(undefined);
+    writePlayAnnouncements('unforgiven', true);
+    expect(readPlayAnnouncements('unforgiven')).toBe(false);
   });
 });
 
