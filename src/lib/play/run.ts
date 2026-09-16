@@ -2,6 +2,7 @@ import type { Leaderboard, PortedGameId } from '../app-state.svelte';
 import { base64FromBytes, bytesFromBase64 } from '../bytes';
 import { isActionKind } from '../game/action';
 import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
+import type { EndlessStore, KeptEndlessState } from '../game/endless/state';
 import { BorlandRng, SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
@@ -763,6 +764,16 @@ export interface RunReplay {
   /** Everything the session did, in words, which is what a run is read as and what the summary
    *  is folded from. */
   journal: JournalEntry[];
+  /**
+   * What an endless character was carrying beside its record when the sitting ended — the trap
+   * door keys and the Shadow boss squares the record has no room for
+   * (`src/lib/game/endless/state.ts`) — and null for a sitting of the game as it shipped.
+   *
+   * It is handed back for the same reason the record is: the next sitting of the chain starts
+   * from it, and a replay of that sitting reaches where the player did only if it starts
+   * carrying what the player was carrying.
+   */
+  endless: KeptEndlessState | null;
   /** The loop came back: the character quit or died. */
   over: boolean;
   dead: boolean;
@@ -776,7 +787,9 @@ export interface RunReplay {
  * that does any of those three has to know which games there are.
  */
 export interface RunGameEngine {
-  replay(recorded: RunSession, run: RunRecorder): Promise<RunReplay>;
+  /** `carried` is what the character was carrying at the end of the sitting before this one,
+   *  which only the endless dungeon of Dungeons of the Unforgiven has anything to put in. */
+  replay(recorded: RunSession, run: RunRecorder, carried: KeptEndlessState | null): Promise<RunReplay>;
   /**
    * The game's own words for one of its events, for the run journal, and undefined for a game
    * whose journal has not been written yet: that game's runs keep their milestones and their
@@ -802,13 +815,20 @@ export interface RunGameEngine {
  * as well as in a browser, since nothing here draws.
  *
  * `before` is what the character's run had come to in the sessions before this one, which is what
- * the session's own numbers count on from; a session played from a roll has none.
+ * the session's own numbers count on from; a session played from a roll has none. `carried` is
+ * what an endless character was carrying beside its record when the session before this one
+ * ended, which the replay of that session handed back; a faithful session carries nothing either
+ * way.
  *
  * The engine it runs is this build's. A session whose `engine` is not {@link ENGINE_COMMIT} was made
  * by another one and its ending is only as good as the two engines agreeing; the caller is what
  * compares them.
  */
-export async function replayRun(recorded: RunSession, before?: RunTotals): Promise<RunReplay> {
+export async function replayRun(
+  recorded: RunSession,
+  before?: RunTotals,
+  carried: KeptEndlessState | null = null,
+): Promise<RunReplay> {
   const record = bytesFromBase64(recorded.record);
   const run = new RunRecorder({
     game: recorded.game,
@@ -825,7 +845,7 @@ export async function replayRun(recorded: RunSession, before?: RunTotals): Promi
     tickCounter: countedTicks(recorded),
     startedSecond: recordedSecond(recorded),
   });
-  return RUN_GAMES[recorded.game].replay(recorded, run);
+  return RUN_GAMES[recorded.game].replay(recorded, run, carried);
 }
 
 /**
@@ -877,18 +897,24 @@ function stoppedReplay(session: PlayLoopSession): void {
   if (session.stopped !== null) throw new Error(session.stopped);
 }
 
-async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise<RunReplay> {
+async function replayUnforgiven(
+  recorded: RunSession,
+  run: RunRecorder,
+  carried: KeptEndlessState | null,
+): Promise<RunReplay> {
+  // A sitting played in the endless dungeon is replayed in it, or the floors it was played on
+  // would not be there at all. The world is the one its log names; a log written before the world
+  // was recorded names none, and every endless character rolled then was rolled into the first
+  // world.
+  const endless = recorded.mode === ENDLESS_MODE ? carriedEndlessState(carried) : null;
   const file: CharacterFile = {
     bytes: run.record.slice(),
     write(bytes) {
       this.bytes = bytes;
     },
     died() {},
-    // A sitting played in the endless dungeon is replayed in it, or the floors it was played on
-    // would not be there at all. The world is the one its log names; a log written before the
-    // world was recorded names none, and every endless character rolled then was rolled into the
-    // first world.
-    endless: recorded.mode === ENDLESS_MODE ? { seed: recorded.worldSeed ?? ENDLESS_WORLD_SEED, kept: null } : undefined,
+    endless:
+      endless === null ? undefined : { seed: recorded.worldSeed ?? ENDLESS_WORLD_SEED, kept: endless },
   };
   const session = startGame(file, run.rng, run);
   void runPlayLoop(session, runMoveControl(session));
@@ -912,8 +938,27 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
     actions: ended.actions,
     milestones: ended.milestones,
     journal: run.journal(),
+    endless: endless?.read() ?? null,
     over: session.over,
     dead: session.dead,
+  };
+}
+
+/**
+ * Where a replay of an endless sitting keeps what the character carries beside its record: what
+ * the sitting before it left, and then what this one leaves behind.
+ *
+ * The game writes it wherever it writes the record, so what is here at the end is what the
+ * character was carrying at the last save rather than at the last key — the same moment the record
+ * the next sitting starts from was written at.
+ */
+function carriedEndlessState(carried: KeptEndlessState | null): EndlessStore {
+  let kept = carried;
+  return {
+    read: () => kept,
+    write: (state) => {
+      kept = state;
+    },
   };
 }
 
@@ -946,6 +991,9 @@ async function replayMoraffsWorld(recorded: RunSession, run: RunRecorder): Promi
     actions: ended.actions,
     milestones: ended.milestones,
     journal: run.journal(),
+    // Dungeons of the Unforgiven has the endless dungeon; this game has nothing beside its
+    // record to carry.
+    endless: null,
     over: session.over,
     dead: session.dead,
   };
@@ -988,6 +1036,8 @@ async function replayMoraffsRevenge(recorded: RunSession, run: RunRecorder): Pro
     actions: ended.actions,
     milestones: ended.milestones,
     journal: run.journal(),
+    // As above: nothing of this game is kept beside the record.
+    endless: null,
     over: session.over,
     dead: session.dead,
   };

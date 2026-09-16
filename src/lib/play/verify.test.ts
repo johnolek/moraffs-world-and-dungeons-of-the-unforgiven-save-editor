@@ -15,7 +15,7 @@ import { REV_KEY } from './rev/keys';
 import { ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
 import { RUN_LOG_VERSION } from './run';
 import { firstSwingsReading, unforgivenClockedRun } from './test-clocked-run';
-import { endlessRun, RUN_SECTION, RUN_WORLD } from './test-endless-run';
+import { endlessChain, endlessRun, RUN_BOSS_SQUARE, RUN_SECTION, RUN_WORLD } from './test-endless-run';
 import { readRunLog, verifyRun, verifySession, whatToSayAboutTheEngine } from './verify';
 
 /**
@@ -432,6 +432,20 @@ describe('verifying a run of the endless dungeon', () => {
 
     expect(here.journal[0].text).toBe('Came face to face with a Level 165 SHADOW KHAGISTOLL');
     expect(elsewhere.journal[0].text).toBe('Came face to face with a Level 165 SHADOW HEAD HUNTER');
+  });
+
+  it('hands back what the character was carrying when the sitting ended', async () => {
+    const [first] = await endlessChain();
+
+    const replay = await replayRun(first);
+
+    // The Shadow boss of a section past the twentieth is remembered beside the record, since the
+    // record's own table has no place for him.
+    expect(replay.endless).toEqual({ keys: [], bossSquares: [{ section: RUN_SECTION, ...RUN_BOSS_SQUARE }] });
+  });
+
+  it('hands back nothing for a sitting of the game as it shipped', async () => {
+    expect((await replayRun(await unforgivenRun())).endless).toBeNull();
   });
 
   it('replays a log written before the world was recorded in the first world', async () => {

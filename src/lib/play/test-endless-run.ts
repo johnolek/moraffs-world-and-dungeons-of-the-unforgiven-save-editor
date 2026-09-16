@@ -44,8 +44,8 @@ const FIRST_SEED = 1;
 const SECOND_SEED = 204;
 
 /**
- * The square the character stands on for the whole of both sittings, facing north, which is the
- * square the section's Shadow boss is put down on.
+ * The square the section's Shadow boss is put down on, and the square south of it, where the
+ * character stands facing him for the whole of both sittings.
  *
  * A boss his section has never put down is rolled onto the middle fifty squares of each axis, and
  * under {@link FIRST_SEED} that roll puts him here. Every roll of his floor after that puts him
@@ -54,7 +54,8 @@ const SECOND_SEED = 204;
  * that started carrying nothing would roll him into the middle of the floor again, twenty squares
  * away, and swing at air.
  */
-const FACING_THE_BOSS = { x: 39, y: 64 };
+export const RUN_BOSS_SQUARE = { x: 39, y: 63 };
+const FACING_THE_BOSS = { x: RUN_BOSS_SQUARE.x, y: RUN_BOSS_SQUARE.y + 1 };
 
 /** When each of the two sittings began. */
 const SITTINGS = ['2026-09-07T00:00:00.000Z', '2026-09-07T01:00:00.000Z'];
