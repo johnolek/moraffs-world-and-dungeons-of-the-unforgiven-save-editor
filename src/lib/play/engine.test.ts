@@ -886,17 +886,12 @@ describe('the monster the map draws a close-up of', () => {
     session.finish();
   });
 
-  it('carries the lines debug mode prints over it, and none with nothing faced', async () => {
+  it('is nothing at all with nothing faced', async () => {
     const session = await facingAMonster(new BorlandRng(5), { lev: 10, str: 60 });
-    const lines = session.view().engagedDebugLines;
-    expect(lines[0]).toBe(`LEVEL:1 HP:${session.view().engaged?.hp}`);
-    expect(lines[1]).toMatch(/^HIT:\d+\.\d%$/);
-    expect(lines[2]).toMatch(/^IT HITS:\d+\.\d%$/);
     session.game.engaged = -1;
     session.game.engagedAhead = -1;
     expect(session.view().engaged).toBeNull();
     expect(session.view().engagedFullHp).toBe(0);
-    expect(session.view().engagedDebugLines).toEqual([]);
     session.finish();
   });
 });

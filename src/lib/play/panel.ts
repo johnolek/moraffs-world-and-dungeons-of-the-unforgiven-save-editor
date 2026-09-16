@@ -1,11 +1,12 @@
 import { describeEffects } from '../bestiary/monsters';
-import { hitChance, toHitTotal, type ToHitFighter } from '../bestiary/to-hit';
+import { hitChance, hitChanceOfRoll, toHitTotal, type ToHitFighter } from '../bestiary/to-hit';
 import { NAMED_SLOTS, SLOTS_PER_SUBCATEGORY, SPELL_NAMES, SPELL_SUBCATEGORIES } from '../editor/spell-names';
 import { monsterHpRange } from '../game/dotu-mech.js';
 import { breathDamageChance, breathResisted, monsterHitsYouChance } from './hits-you';
 import type { Game, PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { Mark } from '../map/marks';
+import { swingRoll } from './sawtooth';
 import type { StockedMonster } from '../map/stocking';
 
 /**
@@ -314,7 +315,8 @@ export interface EngagedMonster {
   hp: number;
   /** The most a monster of this kind is ever stocked with on this floor. */
   mostHp: number;
-  /** The share of swings the game itself calls hits, 0 to 1. */
+  /** The share of swings the game itself calls hits, 0 to 1. On the clock it is the chance the
+   *  one swing that could be made right now lands, since its roll is already settled. */
   hitChance: number;
   /** The share of the monster's own attacks that take hit points off the character, 0 to 1. */
   hitsYouChance: number;
@@ -322,6 +324,19 @@ export interface EngagedMonster {
    *  monster: the drains, the breath, the poison and the disease. Empty for a monster that only
    *  hits. */
   effects: string[];
+}
+
+/** The chance a swing lands: this moment's roll for a game on the clock, and the average over the
+ *  eighty rolls for one drawing its own numbers. */
+function swingChance(
+  total: number,
+  monsterLevel: number,
+  stats: { defense: number; speed: number },
+  damageDie: number,
+  tick: number | null,
+): number {
+  if (tick === null) return hitChance(total, monsterLevel, stats.defense, stats.speed, damageDie);
+  return hitChanceOfRoll(total, monsterLevel, stats.defense, stats.speed, damageDie, swingRoll(tick));
 }
 
 /**
@@ -344,8 +359,13 @@ function engagedSlot(game: Game): number {
  *
  * A Power Weapon spell swings its own damage die eight rows further into the weapon table while
  * the to-hit bonus and the plus still come from the weapon in hand, exactly as strike reads them.
+ *
+ * @param tick what the machine's tick counter reads at this moment, for a game played on the
+ *   clock. `strike` seeds itself from that reading and the to-hit roll is the first number out of
+ *   the generator, so the roll of a swing made now is already settled and the chance is that one
+ *   roll's rather than the average over all eighty. Null takes the average.
  */
-export function engagedMonster(game: Game): EngagedMonster | null {
+export function engagedMonster(game: Game, tick: number | null = null): EngagedMonster | null {
   const slot = engagedSlot(game);
   if (slot === -1) return null;
   const monster = game.monsters[slot];
@@ -375,7 +395,7 @@ export function engagedMonster(game: Game): EngagedMonster | null {
     level: monster.level,
     hp: monster.hp,
     mostHp,
-    hitChance: hitChance(toHitTotal(fighter), monster.level, stats.defense, stats.speed, game.weaponDamage[damageRow]),
+    hitChance: swingChance(toHitTotal(fighter), monster.level, stats, game.weaponDamage[damageRow], tick),
     hitsYouChance: monsterHitsYouChance({
       attacks: kind.special !== PUFFBALL_SPECIAL && pc.sleepTimer < 1 && pc.holdMonsterTimer < 1,
       total: defendTotal(game, monster.level),

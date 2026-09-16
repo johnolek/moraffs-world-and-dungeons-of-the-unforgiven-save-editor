@@ -16,7 +16,6 @@ import type { StockedMonster } from '../map/stocking';
 import { boxesOf } from './boxes';
 import { castFromSpellbook, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
-import { debugMonsterLines } from './debug-screen';
 import { statusNumbers, type StatusNumbers } from './display';
 import { TABLET_PAUSE_MS, TABLET_WITHOUT_ITS_WORDS } from './tablet';
 import { digHole } from './dig';
@@ -199,11 +198,6 @@ export interface PlayView {
    * redraw off it.
    */
   engagedFullHp: number;
-  /**
-   * The lines debug mode prints over that monster, which the map's close-up shows in debug mode
-   * and in no other; empty when nothing is being faced.
-   */
-  engagedDebugLines: string[];
   /** That monster is the one standing straight ahead (DS:c655) rather than one being fought
    *  from another side, which is when the game has its picture on the screen. */
   ahead: boolean;
@@ -817,7 +811,6 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       seconds: game.secondsElapsed,
       engaged,
       engagedFullHp: engaged === null ? 0 : this.floors.fullHp(engaged.slot, engaged.hp),
-      engagedDebugLines: debugMonsterLines(game).map((line) => line.text),
       ahead: game.engagedAhead !== -1,
       killed: this.timed.holding ? this.killedWhileHeld : this.killed,
       viewsDrawn: this.viewsDrawn,

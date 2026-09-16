@@ -19,7 +19,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | routine | address | named in | mentioned in |
 |---|---|---|---|
 | `ftol` | 1000:115b |  | `play/view3d/geometry.ts` |
-| `FUN_1000_11b4` | 1000:11b4 |  | `game/port/state.ts`, `play/run.ts` |
+| `FUN_1000_11b4` | 1000:11b4 |  | `game/port/state.ts`, `play/sawtooth.ts` |
 | `N_LDIV` | 1000:1558 |  | `play/view3d/flood.ts` |
 | `srand` | 1000:18a5 |  | `game/port/rng.ts` |
 | `rand` | 1000:18b6 |  | `game/port/rng.ts` |
@@ -90,7 +90,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `check_gain_level` | 2000:7c71 | `game/port/levels.ts` | `formulas/formulas.ts`, `play/zoom-map.ts` |
 | `gain_level` | 2000:7d23 | `game/port/levels.ts` | `formulas/formulas.ts` |
 | `FUN_2000_7dec` | 2000:7dec | `game/port/sound.ts` |  |
-| `strike` | 2000:7e36 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/screens.ts`, `play/engine.ts`, `play/fight.ts`, `play/panel.ts`, `play/screens.ts`, `play/session.ts` |
+| `strike` | 2000:7e36 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/screens.ts`, `play/engine.ts`, `play/fight.ts`, `play/panel.ts`, `play/sawtooth.ts`, `play/screens.ts`, `play/session.ts` |
 | `gain_or_drain` | 2000:8189 | `game/port/combat.ts` | `game/port/state.ts` |
 | `FUN_2000_826d` | 2000:826d | `game/port/sound.ts` |  |
 | `defend` | 2000:82b7 | `game/port/combat.ts` | `editor/games.ts`, `formulas/formulas.ts`, `game/port/screens.ts`, `game/port/state.ts`, `play/hits-you.ts`, `play/panel.ts` |

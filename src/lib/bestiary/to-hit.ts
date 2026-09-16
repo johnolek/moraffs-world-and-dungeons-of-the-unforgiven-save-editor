@@ -83,13 +83,41 @@ export function defenseBeatenChance(total: number, monsterLevel: number, defense
 }
 
 /**
- * The share of swings the game itself calls hits: the roll gets past the monster's defense and
- * at least one of the damage dice it earns comes up over zero. The game prints "YOU MISSED THE
- * MONSTER" whenever the damage adds up to nothing, which on a small weapon is often.
+ * The chance one swing lands, given the value its random(80) came up with: the roll has to get
+ * past the monster's defense, and at least one of the damage dice it earns has to come up over
+ * zero. The game prints "YOU MISSED THE MONSTER" whenever the damage adds up to nothing, which on
+ * a small weapon is often.
+ *
+ * This is the number to show for a swing whose roll is already settled, which on the clock it is:
+ * `strike` seeds its generator from the tick counter and the to-hit roll is the first number out
+ * of it, so the roll a swing made at a given moment will get is known before it is made.
  *
  * @param total the swinging character's to-hit total, from toHitTotal
  * @param damageDie the die of the weapon in hand; random(die) runs 0 to die - 1, so each die
  *   comes up 0 one time in die
+ * @param roll one of the 80 values random(80) can return
+ */
+export function hitChanceOfRoll(
+  total: number,
+  monsterLevel: number,
+  defense: number,
+  speed: number,
+  damageDie: number,
+  roll: number,
+): number {
+  // A 1-sided die always rolls 0, and strike() treats a die of 0 or less the same way.
+  if (damageDie < 2) return 0;
+  const dice = damageDice(total - monsterDefense(monsterLevel, defense, speed), roll);
+  return dice > 0 ? 1 - damageDie ** -dice : 0;
+}
+
+/**
+ * The share of swings the game itself calls hits, over all eighty values the roll can take. That
+ * is the number to show where the roll is not settled, which is a game drawing its own random
+ * numbers rather than reseeding from the clock.
+ *
+ * @param total the swinging character's to-hit total, from toHitTotal
+ * @param damageDie the die of the weapon in hand
  */
 export function hitChance(
   total: number,
@@ -98,13 +126,9 @@ export function hitChance(
   speed: number,
   damageDie: number,
 ): number {
-  // A 1-sided die always rolls 0, and strike() treats a die of 0 or less the same way.
-  if (damageDie < 2) return 0;
-  const net = total - monsterDefense(monsterLevel, defense, speed);
   let hitting = 0;
   for (let roll = 0; roll < ROLL_VALUES; roll++) {
-    const dice = damageDice(net, roll);
-    if (dice > 0) hitting += 1 - damageDie ** -dice;
+    hitting += hitChanceOfRoll(total, monsterLevel, defense, speed, damageDie, roll);
   }
   return hitting / ROLL_VALUES;
 }

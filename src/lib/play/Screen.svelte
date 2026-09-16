@@ -58,6 +58,7 @@
   import { renderFourViews } from './view3d/render';
   import { dotuViewScene, killedMonster, viewMonsters } from './view-scene';
   import { drawDotuScreenText } from './view3d/text';
+  import { whileShowing } from './while-showing';
   import { viewLabels } from './view3d/views';
 
   interface Props {
@@ -94,6 +95,15 @@
     /** Whether the numbers the game never prints are printed over the views, which is debug
      *  mode's own doing. */
     debug?: boolean;
+    /**
+     * What the machine's tick counter reads at this moment, for a game played on the clock in
+     * debug mode, and null everywhere else (`PlayTab.svelte`).
+     *
+     * It is what the next swing would be seeded from, so the HIT line over the monster is the
+     * chance of the swing that could be made right now rather than the average over the eighty
+     * rolls, and the bar in the corner is the sawtooth that chance climbs.
+     */
+    tick?: number | null;
     /** Told which monster a click on the zoom map landed on, for the tab to open its details.
      *  Only debug mode marks them, so in the other two modes nothing is ever found. */
     onmonster?: (monster: StockedMonster) => void;
@@ -141,6 +151,7 @@
     highlightMonsterId = null,
     routeSquares = [],
     debug = false,
+    tick = null,
     onmonster,
     killed = null,
     viewsDrawn = 0,
@@ -311,7 +322,7 @@
   const text = $derived([
     ...(cleared === null ? standing : standing.filter((line) => !inRect(cleared, line))),
     ...screen,
-    ...(debug ? debugMonsterLines(game) : []),
+    ...(debug ? debugMonsterLines(game, tick) : []),
   ]);
 
   const drawn = $derived(viewMonsters(monsters));
@@ -539,30 +550,6 @@
   $effect(() => {
     if (!visible.showing) painter.finish();
   });
-
-  /**
-   * A timer for one of the little canvases over the screen, which runs only while the Play tab is
-   * the one on the stage and the page is not hidden: a tab nobody is looking at is not worth one,
-   * and a browser throttles it anyway. The returned function is what the effect gives back.
-   */
-  function whileShowing(showing: boolean, ms: number, step: () => void): () => void {
-    let timer: ReturnType<typeof setInterval> | null = null;
-    const stop = (): void => {
-      if (timer !== null) clearInterval(timer);
-      timer = null;
-    };
-    const follow = (): void => {
-      stop();
-      if (document.hidden || !showing) return;
-      timer = setInterval(step, ms);
-    };
-    follow();
-    document.addEventListener('visibilitychange', follow);
-    return () => {
-      stop();
-      document.removeEventListener('visibilitychange', follow);
-    };
-  }
 
   /**
    * The arrow on the little map flashing (`display.ts` for the period and the two colours).

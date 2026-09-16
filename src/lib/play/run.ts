@@ -11,6 +11,7 @@ import { moraffsWorldJournal } from './mw/journal';
 import { mwTurn } from './mw/keys';
 import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile } from './rev/engine';
 import { moraffsRevengeJournal } from './rev/journal';
+import { TICKS_A_SECOND } from './sawtooth';
 
 /**
  * The run log: everything a character has played here, written down as it is played.
@@ -66,9 +67,6 @@ export const TURN_INPUTS = [-0x101, -0x102, -0x103, -0x104];
 export function turnedTo(input: number): number {
   return TURN_INPUTS.indexOf(input);
 }
-
-/** How many times a second the PC's tick counter counts (exe 1000:11b4). */
-export const TICKS_A_SECOND = 18.2;
 
 /**
  * Not a key: what the PC's tick counter read at the moment the input after it was made, which a
@@ -526,6 +524,22 @@ export class RunRecorder {
    */
   gameClock(): (() => number) | null {
     return this.tickCounter === null ? null : () => this.lastTick;
+  }
+
+  /**
+   * What the tick counter reads at this very moment, or null where there is none to read.
+   *
+   * Nothing is written down and the game is not told: {@link gameClock} answers the reading taken
+   * in front of the input the game is handling, which is the one its rolls are made from, and
+   * this is what the counter has moved on to since. Debug mode reads it to show what a swing made
+   * right now would roll.
+   *
+   * A replay has no counter of its own — its readings are the ones its log carries, and handing
+   * one out here would spend a reading the next input is owed — so a replay answers null.
+   */
+  nowTick(): number | null {
+    if (this.tickCounter === null || this.replaying) return null;
+    return this.tickCounter();
   }
 
   /**

@@ -18,6 +18,7 @@
   import MessageBox from './MessageBox.svelte';
   import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
+  import { debugMonsterLines } from './debug-screen';
   import { ailments, monsterKindSquares, spellTimers, untimedSpells, type PanelLine } from './panel';
   import { pathToNearestTeleporter } from '../map/path';
   import PlayTab from './PlayTab.svelte';
@@ -238,6 +239,7 @@
     highlightMonsterId={kind}
     routeSquares={route?.squares ?? []}
     debug={debugDrawn(stage.mode)}
+    tick={stage.tick}
     onmonster={(monster) => (openMonsterId = monster.monsterId)}
     prompt={view.prompt}
     killed={view.killed}
@@ -297,7 +299,7 @@
       bind:barHeight={hudBarHeight}
       closeUp={forwardView ? forward : facing ? closeUp : undefined}
       closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
-      closeUpLines={debugDrawn(stage.mode) ? view.engagedDebugLines : []}
+      closeUpLines={debugDrawn(stage.mode) ? debugMonsterLines(stage.session.game, stage.tick).map((line) => line.text) : []}
       spells={spellsRunning(stage)}
       afflictions={afflictions(stage)}
       hp={view.hp}

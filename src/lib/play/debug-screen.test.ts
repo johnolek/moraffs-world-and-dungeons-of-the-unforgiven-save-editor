@@ -4,6 +4,7 @@ import { describeEffects } from '../bestiary/monsters';
 import { debugMonsterLines, wrapToWidth } from './debug-screen';
 import { dropOdds } from './drop-odds';
 import { engagedMonster } from './panel';
+import { swingRoll } from './sawtooth';
 import { AHEAD_VIEW } from './view3d/geometry';
 
 /** A game with one monster standing in slot 3 and the character facing it. */
@@ -30,6 +31,22 @@ describe("the monster's numbers over the forward view", () => {
     const game = facing();
     const chance = engagedMonster(game)!.hitChance;
     expect(debugMonsterLines(game)[1].text).toBe(`HIT:${(chance * 100).toFixed(1)}%`);
+  });
+
+  it('prints the chance of the swing this very tick would take, for a game on the clock', () => {
+    const game = facing();
+    // srand(5000) then random(80) is the to-hit roll of a swing made at tick 5000, which is what
+    // strike does with the reading it takes. A roll that high beats this monster outright, and
+    // one 40 ticks later does not: the chance is the moment's rather than the average.
+    const high = swingRoll(5000);
+    expect(high).toBeGreaterThan(swingRoll(5040));
+    const atTheTop = engagedMonster(game, 5000)!.hitChance;
+    const lower = engagedMonster(game, 5040)!.hitChance;
+    expect(atTheTop).toBeGreaterThan(lower);
+    expect(debugMonsterLines(game, 5000)[1].text).toBe(`HIT:${(atTheTop * 100).toFixed(1)}%`);
+    // Without a tick it is the average over all eighty rolls, which is what a game drawing its
+    // own numbers has.
+    expect(debugMonsterLines(game)[1].text).toBe(`HIT:${(engagedMonster(game)!.hitChance * 100).toFixed(1)}%`);
   });
 
   it("prints the chance the monster's own attack lands, to a tenth of a per cent", () => {

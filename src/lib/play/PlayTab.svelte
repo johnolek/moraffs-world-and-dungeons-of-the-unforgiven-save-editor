@@ -32,8 +32,11 @@
   import ScreenSwitch from './ScreenSwitch.svelte';
   import { streamedSession, streamRun, type RunMark, type RunStreamer } from './streaming';
   import { actionWords, lastMilestones, milestoneNote, milestoneWords, runLogOf, RUN_GAMES } from './run';
+  import { TICK_MS } from './sawtooth';
+  import { whileShowing } from './while-showing';
   import {
     colourblindFilter,
+    debugDrawn,
     PLAY_MODES,
     readPlayColourblind,
     readPlayDisplay,
@@ -136,6 +139,16 @@
   /** Whether the character roller is open over the landing page. */
   let rollerOpen = $state(false);
   let display = $state<PlayDisplay>(untrack(() => readPlayDisplay(game.id)));
+  /**
+   * What the machine's tick counter reads at this moment, for a game that reseeds from it, and
+   * null for one that does not.
+   *
+   * It is what the next roll the game reseeds would be seeded from, so debug mode can show the
+   * chance a swing made right now would land and draw the sawtooth that chance climbs. Nothing
+   * here reaches the game or the run log: the reading the game is really handed is the one taken
+   * in front of the input it is handling (`run.ts`).
+   */
+  let tick = $state.raw<number | null>(null);
   let colourblind = $state(untrack(() => readPlayColourblind(game.id)));
   let redraw = $state(untrack(() => readPlayRedraw(game.id)));
 
@@ -299,6 +312,20 @@
     if (showing.dead || won) untrack(() => streamer?.ended());
   });
 
+  /**
+   * Reading that counter over and over, once a tick, while this tab is the one showing. Only debug
+   * mode draws anything that moves with it, so no other mode pays for the timer.
+   */
+  $effect(() => {
+    const run = session?.run ?? null;
+    if (run === null || !debugDrawn(mode) || run.nowTick() === null) {
+      tick = null;
+      return;
+    }
+    tick = run.nowTick();
+    return whileShowing(app.tab === 'play', TICK_MS, () => (tick = run.nowTick()));
+  });
+
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
   $effect(() => {
@@ -435,7 +462,7 @@
       </Overlay>
     {/if}
   {:else}
-    {@const stage = { session, view, mode, display, redraw }}
+    {@const stage = { session, view, mode, display, redraw, tick }}
     <div class="stage">
       <div class="map" bind:this={mapElement} style:filter={colourblindFilter(colourblind)}>
         {@render screen(stage)}

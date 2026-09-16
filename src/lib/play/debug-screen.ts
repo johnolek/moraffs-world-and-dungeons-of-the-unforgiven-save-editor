@@ -79,9 +79,13 @@ export function wrapToWidth(sentences: string[], characters: number): string[] {
  * next swing lands on the second, the chance the monster's own next attack takes hit points off
  * them on the third, what killing it is likely to leave behind on the three after those, and what
  * it does beyond an ordinary hit under the lot. Nothing is printed when nothing is being faced.
+ *
+ * @param tick what the machine's tick counter reads at this moment, for a game played on the
+ *   clock, which makes HIT the chance of the swing that could be made right now rather than the
+ *   average over the eighty rolls. It moves as the counter does.
  */
-export function debugMonsterLines(game: Game): ScreenLine[] {
-  const engaged = engagedMonster(game);
+export function debugMonsterLines(game: Game, tick: number | null = null): ScreenLine[] {
+  const engaged = engagedMonster(game, tick);
   if (engaged === null) return [];
   const drops = dropOdds(game);
   const texts = [

@@ -75,6 +75,12 @@ export interface PlayStage<Session, View> {
   display: PlayDisplay;
   /** How long the game's screen takes to appear, from the switch's slider. */
   redraw: number;
+  /**
+   * What the machine's tick counter reads at this moment, for a game played on the clock in debug
+   * mode, and null everywhere else. Dungeons of the Unforgiven is the one game that reseeds from
+   * it, and debug mode the one mode that draws anything moving with it.
+   */
+  tick: number | null;
 }
 
 /** One game the Play tab can play. */
