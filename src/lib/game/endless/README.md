@@ -289,6 +289,19 @@ Nothing else is lifted. The six characteristics and the counts the record keeps 
 potions of healing, stones of teleportation — are the next fields an endless character could run
 off the end of, and lifting them would be the same piece of work again.
 
+## The page a player reads
+
+`ENDLESS.md` beside this file is the Endless tab: the same ground as this README, written for
+somebody playing rather than somebody building. It is part of any change to endless mode, not
+something to catch up on later.
+
+`page.test.ts` holds it to the rules seam. Every member of `GameRules` is written down there
+against the section of the page that explains it, so a rule added to endless mode fails the suite
+until somebody has decided what the page says about it, and a section renamed out from under the
+table is caught the same day. Everything endless changes that is not a member of `GameRules` — the
+repainted monsters, the state kept beside the record, the world the server hands out — the test
+cannot see, and stays the writer's job.
+
 ### What endless takes away
 
 One thing goes the other way.
