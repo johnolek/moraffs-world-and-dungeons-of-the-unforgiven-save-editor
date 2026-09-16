@@ -15,8 +15,14 @@ import type { StockedMonster } from '../map/stocking';
  * elsewhere on this site, but marks only the monsters faithful marks, since the monsters are
  * rolled afresh every game and finding them is part of the run; and **debug** shows everything
  * the port knows.
+ *
+ * **endless** is the fourth, and the switch never offers it: it is the mode of a character rolled
+ * to play the endless dungeon (`src/lib/game/endless/rules.ts`), which is a choice made once at
+ * the roll and never again. Everything it shows, faithful shows: the same map, the same monsters,
+ * the same absence of the numbers the game keeps to itself. What differs is the dungeon it is
+ * played in, and nothing here decides that.
  */
-export type PlayMode = 'faithful' | 'speedrun' | 'debug';
+export type PlayMode = 'faithful' | 'speedrun' | 'debug' | 'endless';
 
 /** What a game is played in until the player says otherwise. */
 export const DEFAULT_PLAY_MODE: PlayMode = 'faithful';
@@ -270,14 +276,22 @@ export function zoomMapMonsters(mode: PlayMode, sight: { monsters: StockedMonste
 }
 
 /**
- * The map the floor is drawn from: the one the character has discovered in faithful, and none in
- * the other two modes, where the whole floor is drawn.
+ * Whether the floor is drawn as the character has discovered it rather than whole, which is what
+ * faithful and endless do and what speedrun and debug do not.
+ */
+export function discoveredMapOnly(mode: PlayMode): boolean {
+  return mode === 'faithful' || mode === 'endless';
+}
+
+/**
+ * The map the floor is drawn from: the one the character has discovered in faithful and in
+ * endless, and none in the other two modes, where the whole floor is drawn.
  *
  * `MapMemory` is what the two games that share a map engine hand it; Moraff's Revenge keeps its
  * own and hands over the same one question, which is all this asks for.
  */
 export function mapDrawn(mode: PlayMode, memory: { discovered(): DiscoveredMap }): DiscoveredMap | null {
-  return mode === 'faithful' ? memory.discovered() : null;
+  return discoveredMapOnly(mode) ? memory.discovered() : null;
 }
 
 /** Where the choice is kept, one key per game, beside the mode and the display. */

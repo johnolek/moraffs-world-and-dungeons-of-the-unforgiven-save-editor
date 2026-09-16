@@ -75,7 +75,7 @@ import { revScreenStateOf } from './screen/from-game';
 import { drawRevScreen, type RevScreenState } from './screen/screen';
 import { drawRevTextScreen } from './screen/text-screen';
 import type { Frame } from '../view3d/frame';
-import { debugDrawn, panelVisible } from '../mode';
+import { debugDrawn, discoveredMapOnly, panelVisible } from '../mode';
 import type { RevStanding } from './monsters';
 import { REV_NOT_BUILT, revClearScreen, revDrawTheDungeonAgain, revSayGoodbye } from './screens';
 
@@ -323,7 +323,7 @@ export class RevGameSession extends KeyedSession<RevPc> {
   /** Everything the game's own screen is drawn from, at the mode the tab is showing. */
   screenState(): RevScreenState {
     return revScreenStateOf(this.game, {
-      wholeFloor: this.mode !== 'faithful',
+      wholeFloor: !discoveredMapOnly(this.mode),
       debug: debugDrawn(this.mode),
     });
   }
