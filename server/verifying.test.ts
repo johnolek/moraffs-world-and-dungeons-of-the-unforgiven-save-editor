@@ -604,23 +604,23 @@ describe('replaying the chain of a character still being played', () => {
   it('writes down the level and the depth the replay reached', async () => {
     await played(0, [], 1000);
 
-    const snapshot = await snapshotLivingRun(sql, counting(), CHARACTER, AT_NOON);
+    const replayed = await snapshotLivingRun(sql, counting(), CHARACTER, AT_NOON);
 
-    expect(snapshot).toMatchObject({ status: 'verified', level: 5, deepest: 2, actions: 12, time: 30 });
+    expect(replayed?.snapshot).toMatchObject({ status: 'verified', level: 5, deepest: 2, actions: 12, time: 30 });
     expect(await livingSnapshotFor(sql, CHARACTER)).toMatchObject({ level: 5, deepest: 2 });
   });
 
   it('writes down the journal of the run so far', async () => {
     await played(0, [], 1000);
 
-    const snapshot = await snapshotLivingRun(
+    const replayed = await snapshotLivingRun(
       sql,
       fakeEngines(() => ({ journal: [STEPPED] })),
       CHARACTER,
       AT_NOON,
     );
 
-    expect(snapshot?.journal).toEqual([STEPPED]);
+    expect(replayed?.snapshot.journal).toEqual([STEPPED]);
   });
 
   it('leaves the chain alone while nothing has been played since', async () => {
@@ -669,14 +669,17 @@ describe('replaying the chain of a character still being played', () => {
   it('keeps the snapshot of a chain the replay refused, with why', async () => {
     await played(0, [], 1000);
 
-    const snapshot = await snapshotLivingRun(
+    const replayed = await snapshotLivingRun(
       sql,
       fakeEngines(() => ({ status: 'failed', reason: 'The replay spent 3 actions and the log claims 12.' })),
       CHARACTER,
       AT_NOON,
     );
 
-    expect(snapshot).toMatchObject({ status: 'failed', reason: 'The replay spent 3 actions and the log claims 12.' });
+    expect(replayed?.snapshot).toMatchObject({
+      status: 'failed',
+      reason: 'The replay spent 3 actions and the log claims 12.',
+    });
   });
 
   it('replays nothing for a character whose run has ended', async () => {
@@ -707,6 +710,59 @@ describe('replaying the chain of a character still being played', () => {
     expect(replays).toBe(0);
   });
 
+  it('announces what a character still being played has reached, and nothing about an outcome', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: { ...header, leaderboard: 'endless' } }), 1000);
+
+    const replayed = await snapshotLivingRun(
+      sql,
+      fakeEngines(() => ({
+        leaderboard: 'endless',
+        journal: [killedAShadow(120)],
+        replayed: { actions: 12, time: 30, milestones: [{ kind: 'level', which: 20, actions: 9, time: 20, floor: 120 }] },
+      })),
+      CHARACTER,
+      AT_NOON,
+    );
+
+    expect(replayed?.announced.map((announcement) => [announcement.kind, announcement.which])).toEqual([
+      ['level', 20],
+      ['shadow', 120],
+    ]);
+    expect((await announcementsBefore(sql, null, 50)).announcements.map((one) => one.kind)).toEqual(['shadow', 'level']);
+  });
+
+  it('announces nothing again for a chain there was no reason to replay', async () => {
+    const engines = counting([{ kind: 'level', which: 20, actions: 9, time: 20, floor: 3 }]);
+    await played(0, [], 1000);
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON);
+
+    const again = await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON + 1000);
+
+    expect(again?.announced).toEqual([]);
+  });
+
+  it('announces nothing about a chain with a record written into it from outside the game', async () => {
+    await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({ session: header, claims: { mode: 'speedrun', actions: 12, time: 30, edits: 1, milestones: [] } }),
+      1000,
+    );
+
+    const replayed = await snapshotLivingRun(
+      sql,
+      counting([{ kind: 'level', which: 20, actions: 9, time: 20, floor: 3 }]),
+      CHARACTER,
+      AT_NOON,
+    );
+
+    // The chain was replayed; what held its announcements back is the edit and nothing else.
+    expect(replays).toBe(1);
+    expect(replayed?.announced).toEqual([]);
+    expect((await announcementsBefore(sql, null, 50)).announcements).toEqual([]);
+  });
+
   it('takes a snapshot for a batch the line was told about', async () => {
     const verifier = createRunVerifier(sql, counting(), () => {});
     await played(0, [], 1000);
@@ -715,6 +771,21 @@ describe('replaying the chain of a character still being played', () => {
     await verifier.idle();
 
     expect(await livingSnapshotFor(sql, CHARACTER)).toMatchObject({ status: 'verified', level: 5 });
+  });
+
+  it('hands what it announced about a living chain to whoever is listening to the line', async () => {
+    const heard: Announcement[] = [];
+    const verifier = createRunVerifier(
+      sql,
+      counting([{ kind: 'level', which: 20, actions: 9, time: 20, floor: 3 }]),
+      (announcements) => heard.push(...announcements),
+    );
+    await played(0, [], 1000);
+
+    verifier.snapshotSoon(CHARACTER);
+    await verifier.idle();
+
+    expect(heard.map((announcement) => [announcement.kind, announcement.which])).toEqual([['level', 20]]);
   });
 });
 

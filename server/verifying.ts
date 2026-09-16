@@ -204,7 +204,7 @@ export async function verifyKeptRun(
   const verdict = await replayChain(engines, runLogFrom(sessions, batches));
   const eligible = mayGoOnABoard(verdict, sessions);
   await keepVerdict(sql, characterId, verdict, timing, eligible);
-  return eligible ? announceVerifiedRun(sql, characterId, verdict, timing) : [];
+  return eligible ? announceReplayedRun(sql, characterId, verdict, timing) : [];
 }
 
 /**
@@ -238,14 +238,14 @@ function forTheBoards(newest: KeptSession): boolean {
 }
 
 /**
- * What a checked run has to announce: the milestones the replay reached, what the journal it wrote
- * counted, and how it ended.
+ * What a replayed chain has to announce: the milestones the replay reached, what the journal it
+ * wrote counted, and how the run ended.
  *
  * A character still being played has reached everything else already, and the feed is read live,
  * so what it has reached is announced now rather than being held back until it dies or wins. How
  * it came out is the one thing left to say when it does.
  */
-async function announceVerifiedRun(
+async function announceReplayedRun(
   sql: Queries,
   characterId: string,
   verdict: RunVerdict,
@@ -566,29 +566,45 @@ export async function livingSnapshotFor(sql: Queries, characterId: string): Prom
   };
 }
 
+/** What came of looking at a living character's chain: where it stands now, and whatever was
+ *  announced about it this time. */
+export interface LivingReplay {
+  snapshot: LivingSnapshot;
+  announced: Announcement[];
+}
+
 /**
- * Replay the chain a character has played so far and write down what it came to, where that is
- * worth doing.
+ * Replay the chain a character has played so far, write down what it came to, and announce it,
+ * where that is worth doing.
  *
- * What comes back is the snapshot that stands afterwards, which is the one already kept when
- * nothing had changed enough to replay for. Null is for a character there is no board of the
- * living for at all: one whose run has ended is `verifyKeptRun`'s, and one rolled for no board or
- * played in debug is ranked against nothing.
+ * What comes back is the snapshot that stands afterwards and what was announced this time. A chain
+ * nothing had changed enough to replay again has the snapshot already kept and nothing announced:
+ * the replay that would have found something new is the one that never ran. Null is for a
+ * character there is no board of the living for at all: one whose run has ended is
+ * `verifyKeptRun`'s, and one rolled for no board or played in debug is ranked against nothing.
  */
 export async function snapshotLivingRun(
   sql: Queries,
   engines: EngineStore,
   characterId: string,
   now: number,
-): Promise<LivingSnapshot | null> {
+): Promise<LivingReplay | null> {
   if (!(await stillBeingPlayed(sql, characterId))) return null;
   const sessions = await sessionsOf(sql, characterId);
   if (sessions.length === 0 || !forTheBoards(sessions[sessions.length - 1])) return null;
   const held = await livingSnapshotFor(sql, characterId);
   const batches = await batchesOf(sql, characterId);
   const newest = batches[batches.length - 1]?.id ?? 0;
-  if (!worthReplaying(held, newest, claimedReach(sessions), now)) return held;
-  return keepLivingSnapshot(sql, characterId, await replayChain(engines, runLogFrom(sessions, batches)), newest, now);
+  if (held !== null && !worthReplaying(held, newest, claimedReach(sessions), now)) {
+    return { snapshot: held, announced: [] };
+  }
+  const verdict = await replayChain(engines, runLogFrom(sessions, batches));
+  const snapshot = await keepLivingSnapshot(sql, characterId, verdict, newest, now);
+  if (!mayGoOnABoard(verdict, sessions)) return { snapshot, announced: [] };
+  // An announcement is never taken back. If a later sitting of this chain turns out to have had a
+  // record written into it from outside the game, the character falls off the boards, and what was
+  // said about it while the replay still passed stays in the history.
+  return { snapshot, announced: await announceReplayedRun(sql, characterId, verdict, runTiming(batches)) };
 }
 
 /**
@@ -643,8 +659,7 @@ function claimedReach(sessions: readonly KeptSession[]): Reach {
  * verified: such a character is off the board whatever the site says about it, so there is
  * nothing to hurry for and the two minutes are soon enough.
  */
-function worthReplaying(held: LivingSnapshot | null, newest: number, claimed: Reach, now: number): boolean {
-  if (held === null) return true;
+function worthReplaying(held: LivingSnapshot, newest: number, claimed: Reach, now: number): boolean {
   if (newest <= held.replayedThrough) return false;
   if (now - Date.parse(held.replayedAt) >= REPLAY_LIVING_AFTER_MS) return true;
   if (held.status !== 'verified') return false;
@@ -692,7 +707,7 @@ export interface RunVerifier {
   /** Put this character's ended run in line to be judged. */
   verifySoon(characterId: string): void;
   /** Put this character in line to have the chain it has played so far replayed, so that a board
-   *  of the living can say where it stands. */
+   *  of the living can say where it stands and the feed can say what it has reached. */
   snapshotSoon(characterId: string): void;
   /** Settles when everything in line when it was called has been replayed. */
   idle(): Promise<void>;
@@ -707,8 +722,10 @@ export interface RunVerifier {
  * both slow -- which is also why the boards of the living share this line rather than keeping one
  * of their own.
  *
- * `announced` is handed everything a checked run had to say, which is how the feed hears about a
- * run whose last batch was answered seconds before the replay finished.
+ * `announced` is handed everything a replayed chain had to say, whether it was replayed because
+ * the run ended or because a character still being played was looked at again. That is how the
+ * feed hears about a run whose last batch was answered seconds before the replay finished, and how
+ * it hears about a character while it is still down there.
  */
 export function createRunVerifier(
   sql: Queries,
@@ -741,7 +758,8 @@ export function createRunVerifier(
     },
     snapshotSoon(characterId: string): void {
       inLine(`Replaying the chain ${characterId} has played so far`, async () => {
-        await snapshotLivingRun(sql, engines, characterId, Date.now());
+        const replayed = await snapshotLivingRun(sql, engines, characterId, Date.now());
+        announced(replayed?.announced ?? []);
       });
     },
     idle(): Promise<void> {

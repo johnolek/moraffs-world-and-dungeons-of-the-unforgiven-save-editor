@@ -529,7 +529,8 @@ Where it stands is not what the site says. The chain it has played so far is
 replayed by the engine build that played it, the same way an ended run is, and
 the level and the depth the board shows are what that replay reached. A
 character whose replay failed or could not be checked is off the board
-altogether.
+altogether. That same replay is when the feed hears what a living character has
+reached.
 
 Every row carries the player's name and the character's, the level and the
 reach the replay found, the actions and the game's own clock, whether a device
@@ -626,6 +627,12 @@ it has reached is announced without one rather than being held back until it
 dies or wins. Nothing at all is announced about a run that could not be checked
 or that had a record written into it from outside the game: that is the
 player's own business and not news.
+
+A living character's announcements are made off the replay a board of the
+living already runs, so they arrive as often as that chain is replayed rather
+than once per batch. An announcement is never taken back: a chain that later
+turns out to have had a record written into it falls off the boards, and what
+was said about it while its replay still passed stays in the history.
 
 | Endpoint                             | What it does                                      |
 | ------------------------------------ | ------------------------------------------------- |
