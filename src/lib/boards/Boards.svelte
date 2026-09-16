@@ -185,6 +185,15 @@
     }
   });
 
+  // An announcement names a character, and clicking that name anywhere on the site opens its run
+  // here. The board underneath is left on whatever it was showing, so Back returns to it.
+  $effect(() => {
+    const wanted = app.requestedRun;
+    if (wanted === null) return;
+    app.requestedRun = null;
+    openRun = wanted;
+  });
+
   /**
    * The number the board is in order of, where the table has no column of its own for it. The
    * boards of wins are ordered by numbers every row already shows.

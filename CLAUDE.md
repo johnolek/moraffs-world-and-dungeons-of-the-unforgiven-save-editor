@@ -2,6 +2,8 @@
 
 Workflow: work-on-main
 
+No session works in the main checkout; see "Worktrees" below.
+
 The global rule that John approves every new user-facing string before it ships
 does not apply here. Write a plain, literal draft of a label, heading, message or
 error and ship it with the change. John reads the copy in larger passes later and
@@ -14,6 +16,51 @@ present the next chunk's plan and wait.
 
 `docs/INDEX.md` is the index to every document here: what each one answers, how
 long it is, and which of the three games it is about. Read it before going looking.
+
+## Worktrees
+
+Several sessions work this repository at once, so no session works in the main
+checkout at `~/projects/moraff-editor`. Call `EnterWorktree` before the first
+edit, every time, and do the whole item there. Name the worktree for the item
+(`MORF-542/sawtooth-bar`), which puts the work on the branch
+`claude/MORF-542/sawtooth-bar`.
+
+That leaves the main checkout holding nothing but `main`, clean and free, so a
+landing never waits on anybody and no two sessions ever read each other's
+half-written files.
+
+`.claude/settings.json` sets `worktree.baseRef` to `head` so a new worktree
+starts from local `main`. The default, `origin/main`, is usually several commits
+behind here, because pushes are rare.
+
+A fresh worktree has no `node_modules` and no built `server/engines/<commit>/`.
+`pnpm install` fills the first in about a second off the shared pnpm store; run
+`pnpm build:engine` when something needs to replay a run.
+
+### Landing
+
+`main` is checked out in the main checkout, so git refuses to move it from
+inside a worktree: `git branch -f`, `git push .` and `git fetch .` all fail with
+"checked out at". Drive the main checkout from where you are instead:
+
+```bash
+git -C ~/projects/moraff-editor merge --ff-only claude/MORF-542/sawtooth-bar
+```
+
+Never `cd` into the main checkout to do it. The shell's working directory
+persists between commands, so the next command runs in the wrong tree.
+
+"Not possible to fast-forward" means another session landed while you worked.
+Rebase your branch onto `main` in your own worktree, run the tests again, and
+repeat the merge. Never merge `main` into your branch; this history is linear.
+
+Once the branch is on `main`, leave with `ExitWorktree` and `remove`. A
+`claude/*` branch still under `.claude/worktrees/` is either live work or a
+session that forgot; land it or drop it, and ask John when you cannot tell.
+
+The stash stack belongs to the repository, not to your worktree, so a bare
+`git stash pop` can take another session's work. Set work aside with a WIP
+commit instead.
 
 ## Deploy map
 

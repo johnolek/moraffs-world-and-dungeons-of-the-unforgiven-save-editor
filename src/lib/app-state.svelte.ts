@@ -162,6 +162,9 @@ export interface AppState {
   requestedFormula: string | null;
   /** Set to stand the party somewhere in the Map tab; the map clears it once it has. */
   requestedPlace: PlaceRequest | null;
+  /** Set to the id of a character whose run to open in the Boards tab; that tab clears it once
+   *  it has. */
+  requestedRun: string | null;
   /** Every character kept in the browser, oldest first. */
   roster: RosterEntry[];
   /** Which of them is being worked on. The entry itself is only ever reached through the
@@ -206,6 +209,7 @@ export const app = $state<AppState>({
   requestedSource: null,
   requestedFormula: null,
   requestedPlace: null,
+  requestedRun: null,
   roster: [],
   characterId: null,
   characterVersion: 0,
