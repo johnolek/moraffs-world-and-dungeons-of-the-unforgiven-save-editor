@@ -385,8 +385,15 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    */
   private readonly timed = new TimedScreens(() => this.changed());
 
-  /** A ported function has called mgetch_message and is owed a key once it has finished. */
-  private waitOwed = false;
+  /**
+   * How many keys ported functions have called mgetch_message for and are owed once they have
+   * finished.
+   *
+   * It is a count rather than a flag because one pass can owe several: a moment in which three
+   * life drainers land asks for a key after each of their boxes, and the original stops at each
+   * one.
+   */
+  private waitsOwed = 0;
 
   /** The endless world this character is playing in, or null for one playing the game as it
    *  shipped. */
@@ -426,7 +433,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       key: () => this.key(),
       choice: (allowed) => this.choice(allowed),
       pressAnyKey: () => {
-        this.waitOwed = true;
+        this.waitsOwed += 1;
       },
       delay: (ms) => {
         this.killedWhileHeld = this.killed;
@@ -454,7 +461,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       // (exe 3000:9124) and cuts the four lines in afterwards, so the stone comes out of black
       // bare and the words appear on it once it has arrived.
       this.fadeScreen('in', { tablet: TABLET_WITHOUT_ITS_WORDS });
-      this.waitOwed = true;
+      this.waitsOwed += 1;
     };
     // movecontrol puts the map cursor in the middle of the view before its first pass. newGame
     // copies the record into a character of its own, so the cursor goes on that one.
@@ -532,8 +539,8 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * code cannot wait, so the wait is owed until the loop reaches somewhere it can take it.
    */
   async settle(): Promise<void> {
-    while (this.waitOwed) {
-      this.waitOwed = false;
+    while (this.waitsOwed > 0) {
+      this.waitsOwed -= 1;
       await this.keyWithPlaque(this.tablet === null ? undefined : { ms: this.tabletPause() });
       // The key the tablet was waiting on is what takes it off the screen (exe 3000:9086), and
       // FUN_4000_5c25 fades it away first (exe 3000:92fc). The frame the fade runs over is what

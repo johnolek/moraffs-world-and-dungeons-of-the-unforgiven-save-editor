@@ -624,6 +624,37 @@ describe('the message box', () => {
     expect(session.box).toEqual([]);
     expect(game.screen).toEqual([]);
   });
+
+  it('takes a key for each wait a pass owes rather than one for all of them', async () => {
+    const session = playing(characterFile({ level: 0, ...townWalk() }));
+    await settle();
+    // A moment in which several drainers land asks for a key after each of their boxes
+    // (`drainsAndAilments` in `src/lib/game/port/combat.ts`). There is no key of the game's that
+    // puts up two boxes, so the test brings its own.
+    let turns = 0;
+    const twoBoxes = 0x6a;
+    KEY_HANDLERS[twoBoxes] = {
+      c: 'a handler that exists only in this test',
+      run(turn) {
+        turns += 1;
+        turn.game.say('THE FIRST BOX');
+        turn.game.pressAnyKey();
+        turn.game.say('THE SECOND BOX');
+        turn.game.pressAnyKey();
+      },
+    };
+    try {
+      await press(session, twoBoxes);
+      await press(session, KEY.escape);
+      // With only one wait taken this key would reach the top of the pass and run the handler
+      // again; it answers the second box instead.
+      await press(session, twoBoxes);
+    } finally {
+      delete KEY_HANDLERS[twoBoxes];
+    }
+
+    expect(turns).toBe(1);
+  });
 });
 
 describe('dying', () => {
