@@ -66,6 +66,7 @@ describe('applyMigrations', () => {
 
     const mine = await tableNames(sql);
     expect(mine.map((row) => row.tablename)).toEqual([
+      'admin_actions',
       'announcements',
       'batches',
       'characters',
