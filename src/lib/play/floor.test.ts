@@ -9,7 +9,7 @@ import { MAP_PLAYER, monsterAt, newGame, type Game, type PlayerCharacter } from 
 import { monsterById, MONSTER_SLOTS } from '../map/stocking';
 import { newCharacterFile } from '../roller/save-file';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
-import { drawnMonsters, FloorMonsters, loadLevelMap, monsterIdOf, monsterTypeOf } from './floor';
+import { drawnMonsters, FloorMonsters, loadLevelMap, monsterTypeOf } from './floor';
 import { KEY } from './keys';
 import { floorMonsterKinds } from './panel';
 
@@ -35,11 +35,6 @@ describe('the type a stocked monster is', () => {
     expect(monsterTypeOf('builtin-21')).toBe(21);
     expect(monsterTypeOf('section-3-22')).toBe(22);
     expect(monsterTypeOf('section-12-26')).toBe(26);
-  });
-
-  it('reads back as the id the stocking knows', () => {
-    expect(monsterIdOf(5, 3)).toBe('builtin-5');
-    expect(monsterIdOf(26, 3)).toBe('section-3-26');
   });
 });
 
@@ -69,7 +64,7 @@ describe('stocking a floor', () => {
     const game = gameOn(0);
     const floors = new FloorMonsters();
     loadLevelMap(game, floors, floorOf(0, 0), 0, game.rng);
-    expect(drawnMonsters(game, 0)).toEqual([]);
+    expect(drawnMonsters(game)).toEqual([]);
   });
 
   it('loads the monster descriptions of the floor’s own section', () => {
@@ -244,8 +239,8 @@ describe('the monsters the map draws', () => {
     const game = gameOn(3);
     const floors = new FloorMonsters();
     loadLevelMap(game, floors, floorOf(0, 3), 3, game.rng);
-    expect(drawnMonsters(game, 3)).toHaveLength(MONSTER_SLOTS);
-    const drawn = drawnMonsters(game, 3)[0];
+    expect(drawnMonsters(game)).toHaveLength(MONSTER_SLOTS);
+    const drawn = drawnMonsters(game)[0];
     expect(drawn.monsterId.startsWith('builtin-') || drawn.monsterId.startsWith('section-1-')).toBe(true);
   });
 });
@@ -314,7 +309,7 @@ function ladderDownToTheBoss(): { x: number; y: number } {
 /** Whether the section's Shadow boss is standing on the floor the character is on. */
 function bossIsOnTheFloor(session: GameSession): boolean {
   const name = sectionInfo(session.game.pc.module, session.game.pc.level)?.bossName;
-  return drawnMonsters(session.game, session.game.pc.level).some(
+  return drawnMonsters(session.game).some(
     (monster) => monsterById(monster.monsterId).name === name,
   );
 }
@@ -389,6 +384,6 @@ describe('the section boss on his floor', () => {
       characterFile({ module: MODULE_V, level: OGEROTH_FLOOR, objective: beaten, ...openSquare(OGEROTH_FLOOR) }),
     );
     expect(bossIsOnTheFloor(session)).toBe(false);
-    expect(drawnMonsters(session.game, OGEROTH_FLOOR)).toHaveLength(MONSTER_SLOTS);
+    expect(drawnMonsters(session.game)).toHaveLength(MONSTER_SLOTS);
   });
 });

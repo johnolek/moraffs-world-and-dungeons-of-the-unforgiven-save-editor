@@ -799,7 +799,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * in the original.
    */
   drawFloor(): void {
-    const monsters = drawnMonsters(this.game, this.game.pc.level);
+    const monsters = drawnMonsters(this.game);
     this.screenFloor = {
       rows: this.rows,
       discovered: this.memory.discovered(),
@@ -839,7 +839,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     const game = this.game;
     const pc = game.pc;
     const facing = game.engagedAhead === -1 ? game.engaged : game.engagedAhead;
-    const drawn = drawnMonsters(game, pc.level);
+    const drawn = drawnMonsters(game);
     const engaged = facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null);
     const printed = this.timed.showing(game.screen);
     return {

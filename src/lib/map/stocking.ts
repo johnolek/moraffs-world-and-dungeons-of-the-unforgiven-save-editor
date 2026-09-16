@@ -2,6 +2,7 @@ import { allMonsters, isPuffball, type Monster } from '../bestiary/monsters';
 import { renderMonster } from '../bestiary/pictures';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
 import { FAITHFUL_RULES, type BossSquare, type GameRules, type SectionPlace } from '../game/port/rules';
+import type { MonsterKind } from '../game/port/state';
 import { sectionInfo } from '../game/sections';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
 import { isOnMap, type MapArea } from './area';
@@ -77,11 +78,8 @@ export function monsterById(id: string): Monster {
 /** A section as a floor is stocked from it: where it sits, and the number its monster table is
  *  loaded by. */
 export interface StockedSection extends SectionPlace {
-  /** 1..20 across all modules. */
+  /** 1..20 across all modules, and past 20 for a section of a dungeon deeper than the game's. */
   section: number;
-  /** The section whose five monsters this one is stocked from, which is its own number unless
-   *  the rules have it borrow another's table. */
-  source: number;
 }
 
 /**
@@ -95,7 +93,7 @@ export function stockingSection(rules: GameRules, moduleIndex: number, floor: nu
   const place = rules.sectionPlace(section);
   if (!place || place.module !== moduleIndex) return null;
   if (rules.monsterLevel(moduleIndex, floor) <= 0) return null;
-  return { section, source: rules.sectionSource(section), ...place };
+  return { section, ...place };
 }
 
 /** The game's random(n): an integer 0..n-1. */
@@ -173,6 +171,7 @@ export function stockFloor(
 ): StockedMonster[] {
   const section = stockingSection(rules, moduleIndex, floor);
   if (!section) return [];
+  const kinds = rules.monsterKinds(section.section);
   const baseLevel = rules.monsterLevel(moduleIndex, floor);
   const taken = new Set<number>(occupied);
   const monsters: StockedMonster[] = [];
@@ -181,9 +180,9 @@ export function stockFloor(
     const beforeTry = clocked === null ? null : () => clocked.reseed(slot, (tries += 1));
     let { x, y } = freeSquare(rows, taken, rnd, beforeTry);
     taken.add(y * WIDTH + x);
-    let entry = rollKind(section.source, rnd, clocked);
+    let entry = rollKind(kinds, rnd, clocked);
     if (slot === 0 && bossStandsOn(section, floor, bossesBeaten)) {
-      entry = sectionMonster(section.source, BOSS_SLOT);
+      entry = kindAt(kinds, BOSS_SLOT);
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
       // down in the middle of the floor instead.
       taken.delete(y * WIDTH + x);
@@ -263,23 +262,20 @@ export function groupedMonsterCounts(monsters: StockedMonster[]): MonsterCountGr
  * chance in twenty over an even generator and a different monster over a reseeded one. Only the
  * first roll is a `Random` call (2000:6601); the six under it are written inline.
  *
- * @param source the section whose five monsters the floor is stocked from.
+ * @param kinds the 27 rows the rules have loaded for the section, which the roll picks one of.
  */
-function rollKind(source: number, rnd: () => number, clocked: ClockedStocking | null): Monster {
+function rollKind(kinds: MonsterKind[], rnd: () => number, clocked: ClockedStocking | null): Monster {
   const puffballs = clocked === null ? random(rnd, 20) : clocked.randomCall(20);
-  if (puffballs === 1) return builtinMonster(random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
-  if (random(rnd, 7) === 1) return builtinMonster(random(rnd, BLOCKER_COUNT));
-  if (random(rnd, 15) === 1) return sectionMonster(source, LEVEL_DRAINER_SLOT);
-  if (random(rnd, 12) === 1) return builtinMonster(random(rnd, POISON_COUNT) + FIRST_POISON);
-  return sectionMonster(source, random(rnd, 3) + FIRST_REGULAR_SLOT);
+  if (puffballs === 1) return kindAt(kinds, random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
+  if (random(rnd, 7) === 1) return kindAt(kinds, random(rnd, BLOCKER_COUNT));
+  if (random(rnd, 15) === 1) return kindAt(kinds, LEVEL_DRAINER_SLOT);
+  if (random(rnd, 12) === 1) return kindAt(kinds, random(rnd, POISON_COUNT) + FIRST_POISON);
+  return kindAt(kinds, random(rnd, 3) + FIRST_REGULAR_SLOT);
 }
 
-function builtinMonster(index: number): Monster {
-  return monsterById(`builtin-${index}`);
-}
-
-function sectionMonster(section: number, slot: number): Monster {
-  return monsterById(`section-${section}-${slot}`);
+/** The catalogue entry one of the loaded rows is drawn and fought as. */
+function kindAt(kinds: MonsterKind[], row: number): Monster {
+  return monsterById(kinds[row].id);
 }
 
 /** A random square, redrawn until it is open and holds no monster yet. `beforeTry` is the

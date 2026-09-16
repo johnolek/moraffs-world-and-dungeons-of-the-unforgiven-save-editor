@@ -1,5 +1,5 @@
 import type { Rng } from '../game/port/rng';
-import type { Game, Monster } from '../game/port/state';
+import type { Game, Monster, MonsterKind } from '../game/port/state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from '../game/port/state';
 import { WIDTH } from '../game/unfmap.js';
 import type { MapSquare } from '../map/game';
@@ -33,12 +33,6 @@ export function monsterTypeOf(monsterId: string): number {
   const section = SECTION_ID.exec(monsterId);
   if (section) return Number(section[1]);
   throw new Error(`no monster type for ${monsterId}`);
-}
-
-/** The id `src/lib/map/stocking.ts` knows a monster of this type by, on a floor stocked from
- *  `section`'s own five monsters. */
-export function monsterIdOf(type: number, section: number): string {
-  return type < BUILTIN_KINDS ? `builtin-${type}` : `section-${section}-${type}`;
 }
 
 /**
@@ -142,7 +136,7 @@ export class FloorMonsters {
           game.rules.bossSquares.of(game.pc, section),
           clockedStocking(game, rng),
         );
-        fill(table.monsters, stocked);
+        fill(table.monsters, stocked, game.monsterKinds);
         for (const monster of stocked) table.fullHp[monster.slot] = monster.hp;
         rememberBossSquare(game, section);
       }
@@ -169,15 +163,19 @@ export class FloorMonsters {
   }
 }
 
-/** Write a roll of a floor's monsters into the game's own slots. */
-function fill(slots: Monster[], stocked: StockedMonster[]): void {
+/** Write a roll of a floor's monsters into the game's own slots. The stocking picks its monsters
+ *  out of the rows the game has loaded, so every one of them is one of those rows. */
+function fill(slots: Monster[], stocked: StockedMonster[], kinds: MonsterKind[]): void {
+  const rows = new Map(kinds.map((kind, row) => [kind.id, row]));
   for (const monster of stocked) {
+    const type = rows.get(monster.monsterId);
+    if (type === undefined) throw new Error(`no loaded row for ${monster.monsterId}`);
     const slot = slots[monster.slot];
     slot.x = monster.x;
     slot.y = monster.y;
     slot.hp = monster.hp;
     slot.level = monster.level;
-    slot.type = monsterTypeOf(monster.monsterId);
+    slot.type = type;
   }
 }
 
@@ -227,9 +225,11 @@ export function loadLevelMap(game: Game, floors: FloorMonsters, rows: MapSquare[
 /**
  * The monsters standing on the floor, as the map draws them: every slot the occupancy grid holds
  * at its own square, which is what `which_monster` (exe 2000:6573) reads to draw one.
+ *
+ * Each one is named by the row of the loaded table its record points at, so a floor of a section
+ * whose monsters were borrowed from elsewhere names the monsters it really holds.
  */
-export function drawnMonsters(game: Game, level: number): StockedMonster[] {
-  const section = game.rules.sectionSource(game.rules.sectionOf(game.pc.module, level));
+export function drawnMonsters(game: Game): StockedMonster[] {
   const drawn: StockedMonster[] = [];
   for (let slot = 0; slot < game.monsters.length; slot++) {
     const monster = game.monsters[slot];
@@ -238,7 +238,7 @@ export function drawnMonsters(game: Game, level: number): StockedMonster[] {
       slot,
       x: monster.x,
       y: monster.y,
-      monsterId: monsterIdOf(monster.type, section),
+      monsterId: game.monsterKinds[monster.type].id,
       level: monster.level,
       hp: monster.hp,
     });

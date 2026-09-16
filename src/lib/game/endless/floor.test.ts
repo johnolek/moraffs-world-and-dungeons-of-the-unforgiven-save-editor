@@ -132,7 +132,7 @@ describe('arriving on a floor below the bottom of the game', () => {
     const game = gameOn(FLOOR);
     loadLevelMap(game, new FloorMonsters(), floorRows(FLOOR), FLOOR, game.rng);
     const source = rules.sectionSource(rules.sectionOf(MODULE_V, FLOOR));
-    const drawn = drawnMonsters(game, FLOOR);
+    const drawn = drawnMonsters(game);
     expect(drawn.length).toBeGreaterThan(0);
     for (const monster of drawn) {
       expect(() => monsterById(monster.monsterId)).not.toThrow();

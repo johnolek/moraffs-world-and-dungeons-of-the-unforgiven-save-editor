@@ -22,7 +22,7 @@ export async function killTheDead(session: GameSession): Promise<void> {
   if (game.engaged === -1 || game.monsters[game.engaged].hp >= 1) return;
   // The original paints the skull only where a monster really was drawn, which it knows from the
   // rectangle draw_3d_view kept for that view (exe 3000:2756 blanks it when the square is empty).
-  const drawn = drawnMonsters(game, game.pc.level).find((monster) => monster.slot === game.engaged);
+  const drawn = drawnMonsters(game).find((monster) => monster.slot === game.engaged);
   if (drawn) session.killed = { dir: game.enemyDir, monsterId: drawn.monsterId };
   await printMenusWhile(session, () => killMonster(game));
   // The repeat-fight flag comes down with the monster (exe 2000:dbe3), so Ctrl-F swings at one
