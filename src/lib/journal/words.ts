@@ -2,7 +2,7 @@
  * Every word the run journal shows that is not one of the run's own lines.
  *
  * The lines themselves are the games' (`src/lib/play/journal.ts`) and the summary's are
- * `summaryLines` in `src/lib/play/summary.ts`; these are the headings around them, so that
+ * `summarySections` in `src/lib/play/summary.ts`; these are the headings around them, so that
  * changing what the timeline is called is one file wherever it is shown.
  */
 export const JOURNAL = {
@@ -10,6 +10,8 @@ export const JOURNAL = {
   timeline: 'Everything that happened',
   locked: 'The journal opens when the run ends.',
   nothing: 'Nothing has happened in this run yet.',
+  expandAll: 'Open every part',
+  collapseAll: 'Close every part',
 };
 
 /** How far the character walked before something else happened, as that walk's one line. */

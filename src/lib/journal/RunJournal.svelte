@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
   import type { JournalEntry } from '../play/journal';
-  import { summarizeJournal, summarySections, type RunClockTotals, type SummaryNames } from '../play/summary';
+  import { summarizeJournal, summarySections, SUMMARY_HEADINGS, type RunClockTotals, type SummaryNames } from '../play/summary';
   import { journalGroups } from './grouping';
   import { JOURNAL, placeHeading } from './words';
 
@@ -26,6 +26,30 @@
 
   const sections = $derived(summarySections(summarizeJournal(entries, reached), names));
   const groups = $derived(journalGroups(entries));
+
+  /** The parts of the summary that are open when the reader has said nothing: what the run came
+   *  to and the fighting, which are the two worth reading first. */
+  const OPEN_AT_FIRST: readonly string[] = [SUMMARY_HEADINGS.run, SUMMARY_HEADINGS.monsters];
+
+  /** Which sections the reader has opened or closed, by heading. Kept for the same reason the
+   *  timeline's stretches are: the journal is redrawn after every key of a game being played. */
+  let opened = $state.raw<ReadonlyMap<string, boolean>>(new Map());
+
+  function isOpen(heading: string): boolean {
+    return opened.get(heading) ?? OPEN_AT_FIRST.includes(heading);
+  }
+
+  function open(heading: string, yes: boolean): void {
+    const next = new Map(opened);
+    next.set(heading, yes);
+    opened = next;
+  }
+
+  const allOpen = $derived(sections.every((section) => isOpen(section.heading)));
+
+  function openEvery(): void {
+    opened = new Map(sections.map((section) => [section.heading, !allOpen]));
+  }
 
   /**
    * The stretches the reader has folded open or shut, by where each comes in the run. A stretch
@@ -48,13 +72,23 @@
   {#if entries.length === 0}
     <p class="empty">{JOURNAL.nothing}</p>
   {:else}
+    <div class="picks">
+      <button type="button" class="open-every" onclick={openEvery}>
+        {allOpen ? JOURNAL.collapseAll : JOURNAL.expandAll}
+      </button>
+    </div>
     {#each sections as section (section.heading)}
-      <h4>{section.heading}</h4>
-      <ul class="summary">
-        {#each section.lines as line, at (at)}
-          <li>{line}</li>
-        {/each}
-      </ul>
+      <details
+        class="part"
+        open={isOpen(section.heading)}
+        ontoggle={(event) => open(section.heading, event.currentTarget.open)}>
+        <summary>{section.heading}</summary>
+        <ul class="summary">
+          {#each section.lines as line, at (at)}
+            <li>{line}</li>
+          {/each}
+        </ul>
+      </details>
     {/each}
     <h3>{JOURNAL.timeline}</h3>
     <div class="timeline">
@@ -86,10 +120,27 @@
     font-size: 13px;
     color: var(--muted);
   }
-  h4 {
-    margin: 4px 0 0;
+  .picks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .open-every {
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: none;
+    font: inherit;
     font-size: 12px;
-    color: var(--accent-dim);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .open-every:hover {
+    color: var(--ink);
+  }
+  .part > summary {
+    font-size: 12px;
   }
   .summary {
     margin: 0;
