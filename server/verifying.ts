@@ -225,7 +225,8 @@ function forTheBoards(newest: KeptSession): boolean {
   return newest.leaderboard !== null && newest.mode !== 'debug';
 }
 
-/** What a checked run has to announce: how it ended, and the milestones the replay reached. */
+/** What a checked run has to announce: how it ended, the milestones the replay reached, and what
+ *  the journal it wrote counted. */
 async function announceVerifiedRun(
   sql: Queries,
   characterId: string,
@@ -243,6 +244,7 @@ async function announceVerifiedRun(
     leaderboard: verdict.leaderboard,
     outcome: run.outcome === 'win' ? 'win' : 'death',
     milestones: totals.milestones,
+    journal: journalOf(verdict),
     actions: totals.actions,
     time: totals.time,
     playMs: timing.playMs,

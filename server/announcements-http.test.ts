@@ -27,6 +27,7 @@ describe('asking the server what it has announced', () => {
         { kind: 'level', which: 25, actions: 8, time: 20, floor: 2 },
         { kind: 'death', which: 0, actions: 12, time: 30, floor: 2 },
       ],
+      journal: [],
       actions: 12,
       time: 30,
       playMs: 5000,

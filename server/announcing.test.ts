@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone } from '../src/lib/play/run';
 import { announceRun, announcementsBefore, type AnnouncedRun } from './announcing';
 import type { Sql } from './sql';
@@ -11,6 +12,22 @@ function reached(over: Partial<Milestone>): Milestone {
   return { kind: 'level', which: 2, actions: 10, time: 20, floor: 3, ...over };
 }
 
+/** A kill of something ordinary, at the action count named. */
+function killed(at: number): JournalEntry {
+  return {
+    at,
+    floor: 5,
+    module: 2,
+    text: 'Killed a GHOUL',
+    event: { kind: 'killed', monster: { type: 3, level: 10, name: 'GHOUL' }, experience: 40 },
+  };
+}
+
+/** A journal of nothing but kills, one an action. */
+function kills(count: number): JournalEntry[] {
+  return Array.from({ length: count }, (ignored, index) => killed(index + 1));
+}
+
 function run(over: Partial<AnnouncedRun> = {}): AnnouncedRun {
   return {
     characterId: CHARACTER,
@@ -20,6 +37,7 @@ function run(over: Partial<AnnouncedRun> = {}): AnnouncedRun {
     leaderboard: 'speedrun',
     outcome: 'death',
     milestones: [],
+    journal: [],
     actions: 120,
     time: 300,
     playMs: 60000,
@@ -90,6 +108,23 @@ describe('announcing a run that has been checked', () => {
     );
 
     expect(made.map((announcement) => announcement.kind)).toEqual(['death']);
+  });
+
+  it('announces each kill count the run passed, where the kill that passed it happened', async () => {
+    const made = await announceRun(sql, run({ journal: kills(600) }));
+
+    expect(made.filter((announcement) => announcement.kind === 'kills')).toMatchObject([
+      { which: 100, actions: 100, floor: 5, dungeon: 2 },
+      { which: 500, actions: 500, floor: 5, dungeon: 2 },
+    ]);
+  });
+
+  it('says a kill count once, however many more a later run of the same character kills', async () => {
+    await announceRun(sql, run({ journal: kills(120) }));
+
+    const later = await announceRun(sql, run({ journal: kills(600) }));
+
+    expect(later.map((announcement) => [announcement.kind, announcement.which])).toEqual([['kills', 500]]);
   });
 
   it('says where a death happened, which is the last milestone and what the run had reached', async () => {

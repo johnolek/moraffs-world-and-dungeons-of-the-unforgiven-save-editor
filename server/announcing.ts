@@ -1,3 +1,4 @@
+import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone } from '../src/lib/play/run';
 import type { Queries } from './sql';
 
@@ -20,14 +21,14 @@ import type { Queries } from './sql';
  * `dungeon` and `floor` are kinds nothing writes any more. They are here because the table still
  * holds rows of them from when it did, and a row nobody can name is a row nobody can read.
  */
-export type AnnouncementKind = 'win' | 'death' | 'boss' | 'dungeon' | 'level' | 'floor';
+export type AnnouncementKind = 'win' | 'death' | 'boss' | 'kills' | 'dungeon' | 'level' | 'floor';
 
 /** One announcement, as it is kept and as it goes out over the feed. */
 export interface Announcement {
   id: number;
   characterId: string;
   kind: AnnouncementKind;
-  /** Which boss, which level, which module or dungeon, which floor. */
+  /** Which boss, which level, which kill count, which module or dungeon, which floor. */
   which: number;
   game: string;
   leaderboard: string | null;
@@ -55,6 +56,9 @@ export interface AnnouncedRun {
   outcome: 'win' | 'death';
   /** Every milestone of the whole chain, oldest first. */
   milestones: readonly Milestone[];
+  /** The whole run written up by the replay, oldest first, which is what the kills are counted
+   *  out of. */
+  journal: readonly JournalEntry[];
   actions: number;
   time: number;
   playMs: number;
@@ -79,22 +83,43 @@ function worthAnnouncing(milestone: Milestone): boolean {
 }
 
 /**
- * Announce a run: the milestones it reached that have not been announced, oldest first, and then
- * how it ended.
+ * The kill counts worth saying, which are the ones a player would notice passing.
  *
- * The outcome goes last so that it is the newest of them, which is the order a feed reads in. What
- * comes back is only what was written this time, which is what there is to push to anybody
+ * They are counted over the character's whole run rather than one sitting of it, and the index on
+ * the table is what keeps a run replayed again from saying any of them a second time.
+ */
+const ANNOUNCED_KILLS: readonly number[] = [100, 500, 1000, 2500, 5000];
+
+/**
+ * Announce a run: everything it has to say that has not been announced for this character before.
+ *
+ * What comes back is only what was written this time, which is what there is to push to anybody
  * listening.
  */
 export async function announceRun(sql: Queries, run: AnnouncedRun): Promise<Announcement[]> {
   const made: Announcement[] = [];
+  for (const moment of momentsOf(run)) {
+    const written = await announce(sql, run, moment);
+    if (written !== null) made.push(written);
+  }
+  return made;
+}
+
+/**
+ * Everything a run has to announce, in the order it goes out.
+ *
+ * The milestones come first, then what the journal counted, and the outcome last so that it is
+ * the newest of them, which is the order a feed reads in.
+ */
+function momentsOf(run: AnnouncedRun): AnnouncementMoment[] {
+  const moments: AnnouncementMoment[] = [];
   let dungeon = 0;
   let level = 0;
   for (const milestone of run.milestones) {
     if (milestone.kind === 'dungeon') dungeon = milestone.which;
     if (milestone.kind === 'level') level = Math.max(level, milestone.which);
     if (!worthAnnouncing(milestone)) continue;
-    const written = await announce(sql, run, {
+    moments.push({
       kind: milestone.kind,
       which: milestone.which,
       actions: milestone.actions,
@@ -103,10 +128,10 @@ export async function announceRun(sql: Queries, run: AnnouncedRun): Promise<Anno
       dungeon,
       level,
     });
-    if (written !== null) made.push(written);
   }
+  moments.push(...journalMoments(run));
   const ended = run.milestones[run.milestones.length - 1];
-  const outcome = await announce(sql, run, {
+  moments.push({
     kind: run.outcome,
     which: 0,
     actions: run.actions,
@@ -115,8 +140,57 @@ export async function announceRun(sql: Queries, run: AnnouncedRun): Promise<Anno
     dungeon,
     level,
   });
-  if (outcome !== null) made.push(outcome);
-  return made;
+  return moments;
+}
+
+/** What the journal the replay wrote has to announce: the kill counts the run passed. */
+function journalMoments(run: AnnouncedRun): AnnouncementMoment[] {
+  const moments: AnnouncementMoment[] = [];
+  let kills = 0;
+  for (const entry of run.journal) {
+    if (entry.event?.kind !== 'killed') continue;
+    kills += 1;
+    if (ANNOUNCED_KILLS.includes(kills)) moments.push(momentAt(run, entry, 'kills', kills));
+  }
+  return moments;
+}
+
+/**
+ * One line of the journal as an announcement of it.
+ *
+ * The line says how many actions the run had spent, the floor the character was standing on and
+ * the module it was in. The game's own clock and the level the character had reached are not in
+ * the journal at all, so they come off the milestones instead.
+ */
+function momentAt(
+  run: AnnouncedRun,
+  entry: JournalEntry,
+  kind: AnnouncementKind,
+  which: number,
+): AnnouncementMoment {
+  const standing = standingAt(run.milestones, entry.at);
+  return {
+    kind,
+    which,
+    actions: entry.at,
+    time: standing.time,
+    floor: entry.floor,
+    dungeon: entry.module,
+    level: standing.level,
+  };
+}
+
+/** The game's clock and the level the run had reached by the time it had spent these actions,
+ *  which is what the last milestone before then left them at. */
+function standingAt(milestones: readonly Milestone[], actions: number): { time: number; level: number } {
+  let time = 0;
+  let level = 0;
+  for (const milestone of milestones) {
+    if (milestone.actions > actions) break;
+    time = milestone.time;
+    if (milestone.kind === 'level') level = Math.max(level, milestone.which);
+  }
+  return { time, level };
 }
 
 /** What one announcement says beyond the run it belongs to. */

@@ -20,6 +20,8 @@ export function announcementWords(announcement: Announcement): string {
     case 'boss':
       // The games count their bosses from zero and their players do not.
       return `${who} beat Boss ${announcement.which + 1}`;
+    case 'kills':
+      return `${who} has killed ${announcement.which} monsters`;
     case 'dungeon':
       return `${who} reached ${dungeonName(announcement.game, announcement.which)}`;
     case 'level':
