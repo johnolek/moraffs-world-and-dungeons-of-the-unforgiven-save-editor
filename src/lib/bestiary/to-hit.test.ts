@@ -43,7 +43,7 @@ function measured(fighter: ToHitFighter, target: Target, seed: number, damageDie
   const rnd = seeded(seed);
   const game = newGame({
     rng: { random: (n: number) => Math.trunc(rnd() * n) },
-    monsterKinds: [{ name: 'TARGET', levelDrain: 0, statDrain: 0, breath: 0, special: 0, type: 0, expMult: 1 }],
+    monsterKinds: [{ id: 'target', name: 'TARGET', levelDrain: 0, statDrain: 0, breath: 0, special: 0, type: 0, expMult: 1 }],
     monsterStats: [{ defense: target.defense, speed: target.speed, damageDie: 1, hpPerLevel: 1, text: '' }],
     weaponDamage: [damageDie],
     weaponHit: [fighter.weaponHit ?? 0],

@@ -217,7 +217,21 @@ function sectionPlace(data: GameData, section: number): SectionPlace | null {
  * which is how a battle message prints them.
  */
 function sectionMonsterKinds(data: GameData, section: number): MonsterKind[] {
-  return [...data.builtinMonsters, ...data.sections[section - 1].monsters].map((kind) => ({
+  return [
+    ...data.builtinMonsters.map((kind) => monsterKind(`builtin-${kind.id}`, kind)),
+    ...data.sections[section - 1].monsters.map((kind) => monsterKind(`section-${section}-${kind.slot}`, kind)),
+  ];
+}
+
+/** A row of `dotu-data.json`'s monster tables, which the two tables spell alike but for the
+ *  number each of them is found by. */
+type MonsterRow = GameData['builtinMonsters'][number] | GameData['sections'][number]['monsters'][number];
+
+/** One loaded row, out of the row of `dotu-data.json` it was read from. The id is the one the
+ *  catalogue of `src/lib/bestiary/monsters.ts` knows the same monster by. */
+function monsterKind(id: string, kind: MonsterRow): MonsterKind {
+  return {
+    id,
     name: kind.name.toUpperCase(),
     levelDrain: kind.levelDrain,
     statDrain: kind.statDrain,
@@ -225,7 +239,7 @@ function sectionMonsterKinds(data: GameData, section: number): MonsterKind[] {
     special: kind.special,
     type: kind.type,
     expMult: kind.expMult,
-  }));
+  };
 }
 
 /** The rules a faithful game is played by. */

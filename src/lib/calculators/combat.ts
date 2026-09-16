@@ -155,6 +155,7 @@ export function swingsFor(hp: number, meanDamage: number): number | null {
  */
 function plainKind(monster: Monster): MonsterKind {
   return {
+    id: monster.id,
     name: monster.name.toUpperCase(),
     levelDrain: 0,
     statDrain: 0,

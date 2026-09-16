@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { monsterById } from '../../map/stocking';
 import data from '../dotu-data.json';
 import { bossIndex, sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
@@ -83,6 +84,17 @@ describe('the faithful rules', () => {
         [...data.builtinMonsters, ...data.sections[section - 1].monsters].map((kind) => kind.name.toUpperCase()),
       );
       expect(kinds[22].expMult).toBe(data.sections[section - 1].monsters[0].expMult);
+    }
+  });
+
+  it('knows every row by the id the catalogue knows the same monster by', () => {
+    for (const section of SECTIONS) {
+      const kinds = rules.monsterKinds(section);
+      expect(kinds[0].id).toBe('builtin-0');
+      expect(kinds[21].id).toBe('builtin-21');
+      expect(kinds[22].id, `section ${section}`).toBe(`section-${section}-22`);
+      expect(kinds[26].id, `section ${section}`).toBe(`section-${section}-26`);
+      for (const kind of kinds) expect(() => monsterById(kind.id), kind.id).not.toThrow();
     }
   });
 

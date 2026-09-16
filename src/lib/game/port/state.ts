@@ -341,6 +341,16 @@ export interface Monster {
  * `name[19], picnum, color_set, ldrain, chrdrain, breath, special, type, int16 exp, color`.
  */
 export interface MonsterKind {
+  /**
+   * Which monster of the catalogue (`src/lib/bestiary/monsters.ts`) this row is, which is what
+   * its picture, its colours and its description are looked up by.
+   *
+   * The game has no such field: it reads all of that out of the row's own bytes. The port keeps
+   * the drawing in the catalogue instead, so a row has to say which entry it is drawn as. A row
+   * of an endless section is a monster borrowed from another section repainted in a colour set
+   * of its own, and its id names both (`src/lib/game/endless/README.md`).
+   */
+  id: string;
   /** Bytes 0..18, upper case as the game stores it: what a battle message calls the monster. */
   name: string;
   /**
