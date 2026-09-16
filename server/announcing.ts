@@ -64,7 +64,9 @@ export interface AnnouncedRun {
   name: string;
   game: string;
   leaderboard: string | null;
-  outcome: 'win' | 'death';
+  /** How the run came out, and null for a character still being played: nothing is said about how
+   *  a run ended until it has. */
+  outcome: 'win' | 'death' | null;
   /** Every milestone of the whole chain, oldest first. */
   milestones: readonly Milestone[];
   /** The whole run written up by the replay, oldest first, which is what the kills, the finds and
@@ -120,7 +122,8 @@ export async function announceRun(sql: Queries, run: AnnouncedRun): Promise<Anno
  * Everything a run has to announce, in the order it goes out.
  *
  * The milestones come first, then what the journal counted, and the outcome last so that it is
- * the newest of them, which is the order a feed reads in.
+ * the newest of them, which is the order a feed reads in. A character still being played has no
+ * outcome yet and everything it has reached is announced without one.
  */
 function momentsOf(run: AnnouncedRun): AnnouncementMoment[] {
   const moments: AnnouncementMoment[] = [];
@@ -141,16 +144,18 @@ function momentsOf(run: AnnouncedRun): AnnouncementMoment[] {
     });
   }
   moments.push(...journalMoments(run));
-  const ended = run.milestones[run.milestones.length - 1];
-  moments.push({
-    kind: run.outcome,
-    which: 0,
-    actions: run.actions,
-    time: run.time,
-    floor: ended?.floor ?? 0,
-    dungeon,
-    level,
-  });
+  if (run.outcome !== null) {
+    const ended = run.milestones[run.milestones.length - 1];
+    moments.push({
+      kind: run.outcome,
+      which: 0,
+      actions: run.actions,
+      time: run.time,
+      floor: ended?.floor ?? 0,
+      dungeon,
+      level,
+    });
+  }
   return moments;
 }
 

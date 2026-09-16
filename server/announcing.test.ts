@@ -187,6 +187,24 @@ describe('announcing a run that has been checked', () => {
     expect(made.map((announcement) => announcement.kind)).toEqual(['death']);
   });
 
+  it('announces what a character still being played has reached, and nothing about an outcome', async () => {
+    const made = await announceRun(
+      sql,
+      run({
+        outcome: null,
+        milestones: [reached({ kind: 'boss', which: 2 }), reached({ kind: 'level', which: 20 })],
+        journal: kills(100),
+      }),
+    );
+
+    expect(made.map((announcement) => [announcement.kind, announcement.which])).toEqual([
+      ['boss', 2],
+      ['level', 20],
+      ['kills', 100],
+    ]);
+    expect(await sql.query('SELECT 1 FROM announcements WHERE kind IN ($1, $2)', ['death', 'win'])).toEqual([]);
+  });
+
   it('says where a death happened, which is the last milestone and what the run had reached', async () => {
     const made = await announceRun(
       sql,

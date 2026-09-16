@@ -225,8 +225,14 @@ function forTheBoards(newest: KeptSession): boolean {
   return newest.leaderboard !== null && newest.mode !== 'debug';
 }
 
-/** What a checked run has to announce: how it ended, the milestones the replay reached, and what
- *  the journal it wrote counted. */
+/**
+ * What a checked run has to announce: the milestones the replay reached, what the journal it wrote
+ * counted, and how it ended.
+ *
+ * A character still being played has reached everything else already, and the feed is read live,
+ * so what it has reached is announced now rather than being held back until it dies or wins. How
+ * it came out is the one thing left to say when it does.
+ */
 async function announceVerifiedRun(
   sql: Queries,
   characterId: string,
@@ -234,7 +240,7 @@ async function announceVerifiedRun(
   timing: RunTiming,
 ): Promise<Announcement[]> {
   const run = await runFor(sql, characterId);
-  if (run === null || run.outcome === null) return [];
+  if (run === null) return [];
   const totals = verdict.replayed ?? verdict.claimed;
   return announceRun(sql, {
     characterId,
@@ -242,13 +248,19 @@ async function announceVerifiedRun(
     name: run.name,
     game: verdict.game,
     leaderboard: verdict.leaderboard,
-    outcome: run.outcome === 'win' ? 'win' : 'death',
+    outcome: outcomeOf(run.outcome),
     milestones: totals.milestones,
     journal: journalOf(verdict),
     actions: totals.actions,
     time: totals.time,
     playMs: timing.playMs,
   });
+}
+
+/** How a run came out, as the announcer names it, out of the word the character's row holds. */
+function outcomeOf(outcome: string | null): 'win' | 'death' | null {
+  if (outcome === null) return null;
+  return outcome === 'win' ? 'win' : 'death';
 }
 
 /**
