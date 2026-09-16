@@ -295,7 +295,7 @@ describe('verifying a run played on the clock', () => {
     expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
     // The swings are what the readings decide, so a replay reaching the same damage is a replay
     // that rolled off the same readings.
-    expect(verdict.journal.map((entry) => entry.text)).toContain('Swung the FIST at a Level 4 HARPEY and hit for 21');
+    expect(verdict.journal.map((entry) => entry.text)).toContain('Swung the FIST at a Level 3 DK. GREEN PUFFBALL and hit for 57');
   });
 
   it('fails a run one of whose readings has been moved', async () => {
@@ -311,7 +311,7 @@ describe('verifying a run played on the clock', () => {
     // reseeds from the clock as well, so the whole fight goes differently and the replay's clock
     // ends a second short of what the log claims.
     expect(verdict.status).toBe('failed');
-    expect(verdict.reason).toBe(`The replay's clock reached 40 seconds and the log claims ${log.time} seconds.`);
+    expect(verdict.reason).toBe(`The replay's clock reached 38 seconds and the log claims ${log.time} seconds.`);
   });
 
   it('cannot check a run with a reading taken out of it', async () => {

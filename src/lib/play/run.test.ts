@@ -215,11 +215,14 @@ describe('the run log', () => {
     await press(session, KEY.arrowLeft);
     session.finish();
 
+    // The first reading is the one the floor the character wakes on was stocked off, taken as the
+    // log was opened; the two after it stand in front of the keys they were read for.
     expect(run.log().inputs).toEqual([
       clockSecondInput(1_757_000_000),
       clockTickInput(101),
-      KEY.arrowUp,
       clockTickInput(102),
+      KEY.arrowUp,
+      clockTickInput(103),
       KEY.arrowLeft,
     ]);
     // Nobody pressed a reading, so the count of the keys a person pressed is the two keys.
@@ -230,7 +233,7 @@ describe('the run log', () => {
     const { run, session } = recordedGame({}, 12345, undefined, () => 3, 1_757_000_000);
     session.finish();
 
-    expect(run.log().inputs).toEqual([clockSecondInput(1_757_000_000)]);
+    expect(run.log().inputs).toEqual([clockSecondInput(1_757_000_000), clockTickInput(3)]);
     expect(run.presses).toBe(0);
   });
 
@@ -238,11 +241,12 @@ describe('the run log', () => {
     let tick = 0;
     const { session } = recordedGame({}, 12345, undefined, () => (tick += 91), 1_757_000_000);
 
-    // 91 ticks is five seconds of the 18.2 a second the counter counts, and 182 is ten.
+    // 91 ticks is five seconds of the 18.2 a second the counter counts, and the reading taken as
+    // the log was opened has already spent the first of them.
     await press(session, KEY.arrowUp);
-    expect(session.game.seconds?.()).toBe(1_757_000_005);
-    await press(session, KEY.arrowLeft);
     expect(session.game.seconds?.()).toBe(1_757_000_010);
+    await press(session, KEY.arrowLeft);
+    expect(session.game.seconds?.()).toBe(1_757_000_015);
     session.finish();
   });
 
@@ -250,10 +254,25 @@ describe('the run log', () => {
     let tick = 500;
     const { session } = recordedGame({}, 12345, undefined, () => (tick += 7));
 
-    await press(session, KEY.arrowUp);
+    // 507 was read as the log was opened, for the floor the character woke on.
     expect(session.game.clock?.()).toBe(507);
-    await press(session, KEY.arrowLeft);
+    await press(session, KEY.arrowUp);
     expect(session.game.clock?.()).toBe(514);
+    await press(session, KEY.arrowLeft);
+    expect(session.game.clock?.()).toBe(521);
+    session.finish();
+  });
+
+  it('stocks the floor the character wakes on off that first reading', () => {
+    // A Random call seeds itself from its running total plus the clock and adds the clock to the
+    // total, so a clock reading of nought would seed every call of the stocking the same and put
+    // 145 monsters of one kind on the floor. The reading taken as the log is opened is what keeps
+    // that from happening.
+    const { session } = recordedGame({ level: 3, ...floorSquare(3) }, 12345, undefined, () => 1005, 1_757_000_000);
+
+    const kinds = new Set(session.game.monsters.map((monster) => `${monster.type}/${monster.level}/${monster.hp}`));
+    expect(session.game.clock?.()).toBe(1005);
+    expect(kinds.size).toBeGreaterThan(50);
     session.finish();
   });
 

@@ -80,9 +80,9 @@ export const TICKS_A_SECOND = 18.2;
  * swings rolled off, so the readings are in the log, the way Moraff's Revenge keeps the ticks its
  * monsters move on ({@link REV_CLOCK_TICK}).
  *
- * A reading carries a number, which is how far below this the input sits: the counter is counted
- * from the start of the sitting, so a reading is never negative and the inputs it writes are
- * never above this. Keys are well inside -0x100 to 0xff, the turn inputs above are at -0x101 to
+ * A reading carries a number, which is how far below this the input sits: the counter only ever
+ * counts up from zero, so a reading is never negative and the inputs it writes are never above
+ * this. Keys are well inside -0x100 to 0xff, the turn inputs above are at -0x101 to
  * -0x104 and Moraff's Revenge's clock tick is -0x202, so an input at or below this is a reading
  * and nothing else.
  */
@@ -131,18 +131,20 @@ export function isClockReading(input: number): boolean {
 }
 
 /**
- * The tick counter of the machine this sitting is being played on: how many 1/18.2 of a second
- * have gone by since the sitting began, from `performance.now()`.
+ * The tick counter a sitting is played on: how many 1/18.2 of a second have gone by since this
+ * page was opened, from `performance.now()`.
  *
- * The original's counter is the BIOS one, which counts from the machine being switched on, less
- * the reading the game took as it started. Counting from the start of the sitting is what makes a
- * reading in a log mean something on its own — the 100th tick is the 100th tick of that sitting,
- * whenever the sitting was — and a reseed does the same thing to a swing wherever the number was
- * counted from.
+ * The original's counter is the BIOS one less the reading the game took as it started, so it
+ * counts from the moment the program began rather than from the moment a character walked into
+ * the dungeon: by the time `stock_level` rolls a floor the game has drawn its title screen and
+ * asked which character to play, and the counter is well past zero. The page is what stands in
+ * for the program here, and counting from it keeps that true — a counter that started with the
+ * sitting would read zero for the floor a character wakes on, and a `Random` call seeded from
+ * zero adds nothing to its running total, so every monster on that floor would be rolled from one
+ * seed.
  */
 export function sittingClock(): () => number {
-  const began = performance.now();
-  return () => Math.floor(((performance.now() - began) * TICKS_A_SECOND) / 1000);
+  return () => Math.floor((performance.now() * TICKS_A_SECOND) / 1000);
 }
 
 /** The wall-clock second a sitting begins in, which is the one `time()` reading its log keeps. */
@@ -473,7 +475,8 @@ export class RunRecorder {
 
   /** The tick counter the run is played on, or null for a run played off the clock. */
   private readonly tickCounter: (() => number) | null;
-  /** What the counter read before the input the game is handling now. */
+  /** What the counter last read: the reading taken as the log was opened, and after that the one
+   *  taken in front of the input the game is handling now. */
   private lastTick = 0;
   /** The wall-clock second the sitting began, which the game's `time()` counts on from. */
   private readonly startedSecond: number;
@@ -503,9 +506,14 @@ export class RunRecorder {
     this.tickCounter = start.tickCounter ?? null;
     this.rng = this.tickCounter === null ? new SeededRng(this.seed) : new BorlandRng(this.seed);
     this.startedSecond = start.startedSecond ?? sittingSecond();
-    // The floor the character wakes on is stocked before a key is ever pressed, so the reading
-    // goes in as the log is opened rather than in front of the first input.
-    if (this.tickCounter !== null) this.inputs.push(clockSecondInput(this.startedSecond));
+    // The floor the character wakes on is stocked before a key is ever pressed, so the second the
+    // sitting began in and the first reading of the counter both go in as the log is opened. That
+    // reading is the one load_level_map stocks the floor off, and a replay reads it back the same
+    // way it reads back the ones in front of the keys.
+    if (this.tickCounter !== null) {
+      this.inputs.push(clockSecondInput(this.startedSecond));
+      this.readTheClock();
+    }
   }
 
   /**
@@ -570,8 +578,9 @@ export class RunRecorder {
 
   /**
    * The reading the tick counter takes before an input, which goes into the log ahead of that
-   * input ({@link CLOCK_TICK_INPUT}). A run played off the clock takes none and its log holds
-   * only the inputs.
+   * input ({@link CLOCK_TICK_INPUT}). The log is opened with one of these as well, for the floor
+   * the character wakes on. A run played off the clock takes none and its log holds only the
+   * inputs.
    *
    * Nobody pressed a reading, so it is no part of {@link presses}: what that counts is the keys
    * a person really pressed.

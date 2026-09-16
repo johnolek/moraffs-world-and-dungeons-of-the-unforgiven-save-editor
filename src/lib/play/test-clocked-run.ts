@@ -24,7 +24,7 @@ export async function unforgivenClockedRun(): Promise<RunSession> {
   // them, so most of the floor has nothing within reach and where the character starts decides
   // whether anything comes. This square has a stripe passing close enough that a monster walks up
   // to it, and a way north for the character to face down.
-  const file = characterFile({ level: 3, dir: 0, x: 13, y: 2, lev: 20, str: 60 });
+  const file = characterFile({ level: 3, dir: 0, x: 9, y: 7, lev: 20, str: 60 });
   let tick = 1000;
   const run = new RunRecorder({
     game: 'unforgiven',

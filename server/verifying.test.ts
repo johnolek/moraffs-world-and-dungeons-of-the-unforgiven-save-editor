@@ -751,6 +751,6 @@ describe('a run played on the clock', () => {
     // fight reseeds from the clock as well, so the whole fight goes differently and the replay's
     // clock ends a second short of what the log claims.
     expect(verdict.status).toBe('failed');
-    expect(verdict.reason).toBe(`The replay's clock reached 40 seconds and the log claims ${log.time} seconds.`);
+    expect(verdict.reason).toBe(`The replay's clock reached 38 seconds and the log claims ${log.time} seconds.`);
   });
 });
