@@ -98,6 +98,25 @@ describe("the panel beside the boss's taunt", () => {
     expect(used.has(15)).toBe(true);
   });
 
+  it('lays the stone alone while the fade brings it up out of black', () => {
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawBossOffice(frame, SCREEN_PIXELS, { section: SECTION, lines: TAUNT, slabOnly: true }, sectionPictures());
+
+    // The slab is there, in its own stone.
+    const stone = entriesIn(frame, 0x100, 0x220, 0x500, 0x240);
+    expect(stone.size).toBeGreaterThan(1);
+    for (const entry of stone) {
+      expect(entry).toBeGreaterThanOrEqual(SLAB_BASE);
+      expect(entry).toBeLessThanOrEqual(SLAB_BASE + 31);
+    }
+    // The panel the boss stands in is not, and neither is the taunt: both are drawn once the
+    // fade is over.
+    expect([...entriesIn(frame, 1, 1, 0x168, 0x1ea)]).toEqual([]);
+    const band = entriesIn(frame, 100, 0x253, 0x5dc, 0x2a3);
+    expect(band.has(14)).toBe(false);
+    expect(band.has(15)).toBe(false);
+  });
+
   it('draws nothing at all with neither a picture nor a word', () => {
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
     drawBossOffice(frame, SCREEN_PIXELS, { section: SECTION, lines: [] }, NO_PICTURES);

@@ -17,10 +17,13 @@ import { drawTabletLines, drawTabletSlab, SLAB_BASE, SLAB_TINT, TABLET_LOWERED, 
  * Everything here is the drawing, and every coordinate is in the 1600 by 1200 grid the game
  * places everything in.
  *
- * The office rises out of black: `FUN_3000_9026` blacks the DAC before it draws the slab and
- * brings it back up afterwards (exe 4000:5b3f and 4000:5b91). `office.ts` runs that fade over a
- * frame whose office is handed no lines, because the original cuts the four lines into the stone
- * after the fade rather than during it.
+ * The office rises out of black a piece at a time. `FUN_3000_9026` blacks the DAC (exe 3000:9088,
+ * which calls 4000:5b3f), draws the slab, and brings the DAC back up (exe 3000:9124, which calls
+ * 4000:5b91) with nothing but that stone on the screen; the four lines of the taunt are cut into
+ * it after the fade (exe 3000:9158 onwards), and `boss_office_message` draws the panel, the boss
+ * and the three lines of the heading after the whole of that has returned (exe 3000:6d9d onwards).
+ * So {@link BossOffice.slabOnly} is what `office.ts` fades up, and the rest arrives at once when
+ * the fade is over.
  */
 
 /** The screen the grid is drawn onto, in pixels. */
@@ -43,6 +46,9 @@ export interface BossOffice {
   section: number;
   /** The four lines of the taunt, which are read off the lowered tablet (`tablet.ts`). */
   lines: string[];
+  /** The stone alone, which is all there is on the screen while the fade brings it up out of
+   *  black: no taunt, no panel, no boss. */
+  slabOnly?: boolean;
 }
 
 /**
@@ -69,6 +75,8 @@ export function drawBossOffice(
   // The tablet is brought down before the panel is laid over the top of it, so the slab's own
   // stone goes on first.
   drawTabletSlab(frame, screen, pictures.wall ?? null, TABLET_LOWERED, SLAB_TINT);
+  // The fade is over the bare stone, and everything below goes on once it has finished.
+  if (showing.slabOnly) return;
   drawTabletLines(frame, screen, showing.lines, TABLET_LOWERED);
   const stone = pictures.wall?.[TABLET_SLAB_IMAGE] ?? null;
   if (stone) {

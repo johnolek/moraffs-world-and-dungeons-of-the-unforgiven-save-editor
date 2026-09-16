@@ -34,9 +34,9 @@ interface Frame {
   tablet?: string[] | null;
   /**
    * The Shadow boss's office that was on the screen when the frame was taken
-   * (`boss-office.ts`), for the same reason the tablet is here: the fade that brings the office
-   * up out of black runs over a frame whose office has none of the taunt's words on it, so the
-   * words appear when the frame is released rather than rising with the stone.
+   * (`boss-office.ts`), for the same reason the tablet is here: the fade that brings the office up
+   * out of black runs over a frame carrying the bare slab, so the taunt, the panel, the boss and
+   * the heading all appear when the frame is released rather than rising with the stone.
    */
   bossOffice?: BossOffice | null;
   /** The palette fade this frame is the screen for (`fade.ts`), or none. */
@@ -93,7 +93,7 @@ export class TimedScreens {
   }
 
   /** The same for the Shadow boss's office, which the fade that brings it out of black holds on
-   *  the screen without the taunt's words on it. */
+   *  the screen as the bare slab. */
   showingBossOffice(office: BossOffice | null): BossOffice | null {
     return this.current?.bossOffice ?? office;
   }

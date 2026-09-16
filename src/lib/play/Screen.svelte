@@ -253,8 +253,16 @@
   /** What a screen whose own fill the port does not know blacks out, which is all of it. */
   const WHOLE_DISPLAY: ScreenRect = { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
 
-  /** The rectangle a screen that is up has been drawn on black, and null when none is up. */
-  const cleared = $derived(screen.length === 0 ? null : (screenCleared ?? WHOLE_DISPLAY));
+  /**
+   * The rectangle a screen that is up has been drawn on black, and null when none is up.
+   *
+   * The boss's office is one of those screens even while it carries no line at all: erase_menu_block
+   * (exe 4000:42b4) blanks the display before it is drawn, and the fade that brings its stone up
+   * runs before the heading is printed on it.
+   */
+  const cleared = $derived(
+    screen.length === 0 && bossOffice === null ? null : (screenCleared ?? WHOLE_DISPLAY),
+  );
 
   // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
   // copies the two shop tables over the banks the building picture is drawn out of.

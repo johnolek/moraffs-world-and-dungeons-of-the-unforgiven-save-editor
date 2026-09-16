@@ -59,6 +59,12 @@ describe("the boss's message", () => {
     await press(session, KEY.arrowUp);
     expect(session.box[0]).toBe('A LITTLE SNAKE HAS A MESSAGE');
     await press(session, READ_THE_MESSAGE);
+    // The fade is still running, and it carries the bare stone: no taunt, no panel, no boss, and
+    // none of the three lines of the heading on the screen under it.
+    const fading = session.view();
+    expect(fading.fade).toBe('in');
+    expect(fading.bossOffice).toEqual({ section: 1, lines: [], slabOnly: true });
+    expect(fading.screen.filter((line) => line.x === 400)).toEqual([]);
     // The taunt's own lines fill the box, and the three that say whose office it came from stand
     // on the screen beside the boss's picture, which is up until a key takes it down.
     expect(session.box).toHaveLength(4);
