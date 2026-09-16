@@ -215,14 +215,13 @@
     font-size: 12px;
     color: var(--muted);
   }
-  /* The game's own face, which is drawn from a ten-pixel box: twenty puts two screen pixels on
-     each game pixel and every edge lands on a whole one. */
+  /* The same size the announcements down the side of the boards are drawn at. */
   .latest .said {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     font-family: var(--font-game);
-    font-size: 20px;
+    font-size: 15px;
     color: var(--said);
   }
   .latest .who {

@@ -81,7 +81,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-    width: 400px;
+    width: 320px;
     flex-shrink: 0;
     padding: 16px;
     border-left: 1px solid var(--line);
@@ -106,12 +106,13 @@
     padding: 6px 0;
     border-bottom: 1px solid var(--line);
   }
-  /* The game's own face, which is drawn from a ten-pixel box: twenty puts two screen pixels on
-     each game pixel and every edge lands on a whole one. */
+  /* The game's own face, which is drawn from a ten-pixel box. Fifteen puts one and a half screen
+     pixels on each game pixel, which is three whole device pixels on a display that draws two to
+     the pixel, and a soft edge on one that draws one. */
   .said {
     display: block;
     font-family: var(--font-game);
-    font-size: 20px;
+    font-size: 15px;
     line-height: 1.35;
     color: var(--said);
   }
