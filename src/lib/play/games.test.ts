@@ -1,15 +1,16 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { app, type RosterEntry } from '../app-state.svelte';
 import { newEntry } from '../character/roster';
-import { ENDLESS_BOTTOM } from '../game/endless/rules';
+import { endlessRules, ENDLESS_BOTTOM, ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import { FAITHFUL_RULES } from '../game/port/rules';
+import { UNFORGIVEN_MAP } from '../map/game';
 import { characterFile, floorSquare, press, settle, teleporterSquare } from './battle.test-support';
 import type { GameSession } from './engine';
 import { PLAY_GAMES } from './games';
 import { KEY } from './keys';
 import { runPlayLoop } from './loop';
 import { mwCharacterFile } from './mw/test-engine';
-import { writePlayClockReseed } from './mode';
+import { writePlayClockReseed, type PlayMode } from './mode';
 import { runLogOf, type RunRecorder } from './run';
 import { verifyRun } from './verify';
 
@@ -28,9 +29,12 @@ function rostered(where: Parameters<typeof characterFile>[0] = { level: 3, dir: 
 }
 
 /** One sitting at the game, played to the end of the keys and left. */
-async function playASession(entry: RosterEntry, keys: number[]): Promise<GameSession> {
+async function playASession(entry: RosterEntry, keys: number[], mode: PlayMode = 'faithful'): Promise<GameSession> {
   const game = PLAY_GAMES.unforgiven;
-  const session = game.start(entry, false, 'faithful');
+  const session = game.start(entry, false, mode);
+  // The Play tab tells the session which mode it is being played in, which is how the sitting
+  // comes to say so.
+  session.mode = mode;
   void runPlayLoop(session, game.loop(session));
   await settle();
   // The snake's stone tablet greets a character standing in the town and takes a key of its own.
@@ -90,18 +94,43 @@ describe('a character played again', () => {
 });
 
 describe('a character rolled for the endless dungeon', () => {
+  /** The module a character rolled under the normal difficulty bottoms out in, and so the one
+   *  whose floors go on for ever. */
   const MODULE_IV = 3;
+  /** A floor below the bottom of Module IV, which the game itself has no map of. */
+  const ENDLESS_FLOOR = 120;
   /** The floor a trap door is opened with the key labelled 44, which is deeper than the record's
    *  own flags reach. */
   const DEEP_FLOOR = 220;
 
-  /** A character on the roster locked to the endless dungeon, standing in the town. */
-  function rosteredEndless(): RosterEntry {
-    const bytes = Uint8Array.from(characterFile({ lev: 20, level: 3, dir: 0, ...floorSquare(3) }).bytes);
+  /** A character on the roster locked to the endless dungeon. */
+  function rosteredEndless(where: Parameters<typeof characterFile>[0] = { level: 3, dir: 0, ...floorSquare(3) }): RosterEntry {
+    const bytes = Uint8Array.from(characterFile({ lev: 99, hp: 30000, maxHp: 30000, ...where }).bytes);
     const entry = newEntry({ game: 'unforgiven', name: 'DEEPER', slot: 2, bytes, imported: false, lock: 'endless' });
     app.roster = [entry];
     app.characterId = entry.id;
     return entry;
+  }
+
+  /** An open square of a floor below the bottom of the module, which only the endless rules
+   *  generate. */
+  function endlessSquare(module: number, floor: number): { x: number; y: number } {
+    const rules = endlessRules({ hard: false, seed: ENDLESS_WORLD_SEED });
+    const rows = UNFORGIVEN_MAP.floor(floor, module, rules.bottomLevel(module), rules.trapdoorReach(module, floor));
+    for (let y = 1; y < rows.length; y++) {
+      for (let x = 1; x < rows[y].length; x++) if (!rows[y][x].solid) return { x, y };
+    }
+    throw new Error(`no open square on floor ${floor} of module ${module}`);
+  }
+
+  /** A character standing on a floor the game itself stops short of. */
+  function standingDeep(): RosterEntry {
+    return rosteredEndless({
+      module: MODULE_IV,
+      level: ENDLESS_FLOOR,
+      dir: 0,
+      ...endlessSquare(MODULE_IV, ENDLESS_FLOOR),
+    });
   }
 
   it('is played in the world it was rolled into, where a faithful character is not', () => {
@@ -133,6 +162,46 @@ describe('a character rolled for the endless dungeon', () => {
 
     expect(session.game.rules.keys.flag(session.game.pc, DEEP_FLOOR)).toBe(1);
     session.finish();
+  });
+
+  it('plays on below the bottom of its module and picks up where it left off', async () => {
+    const entry = standingDeep();
+
+    const first = await playASession(entry, [KEY.enter], 'endless');
+    // The key a level drainer killed this deep carries, which is labelled for a floor the
+    // record has no flag for.
+    first.game.rules.keys.take(first.game.pc, DEEP_FLOOR);
+    first.save();
+
+    const second = await playASession(entry, [KEY.enter], 'endless');
+
+    expect(first.game.rules.sectionOf(MODULE_IV, ENDLESS_FLOOR)).toBeGreaterThan(20);
+    expect(second.view().place.floor).toBe(ENDLESS_FLOOR);
+    expect(entry.run.map((sitting) => sitting.mode)).toEqual(['endless', 'endless']);
+    expect(entry.endless?.keys).toEqual([DEEP_FLOOR / 5]);
+    expect(second.game.rules.keys.flag(second.game.pc, DEEP_FLOOR)).toBe(1);
+  });
+
+  it('replays a sitting played on a floor the game itself has no map of', async () => {
+    const entry = standingDeep();
+    await playASession(entry, [KEY.enter, KEY.arrowLeft, KEY.enter], 'endless');
+
+    const verdict = await verifyRun(runLogOf(entry.run));
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+    expect(verdict.mode).toBe('endless');
+  });
+
+  it('leaves a character rolled to play the game as it shipped where it was', async () => {
+    const entry = rostered();
+
+    const session = await playASession(entry, [KEY.enter]);
+
+    expect(session.game.rules).toBe(FAITHFUL_RULES);
+    expect(entry.worldSeed).toBeUndefined();
+    expect(entry.endless).toBeUndefined();
+    expect(entry.run[0].mode).toBe('faithful');
   });
 });
 
