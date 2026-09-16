@@ -13,7 +13,8 @@
   import { dotuMonsterThumbnail } from './monster-thumbnails';
   import { drawnSmaller } from '../ui/drawn-smaller.svelte';
   import { onScreen } from '../ui/on-screen.svelte';
-  import { inRect } from './screens';
+  import { messageBoxAnnouncement } from './announcement-box.svelte';
+  import { inRect, MESSAGE_BOX_GRID } from './screens';
   import { zoomMapMonsterAt } from './zoom-monsters';
   import type { KilledOnScreen } from './engine';
   import {
@@ -134,6 +135,9 @@
      *  game drew it, the way a slow machine showed one (`mode.ts`). Nothing at all draws it in
      *  one go. */
     redraw?: number;
+    /** Whether an announcement the run server makes while this screen is up is printed on the
+     *  bottom lines of the message box (`mode.ts`, `announcement-box.ts`). */
+    announcements?: boolean;
   }
 
   let {
@@ -165,7 +169,15 @@
     plaque = null,
     fade = null,
     redraw = 0,
+    announcements = false,
   }: Props = $props();
+
+  /**
+   * The announcement the message box is carrying, which the tab draws over the box and tells the
+   * game nothing about: it is in neither the run log nor anything a replay reads.
+   */
+  const announcement = messageBoxAnnouncement(() => box, MESSAGE_BOX_GRID);
+  const announced = $derived(announcements ? announcement.lines : []);
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
   /** Whether the tab the screen is on is the one showing, since the tabs all stay mounted and
@@ -308,13 +320,14 @@
     // words on the screen are the ones the building itself printed. The module tunnel is drawn
     // over the whole display in the same way and is still up while the arrival box is read.
     buildingScreen || tunnel
-      ? box
+      ? [...box, ...announced]
       : [
           ...keyMenuLines(),
           ...battleSpellLines(game),
           ...statusLines(status ?? game.pc),
           ...viewLabels(game.pc.exp, height),
           ...box,
+          ...announced,
           ...(prompt ?? []),
         ],
   );

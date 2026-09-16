@@ -23,6 +23,7 @@
   import { ailments, monsterKindSquares, spellTimers, untimedSpells, type PanelLine } from './panel';
   import { pathToNearestTeleporter } from '../map/path';
   import PlayTab from './PlayTab.svelte';
+  import { runServerUrl } from '../run-server';
   import Portrait from './Portrait.svelte';
   import Screen from './Screen.svelte';
   import type { GameSession, PlayView } from './engine';
@@ -30,14 +31,17 @@
   import { compassKeys } from './keys';
   import { MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import {
+    ANNOUNCEMENTS_LABEL,
     CLOCK_RESEED_LABEL,
     CLOCK_RESEED_NOTE,
     debugDrawn,
     mapDrawn,
     monstersDrawn,
     panelVisible,
+    readPlayAnnouncements,
     readPlayClockReseed,
     readPlayForwardView,
+    writePlayAnnouncements,
     writePlayClockReseed,
     writePlayForwardView,
     zoomMapMonsters,
@@ -60,6 +64,12 @@
   /** Whether a game started from here reseeds from the clock the way the original does. Faithful
    *  and speedrun always do; this is debug mode's own switch. */
   let clockReseed = $state(readPlayClockReseed(game.id));
+  /** Whether an announcement the run server makes while the game is being played is printed in
+   *  the game's own message box. */
+  let announcements = $state(readPlayAnnouncements(game.id));
+  /** There are no announcements to print in a build that was given no run server, so the switch
+   *  for them is not offered there. */
+  const announcementsOffered = runServerUrl() !== null;
   /** The kind of monster picked out of the debug panel's list, which both maps ring until it is
    *  clicked again. */
   let highlightedMonsterId = $state.raw<string | null>(null);
@@ -211,6 +221,12 @@
     input.blur();
   }
 
+  /** The same for the switch that prints announcements in the message box. */
+  function chooseAnnouncements(input: HTMLInputElement) {
+    writePlayAnnouncements(game.id, announcements);
+    input.blur();
+  }
+
   /** And for debug mode's switch over the clock, which the next game started reads. */
   function chooseClockReseed(input: HTMLInputElement) {
     writePlayClockReseed(game.id, clockReseed);
@@ -254,7 +270,8 @@
     tunnel={view.tunnel}
     plaque={view.plaque}
     fade={view.fade}
-    redraw={stage.redraw} />
+    redraw={stage.redraw}
+    {announcements} />
 {/snippet}
 
 {#snippet screen(stage: Stage)}
@@ -356,15 +373,25 @@
   {/if}
 {/snippet}
 
-<!-- The 3-D view is the map's own, so the switch for it only stands there while the map does. -->
+<!-- The 3-D view is the map's own, so the switch for it only stands there while the map does.
+     The announcements go in the message box, which both displays draw. -->
 {#snippet afterSwitch(stage: Stage)}
   {#if stage.display === 'map'}
-    <label class="forward">
+    <label class="side-switch">
       <input
         type="checkbox"
         bind:checked={forwardView}
         onchange={(event) => chooseForwardView(event.currentTarget)} />
       <span>3-D view over the map</span>
+    </label>
+  {/if}
+  {#if announcementsOffered}
+    <label class="side-switch">
+      <input
+        type="checkbox"
+        bind:checked={announcements}
+        onchange={(event) => chooseAnnouncements(event.currentTarget)} />
+      <span>{ANNOUNCEMENTS_LABEL}</span>
     </label>
   {/if}
 {/snippet}
@@ -448,8 +475,9 @@
     font-size: 12px;
     line-height: 1.4;
   }
-  /* The same small, quiet control the switch above it draws its own checkbox as. */
-  .forward {
+  /* The small, quiet switches under the display switch, drawn the way the one above draws its
+     own checkbox. */
+  .side-switch {
     display: flex;
     align-items: center;
     gap: 6px;
