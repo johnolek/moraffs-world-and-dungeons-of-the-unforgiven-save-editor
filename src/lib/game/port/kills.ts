@@ -261,19 +261,20 @@ export async function bossReward(game: Game, section: number): Promise<void> {
  *
  * The roll is against 375 and the floor plus 175, so the key becomes likelier the shallower the
  * floor: on floor 1 a drainer carries a key almost half the time and by floor 200 never. Which
- * floors carry a key at all, and where the character's keys are kept, is the game's rules; the
- * game's own reach floors 4 to 178, which is well past the deepest floor it has.
+ * floor that roll counts, which floors carry a key at all, and where the character's keys are
+ * kept, are the game's rules; the game's own count the floor itself and reach floors 4 to 178,
+ * which is well past the deepest floor it has.
  */
 export function drainerBonus(game: Game): void {
   const pc = game.pc;
-  if (game.rng.random(375) < pc.level + 175) {
+  const keys = game.rules.keys;
+  if (game.rng.random(375) < keys.oddsFloor(pc.level) + 175) {
     const potion = game.rng.random(6);
     pc.potions[potion] += 1;
     game.events.push({ kind: 'found', find: { what: 'potion', item: POTION_NAMES[potion] } });
     showHint(game, 47 + potion);
     return;
   }
-  const keys = game.rules.keys;
   // The number on the key, which is the floor rounded down to the five its trap doors share.
   const label = Math.trunc(pc.level / 5) * 5;
   if (keys.flag(pc, pc.level) === 1 || !keys.foundOn(pc.level)) return;

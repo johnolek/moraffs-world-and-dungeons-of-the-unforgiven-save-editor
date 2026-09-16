@@ -94,6 +94,10 @@ describe('the faithful rules', () => {
     expect(rules.keys.flag(pc, 20)).toBe(1);
   });
 
+  it("counts the floor the character is standing on in a drainer's key roll", () => {
+    for (const floor of [0, 5, 105, 250]) expect(rules.keys.oddsFloor(floor), `floor ${floor}`).toBe(floor);
+  });
+
   it('has a drainer carry a key on the floors kill_monster hands one out on', () => {
     for (const floor of [0, 1, 2, 3, 179, 180, 300]) {
       expect(rules.keys.foundOn(floor), `floor ${floor}`).toBe(false);

@@ -211,11 +211,46 @@ describe('a trap door on a floor below the bottom of the game', () => {
 
   it('has its key handed over by a level drainer killed on the floor it leads to', () => {
     const game = gameOn(FLOOR);
-    // drainerBonus hands over a potion while the roll comes in under the floor plus 175, and the
-    // key the floor is labelled with otherwise.
-    game.rng = { random: () => FLOOR + 175 };
+    game.rng = { random: () => KEY_ROLL };
     drainerBonus(game);
     expect(game.events).toContainEqual({ kind: 'found', find: { what: 'key', key: FLOOR } });
     expect(explainTrapdoor(game, FLOOR)).toBe(true);
+  });
+});
+
+/**
+ * drainerBonus hands over a potion while the roll comes in under the floor it counts plus 175,
+ * and the key the floor is labelled with otherwise. The floor it counts on an endless floor is
+ * the deepest one Module V has itself, so the key is as likely on floor 250 as on floor 105 —
+ * where the game's own arithmetic would have counted floor 250, put the roll out of reach, and
+ * handed over a potion every time.
+ */
+const KEY_ROLL = FAITHFUL_BOTTOM + 175;
+const POTION_ROLL = KEY_ROLL - 1;
+
+describe('a level drainer killed far below the bottom of the game', () => {
+  const drainerKilledOn = (level: number, roll: number): Game => {
+    const game = gameOn(level);
+    game.rng = { random: (range) => (range === 375 ? roll : 0) };
+    drainerBonus(game);
+    return game;
+  };
+
+  it('still carries the key labelled for the floor it was killed on', () => {
+    const game = drainerKilledOn(DEEP_FLOOR, KEY_ROLL);
+    expect(game.events).toContainEqual({ kind: 'found', find: { what: 'key', key: DEEP_FLOOR } });
+    expect(explainTrapdoor(game, DEEP_FLOOR)).toBe(true);
+  });
+
+  it('carries a potion on the roll just under the odds the bottom floor has', () => {
+    const game = drainerKilledOn(DEEP_FLOOR, POTION_ROLL);
+    expect(game.events.map((event) => (event.kind === 'found' ? event.find.what : event.kind))).toEqual(['potion']);
+  });
+
+  it('carries a potion every time under the rules of the game itself', () => {
+    const game = newGame({ pc: { level: DEEP_FLOOR, module: MODULE_V } });
+    game.rng = { random: (range) => (range === 375 ? 374 : 0) };
+    drainerBonus(game);
+    expect(game.events.map((event) => (event.kind === 'found' ? event.find.what : event.kind))).toEqual(['potion']);
   });
 });

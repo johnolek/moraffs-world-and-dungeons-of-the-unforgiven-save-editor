@@ -183,6 +183,13 @@ describe('a trap door key past the floors the record has flags for', () => {
     expect(tough.keys.flag(pc, 4005)).toBe(0);
   });
 
+  it("is rolled for on the odds of the deepest floor the character's own module has", () => {
+    for (const floor of [0, 50, 105]) expect(tough.keys.oddsFloor(floor), `floor ${floor}`).toBe(floor);
+    for (const floor of [106, 250, 4000]) expect(tough.keys.oddsFloor(floor), `floor ${floor}`).toBe(105);
+    for (const floor of [0, 50, 85]) expect(normal.keys.oddsFloor(floor), `floor ${floor}`).toBe(floor);
+    for (const floor of [86, 250, 4000]) expect(normal.keys.oddsFloor(floor), `floor ${floor}`).toBe(85);
+  });
+
   it('is still refused on the floors whose key would be labelled 0', () => {
     for (const floor of [0, 1, 2, 3]) expect(tough.keys.foundOn(floor), `floor ${floor}`).toBe(false);
   });

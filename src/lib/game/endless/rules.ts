@@ -142,7 +142,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     sectionSource,
     monsterKinds: (section) => FAITHFUL_RULES.monsterKinds(sectionSource(section)),
     experienceCap: ENDLESS_EXPERIENCE_CAP,
-    keys: ENDLESS_KEYS,
+    keys: endlessKeys(FAITHFUL_RULES.bottomLevel(endlessModule)),
     bossSquares: ENDLESS_BOSS_SQUARES,
     // stock_level's own base level rolls back round to 1 at 221, which no floor of the game is
     // deep enough to reach; an endless floor is, and a dungeon that got easier the deeper it went
@@ -178,18 +178,27 @@ function borrowedSection(seed: number, section: number): number {
  * A drainer carries a key on every floor from the fourth down. The shallowest floors are left out
  * for the same reason the game leaves them out — the key would be labelled 0 — and there is no
  * deep end, because a trap door on any floor is worth a key.
+ *
+ * `deepestOwnFloor` is the deepest floor the endless module has as the game ships it, which is
+ * where the floor the odds are worked out from stops growing. The game makes a key rarer the
+ * deeper the floor and hands out none at all from floor 200 down, so every endless floor hands
+ * one out on the odds of the module's own last floor: a quarter of the drainers killed on it in
+ * Module V, a little under a third in Module IV.
  */
-const ENDLESS_KEYS: TrapDoorKeys = {
-  foundOn: (floor) => floor > 3,
-  flag: (pc, floor) => {
-    if (recordKeepsKey(pc, floor)) return pc.keys[keyIndex(floor)];
-    return endlessStateOf(pc).keys.has(keyIndex(floor)) ? 1 : 0;
-  },
-  take: (pc, floor) => {
-    if (recordKeepsKey(pc, floor)) pc.keys[keyIndex(floor)] = 1;
-    else endlessStateOf(pc).keys.add(keyIndex(floor));
-  },
-};
+function endlessKeys(deepestOwnFloor: number): TrapDoorKeys {
+  return {
+    foundOn: (floor) => floor > 3,
+    oddsFloor: (floor) => Math.min(floor, deepestOwnFloor),
+    flag: (pc, floor) => {
+      if (recordKeepsKey(pc, floor)) return pc.keys[keyIndex(floor)];
+      return endlessStateOf(pc).keys.has(keyIndex(floor)) ? 1 : 0;
+    },
+    take: (pc, floor) => {
+      if (recordKeepsKey(pc, floor)) pc.keys[keyIndex(floor)] = 1;
+      else endlessStateOf(pc).keys.add(keyIndex(floor));
+    },
+  };
+}
 
 /** Whether the record's own flags reach the key a trap door to this floor is opened with. */
 function recordKeepsKey(pc: PlayerCharacter, floor: number): boolean {

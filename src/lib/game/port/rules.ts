@@ -63,6 +63,15 @@ export interface TrapDoorKeys {
   /** Whether a level drainer killed on this floor can be carrying the key labelled for it. */
   foundOn(floor: number): boolean;
   /**
+   * The floor the roll that decides between a potion and a key counts, which for the game itself
+   * is the floor the character is standing on.
+   *
+   * kill_monster rolls against that floor plus 175 out of 375, so a key grows rarer the deeper
+   * the floor and from floor 200 down a drainer always carries a potion. Rules whose dungeon goes
+   * deeper than that stop the floor growing while a key is still worth finding.
+   */
+  oddsFloor(floor: number): number;
+  /**
    * The flag kept for the key a trap door to this floor is opened with: 0 for a key the
    * character has not found, and 1 for one they have.
    *
@@ -157,10 +166,12 @@ export function keyIndex(floor: number): number {
  * one only on floors 4 to 178.
  *
  * kill_monster (exe 3000:b12d) leaves the shallowest floors out because their key would be
- * labelled 0, and stops at 179 because that is where the record's flags run out.
+ * labelled 0, and stops at 179 because that is where the record's flags run out. It counts the
+ * floor the character is standing on for the odds, which is as deep as the game goes.
  */
 const RECORD_KEYS: TrapDoorKeys = {
   foundOn: (floor) => floor > 3 && floor < 179,
+  oddsFloor: (floor) => floor,
   flag: (pc, floor) => pc.keys[keyIndex(floor)],
   take: (pc, floor) => {
     pc.keys[keyIndex(floor)] = 1;
