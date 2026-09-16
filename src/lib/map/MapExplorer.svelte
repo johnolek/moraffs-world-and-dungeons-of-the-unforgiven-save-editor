@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import { app, watchingCharacterOn, currentEntry, type GameId } from '../app-state.svelte';
+  import { app, watchingCharacterOn, currentEntry, keysGoTo, type GameId } from '../app-state.svelte';
   import { characterStatus } from '../character/record';
   import { readStored, writeStored } from '../character/storage';
   import { floorBounds, summarizeMapFloor } from '../game/floor-summary';
@@ -445,7 +445,7 @@
   }
 
   function onKeydown(event: KeyboardEvent) {
-    if (app.tab !== 'map') return;
+    if (!keysGoTo('map')) return;
     const target = event.target as HTMLElement | null;
     if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
     const action = keyAction(event.key);

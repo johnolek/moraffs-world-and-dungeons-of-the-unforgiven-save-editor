@@ -10,7 +10,7 @@
 <script lang="ts" generics="View extends PlayViewBase, Session extends PlaySession<View>">
   import type { Snippet } from 'svelte';
   import { onDestroy, untrack } from 'svelte';
-  import { app, currentEntry, entryById, type Leaderboard } from '../app-state.svelte';
+  import { app, currentEntry, entryById, keysGoTo, type Leaderboard } from '../app-state.svelte';
   import { bringRunKeysHere, catchUpWithTheServer } from '../character/current';
   import { ENDLESS_PLAY_NOTE, leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
   import { beingPlayedElsewhere } from '../character/server-roster';
@@ -386,7 +386,7 @@
   });
 
   function onKeyDown(event: KeyboardEvent) {
-    if (app.tab !== 'play') return;
+    if (!keysGoTo('play')) return;
     if (takeKey?.(event)) return;
     if (!session || session.over) return;
     if (isTyping(event.target)) return;

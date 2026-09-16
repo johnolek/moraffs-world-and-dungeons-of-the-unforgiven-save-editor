@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
   import { tick, type Snippet } from 'svelte';
-  import { app } from '../app-state.svelte';
+  import { app, keysGoTo } from '../app-state.svelte';
   import Overlay from '../ui/Overlay.svelte';
   import { cellForKey, stepCell, type SpellCategory } from './grid';
 
@@ -93,7 +93,7 @@
    * it answers.
    */
   function onKeydown(event: KeyboardEvent) {
-    if (app.tab !== 'spells') return;
+    if (!keysGoTo('spells')) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const target = event.target as HTMLElement | null;
     if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;

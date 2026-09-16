@@ -11,6 +11,7 @@
   panel of its own rather than another setting on that one.
 -->
 <script lang="ts">
+  import { app } from '../app-state.svelte';
   import Announcements from './Announcements.svelte';
   import { latestAnnouncement } from './announcement-feed.svelte';
   import { markAnnouncementsSeen } from './unread.svelte';
@@ -21,6 +22,14 @@
   const CLOSE_LABEL = 'Close (Esc)';
 
   let closeButton = $state<HTMLButtonElement | undefined>();
+
+  /** The tabs underneath read their keys off the window, so while this is open they are told the
+   *  keyboard is not theirs: Escape shuts the panel rather than meaning what it means to the
+   *  game. */
+  $effect(() => {
+    app.panelOverPage = true;
+    return () => (app.panelOverPage = false);
+  });
 
   /** The keyboard goes into the panel as it opens, so that Escape and Tab are the panel's without
    *  the reader having to click into it first. */

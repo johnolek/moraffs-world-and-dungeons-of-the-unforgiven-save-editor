@@ -185,6 +185,16 @@ export interface AppState {
    * have stopped being an admin's is answered no on the next visit and has no tab.
    */
   admin: string | null;
+  /**
+   * Whether a panel laid over the whole page has taken the keyboard. The announcements timeline
+   * (`src/lib/boards/AnnouncementTimeline.svelte`) is the one that does, and it is opened from the
+   * header whatever tab is on screen underneath.
+   *
+   * It is here rather than in that panel because the tabs are what have to know: they read keys
+   * off the window, which is where a key nobody has clicked into arrives, so a key meant for the
+   * panel reaches them as well unless they ask. {@link keysGoTo} is the asking.
+   */
+  panelOverPage: boolean;
 }
 
 export const app = $state<AppState>({
@@ -202,7 +212,22 @@ export const app = $state<AppState>({
   startPlaying: null,
   rosterKept: true,
   admin: null,
+  panelOverPage: false,
 });
+
+/**
+ * Whether a key pressed now belongs to that tab: it is the tab on screen, and nothing laid over
+ * the page has the keyboard.
+ *
+ * The five tabs that answer keys — the three games' Play tab, the fight simulator, the map, the
+ * spells and the roller — all listen on the window, so each of them sees every key the page gets
+ * and this is how each decides the key is not its own.
+ *
+ * @param tab the tab the caller is part of
+ */
+export function keysGoTo(tab: Tab): boolean {
+  return app.tab === tab && !app.panelOverPage;
+}
 
 /**
  * Whether `tab` is the one on screen, following the character while it is.

@@ -7,7 +7,7 @@
   prints, and `PlayRoster.svelte` for choosing who fights.
 -->
 <script lang="ts">
-  import { app, watchingCharacterOn, currentEntry } from '../app-state.svelte';
+  import { app, watchingCharacterOn, currentEntry, keysGoTo } from '../app-state.svelte';
   import {
     allowedFloors,
     allowedModules,
@@ -331,7 +331,7 @@
   }
 
   function onKeyDown(event: KeyboardEvent) {
-    if (app.tab !== 'fight') return;
+    if (!keysGoTo('fight')) return;
     if (!session || session.over) return;
     if (isTyping(event.target)) return;
     const key = gameKey(event);

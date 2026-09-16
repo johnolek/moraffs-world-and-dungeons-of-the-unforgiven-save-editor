@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { app, currentEntry, type GameId, type Leaderboard, type Tab } from '../app-state.svelte';
+  import { app, currentEntry, keysGoTo, type GameId, type Leaderboard, type Tab } from '../app-state.svelte';
   import { loadCurrentEndlessWorld } from '../boards/server';
   import { keepRolledCharacter } from '../character/current';
   import { characterTypes, ENDLESS_WORLD_UNKNOWN, FREE_PLAY_OFF_A_BOARD } from '../character/leaderboard';
@@ -329,7 +329,7 @@
    *  screens ask for. A key belongs to whatever is being typed into, and a shortcut belongs to
    *  the browser. */
   function onKeyDown(event: KeyboardEvent) {
-    if (app.tab !== tab) return;
+    if (!keysGoTo(tab)) return;
     if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
     // Escape shuts the panel the roller is in, but not while a character is part-way through
     // being rolled: there Escape belongs to the roller, which reads it on the screen a character
