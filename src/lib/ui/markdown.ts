@@ -1,12 +1,12 @@
 /**
- * The Markdown the Tidbits file is written in, which is a deliberately small subset: `##` for a
- * section, `###` for an entry, paragraphs, `-` lists, `code`, `**bold**` and links.
+ * The Markdown a document of this site is written in, which is a deliberately small subset: `##`
+ * for a section, `###` for an entry, paragraphs, `-` lists, `code`, `**bold**` and links.
  *
  * Parsing to a tree rather than to HTML is what keeps an entry from injecting markup: every piece
  * of text comes out as text, and the component that shows it puts it on the page as a text node.
  */
 
-import { slugify } from '../ui/format';
+import { slugify } from './format';
 
 /** Where a link goes. The custom schemes name somewhere inside this app rather than a URL. */
 export type LinkTarget =
@@ -119,15 +119,14 @@ const BULLET = /^-\s+(.*)$/;
 const BANNER = /^!\s+(.*)$/;
 
 /**
- * The sections and entries of a Tidbits document. Anything written before the first `###` of a
- * section, and anything at all before the first `##`, is dropped: every paragraph belongs to an
- * entry.
+ * The sections and entries of a document. Anything written before the first `###` of a section,
+ * and anything at all before the first `##`, is dropped: every paragraph belongs to an entry.
  *
  * A line starting `! ` straight under a `###`, with no blank line between them, is that entry's
  * banner. Anywhere else it is ordinary text, so a paragraph is free to begin with an exclamation
  * mark without disappearing into the heading.
  */
-export function parseTidbits(source: string): Section[] {
+export function parseDoc(source: string): Section[] {
   const sections: Section[] = [];
   const ids = new Set<string>();
   let section: Section | null = null;
@@ -201,7 +200,7 @@ export function parseTidbits(source: string): Section[] {
 }
 
 /** The sections that hold an entry matching `query`, each holding only the entries that match. */
-export function searchTidbits(sections: Section[], query: string): Section[] {
+export function searchDoc(sections: Section[], query: string): Section[] {
   const wanted = query.trim().toLowerCase();
   if (wanted === '') return sections;
   return sections

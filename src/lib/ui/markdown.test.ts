@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { linkTarget, parseInline, parseTidbits, plainText, searchTidbits, type Block } from './markdown';
+import { linkTarget, parseInline, parseDoc, plainText, searchDoc, type Block } from './markdown';
 
 const DOCUMENT = [
   '<!--',
@@ -30,9 +30,9 @@ const DOCUMENT = [
   'It is described at [MobyGames](https://www.mobygames.com/).',
 ].join('\n');
 
-const sections = parseTidbits(DOCUMENT);
+const sections = parseDoc(DOCUMENT);
 
-describe('parseTidbits', () => {
+describe('parseDoc', () => {
   it('splits the document into sections and entries', () => {
     expect(sections.map((section) => section.title)).toEqual(['Exploits and shortcuts', 'Trivia and history']);
     expect(sections[0].entries.map((entry) => entry.title)).toEqual(['The wand gate', 'A second entry']);
@@ -45,7 +45,7 @@ describe('parseTidbits', () => {
   });
 
   it('numbers an id a heading already took', () => {
-    const repeated = parseTidbits(['## Bugs', '### Sleep', '', 'One.', '### Sleep', '', 'Two.'].join('\n'));
+    const repeated = parseDoc(['## Bugs', '### Sleep', '', 'One.', '### Sleep', '', 'Two.'].join('\n'));
     expect(repeated[0].entries.map((entry) => entry.id)).toEqual(['sleep', 'sleep-2']);
   });
 
@@ -84,14 +84,14 @@ describe('the banner over an entry', () => {
   });
 
   it('is not taken from a paragraph that happens to begin with one', () => {
-    const [section] = parseTidbits(['## S', '', '### E', '', '! NOT A BANNER, A PARAGRAPH', '', '! NOR THIS'].join('\n'));
+    const [section] = parseDoc(['## S', '', '### E', '', '! NOT A BANNER, A PARAGRAPH', '', '! NOR THIS'].join('\n'));
     const entry = section.entries[0];
     expect(entry.banner).toBe('');
     expect(plainText(entry.blocks)).toBe('! NOT A BANNER, A PARAGRAPH ! NOR THIS');
   });
 
   it('is matched by the search box along with the title and the body', () => {
-    expect(searchTidbits(sections, 'wizard scrolls')[0].entries[0].title).toBe('The wand gate');
+    expect(searchDoc(sections, 'wizard scrolls')[0].entries[0].title).toBe('The wand gate');
   });
 });
 
@@ -144,19 +144,19 @@ describe('linkTarget', () => {
   });
 });
 
-describe('searchTidbits', () => {
+describe('searchDoc', () => {
   it('keeps the entries whose title or text matches', () => {
-    const found = searchTidbits(sections, 'charges');
+    const found = searchDoc(sections, 'charges');
     expect(found.map((section) => section.title)).toEqual(['Exploits and shortcuts']);
     expect(found[0].entries.map((entry) => entry.title)).toEqual(['The wand gate']);
   });
 
   it('matches a title as well as the body', () => {
-    expect(searchTidbits(sections, 'MobyGames')[0].entries[0].title).toBe('The file called v');
-    expect(searchTidbits(sections, 'second')[0].entries[0].title).toBe('A second entry');
+    expect(searchDoc(sections, 'MobyGames')[0].entries[0].title).toBe('The file called v');
+    expect(searchDoc(sections, 'second')[0].entries[0].title).toBe('A second entry');
   });
 
   it('hands back everything for an empty query', () => {
-    expect(searchTidbits(sections, '  ')).toBe(sections);
+    expect(searchDoc(sections, '  ')).toBe(sections);
   });
 });

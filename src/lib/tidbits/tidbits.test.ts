@@ -5,7 +5,7 @@ import { decompilation, decompSection } from '../source/decomp';
 import { allPortFunctions, sourceFiles } from '../source/ports';
 import { tabsFor } from '../tabs';
 import { TIDBITS_FILES, tidbitsGames } from './files';
-import { parseTidbits, type Inline, type LinkTarget, type Section } from './markdown';
+import { parseDoc, type Inline, type LinkTarget, type Section } from '../ui/markdown';
 
 const SECTIONS = [
   'Exploits and shortcuts',
@@ -39,7 +39,7 @@ function hasTab(game: GameId, tab: 'formulas' | 'source'): boolean {
 }
 
 describe.each(tidbitsGames())('the tidbits of %s', (game) => {
-  const sections = parseTidbits(TIDBITS_FILES[game] ?? '');
+  const sections = parseDoc(TIDBITS_FILES[game] ?? '');
   const entries = entriesOf(sections);
   const targets = targetsOf(sections);
 
@@ -115,7 +115,7 @@ describe.each(tidbitsGames())('the tidbits of %s', (game) => {
 });
 
 describe('TIDBITS.md', () => {
-  const targets = targetsOf(parseTidbits(TIDBITS_FILES.unforgiven ?? ''));
+  const targets = targetsOf(parseDoc(TIDBITS_FILES.unforgiven ?? ''));
 
   it('is the one file that links to the Formulas tab', () => {
     expect(targets.some((target) => target.kind === 'formula')).toBe(true);
