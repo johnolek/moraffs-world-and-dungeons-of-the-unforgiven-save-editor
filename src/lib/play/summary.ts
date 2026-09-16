@@ -110,9 +110,14 @@ export interface RunDeath {
 
 /** Everything a run came to. */
 export interface RunSummary {
-  actions: number;
+  /**
+   * How far the run's own count of actions and its clock had got, and null for a summary of one
+   * part of a run: a module's lines say nothing about how long the character spent in it, so a
+   * summary of one claims neither number rather than borrowing the whole run's.
+   */
+  actions: number | null;
   /** The game's own clock, in whatever that game counts. */
-  time: number;
+  time: number | null;
   travel: RunTravel;
   /** Experience the kills were worth, and experience a life drainer took back. */
   experience: number;
@@ -161,15 +166,16 @@ export interface RunClockTotals {
  * Everything that happened in a run, totalled.
  *
  * `run` is the run's own count of actions and its clock, which the sessions carry: an entry says
- * how far the count stood when it was written rather than what the run came to.
+ * how far the count stood when it was written rather than what the run came to. It is null when
+ * the entries are one part of a run rather than all of it.
  */
 export function summarizeJournal(
   entries: readonly JournalEntry[],
-  run: RunClockTotals,
+  run: RunClockTotals | null,
 ): RunSummary {
   const summary: RunSummary = {
-    actions: run.actions,
-    time: run.time,
+    actions: run?.actions ?? null,
+    time: run?.time ?? null,
     travel: { steps: 0, waits: 0, holes: 0, digsInterrupted: 0, laddersDown: 0, laddersUp: 0, trapdoors: [] },
     experience: 0,
     experienceLost: 0,
@@ -551,10 +557,11 @@ function byCount<Row extends { count: number }>(rows: readonly Row[]): Row[] {
 }
 
 function runLines(summary: RunSummary, names: SummaryNames): string[] {
-  const lines = [
-    `Spent ${count(summary.actions, 'action')} and ${names.clockWords(summary.time)}`,
-    `Took ${count(summary.travel.steps, 'step')}`,
-  ];
+  const lines: string[] = [];
+  if (summary.actions !== null && summary.time !== null) {
+    lines.push(`Spent ${count(summary.actions, 'action')} and ${names.clockWords(summary.time)}`);
+  }
+  lines.push(`Took ${count(summary.travel.steps, 'step')}`);
   const fights = total(summary.monsters, (monster) => monster.fights);
   const passed = total(summary.monsters, (monster) => monster.passed);
   if (fights > 0 || passed > 0) lines.push(fightingWords(summary, fights, passed));

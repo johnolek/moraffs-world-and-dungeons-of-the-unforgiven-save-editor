@@ -10,6 +10,9 @@ export const JOURNAL = {
   timeline: 'Everything that happened',
   locked: 'The journal opens when the run ends.',
   nothing: 'Nothing has happened in this run yet.',
+  /** The row that reads the summary for one module rather than for the whole run. */
+  whichPart: 'Which part of the run to add up',
+  wholeRun: 'The whole run',
   expandAll: 'Open every part',
   collapseAll: 'Close every part',
 };

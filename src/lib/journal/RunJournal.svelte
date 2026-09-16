@@ -8,6 +8,7 @@
   on a board is on the Boards tab because it has ended.
 -->
 <script lang="ts">
+  import Segmented from '../ui/Segmented.svelte';
   import type { JournalEntry } from '../play/journal';
   import { summarizeJournal, summarySections, SUMMARY_HEADINGS, type RunClockTotals, type SummaryNames } from '../play/summary';
   import { journalGroups } from './grouping';
@@ -24,7 +25,30 @@
 
   let { entries, reached, names }: Props = $props();
 
-  const sections = $derived(summarySections(summarizeJournal(entries, reached), names));
+  /** The parts the summary can be read as: the whole run, or one of its modules. */
+  const WHOLE_RUN = 'all';
+
+  /** Which part the reader has picked, which is the whole run until they pick a module. */
+  let part = $state<string>(WHOLE_RUN);
+
+  /** The modules the run actually reached, in the order it reached them. */
+  const modules = $derived([...new Set(entries.map((entry) => entry.module))].sort((one, other) => one - other));
+
+  const parts = $derived([
+    { id: WHOLE_RUN, label: JOURNAL.wholeRun },
+    ...modules.map((module) => ({ id: String(module), label: names.dungeonName(module) })),
+  ]);
+
+  /** The lines the summary is folded from: all of them, or one module's. */
+  const counted = $derived(part === WHOLE_RUN ? entries : entries.filter((entry) => String(entry.module) === part));
+
+  /**
+   * One module's lines say nothing about how long the character spent in it, so a summary of one
+   * is handed no clock at all rather than the whole run's.
+   */
+  const sections = $derived(
+    summarySections(summarizeJournal(counted, part === WHOLE_RUN ? reached : null), names),
+  );
   const groups = $derived(journalGroups(entries));
 
   /** The parts of the summary that are open when the reader has said nothing: what the run came
@@ -73,6 +97,9 @@
     <p class="empty">{JOURNAL.nothing}</p>
   {:else}
     <div class="picks">
+      {#if modules.length > 1}
+        <Segmented label={JOURNAL.whichPart} choices={parts} value={part} onpick={(id) => (part = id)} wrap />
+      {/if}
       <button type="button" class="open-every" onclick={openEvery}>
         {allOpen ? JOURNAL.collapseAll : JOURNAL.expandAll}
       </button>

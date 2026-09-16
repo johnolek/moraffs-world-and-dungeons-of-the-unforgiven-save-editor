@@ -427,6 +427,16 @@ describe('what a run came to', () => {
     expect(sectionOf(summary, SUMMARY_HEADINGS.used, MORAFFS_REVENGE)).toEqual([]);
   });
 
+  it('claims no clock at all for the lines of one part of a run', () => {
+    const summary = summarizeJournal(
+      [wrote({ kind: 'stepped', dir: 0 }, 12, 2), wrote({ kind: 'stepped', dir: 0 }, 14, 2)],
+      null,
+    );
+    expect(summary).toMatchObject({ actions: null, time: null });
+    const lines = sectionOf(summary, SUMMARY_HEADINGS.run);
+    expect(lines).toEqual(['Took 2 steps', 'Reached floor 14 of Module III']);
+  });
+
   it('leaves out a section nothing happened in', () => {
     const summary = summarizeJournal([wrote({ kind: 'stepped', dir: 0 })], { actions: 1, time: 1 });
     const headings = summarySections(summary, NAMES).map((section) => section.heading);
