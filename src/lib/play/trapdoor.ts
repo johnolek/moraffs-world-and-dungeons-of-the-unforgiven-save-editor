@@ -9,9 +9,6 @@ import type { Turn } from './engine';
  * `trapdoor` (exe 2000:9cba) is the building on one.
  */
 
-/** How many floors apart the trap door keys are: one key per five floors. */
-const KEY_STEP = 5;
-
 /**
  * town_features (exe 2000:bd32, unf.c "town_features"): the floor a trap door on this square
  * leads to, and -1 for a square with no trap door.
@@ -39,7 +36,7 @@ export function buildingUnder(game: Game): number {
 export function explainTrapdoor(game: Game, destination: number): boolean {
   // DS:2519: the box goes with the character's next step off the square (FUN_2000_bcb6).
   game.boxLeavesWithSquare = true;
-  const held = game.pc.keys[Math.trunc(destination / KEY_STEP)] !== 0;
+  const held = game.rules.keys.flag(game.pc, destination) !== 0;
   if (!held) {
     // DS:1baf 1bcc, DS:1be4 1bfc 1c16 1c2d 1c46 1c5d
     game.say(

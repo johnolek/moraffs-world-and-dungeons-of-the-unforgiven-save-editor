@@ -260,8 +260,9 @@ export async function bossReward(game: Game, section: number): Promise<void> {
  * stretch of five floors if the character has not got it yet.
  *
  * The roll is against 375 and the floor plus 175, so the key becomes likelier the shallower the
- * floor: on floor 1 a drainer carries a key almost half the time and by floor 200 never. Keys
- * only exist for floors 4 to 178, which is well past the deepest floor the game has.
+ * floor: on floor 1 a drainer carries a key almost half the time and by floor 200 never. Which
+ * floors carry a key at all, and where the character's keys are kept, is the game's rules; the
+ * game's own reach floors 4 to 178, which is well past the deepest floor it has.
  */
 export function drainerBonus(game: Game): void {
   const pc = game.pc;
@@ -272,8 +273,9 @@ export function drainerBonus(game: Game): void {
     showHint(game, 47 + potion);
     return;
   }
+  const keys = game.rules.keys;
   const key = Math.trunc(pc.level / 5);
-  if (pc.keys[key] === 1 || pc.level <= 3 || pc.level >= 179) return;
+  if (keys.flag(pc, pc.level) === 1 || !keys.foundOn(pc.level)) return;
   // DS:31c2, 31dd 2668 with the number between them, 258b, 31f0, 320a, 3224, 258b, 3236
   game.say(
     '  YOU HAVE FOUND A KEY! IT',
@@ -285,7 +287,7 @@ export function drainerBonus(game: Game): void {
     '',
     '      HIT ANY KEY...',
   );
-  pc.keys[key] = 1;
+  keys.take(pc, pc.level);
   game.events.push({ kind: 'found', find: { what: 'key', key: key * 5 } });
 }
 

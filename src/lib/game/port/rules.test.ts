@@ -75,6 +75,21 @@ describe('the faithful rules', () => {
     }
   });
 
+  it('keeps the trap door keys in the record, one flag per five floors', () => {
+    const pc = newGame().pc;
+    expect(rules.keys.flag(pc, 20)).toBe(0);
+    rules.keys.take(pc, 23);
+    expect(pc.keys[4]).toBe(1);
+    expect(rules.keys.flag(pc, 20)).toBe(1);
+  });
+
+  it('has a drainer carry a key on the floors kill_monster hands one out on', () => {
+    for (const floor of [0, 1, 2, 3, 179, 180, 300]) {
+      expect(rules.keys.foundOn(floor), `floor ${floor}`).toBe(false);
+    }
+    for (const floor of [4, 5, 100, 178]) expect(rules.keys.foundOn(floor), `floor ${floor}`).toBe(true);
+  });
+
   it('stops paying for a monster where exp_value stops', () => {
     expect(rules.experienceCap).toBe(130);
   });

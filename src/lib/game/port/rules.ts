@@ -2,7 +2,7 @@ import data from '../dotu-data.json';
 import { sectionOf } from '../dotu-files.js';
 import { monsterLevelBase } from '../dotu-mech.js';
 import { sectionPictures, type SectionPictures } from './pictures';
-import type { MonsterKind } from './state';
+import type { MonsterKind, PlayerCharacter } from './state';
 
 /**
  * The tables the engine looks a floor up in, gathered behind one object so that a game can be
@@ -30,12 +30,37 @@ export interface GameRules {
   monsterKinds(section: number): MonsterKind[];
   /** The highest monster level a kill is paid experience for. */
   readonly experienceCap: number;
+  /** The trap door keys the character carries. */
+  readonly keys: TrapDoorKeys;
   /** The level the monsters of a floor are rolled around. */
   monsterLevel(module: number, floor: number): number;
   /** The highest level a stocked monster may be nudged to; one nudged past it is put back to 1. */
   readonly monsterLevelMax: number;
   /** The two picture files a section's corridors and monsters are drawn from. */
   pictureFiles(section: number): SectionPictures;
+}
+
+/**
+ * Where the character's trap door keys are kept, and which floors have one at all.
+ *
+ * The record keeps one flag per five floors in 36 bytes at 0x822, which reaches floor 179 and no
+ * deeper. Rules that take the dungeon past that have to put the keys of the deeper floors
+ * somewhere else, so every read and every write of one goes through here.
+ */
+export interface TrapDoorKeys {
+  /** Whether a level drainer killed on this floor can be carrying the key labelled for it. */
+  foundOn(floor: number): boolean;
+  /**
+   * The flag kept for the key a trap door to this floor is opened with: 0 for a key the
+   * character has not found, and 1 for one they have.
+   *
+   * The two places the game reads it do not read it the same way — kill_monster asks whether it
+   * is exactly 1 and explain_trapdoor whether it is anything but 0 — so the flag comes back as
+   * it stands and each of them makes its own test.
+   */
+  flag(pc: PlayerCharacter, floor: number): number;
+  /** The character has just found the key labelled for this floor. */
+  take(pc: PlayerCharacter, floor: number): void;
 }
 
 /** Where a section sits in the dungeon, which is what a floor is stocked from. */
@@ -73,11 +98,36 @@ export function faithfulRules(data: GameData): GameRules {
     sectionSource: (section) => section,
     monsterKinds: (section) => sectionMonsterKinds(data, section),
     experienceCap: data.constants.expValueLevelCap,
+    keys: RECORD_KEYS,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
     monsterLevelMax: data.constants.monsterLevelMax,
     pictureFiles: sectionPictures,
   };
 }
+
+/** How many floors apart the trap door keys are: one key per five floors, which is what both the
+ *  door's label and the record's index are worked out from (explain_trapdoor, exe 2000:be3d). */
+const KEY_STEP = 5;
+
+/** Which of the record's 36 flags is the key a trap door to this floor is opened with. */
+export function keyIndex(floor: number): number {
+  return Math.trunc(floor / KEY_STEP);
+}
+
+/**
+ * The keys as the game itself keeps them: the record's own 36 flags, and a drainer who carries
+ * one only on floors 4 to 178.
+ *
+ * kill_monster (exe 3000:b12d) leaves the shallowest floors out because their key would be
+ * labelled 0, and stops at 179 because that is where the record's flags run out.
+ */
+const RECORD_KEYS: TrapDoorKeys = {
+  foundOn: (floor) => floor > 3 && floor < 179,
+  flag: (pc, floor) => pc.keys[keyIndex(floor)],
+  take: (pc, floor) => {
+    pc.keys[keyIndex(floor)] = 1;
+  },
+};
 
 /** The section's row of `dotu-data.json`, which numbers modules from 1 where the port numbers
  *  them from 0. `section` is 1 to 20. */

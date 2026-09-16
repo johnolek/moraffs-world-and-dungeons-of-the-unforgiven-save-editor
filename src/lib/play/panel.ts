@@ -434,10 +434,6 @@ function defendTotal(game: Game, monsterLevel: number): number {
   return total;
 }
 
-/** How many floors apart the trap door keys are: one key per five floors (explain_trapdoor,
- *  exe 2000:be3d). */
-const KEY_STEP = 5;
-
 /**
  * Why the square's lines are facts rather than odds. The dungeon is a hash of the square's own
  * coordinates — `trapdoor` and `detect_chute` in `src/lib/game/unfmap.js` — so asking whether a
@@ -466,7 +462,7 @@ export function squareFacts(game: Game, square: MapSquare): PanelLine[] {
     lines.push({ label: UNFORGIVEN_MAP.buildings[building - 1].label, value: 'on this square' });
   }
   if (square.trapdoor >= 0) {
-    const held = pc.keys[Math.trunc(square.trapdoor / KEY_STEP)] !== 0;
+    const held = game.rules.keys.flag(pc, square.trapdoor) !== 0;
     lines.push({
       label: 'Trap door',
       value: `to floor ${square.trapdoor}`,
