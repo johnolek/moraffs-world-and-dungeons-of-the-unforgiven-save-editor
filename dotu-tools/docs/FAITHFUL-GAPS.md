@@ -6,9 +6,9 @@ often a player meets it. `mw-tools/docs/FAITHFUL-GAPS.md` and `rev-tools/docs/FA
 are the same list for the other two games.
 
 What is **not** here: the departures the port makes on purpose and already writes down, which are
-the last section of `src/lib/play/README.md` — one seeded generator instead of the clock reseeds,
-no `?MON.MAP`, the roster entry standing in for the character file, the maps as a blob beside it,
-the settings menus that answer with a box. Those are decisions, not gaps.
+the last section of `src/lib/play/README.md` — no `?MON.MAP`, the roster entry standing in for the
+character file, the maps as a blob beside it, the settings menus that answer with a box. Those are
+decisions, not gaps.
 
 The `fixed` lines were fixed under MORF-201 itself; the rest name the item they were filed as.
 
@@ -37,6 +37,7 @@ The `fixed` lines were fixed under MORF-201 itself; the rest name the item they 
 | **The ceiling walks a ramp of the palette where the port fills it flat.** `draw_3d_view` lays the wall file's tiles on a half of the view only while DS:2322 is 4 (the graphics menu's floor tile type), the wall pictures were loaded, and — for the ceiling alone — the section is not one of the three water ones. Otherwise the half is drawn as bands of palette entries 48 to 63 converging on the vanishing point, which reads as one flat colour at this size. The port lays the tiles on the same halves the game does and fills the rest with black. | `draw_3d_view` 3000:0f75, the two runs at 3000:13ab..15ee and 3000:19f5..1c38; DS:031d is raised by `load_section_pictures` (2000:372c) for sections 4, 8 and 20. | filed MORF-484 for the ceiling's own half, which the port used to lay with the floor's tiles; the ramp itself is not ported |
 | The message box's text colour is unsettled: the code draws it in colour 6 in both branches, and the screenshot reads light blue. | 2000:2f5d. | filed MORF-174 |
 | `FUN_4000_433e` is a second blitter with a colour rule of its own that nothing in the port goes through. | 4000:433e. | read and written down under MORF-267: `dotu-tools/docs/PICTURES.md` has the rule and the five ways it differs from `scale_image2`. MORF-203 is left with the question of whether anything the port draws with it needs the difference — nothing does today, since every picture it is given stops at value 15, where the two rules agree |
+| **Three of the game's reseeds are not played, and none of them reaches a die.** `main` (2000:620f) seeds from `time()` at 2000:63bd and rolls the number `DS:c609` starts at; the port starts that total off the sitting's own seed instead, so a run can be replayed from its log. `defend`'s `srand(clock() + 100)` at 2000:84ca and `stock_level`'s `srand(time())` at 2000:6737 are both followed by a `Random` call, which reseeds again before it rolls, so playing either would hand out numbers the game never had. `FUN_3000_8d7e`'s four are in a function nothing calls. | Section 8.2 of `UNFORGIVEN-RE-NOTES.md`, which is every reseed in the game. | not worth it — the port plays every reseed that reaches a die, and `src/lib/game/port/README.md`'s third departure says which |
 | A box shown with a negative period takes itself down after that period instead of waiting for a key. Nothing in ordinary play reaches it. | `mset_gmenu` 2000:2b08, unf.c 9359. | not worth it — no caller in the dungeon uses the timed form |
 | The title screen's attract mode holds each auto-walked scene for a hundred ticks. | `title_screen` 3000:99bf. | not worth it — the port has no title screen |
 | `FUN_3000_a0c1` is an interruptible wait helper with no callers. | 3000:a0c1. | not worth it — dead in the original too |

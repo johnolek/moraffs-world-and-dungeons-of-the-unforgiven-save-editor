@@ -14,14 +14,12 @@ This port is the game: Dungeons of the Unforgiven, playable in a browser and alm
 faithful to the 1993 original, built function by function out of the decompilation. Every piece
 of logic it runs is a cited port of the function it came from, bugs included.
 
-The one deliberate difference in play is the random numbers. The original re-seeds from the clock
-before nearly every roll, so what it hands back falls into patterns a player can feel — see "Your
-to-hit roll is a clock" in `dotu-tools/docs/TIDBITS.md`. Unless the session hands the game a clock
-of its own, a game played here draws its numbers from one generator seeded once at the start of
-the run, which is why `Rng` is something a `Game` is handed rather than something a ported
-function reaches for: `BorlandRng` reproduces the original's rolls for a test that has to match
-them, and the run's own seeded generator goes in to play, which is what lets a run be played again
-from its log.
+The random numbers are the original's. It re-seeds from the clock before nearly every roll, so
+what it hands back falls into patterns a player can feel — see "Your to-hit roll is a clock" in
+`dotu-tools/docs/TIDBITS.md` — and a game played here is handed a clock and does the same. That is
+why `Rng` is something a `Game` is handed rather than something a ported function reaches for:
+`BorlandRng` is what a reseed answers, and a game given no clock draws from one generator seeded
+once at the start of the run instead.
 
 ## The three deliberate departures
 
@@ -86,18 +84,32 @@ game's 212 rolls go through `Random` and which are written inline. That reseedin
 to-hit roll follows the BIOS tick counter round a sawtooth instead of being random, which
 `dotu-tools/docs/TIDBITS.md` lays out.
 
-The switch is `Game.clock`, the tick counter the session hands in, or null. Null is what a game
-built for a test has, and what a run played off the clock has: the port then reseeds nothing, says
-so in a comment where the original reseeds, and the run draws its numbers from one generator
-seeded once, which is what lets it be played again from that seed alone. Given a clock — which is
-what the faithful and speedrun modes hand in — the reseeds come back and with them the sawtooth
-the to-hit roll follows. The clock a session hands in reads the machine's tick counter, and what
-it read is written into the run log in front of the input it was read for, so a replay rolls what
-the player rolled; `src/lib/play/README.md` is that half of it.
+The switch is `Game.clock`, the tick counter the session hands in, or null. Three kinds of game
+are handed one, and the fourth is what null is for:
+
+* **A run of the Play tab** in faithful or speedrun mode, always, and in debug mode unless its
+  switch has been turned off. `src/lib/play/games.ts` hands in `sittingClock`, which reads the
+  machine's counter, and what it read is written into the run log — in front of the input it was
+  read for, and once as the log is opened for the floor the character wakes on — so a replay rolls
+  what the player rolled. `src/lib/play/README.md` is that half of it.
+* **The character roller**, which is not a run: `roll_char` (exe 3000:5447) seeds from the wall
+  clock in seconds rather than from the tick counter, so the New Character tab hands
+  `RollerSession` the second the roll started in and keeps it beside the finished character.
+* **A test that has to match the original's numbers**, which scripts a counter of its own.
+* **A game built by `newGame` with nothing said about it**, and a run played with debug mode's
+  switch off. The port then reseeds nothing, says so in a comment where the original reseeds, and
+  the run draws its numbers from one generator seeded once, which is what lets it be played again
+  from that seed alone.
+
+Moraff's World and Moraff's Revenge are handed no clock at all: neither port plays any of its
+game's reseeds, and a reading in one of their logs would be read back as a key.
 
 Given a clock the port plays all three of the tick-counter reseeds that reach a die: `strike`'s,
 `Random`'s own, and the one `stock_level` (exe 2000:671e) does at 2000:6979 before every try at a
-monster's square, which is why a freshly stocked floor holds its monsters in diagonal stripes.
+monster's square, which is why a freshly stocked floor holds its monsters in diagonal stripes. The
+stocking's own rolls are the game's, roll for roll: `get_mtype`'s type roll is a `Random` call and
+everything under it is inline, so a clocked floor is stocked with the monsters the original would
+have put there.
 `Game.randomCall(n)` is the `Random` call and `Game.rng.random(n)` is the roll the game writes
 inline, and every roll site in the port is one or the other, checked against the instruction
 stream; `Game.randomTotal` is the running total `Random` keeps, `DS:c609`, which a sitting starts
@@ -112,10 +124,10 @@ from the tick counter — `time()` for an input is that second plus the input's 
 (exe 4000:6b24) seeds from it, which is why two monsters of the same floor killed inside one
 second drop exactly the same money.
 
-`roll_char` (exe 3000:5447) seeds from it too, and the character roller is not a run: it is handed
-a wall clock of its own and keeps the second it read beside the character, since that second is
-the whole of what such a roll is made of. Asked for no clock it draws from Math.random and keeps
-the fractions instead, which is what the New Character tab does today.
+`roll_char` (exe 3000:5447) seeds from it too, and the character roller keeps the second it read
+beside the character on the roster, since that second is the whole of what such a roll is made of.
+Asked for no clock it draws from Math.random and keeps the fractions instead, which is what the
+other two games' rollers do.
 
 Two reseeds are left over and neither reaches a die, in the original or here. `defend`'s is
 followed by a `Random` call, and `Random` reseeds from the clock again before it rolls, so playing

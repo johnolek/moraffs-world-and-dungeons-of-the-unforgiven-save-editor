@@ -120,11 +120,13 @@ something the original does, a comment says so.
   the hit points a monster has left after every swing. Over the picture stand the lines debug mode
   prints over the monster on the game's own screen — `debugMonsterLines` here and
   `mw/debug-screen.ts`'s `mwDebugMonsterLines` — in the site's own type, under `debugDrawn(mode)`
-  and so in no other mode. Both are read off the view (`engagedFullHp` and `engagedDebugLines`)
-  for the same reason the character's own numbers are, and the hit points a monster was stocked
-  with are remembered by `floor.ts` and `mw/floor.ts`, since a monster's record holds only the hit
-  points it has left; a monster that arrived on a floor from anywhere else has the first hit
-  points seen for it taken as its mark.
+  and so in no other mode. The hit points the monster was stocked with are read off the view
+  (`engagedFullHp`) for the same reason the character's own numbers are, and are remembered by
+  `floor.ts` and `mw/floor.ts`, since a monster's record holds only the hit points it has left; a
+  monster that arrived on a floor from anywhere else has the first hit points seen for it taken as
+  its mark. The lines themselves are worked out where they are drawn, so that the reading of the
+  clock in them is this moment's. Under the picture, in debug mode alone, stands `ClockBar.svelte`
+  — the bar of the sawtooth below.
 
   Moraff's World takes all of this. Moraff's Revenge takes none of it: its record keeps no maximum
   spell points, its map draws no monster, and the experience a kill is worth sits in a pot the
@@ -189,9 +191,14 @@ played, so that a claimed ending can be checked by playing it again rather than 
   of the input it is handling, and is rolled with `BorlandRng`, since what the original gets out
   of a reseed is Borland's generator answering the counter. A replay is played on a counter made
   of the log's own readings, handed back in the order they were taken, so it rolls what the player
-  rolled. Whether a sitting is played on the clock is the `tickCounter` its `RunRecorder` is
-  started with; nothing hands one over yet, so every run played here today is played off the
-  clock and its log holds nothing but keys.
+  rolled. One more reading goes in as the log is opened, ahead of every key: the floor a character
+  wakes on is stocked before a key is ever pressed, and a reading of nought there would seed every
+  `Random` call of the stocking the same. The counter counts from the page rather than from the
+  sitting, which is what the original's own does — its counter is the BIOS one less the reading
+  taken at start-up, and the title screen and the character select have gone by before
+  `stock_level` runs. Whether a sitting is played on the clock is the `tickCounter` its
+  `RunRecorder` is started with, which `games.ts` supplies for Dungeons of the Unforgiven and for
+  no other game (see the modes below).
 * **The actions** — the things that happened to the character or to the world, which is the
   number a leaderboard orders runs by. What counts is what the game did rather than what the
   player typed: opening the spell menu and backing out is nothing and the spell cast through it
@@ -743,6 +750,22 @@ which both tabs offer as three radio buttons:
 * **debug** — everything: the whole floor, every monster on it, the panel of numbers below, and
   the three things below that the other two modes never show.
 
+### The switch over the clock
+
+Dungeons of the Unforgiven reseeds its generator from the machine's clock wherever the original
+reseeds from the PC's, which is what makes a swing's to-hit roll climb a sawtooth in real time and
+lays a fresh floor's monsters in diagonal stripes. Faithful and speedrun always do it: a game that
+does not is not the game, and a board compares runs played the same way. Debug mode has a switch
+of its own beside the mode radios, on until it is turned off and remembered per game the way the
+display and the sound are (`readPlayClockReseed`); off, the game draws its numbers from one
+generator seeded once at the start of the run, which is the port's third departure. The switch is
+read when a game starts, so moving it while one is being played takes hold the next time that
+character is played, and the line under it says so.
+
+`clockReseeds(mode, switchedOn)` is that rule, and `games.ts`'s `startUnforgiven` is the one place
+a clock is handed over: neither of the other two ports plays any of its game's reseeds, and a
+reading in one of their logs would be read back as a key.
+
 ### What debug mode shows on the game's own screen
 
 None of this is a port of anything — no game ever drew any of it — so it belongs to debug mode
@@ -766,6 +789,17 @@ mush, and its monster records carry nothing beyond a name, a level and what it h
   sentences are wider than either game's view, so they are broken on the spaces between words at
   the width the view leaves — about fifty characters in Dungeons of the Unforgiven's forward view
   and about eighteen in each of Moraff's World's four.
+* **The sawtooth a swing's to-hit roll climbs** (`ClockBar.svelte` and `sawtooth.ts`), while the
+  game is being played on the clock. `strike` seeds the generator from the tick counter and the
+  to-hit roll is the first number out of it, so the roll a swing will get is settled by the moment
+  it is made; Borland's generator moves 346 out of 32768 per tick, so that roll climbs about 0.85
+  of its eighty a tick and drops back every 95 of them. The bar fills as it climbs and says how
+  long the climb has left, and the HIT line over the monster is the chance of that one roll rather
+  than the average over all eighty. Both move once a tick while the tab is the one showing
+  (`while-showing.ts`), off `RunRecorder.nowTick`, which reads the counter and writes nothing
+  down. It stands in the corner of the game's own screen and under the close-up on the map, so
+  whichever display is up has it. Dungeons of the Unforgiven alone: it is the one game whose
+  reseeds are ported.
 * **A monster's full details, from a click on its picture.** The click is scaled back to the
   game's own pixels and read off whichever map is up (`zoomMapMonsterAt`), and what opens is the
   Monsters tab's own card for that monster, in the panel the Spells tab reads a spell in
@@ -861,10 +895,13 @@ only.
 
 ## Where this leaves the original
 
-* **Random numbers from a seed of the run's own.** `SeededRng` in `src/lib/game/port/rng.ts`,
-  which is mulberry32 under the game's own `Random(n)`, per the port's third departure. The seed
-  is drawn once when the game starts and kept in the run log with every key that follows
-  (`run.ts`), so a run can be played again exactly. A test hands the session its own seed.
+* **Random numbers off the machine's clock, as the original draws them.** Dungeons of the
+  Unforgiven is played on a tick counter and reseeds where the original reseeds, so its numbers
+  fall into the patterns a player can feel; what the counter read is in the run log, so the run
+  can still be played again exactly. The other two games, and this one with debug mode's switch
+  off, draw from `SeededRng` in `src/lib/game/port/rng.ts` — mulberry32 under the game's own
+  `Random(n)`, per the port's third departure — off a seed drawn once and kept in the log. A test
+  hands the session its own seed.
 * **No clock in the game.** The game is turn based: a moment passes per action and nothing
   happens while the player thinks, and the seconds `call_check_eng` counts are game time and are
   kept exactly. The `delay` calls the original busy-waits in are about the screen alone, so those
