@@ -53,8 +53,8 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `allocate_buffers` | 2000:3bc7 |  | `map/explored.ts` |
 | `reset_view_caches` | 2000:3d9b | `game/port/character.ts` | `game/port/magic.ts` |
 | `FUN_2000_3e73` | 2000:3e73 |  | `game/port/screens.ts`, `play/engine.ts`, `play/plaque.ts`, `play/timed.ts` |
-| `FUN_2000_4054` | 2000:4054 | `play/engine.ts` | `game/port/drops.ts`, `game/port/screens.ts`, `play/Screen.svelte`, `play/boxes.ts`, `play/dig.ts`, `play/plaque.ts` |
-| `FUN_2000_412a` | 2000:412a |  | `play/engine.ts`, `play/plaque.ts` |
+| `FUN_2000_4054` | 2000:4054 | `play/engine.ts` | `game/port/combat.ts`, `game/port/drops.ts`, `game/port/screens.ts`, `play/Screen.svelte`, `play/boxes.ts`, `play/dig.ts`, `play/plaque.ts` |
+| `FUN_2000_412a` | 2000:412a |  | `game/port/combat.ts`, `play/engine.ts`, `play/plaque.ts` |
 | `Random` | 2000:4156 |  | `game/port/combat.ts`, `game/port/rng.ts`, `game/port/state.ts`, `map/stocking.ts` |
 | `compute_weight` | 2000:41ae | `game/port/magic.ts` | `play/gear.ts` |
 | `end_prep_spells` | 2000:4212 | `game/port/town.ts` | `play/panel.ts` |
@@ -246,7 +246,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_4000_41e5` | 4000:41e5 |  | `play/engine.ts` |
 | `FUN_4000_4225` | 4000:4225 |  | `play/section-screen.ts` |
 | `erase_menu_block` | 4000:42b4 |  | `game/port/state.ts`, `play/Screen.svelte`, `play/boss-office.ts`, `play/office.ts`, `play/town.ts` |
-| `erase_message_block` | 4000:430e |  | `game/port/kills.ts`, `game/port/screens.ts`, `play/chute.ts`, `play/engine.ts`, `play/town.ts`, `play/tunnel.ts` |
+| `erase_message_block` | 4000:430e |  | `game/port/combat.ts`, `game/port/kills.ts`, `game/port/screens.ts`, `play/chute.ts`, `play/engine.ts`, `play/town.ts`, `play/tunnel.ts` |
 | `FUN_4000_433e` | 4000:433e |  | `play/boss-office.ts` |
 | `scale_image2` | 4000:4818 |  | `game/dotu-pic.js`, `game/endless/monsters.ts`, `play/section-screen.ts`, `play/view3d/render.ts`, `play/view3d/scale.ts` |
 | `FUN_4000_4f8f` | 4000:4f8f |  | `play/plaque.ts`, `play/view3d/pictures.ts`, `play/view3d/texture.ts` |

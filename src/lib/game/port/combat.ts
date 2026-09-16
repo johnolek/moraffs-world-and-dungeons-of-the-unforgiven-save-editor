@@ -366,6 +366,9 @@ function drainsAndAilments(game: Game, slot: number): void {
     // DS:150e, the line above, DS:06f0, DS:152a
     game.say('OH NO! HIT BY LIFE DRAINER!', lost, '', 'HIT ANY KEY');
     game.reprintBattleInfo = true;
+    // erase_message_block (exe 4000:430e) reads the keyboard buffer empty, and FUN_2000_4054
+    // then waits for a key with the box still up.
+    game.pressAnyKey();
   }
   if (kind.statDrain !== 0) {
     game.delay(DRAIN_MS);
@@ -379,6 +382,9 @@ function drainsAndAilments(game: Game, slot: number): void {
     const line = stat + (kind.statDrain < 0 ? ' HAS BEEN DRAINED!' : ' HAS BEEN RAISED!');
     game.events.push({ kind: 'playerSaved' });
     game.draw(messageLine(line, DRAIN_COLOUR));
+    // FUN_2000_412a waits for a key here the way FUN_2000_4054 does above it, with the line on
+    // the strip rather than a box in the block.
+    game.pressAnyKey();
   }
   if (kind.special !== 0) {
     if (kind.special !== 99) game.events.push({ kind: 'playerSaved' });
@@ -396,6 +402,7 @@ function drainsAndAilments(game: Game, slot: number): void {
         'HIT ANY KEY',
       );
       game.reprintBattleInfo = true;
+      game.pressAnyKey();
       if (pc.poison < 1) pc.poison = 450;
       game.events.push({ kind: 'afflicted', what: 'poison', monster: monsterSeen(game, slot) });
     }
@@ -412,6 +419,7 @@ function drainsAndAilments(game: Game, slot: number): void {
         'HIT ANY KEY',
       );
       game.reprintBattleInfo = true;
+      game.pressAnyKey();
       if (pc.disease < 1) pc.disease = 450;
       game.events.push({ kind: 'afflicted', what: 'disease', monster: monsterSeen(game, slot) });
     }

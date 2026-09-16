@@ -490,6 +490,26 @@ describe('defend, the beats a swing is read out over', () => {
     expect(swing('a hit')).toEqual([110, 500, 500, 250, 150]);
   });
 
+  it('stops for a key at each thing the drains put on the screen', () => {
+    const { game, swing } = swinging({ levelDrain: -30, statDrain: -4, special: 1 });
+    let asked = 0;
+    game.pressAnyKey = () => void (asked += 1);
+
+    swing('a hit');
+
+    expect(asked).toBe(3);
+  });
+
+  it('stops for a key behind the disease box', () => {
+    const { game, swing } = swinging({ special: 2 });
+    let asked = 0;
+    game.pressAnyKey = () => void (asked += 1);
+
+    swing('a hit');
+
+    expect(asked).toBe(1);
+  });
+
   it('keeps the drains apart even for a special with no box behind it', () => {
     const { swing } = swinging({ special: 3 });
     expect(swing('a hit')).toEqual([110, 250, 150]);
