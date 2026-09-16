@@ -546,6 +546,9 @@ export async function batchesOf(sql: Queries, characterId: string): Promise<Kept
 export interface KeptSession {
   sessionIndex: number;
   seed: number;
+  /** The endless world the character was rolled into, which every sitting of its chain was
+   *  played in, and null for a character that plays the game as it shipped. */
+  worldSeed: number | null;
   engine: string;
   game: string;
   leaderboard: string | null;
@@ -560,11 +563,17 @@ export interface KeptSession {
   milestones: Milestone[];
 }
 
-/** Every sitting of a character's run, oldest first. */
+/**
+ * Every sitting of a character's run, oldest first.
+ *
+ * The endless world comes off the character rather than the sitting: it is decided at the roll
+ * and never again, so every sitting of one character's chain was played in the same world.
+ */
 export async function sessionsOf(sql: Queries, characterId: string): Promise<KeptSession[]> {
   const rows = await sql.query<{
     session_index: number;
     seed: number;
+    world_seed: number | null;
     engine: string;
     game: string;
     leaderboard: string | null;
@@ -577,10 +586,16 @@ export async function sessionsOf(sql: Queries, characterId: string): Promise<Kep
     time: number;
     edits: number;
     milestones: Milestone[];
-  }>('SELECT * FROM sessions WHERE character_id = $1 ORDER BY session_index', [characterId]);
+  }>(
+    `SELECT s.*, c.world_seed FROM sessions s
+     JOIN characters c ON c.id = s.character_id
+     WHERE s.character_id = $1 ORDER BY s.session_index`,
+    [characterId],
+  );
   return rows.map((row) => ({
     sessionIndex: row.session_index,
     seed: row.seed,
+    worldSeed: row.world_seed,
     engine: row.engine,
     game: row.game,
     leaderboard: row.leaderboard,

@@ -302,6 +302,18 @@ export interface RunSession {
   startedAt: string;
   /** The seed this session's generator was started from. */
   seed: number;
+  /**
+   * The number the endless world this sitting was played in is built from
+   * (`src/lib/game/endless/rules.ts`), and null for a sitting played in the game's own dungeon.
+   *
+   * The world decides which of the game's twenty sections each endless section borrows its
+   * monsters and its look from, so a replay that guessed at it would stock the floors from
+   * another dungeon's monsters. It is one number for the whole run rather than a thing that
+   * happens in it, which is why it is a field here and not an input. A log written before the
+   * world was recorded has no field, and reads as the first world, which is the only one there
+   * was then.
+   */
+  worldSeed: number | null;
   /** The character's record as this session began, base64. */
   record: string;
   /** Every input the game was given in this session, in order. */
@@ -349,6 +361,9 @@ export interface RunStart {
   leaderboard?: Leaderboard | null;
   /** Whether the game starts with its sound on, for a game that has such a flag. */
   sound?: boolean | null;
+  /** The endless world the character was rolled into, which only a character locked to the
+   *  endless dungeon has ({@link RunSession.worldSeed}). */
+  worldSeed?: number | null;
   /**
    * What the character's run had come to before this session, which everything this session
    * counts goes on from. A character being played for the first time has none.
@@ -428,6 +443,9 @@ export class RunRecorder {
   mode: string | null;
   readonly leaderboard: Leaderboard | null;
   readonly sound: boolean | null;
+  /** The endless world this sitting is being played in, and null for one in the game's own
+   *  dungeon. */
+  readonly worldSeed: number | null;
   /** The run is being replayed from a log rather than played by anybody. */
   readonly replaying: boolean;
   /** The character's record as this session began. */
@@ -504,6 +522,7 @@ export class RunRecorder {
     this.mode = start.mode ?? null;
     this.leaderboard = start.leaderboard ?? null;
     this.sound = start.sound ?? null;
+    this.worldSeed = start.worldSeed ?? null;
     this.before = start.before ?? nothingYet();
     this.actions = this.before.actions;
     this.replaying = start.replaying ?? false;
@@ -714,6 +733,7 @@ export class RunRecorder {
       name: this.name,
       startedAt: this.startedAt,
       seed: this.seed,
+      worldSeed: this.worldSeed,
       record: base64FromBytes(this.record),
       inputs: [...this.inputs],
       actions: this.actions,
@@ -799,6 +819,7 @@ export async function replayRun(recorded: RunSession, before?: RunTotals): Promi
     mode: recorded.mode,
     leaderboard: recorded.leaderboard,
     sound: recorded.sound,
+    worldSeed: recorded.worldSeed,
     before,
     replaying: true,
     tickCounter: countedTicks(recorded),
@@ -864,10 +885,10 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
     },
     died() {},
     // A sitting played in the endless dungeon is replayed in it, or the floors it was played on
-    // would not be there at all. There is one endless world for now and every endless character
-    // is rolled into it; when MORF-513 starts handing worlds out, the log will have to say which
-    // one a sitting was played in, since nothing else here can tell.
-    endless: recorded.mode === ENDLESS_MODE ? { seed: ENDLESS_WORLD_SEED, kept: null } : undefined,
+    // would not be there at all. The world is the one its log names; a log written before the
+    // world was recorded names none, and every endless character rolled then was rolled into the
+    // first world.
+    endless: recorded.mode === ENDLESS_MODE ? { seed: recorded.worldSeed ?? ENDLESS_WORLD_SEED, kept: null } : undefined,
   };
   const session = startGame(file, run.rng, run);
   void runPlayLoop(session, runMoveControl(session));

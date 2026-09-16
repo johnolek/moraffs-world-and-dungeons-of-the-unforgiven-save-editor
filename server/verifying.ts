@@ -135,6 +135,7 @@ export function sessionWithoutKeys(session: KeptSession): Omit<RunSession, 'inpu
     name: session.name,
     startedAt: session.startedAt,
     seed: session.seed,
+    worldSeed: session.worldSeed,
     record: session.record,
     actions: session.actions,
     time: session.time,

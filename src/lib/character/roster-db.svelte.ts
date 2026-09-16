@@ -69,6 +69,9 @@ interface SessionRow {
   name: string;
   startedAt: string;
   seed: number;
+  /** The endless world the sitting was played in, and null for one played in the game's own
+   *  dungeon. A row written before the world was kept has none, and reads as the first world. */
+  worldSeed?: number | null;
   record: Uint8Array<ArrayBuffer>;
   inputs: Int16Array;
   actions: number;
@@ -236,6 +239,7 @@ function sessionRow({ entry, at }: PlayedSession): SessionRow | null {
     name: session.name,
     startedAt: session.startedAt,
     seed: session.seed,
+    worldSeed: session.worldSeed,
     record,
     inputs: Int16Array.from(session.inputs),
     milestones: session.milestones.map((milestone) => ({ ...milestone })),
@@ -329,6 +333,7 @@ function sessionOf(row: SessionRow): RunSession {
     name: row.name,
     startedAt: row.startedAt,
     seed: row.seed,
+    worldSeed: row.worldSeed ?? null,
     record: base64FromBytes(row.record),
     inputs: Array.from(row.inputs),
     milestones: row.milestones,

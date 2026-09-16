@@ -35,6 +35,7 @@ function sitting(): StreamedSession {
     name: 'Grond',
     startedAt: '2026-09-09T12:00:00.000Z',
     seed: 12345,
+    worldSeed: null,
     record: 'AAEC',
     inputs: [104, 106],
     actions: 2,

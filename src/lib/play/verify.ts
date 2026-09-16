@@ -407,6 +407,9 @@ export function isRunSession(value: unknown): value is RunSession {
     (session.sound === null || session.sound === undefined || typeof session.sound === 'boolean') &&
     typeof session.startedAt === 'string' &&
     typeof session.seed === 'number' &&
+    // A log written before the endless world was recorded has no field, and reads as the first
+    // world, which is the only one there was then.
+    (session.worldSeed === null || session.worldSeed === undefined || typeof session.worldSeed === 'number') &&
     typeof session.record === 'string' &&
     typeof session.actions === 'number' &&
     typeof session.time === 'number' &&

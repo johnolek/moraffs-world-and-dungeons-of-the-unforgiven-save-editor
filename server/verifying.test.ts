@@ -113,6 +113,7 @@ describe('putting a run back together', () => {
       {
         sessionIndex: 0,
         seed: 1,
+        worldSeed: null,
         engine: ENGINE,
         game: 'unforgiven',
         leaderboard: null,
@@ -451,6 +452,7 @@ describe('replaying a chain whose sittings name more than one commit', () => {
       name: 'Grond',
       startedAt: '2026-09-09T12:00:00.000Z',
       seed: 12345,
+      worldSeed: null,
       record: 'AAEC',
       inputs: [104, 106],
       actions: 2,

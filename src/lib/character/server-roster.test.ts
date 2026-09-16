@@ -14,6 +14,7 @@ function sitting(at: number, keys: number): RunSession {
     name: 'Grond',
     startedAt: `2026-09-09T1${at}:00:00.000Z`,
     seed: 1000 + at,
+    worldSeed: null,
     record: 'AAEC',
     inputs: Array.from({ length: keys }, (_, key) => key),
     actions: keys,

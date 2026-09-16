@@ -193,6 +193,14 @@ describe('a character rolled for the endless dungeon', () => {
     expect(verdict.mode).toBe('endless');
   });
 
+  it('writes the world it was rolled into into its run log, for a replay to read', async () => {
+    const entry = standingDeep();
+
+    await playASession(entry, [KEY.enter], 'endless');
+
+    expect(entry.run[0].worldSeed).toBe(ENDLESS_WORLD_SEED);
+  });
+
   it('leaves a character rolled to play the game as it shipped where it was', async () => {
     const entry = rostered();
 
@@ -201,6 +209,7 @@ describe('a character rolled for the endless dungeon', () => {
     expect(session.game.rules).toBe(FAITHFUL_RULES);
     expect(entry.worldSeed).toBeUndefined();
     expect(entry.endless).toBeUndefined();
+    expect(entry.run[0].worldSeed).toBeNull();
     expect(entry.run[0].mode).toBe('faithful');
   });
 });

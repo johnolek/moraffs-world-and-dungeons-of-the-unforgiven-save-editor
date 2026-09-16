@@ -27,6 +27,7 @@ function session(over: Partial<RunSession> = {}): RunSession {
     name: 'Grond',
     startedAt: '2026-09-09T12:00:00.000Z',
     seed: 12345,
+    worldSeed: null,
     record: 'AAEC',
     inputs: [],
     actions: 0,

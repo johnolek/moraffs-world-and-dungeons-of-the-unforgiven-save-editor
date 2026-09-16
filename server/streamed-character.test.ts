@@ -54,6 +54,7 @@ function sitting(index: number, inputs: number[]): RunSession {
     name: 'GRIM',
     startedAt: `2026-09-09T1${index}:00:00.000Z`,
     seed: 12345 + index,
+    worldSeed: null,
     record: 'AAEC',
     inputs,
     actions: inputs.length,

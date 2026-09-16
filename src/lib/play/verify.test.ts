@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { bytesFromBase64 } from '../bytes';
+import { endlessRules, ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import { savePlayer, loadPlayer } from '../game/port/record';
 import { characterFile, press, settle, teleporterSquare, townSquare } from './battle.test-support';
 import { runMoveControl, startGame } from './engine';
@@ -14,6 +15,7 @@ import { REV_KEY } from './rev/keys';
 import { ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
 import { RUN_LOG_VERSION } from './run';
 import { firstSwingsReading, unforgivenClockedRun } from './test-clocked-run';
+import { endlessRun, RUN_SECTION, RUN_WORLD } from './test-endless-run';
 import { readRunLog, verifyRun, verifySession, whatToSayAboutTheEngine } from './verify';
 
 /**
@@ -409,6 +411,37 @@ describe('judging one session of a chain on its own', () => {
 
     expect(checked.status).toBe('failed');
     expect(checked.reason).toBe('Session 2 does not start from the record session 1 ended with.');
+  });
+});
+
+describe('verifying a run of the endless dungeon', () => {
+  /** The two worlds these tests tell apart, and the endless section they differ over. */
+  const NORMAL = { hard: false };
+
+  it('replays a sitting in the endless world its log names', async () => {
+    const log = await endlessRun(RUN_WORLD);
+    expect(log.worldSeed).toBe(RUN_WORLD);
+    // The endless sections borrow their monsters from the game's own twenty, and which one a
+    // section borrows from is the world's answer alone.
+    expect(endlessRules({ ...NORMAL, seed: RUN_WORLD }).sectionSource(RUN_SECTION)).not.toBe(
+      endlessRules({ ...NORMAL, seed: ENDLESS_WORLD_SEED }).sectionSource(RUN_SECTION),
+    );
+
+    const here = await replayRun(log);
+    const elsewhere = await replayRun({ ...log, worldSeed: ENDLESS_WORLD_SEED });
+
+    expect(here.journal[0].text).toBe('Came face to face with a Level 165 SHADOW KHAGISTOLL');
+    expect(elsewhere.journal[0].text).toBe('Came face to face with a Level 165 SHADOW HEAD HUNTER');
+  });
+
+  it('replays a log written before the world was recorded in the first world', async () => {
+    const { worldSeed, ...older } = await endlessRun(ENDLESS_WORLD_SEED);
+    expect(worldSeed).toBe(ENDLESS_WORLD_SEED);
+
+    const log = readRunLog(JSON.stringify({ version: RUN_LOG_VERSION, sessions: [older] }));
+
+    expect(log?.sessions[0].worldSeed).toBeUndefined();
+    expect((await verifyRun(log!)).status).toBe('verified');
   });
 });
 

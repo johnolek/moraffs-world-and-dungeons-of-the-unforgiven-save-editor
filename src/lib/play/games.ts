@@ -130,7 +130,8 @@ function playedFile(entry: RosterEntry): CharacterFile {
  * leaving the game and playing on does not start the count again.
  *
  * The board the character is locked to goes in as play begins, since nothing in a game changes
- * it.
+ * it, and so does the endless world it was rolled into, which a replay has no other way of
+ * knowing.
  *
  * `tickCounter` is the clock the run is played on, for the one game that reseeds from one.
  */
@@ -146,6 +147,7 @@ function recorder(
     record: entry.bytes,
     sound,
     leaderboard: entry.leaderboard,
+    worldSeed: entry.worldSeed ?? null,
     before: runTotals(entry.run),
     tickCounter,
   });
