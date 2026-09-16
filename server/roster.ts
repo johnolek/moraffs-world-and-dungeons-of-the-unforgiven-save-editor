@@ -248,13 +248,32 @@ export async function forgetKeptCharacter(sql: Sql, characterId: string, playerI
       playerId,
     ]);
     if (mine.length === 0) return false;
-    // Every table that points at the character, before the character itself.
-    await queries.query('DELETE FROM announcements WHERE character_id = $1', [characterId]);
-    await queries.query('DELETE FROM living WHERE character_id = $1', [characterId]);
-    await queries.query('DELETE FROM verdicts WHERE character_id = $1', [characterId]);
-    await queries.query('DELETE FROM batches WHERE character_id = $1', [characterId]);
-    await queries.query('DELETE FROM sessions WHERE character_id = $1', [characterId]);
-    await queries.query('DELETE FROM characters WHERE id = $1', [characterId]);
+    await deleteCharacterRows(queries, characterId);
     return true;
   });
+}
+
+/**
+ * The same, for an admin, whoever the character belongs to.
+ *
+ * Says whether there was one to forget, so that a character that is not here and a character an
+ * admin has just deleted are one answer.
+ */
+export async function forgetAnyCharacter(sql: Sql, characterId: string): Promise<boolean> {
+  return sql.transaction(async (queries) => {
+    const here = await queries.query('SELECT id FROM characters WHERE id = $1', [characterId]);
+    if (here.length === 0) return false;
+    await deleteCharacterRows(queries, characterId);
+    return true;
+  });
+}
+
+/** Every table that points at the character, and then the character itself. */
+async function deleteCharacterRows(queries: Queries, characterId: string): Promise<void> {
+  await queries.query('DELETE FROM announcements WHERE character_id = $1', [characterId]);
+  await queries.query('DELETE FROM living WHERE character_id = $1', [characterId]);
+  await queries.query('DELETE FROM verdicts WHERE character_id = $1', [characterId]);
+  await queries.query('DELETE FROM batches WHERE character_id = $1', [characterId]);
+  await queries.query('DELETE FROM sessions WHERE character_id = $1', [characterId]);
+  await queries.query('DELETE FROM characters WHERE id = $1', [characterId]);
 }
