@@ -21,6 +21,11 @@ export interface GameRules {
   sectionOf(module: number, floor: number): number;
   /** Where a section sits, or null when there is no section of that number. */
   sectionPlace(section: number): SectionPlace | null;
+  /**
+   * Which of the game's own twenty sections a section's monsters, pictures and words are taken
+   * from. A section the game itself has is its own source; a section beyond them borrows one.
+   */
+  sectionSource(section: number): number;
   /** The 27 monster descriptions the game keeps loaded while the character is in a section. */
   monsterKinds(section: number): MonsterKind[];
   /** The highest monster level a kill is paid experience for. */
@@ -57,12 +62,15 @@ type GameData = typeof data;
  * `sectionPlace` is the twenty-row section table of `dotu-data.json`, which counts four sections
  * to a module and puts each section's Shadow boss on the last of its floors, and
  * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005).
+ * `sectionSource` is every section's own number: the game has a row of MD.BIN for each of the
+ * twenty, so none of them borrows another's.
  */
 export function faithfulRules(data: GameData): GameRules {
   return {
     bottomLevel: (module) => data.constants.bottomLevel[module],
     sectionOf,
     sectionPlace: (section) => sectionPlace(data, section),
+    sectionSource: (section) => section,
     monsterKinds: (section) => sectionMonsterKinds(data, section),
     experienceCap: data.constants.expValueLevelCap,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),

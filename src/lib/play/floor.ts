@@ -36,7 +36,8 @@ export function monsterTypeOf(monsterId: string): number {
   throw new Error(`no monster type for ${monsterId}`);
 }
 
-/** The id `src/lib/map/stocking.ts` knows a monster of this type by, on a floor of `section`. */
+/** The id `src/lib/map/stocking.ts` knows a monster of this type by, on a floor stocked from
+ *  `section`'s own five monsters. */
 export function monsterIdOf(type: number, section: number): string {
   return type < BUILTIN_KINDS ? `builtin-${type}` : `section-${section}-${type}`;
 }
@@ -239,7 +240,7 @@ export function loadLevelMap(game: Game, floors: FloorMonsters, rows: MapSquare[
  * at its own square, which is what `which_monster` (exe 2000:6573) reads to draw one.
  */
 export function drawnMonsters(game: Game, level: number): StockedMonster[] {
-  const section = game.rules.sectionOf(game.pc.module, level);
+  const section = game.rules.sectionSource(game.rules.sectionOf(game.pc.module, level));
   const drawn: StockedMonster[] = [];
   for (let slot = 0; slot < game.monsters.length; slot++) {
     const monster = game.monsters[slot];

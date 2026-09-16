@@ -86,6 +86,9 @@ export function monsterById(id: string): Monster {
 export interface StockedSection extends SectionPlace {
   /** 1..20 across all modules. */
   section: number;
+  /** The section whose five monsters this one is stocked from, which is its own number unless
+   *  the rules have it borrow another's table. */
+  source: number;
 }
 
 /**
@@ -99,7 +102,7 @@ export function stockingSection(rules: GameRules, moduleIndex: number, floor: nu
   const place = rules.sectionPlace(section);
   if (!place || place.module !== moduleIndex) return null;
   if (rules.monsterLevel(moduleIndex, floor) <= 0) return null;
-  return { section, ...place };
+  return { section, source: rules.sectionSource(section), ...place };
 }
 
 /** The game's random(n): an integer 0..n-1. */
@@ -185,9 +188,9 @@ export function stockFloor(
     const beforeTry = clocked === null ? null : () => clocked.reseed(slot, (tries += 1));
     let { x, y } = freeSquare(rows, taken, rnd, beforeTry);
     taken.add(y * WIDTH + x);
-    let entry = rollKind(section.section, rnd, clocked);
+    let entry = rollKind(section.source, rnd, clocked);
     if (slot === 0 && bossStandsOn(section, floor, bossesBeaten)) {
-      entry = sectionMonster(section.section, BOSS_SLOT);
+      entry = sectionMonster(section.source, BOSS_SLOT);
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
       // down in the middle of the floor instead.
       taken.delete(y * WIDTH + x);
@@ -266,14 +269,16 @@ export function groupedMonsterCounts(monsters: StockedMonster[]): MonsterCountGr
  * Each of the four tests asks whether the roll came up 1 rather than 0, which is the same one
  * chance in twenty over an even generator and a different monster over a reseeded one. Only the
  * first roll is a `Random` call (2000:6601); the six under it are written inline.
+ *
+ * @param source the section whose five monsters the floor is stocked from.
  */
-function rollKind(section: number, rnd: () => number, clocked: ClockedStocking | null): Monster {
+function rollKind(source: number, rnd: () => number, clocked: ClockedStocking | null): Monster {
   const puffballs = clocked === null ? random(rnd, 20) : clocked.randomCall(20);
   if (puffballs === 1) return builtinMonster(random(rnd, PUFFBALL_COUNT) + FIRST_PUFFBALL);
   if (random(rnd, 7) === 1) return builtinMonster(random(rnd, BLOCKER_COUNT));
-  if (random(rnd, 15) === 1) return sectionMonster(section, LEVEL_DRAINER_SLOT);
+  if (random(rnd, 15) === 1) return sectionMonster(source, LEVEL_DRAINER_SLOT);
   if (random(rnd, 12) === 1) return builtinMonster(random(rnd, POISON_COUNT) + FIRST_POISON);
-  return sectionMonster(section, random(rnd, 3) + FIRST_REGULAR_SLOT);
+  return sectionMonster(source, random(rnd, 3) + FIRST_REGULAR_SLOT);
 }
 
 function builtinMonster(index: number): Monster {

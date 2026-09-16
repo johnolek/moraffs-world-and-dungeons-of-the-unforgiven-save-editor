@@ -55,6 +55,10 @@ describe('the faithful rules', () => {
     }
   });
 
+  it("draws every section from its own five monsters rather than another section's", () => {
+    for (const section of SECTIONS) expect(rules.sectionSource(section)).toBe(section);
+  });
+
   it('has no section either side of the twenty', () => {
     expect(rules.sectionPlace(0)).toBeNull();
     expect(rules.sectionPlace(21)).toBeNull();
