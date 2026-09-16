@@ -102,7 +102,7 @@ Read the thunk-aware listing from `rev-tools/reference/list_basic.py`, not the G
 | `src/lib/play/mw/README.md` | 20K | The same for Moraff's World. |
 | `src/lib/game/port/README.md` | 14K | Dungeons of the Unforgiven's rules, function by function, and the rules the port itself is written under — naming, citations, and the three deliberate departures. |
 | `src/lib/game/mw-port/README.md` | 11K | Moraff's World's rules, function by function. |
-| `src/lib/game/endless/README.md` | 6K | Dungeons of the Unforgiven below the floor it bottoms out at: what one endless world is, how a section past the twentieth gets its five monsters, and what it borrows from the sections the game has. |
+| `src/lib/game/endless/README.md` | 23K | Dungeons of the Unforgiven below the floor it bottoms out at: what one endless world is, how a section past the twentieth gets its five monsters and the theme they stand under, what it borrows from the sections the game has, the Shadows that wander it, and which of the 1993 record's limits it lifts. |
 | `src/lib/boards/README.md` | 8K | The leaderboard pages over the run server. |
 | `src/lib/journal/README.md` | 3K | A run written up in words, as the Play tab and the boards both show it. |
 | `server/README.md` | 48K | The run server: what it answers, the database, how a run is verified, and how it is deployed. |

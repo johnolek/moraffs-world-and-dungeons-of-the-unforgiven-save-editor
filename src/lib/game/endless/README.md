@@ -20,8 +20,8 @@ answered by passing the question to `FAITHFUL_RULES`.
   worth. `endlessRules({ hard, seed })` builds one. `hard` decides which module the new floors are
   in — a character rolled under the normal difficulty is turned back at the door of Module V, so
   its endless floors are Module IV's — and `seed` is the world.
-- **`monsters.ts`** — the five monsters a new section stands, drawn from the world's seed and the
-  section number.
+- **`monsters.ts`** — the five monsters a new section stands and the theme it stands them under,
+  both drawn from the world's seed and the section number.
 - **`shadows.ts`** — the Shadows that wander the floors between the section bosses, and what
   killing a Shadow this deep leaves behind.
 - **`state.ts`** — what an endless character carries beside the record: the trap door keys, the
@@ -57,7 +57,7 @@ spells.
 
 ## What a new section is made of
 
-A section past the twentieth draws two things from a generator started from the world's seed and
+A section past the twentieth draws three things from a generator started from the world's seed and
 its own number (`endlessSection` in `monsters.ts`):
 
 - **A section of the game to be drawn and described as.** Its walls, its palette and the pages its
@@ -69,16 +69,52 @@ its own number (`endlessSection` in `monsters.ts`):
   is one of the hundred monsters the game has, taken out of the slot it fills in its own section,
   so a boss is one of the twenty bosses and a drainer one of the twenty drainers. No two of the
   three regulars are the same monster.
+- **A theme**, which is what those five do beyond standing there. "Section themes" below is what
+  each one is. It is drawn after the five, so which five a section stands does not depend on the
+  theme it drew.
 
 A borrowed monster arrives whole: its type row, its level drain, its stat drain, its breath, its
 special and its experience multiplier are the bytes the game gave it, so every piece of arithmetic
-the game does on a monster is untouched. What changes is what it looks like. It also keeps its own
-picture, which lives in the file of the section it came from — `ufmon<N>.pic` — which is why a
-monster says which section's file to read and the picture set of the 3-D view reads that file
+the game does on a monster is untouched. What changes is what it looks like — and, in a section
+whose theme is one of the two breathing ones, what it breathes. It also keeps its own picture,
+which lives in the file of the section it came from — `ufmon<N>.pic` — which is why a monster says
+which section's file to read and the picture set of the 3-D view reads that file
 (`src/lib/play/view3d/browser.ts`).
 
 Because the five come from all over the game, the words of the S screen are no longer about the
 monsters standing on the floor. The screen says so.
+
+## Section themes
+
+A theme is about the monsters and nothing else (John, MORF-512). None of them touches the walls,
+the trap doors or the ladders, and none of them is a change to anything the engine does: each is
+written into the rows `monsterKinds` hands back, into the four tests the type roll makes
+(`GameRules.monsterTypeOdds`), or into the level a floor rolls its monsters around — all three of
+them answers the rules were already giving.
+
+Module IV's last section is the model. Every one of its five monsters breathes fire, which is what
+somebody who played that deep remembers about it long after the names have gone.
+
+Three sections in eight are plain, and each of the five themes has one in eight.
+
+| theme | what it does | what the S screen says |
+|---|---|---|
+| **plain** | nothing at all | — |
+| **fire** | all five rows breathe fire | Everything down here breathes fire. |
+| **ice** | all five rows breathe ice | Everything down here breathes ice. |
+| **drainers** | another of the game's twenty level drainers takes one of the three regular slots, and the type roll reaches for the section's own drainer one time in five rather than one in fifteen. About a third of such a floor takes a level off the character when it hits — and carries that floor's trap door key when it dies. | Level drainers are everywhere. |
+| **afflictions** | the type roll reaches for the eight poison and disease monsters one of the rolls left in three rather than one in twelve, which is about a quarter of the floor. What they take — a point of strength or of constitution every 450 moves — stays taken until a temple or a spell puts it right. | Poison and disease are everywhere. |
+| **elites** | every monster of the section's floors is rolled two levels deeper than the floor, so all of them have more hit points, are harder to hit and are worth more. Two levels is felt on the shallowest endless floors and swamped by the floor number further down. | The monsters here stand two levels up. |
+
+A breathing theme sets the breath byte of the rows rather than drawing rows that breathe already,
+because there is not enough of the game to draw from: of the twenty Shadow bosses one breathes fire
+and one breathes ice, and of the sixty regulars five breathe fire and one breathes ice. Every other
+byte of a row is the one the game gave it, so a fire section's monsters are the monsters they were,
+breathing.
+
+A faithful game has no themes. `monsterTypeOdds` answers the game's own 20, 7, 15 and 12 for each
+of the twenty sections and `sectionNote` answers nothing, which is what leaves MD.BIN's own four
+lines standing on the S screen.
 
 ## Repainting
 
