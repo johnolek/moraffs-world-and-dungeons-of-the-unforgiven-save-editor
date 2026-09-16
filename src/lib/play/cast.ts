@@ -219,7 +219,7 @@ const ITEM_MENU_SOURCES = [CAST_SCROLL, CAST_WAND, CAST_PAPER];
 const MAGIC_MENU_HEADING = { text: 'USE MAGIC MENU:', x: 0x3a2, y: 0x301, font: 0, colour: 15 };
 
 export async function useAnItem(turn: Turn): Promise<void> {
-  const { game } = turn;
+  const { game, session } = turn;
   clearMessageLine(game);
   game.draw(MAGIC_MENU_HEADING);
   game.say(...ITEM_MENU);
@@ -237,7 +237,12 @@ export async function useAnItem(turn: Turn): Promise<void> {
     return;
   }
   if (line === 5) {
+    const floorBefore = game.pc.level;
     await useMagicItem(game);
+    // The floor slosher and the stone of teleportation move the character to another floor. The
+    // original's use_magic_item calls load_level_map itself; the port records an event instead —
+    // see the port README's second departure — so the session lays the new floor out.
+    if (game.pc.level !== floorBefore) session.enterFloor(game.pc.level);
     return;
   }
   await drinkAPotion(turn);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { UNFORGIVEN_MAP } from '../map/game';
-import { characterFile, floorSquare, inTheTown, press, settle, startPlaying } from './battle.test-support';
+import { characterFile, findSquare, floorSquare, inTheTown, press, settle, startPlaying } from './battle.test-support';
 import { KEY } from './keys';
 
 /** A generator that rolls the lowest number it can; nothing in these keys rolls for anything. */
@@ -51,6 +51,46 @@ describe('the I key', () => {
     expect(session.game.pc.seeingStones).toBe(0);
     expect(open.filter(([x, y]) => !session.memory.isKnown(x, y))).toEqual([]);
     expect(unseenRock.filter(([x, y]) => session.memory.isKnown(x, y))).toEqual([]);
+  });
+
+  it('lands on the floor below when the floor slosher is used', async () => {
+    // A square of the town that is rock on the floor below it, so the slosher has to roll another.
+    const townRows = UNFORGIVEN_MAP.floor(0, 0);
+    const floorBelow = UNFORGIVEN_MAP.floor(1, 0);
+    const start = findSquare(0, (square, x, y) => square.town === 0 && square.ladder === 0 && floorBelow[y][x].solid);
+    expect(townRows[start.y][start.x].solid).toBe(false);
+    // A floor of the dungeon has 145 monsters to place, which needs a generator that gives more
+    // than one number.
+    const session = startPlaying(characterFile({ level: 0, dir: 0, ...start, slosher: 1 }), new BorlandRng(3));
+    await settle();
+    await press(session, KEY.useItem);
+    await press(session, 0x35);
+    await press(session, 0x31);
+    const pc = session.game.pc;
+    expect(pc.level).toBe(1);
+    expect(pc.slosher).toBe(1);
+    // use_magic_item reloads the floor around the character, so the screen draws the floor they
+    // slipped onto rather than the town, and the square they landed on is open on it.
+    expect(session.rows.flat().some((square) => square.town !== 0)).toBe(false);
+    expect(session.rows[pc.y][pc.x].solid).toBe(false);
+    expect(session.view().monsters.length).toBeGreaterThan(0);
+  });
+
+  it('lands in the town when a stone of teleportation is used', async () => {
+    const level = 3;
+    const session = startPlaying(
+      characterFile({ level, dir: 0, ...floorSquare(level), teleportStones: 1 }),
+      new BorlandRng(3),
+    );
+    await settle();
+    await press(session, KEY.useItem);
+    await press(session, 0x35);
+    await press(session, 0x35);
+    const pc = session.game.pc;
+    expect(pc.level).toBe(0);
+    expect(pc.teleportStones).toBe(0);
+    expect(session.rows.flat().some((square) => square.town !== 0)).toBe(true);
+    expect(session.rows[pc.y][pc.x].solid).toBe(false);
   });
 
   it('casts out of the scrolls when the first line is picked', async () => {
