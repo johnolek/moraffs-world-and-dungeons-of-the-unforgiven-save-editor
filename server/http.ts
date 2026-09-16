@@ -339,22 +339,29 @@ async function serveAdmin(
  * worked out from the words themselves (`server/admins.ts`).
  *
  * Guesses are slowed down the way guesses at a sign-in are, and by the same count, since both are
- * guesses at a passphrase; the admin endpoints share one name to be counted against, so five
- * wrong tries from anywhere leave them unreachable for a quarter of an hour, John's own tries
- * included.
+ * guesses at a passphrase. Five wrong tries leave the admin endpoints unreachable from that one
+ * address for a quarter of an hour, and reachable as ever from everywhere else.
  */
 async function adminAsking(request: IncomingMessage, sql: Queries, attempts: SignInAttempts): Promise<AdminPlayer | null> {
   const said = bearerValue(request);
   const from = whereFrom(request);
-  if (said === null || attempts.tooMany(ADMIN_TRIES, from)) return null;
+  const counted = adminTriesFrom(from);
+  if (said === null || attempts.tooMany(counted, from)) return null;
   const admin = await adminFor(sql, said);
-  if (admin === null) attempts.failed(ADMIN_TRIES, from);
+  if (admin === null) attempts.failed(counted, from);
   return admin;
 }
 
-/** The name wrong tries at an admin endpoint are counted against, which stands for all of them:
- *  there is no name in an admin request to count against instead. */
-const ADMIN_TRIES = 'admin';
+/**
+ * The name wrong tries at an admin endpoint are counted against.
+ *
+ * There is no name in an admin request, so the address the request came from stands in for one.
+ * A single name standing for every admin request would be a name anybody can fail five times at,
+ * which would shut John out of his own server from whatever machine he is at.
+ */
+function adminTriesFrom(address: string): string {
+  return `admin:${address}`;
+}
 
 /** One page of every character here, whoever's it is, which is what an admin picks the character
  *  to delete out of. */

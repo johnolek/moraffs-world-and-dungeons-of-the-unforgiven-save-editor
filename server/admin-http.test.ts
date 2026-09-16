@@ -207,6 +207,24 @@ describe('the admin endpoints', () => {
     expect((await asAdmin('/admin/characters', somebodyElses)).status).toBe(200);
   });
 
+  /** One call as a caller at a named address makes it. The proxy in front of the deployed server
+   *  writes the caller's address into this header, and the server reads it back. */
+  function asAdminFrom(path: string, passphrase: string, from: string): Promise<Response> {
+    return fetch(`${origin}${path}`, {
+      headers: { Authorization: `Bearer ${passphrase}`, 'X-Forwarded-For': from },
+    });
+  }
+
+  it('turns the address that guessed away and lets every other address in', async () => {
+    const guessing = '198.51.100.7';
+    for (let guess = 0; guess < 5; guess += 1) {
+      await asAdminFrom('/admin/me', `six words nobody here has ${guess}`, guessing);
+    }
+
+    expect((await asAdminFrom('/admin/me', johns, guessing)).status).toBe(404);
+    expect((await asAdminFrom('/admin/me', johns, '203.0.113.4')).status).toBe(200);
+  });
+
   it('is not there for an admin path this server does not know', async () => {
     const response = await asAdmin('/admin/everything', johns);
 
