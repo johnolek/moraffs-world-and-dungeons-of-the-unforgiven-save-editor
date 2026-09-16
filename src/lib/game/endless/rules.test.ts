@@ -252,11 +252,17 @@ describe("an endless section's theme", () => {
    *  loaded as rows 14 to 21. */
   const AFFLICTED = new Set(Array.from({ length: 8 }, (unused, index) => `builtin-${14 + index}`));
 
-  /** What share of a stocked floor of this section counts. The floor is the section's second
-   *  last, so that no Shadow boss stands on it. */
+  /** A floor of the section with no Shadow boss standing on it, which is its second last. */
+  const floorOf = (section: number): number => (tough.sectionPlace(section)?.bossFloor ?? 0) - 1;
+
+  /** The level a floor of Module V rolls its monsters around before any theme: the floor, and the
+   *  15 levels stock_level adds for each of the four modules above it. */
+  const baseLevelOf = (floor: number): number => floor + 15 * MODULE_V;
+
+  /** What share of a stocked floor of this section counts. */
   const shareOf = (section: number, counts: (row: MonsterKind) => boolean): number => {
     const rows = new Map(tough.monsterKinds(section).map((kind) => [kind.id, kind]));
-    const floor = (tough.sectionPlace(section)?.bossFloor ?? 0) - 1;
+    const floor = floorOf(section);
     const map = UNFORGIVEN_MAP.floor(floor, MODULE_V, tough.bottomLevel(MODULE_V), tough.trapdoorReach(MODULE_V, floor));
     const monsters = stockFloor(tough, map, MODULE_V, floor, seeded(11));
     const counted = monsters.filter((monster) => {
@@ -304,6 +310,13 @@ describe("an endless section's theme", () => {
 
   it('stands far more poison and disease in an afflictions section than in a plain one', () => {
     expect(afflictedShareOf(sectionWith('afflictions'))).toBeGreaterThan(2 * afflictedShareOf(sectionWith('plain')));
+  });
+
+  it('rolls the monsters of an elites section two levels above the floor', () => {
+    const elite = floorOf(sectionWith('elites'));
+    const plain = floorOf(sectionWith('plain'));
+    expect(tough.monsterLevel(MODULE_V, elite)).toBe(baseLevelOf(elite) + 2);
+    expect(tough.monsterLevel(MODULE_V, plain)).toBe(baseLevelOf(plain));
   });
 
   it('draws every theme there is', () => {

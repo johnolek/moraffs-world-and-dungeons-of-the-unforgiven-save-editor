@@ -8,7 +8,7 @@ import {
   type TrapDoorKeys,
 } from '../port/rules';
 import type { PlayerCharacter } from '../port/state';
-import { endlessMonsterKinds, endlessSection, themeTypeOdds } from './monsters';
+import { endlessMonsterKinds, endlessSection, themeLevels, themeTypeOdds, type SectionTheme } from './monsters';
 import { shadowKilled, wanderingShadow } from './shadows';
 import { endlessStateOf } from './state';
 
@@ -170,6 +170,11 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
   const sectionSource = (section: number): number =>
     section <= LAST_OWN_SECTION ? section : endlessSection(seed, section).source;
 
+  /** What a section does with its monsters beyond standing them. The game's own twenty do
+   *  nothing, which is what `plain` is. */
+  const themeOf = (section: number): SectionTheme =>
+    section <= LAST_OWN_SECTION ? 'plain' : endlessSection(seed, section).theme;
+
   return {
     // How far down a ladder or a chute off a floor may lead. The map generator works a trap
     // door's destination out from the bottom as well, which a bottom this deep makes nonsense of,
@@ -184,10 +189,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     sectionSource,
     monsterKinds: (section) =>
       section <= LAST_OWN_SECTION ? FAITHFUL_RULES.monsterKinds(section) : endlessMonsterKinds(seed, section),
-    monsterTypeOdds: (section) =>
-      section <= LAST_OWN_SECTION
-        ? FAITHFUL_RULES.monsterTypeOdds(section)
-        : themeTypeOdds(endlessSection(seed, section).theme),
+    monsterTypeOdds: (section) => themeTypeOdds(themeOf(section)),
     experienceCap: ENDLESS_EXPERIENCE_CAP,
     keys: endlessKeys(FAITHFUL_RULES.bottomLevel(endlessModule)),
     bossSquares: ENDLESS_BOSS_SQUARES,
@@ -200,7 +202,9 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     // deep enough to reach; an endless floor is, and a dungeon that got easier the deeper it went
     // would be no dungeon at all.
     monsterLevel: (module, floor) =>
-      module === endlessModule ? floor + LEVELS_PER_MODULE * module : FAITHFUL_RULES.monsterLevel(module, floor),
+      module === endlessModule
+        ? floor + LEVELS_PER_MODULE * module + themeLevels(themeOf(sectionOf(module, floor)))
+        : FAITHFUL_RULES.monsterLevel(module, floor),
     // The deepest base level the endless dungeon rolls monsters around, so that no monster is ever
     // put back to level 1 for standing deeper than the rules allow.
     monsterLevelMax: ENDLESS_BOTTOM + LEVELS_PER_MODULE * endlessModule,

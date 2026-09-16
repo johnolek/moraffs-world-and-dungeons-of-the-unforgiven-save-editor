@@ -445,7 +445,9 @@ describe('verifying a run of the endless dungeon', () => {
     const here = await replayRun(log);
     const elsewhere = await replayRun({ ...log, worldSeed: OTHER_WORLD });
 
-    expect(here.journal[0].text).toBe('Came face to face with a Level 165 SHADOW CENTIPEDE');
+    // The two levels between them are this world's section 22 being one that rolls its monsters
+    // deeper than the floor, which is one of the themes a section draws.
+    expect(here.journal[0].text).toBe('Came face to face with a Level 167 SHADOW CENTIPEDE');
     expect(elsewhere.journal[0].text).toBe('Came face to face with a Level 165 SHADOW WARRIOR');
   });
 

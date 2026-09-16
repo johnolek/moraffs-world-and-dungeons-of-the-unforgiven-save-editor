@@ -75,6 +75,16 @@ const DRAINERS_THEME_ODDS = 5;
  */
 const AFFLICTIONS_THEME_ODDS = 3;
 
+/**
+ * How many levels deeper than the floor an elites section rolls everything standing on it.
+ *
+ * A monster's level is what its hit points are rolled from, what the character's swing is counted
+ * against and what the kill is paid for, so the whole floor is that much harder and that much
+ * better paid. It is felt on the shallowest endless floors, where the base level is around a
+ * hundred; further down the floor number swamps it.
+ */
+const ELITE_LEVELS = 2;
+
 /** The odd multiplier a 32-bit hash spreads its input with: two to the 32 over the golden
  *  ratio. */
 const GOLDEN_RATIO = 0x9e3779b1;
@@ -131,6 +141,12 @@ export function endlessSection(seed: number, section: number): EndlessSection {
   // stands does not depend on which theme it drew.
   const theme = THEME_DRAW[rng.random(THEME_DRAW.length)];
   return { source, theme, monsters: themed(monsters, theme, drainer, rng) };
+}
+
+/** How many levels deeper than the floor a themed section rolls its monsters, which is none for
+ *  every theme but the one that is about the levels. */
+export function themeLevels(theme: SectionTheme): number {
+  return theme === 'elites' ? ELITE_LEVELS : 0;
 }
 
 /**
