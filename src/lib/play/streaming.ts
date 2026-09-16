@@ -60,9 +60,9 @@ const OFF_THE_BOARDS: RunMark = {
   tone: 'plain',
 };
 const NOT_CHECKED_YET: RunMark = { words: 'Still being checked.', note: null, tone: 'plain' };
-const PLAYED_ELSEWHERE: RunMark = {
-  words: 'This character was played elsewhere.',
-  note: 'The copy here has been replaced with the one from the boards.',
+const OUT_OF_STEP: RunMark = {
+  words: 'The boards hold a different run of this character.',
+  note: 'Nothing more of this game is kept. Leave the game to pick the character up from the boards.',
   tone: 'bad',
 };
 const ALREADY_DEAD: RunMark = {
@@ -163,10 +163,14 @@ export interface StreamRun {
    */
   writeTheGameDown: () => void;
   /**
-   * The server holds a newer run of this character than the one being played: another device
-   * carried it on while this one was away. The tab takes the server's copy over.
+   * The run being played does not carry on from the one the server holds, so nothing more of it
+   * will ever be taken.
+   *
+   * The copy on the server is the one that stands, and the tab takes it over — but not until the
+   * game has been left. Swapping the roster entry out from under a game still being played would
+   * leave that game writing its record to one copy of the character and its keys to another.
    */
-  movedOn: () => void;
+  outOfStep: () => void;
 }
 
 /**
@@ -273,16 +277,16 @@ class Streamer implements RunStreamer {
   /**
    * A run the server will not take.
    *
-   * A character the server holds a newer run of than this device is playing is the one refusal
-   * there is something to do about: the copy here is behind, so the tab takes the server's over
-   * and says so. A character the server has already seen die gets words of its own, since
-   * nothing about the keys being played now will ever be kept. The rest are shown as the server
-   * worded them.
+   * A run that does not carry on from the one the server holds is the one refusal there is
+   * something to do about: the copy on the server is the one that stands, so the tab takes it
+   * over once the game has been left. A character the server has already seen die gets words of
+   * its own, since nothing about the keys being played now will ever be kept. The rest are shown
+   * as the server worded them.
    */
   private refused(words: string, because: string | null): void {
     if (because === MOVED_ON) {
-      this.run.onMark(PLAYED_ELSEWHERE);
-      this.run.movedOn();
+      this.run.onMark(OUT_OF_STEP);
+      this.run.outOfStep();
       return;
     }
     if (because === DEAD) {

@@ -677,6 +677,25 @@ describe('the characters the server is keeping for this player', () => {
     expect(app.roster[0].run[0].inputs).toHaveLength(9);
   });
 
+  it('gives this device’s copy up where a sitting the server has played past has grown here', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    const entry = app.roster[0];
+    // Keys of an earlier sitting that never reached the server before a later one did. The
+    // server refuses such keys for ever, so a device that held on to them would be refused every
+    // time the character was played; taking the server's copy is what puts it back in step.
+    runSessionPlayed(entry, 0, sitting(0, 9));
+    runSessionPlayed(entry, 1, sitting(1, 3));
+    await rememberNow();
+    serverHolding([
+      served({ id: entry.id, name: 'SAGEY', record: 'CQkJ', run: [sitting(0, 4), sitting(1, 3)] }),
+    ]);
+
+    await catchUpWithTheServer();
+
+    expect(Array.from(app.roster[0].bytes)).toEqual([9, 9, 9]);
+    expect(app.roster[0].run[0].inputs).toHaveLength(4);
+  });
+
   it('leaves the roster alone when the server has nothing to say', async () => {
     keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
     serverHolding([], 403);
@@ -738,7 +757,7 @@ describe('the characters the server is keeping for this player', () => {
       mode: () => 'faithful',
       onMark: () => undefined,
       writeTheGameDown: () => undefined,
-      movedOn: () => undefined,
+      outOfStep: () => undefined,
     })!;
 
     characterEdited();

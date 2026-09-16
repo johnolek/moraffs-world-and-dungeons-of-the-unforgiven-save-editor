@@ -136,6 +136,9 @@
    *  given no server address has neither. */
   let streamer = $state.raw<RunStreamer | null>(null);
   let runMark = $state.raw<RunMark | null>(null);
+  /** The boards have refused this run because it does not carry on from the one they hold, so the
+   *  character is picked up from them again once the game has been put down. */
+  let outOfStep = $state.raw(false);
   /** Why the game did not start, which is only ever that the character is being played on
    *  another device of this player's. */
   let elsewhere = $state.raw<string | null>(null);
@@ -239,6 +242,7 @@
     playingId = entry.id;
     view = started.view();
     runMark = null;
+    outOfStep = false;
     if (started.run) {
       streamer = streamRun({
         characterId: entry.id,
@@ -247,7 +251,7 @@
         mode: () => mode,
         onMark: (mark) => (runMark = mark),
         writeTheGameDown,
-        movedOn: () => void catchUpWithTheServer(),
+        outOfStep: () => (outOfStep = true),
       });
     }
     void runPlayLoop(started, game.loop(started));
@@ -312,11 +316,26 @@
     if (session && !session.over) session.save();
   }
 
-  function leave() {
+  /**
+   * The game is being put down: what it did goes into the roster, the sender stops, and a
+   * character the boards refused is picked up again from the boards.
+   *
+   * That last one waits until here rather than happening the moment the boards say so, because
+   * taking their copy swaps the roster entry for a new one: a game still being played would go
+   * on writing its keys to the entry it started with and its record to the one that replaced it,
+   * and the character would end up describing neither run.
+   */
+  function putTheGameDown() {
     writeTheGameDown();
     session?.finish();
     streamer?.stop();
     streamer = null;
+    if (outOfStep) void catchUpWithTheServer();
+    outOfStep = false;
+  }
+
+  function leave() {
+    putTheGameDown();
     runMark = null;
     session = null;
     playingId = null;
@@ -327,11 +346,7 @@
 
   /** A tab closed or switched away from leaves whatever was played last unwritten and unsent
    *  otherwise, and its timers running. */
-  onDestroy(() => {
-    writeTheGameDown();
-    session?.finish();
-    streamer?.stop();
-  });
+  onDestroy(() => putTheGameDown());
 
   /** The end of a run, which is a death or a win: the last batch goes and the server replays the
    *  whole chain. Quitting is not an end -- the character is played again from where it stood. */

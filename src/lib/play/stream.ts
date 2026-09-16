@@ -133,8 +133,12 @@ export interface StreamedSession {
 }
 
 /**
- * The server's word for a character it has been sent a newer run of than this device is playing:
- * another device carried the character on while this one was away.
+ * The server's word for keys that do not carry on from the run it holds.
+ *
+ * Another device may have played the character on while this one was away, but the server has no
+ * way of telling that from a device whose own copy of the run has fallen behind, so it says only
+ * the thing it knows. The word on the wire stays `moved-on`, which is what every build already
+ * deployed is looking for.
  *
  * It is a refusal the site does something about rather than only showing, which is why the
  * server's word for it is written down here beside the shapes the two halves agree on.

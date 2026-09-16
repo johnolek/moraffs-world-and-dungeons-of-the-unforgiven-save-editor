@@ -71,14 +71,14 @@ const TAKEN: Answer = () => new Response(JSON.stringify({ received: 0 }), { stat
 function sender(
   answer: Answer = TAKEN,
   over: Partial<Parameters<typeof streamRun>[0]> = {},
-): { stop(): void; posts: string[]; marks: RunMark[]; movedOn: number } {
+): { stop(): void; posts: string[]; marks: RunMark[]; outOfStep: number } {
   const posts: string[] = [];
   vi.stubGlobal('fetch', (url: string) => {
     posts.push(url);
     return Promise.resolve(answer());
   });
   const marks: RunMark[] = [];
-  const told = { movedOn: 0 };
+  const told = { outOfStep: 0 };
   const streamer = streamRun({
     characterId: 'k3p9x1-ab12cd',
     session: sitting(),
@@ -86,7 +86,7 @@ function sender(
     mode: () => 'faithful',
     onMark: (mark) => marks.push(mark),
     writeTheGameDown: () => undefined,
-    movedOn: () => (told.movedOn += 1),
+    outOfStep: () => (told.outOfStep += 1),
     ...over,
   });
   if (streamer === null) throw new Error('The build under test has no run server.');
@@ -94,8 +94,8 @@ function sender(
     stop: () => streamer.stop(),
     posts,
     marks,
-    get movedOn() {
-      return told.movedOn;
+    get outOfStep() {
+      return told.outOfStep;
     },
   };
 }
@@ -148,7 +148,7 @@ describe('keeping the roster level with the server', () => {
       mode: () => 'faithful',
       onMark: () => undefined,
       writeTheGameDown: () => order.push('wrote the game down'),
-      movedOn: () => undefined,
+      outOfStep: () => undefined,
     })!;
 
     streamer.stop();
@@ -172,23 +172,23 @@ describe('keeping the roster level with the server', () => {
   });
 });
 
-describe('a character played on another device since', () => {
-  it('says so and asks for the server’s copy', async () => {
+describe('a run that does not carry on from the one the boards hold', () => {
+  it('says so and asks for the boards’ copy to be taken', async () => {
     browser();
     setOffTheBoards(false);
-    const movedOn: Answer = () =>
-      new Response(JSON.stringify({ error: 'That character has been played on another device since.', because: 'moved-on' }), {
+    const outOfStep: Answer = () =>
+      new Response(JSON.stringify({ error: 'Those keys do not carry on from the run the boards hold.', because: 'moved-on' }), {
         status: 409,
       });
 
-    const run = sender(movedOn);
+    const run = sender(outOfStep);
     run.stop();
     await settled();
 
-    expect(run.movedOn).toBe(1);
+    expect(run.outOfStep).toBe(1);
     expect(run.marks[run.marks.length - 1]).toEqual({
-      words: 'This character was played elsewhere.',
-      note: 'The copy here has been replaced with the one from the boards.',
+      words: 'The boards hold a different run of this character.',
+      note: 'Nothing more of this game is kept. Leave the game to pick the character up from the boards.',
       tone: 'bad',
     });
   });
@@ -205,7 +205,7 @@ describe('a character played on another device since', () => {
     run.stop();
     await settled();
 
-    expect(run.movedOn).toBe(0);
+    expect(run.outOfStep).toBe(0);
     expect(run.marks[run.marks.length - 1]).toEqual({
       words: 'The boards refused the run.',
       note: 'That character belongs to another player.',
@@ -225,7 +225,7 @@ describe('a character the boards have already seen die', () => {
     run.stop();
     await settled();
 
-    expect(run.movedOn).toBe(0);
+    expect(run.outOfStep).toBe(0);
     expect(run.marks[run.marks.length - 1]).toEqual({
       words: 'This character has already died.',
       note: 'The boards keep nothing more of this run.',

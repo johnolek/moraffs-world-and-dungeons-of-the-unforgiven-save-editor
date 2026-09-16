@@ -175,7 +175,7 @@ describe('a character streamed to the server and read back off it', () => {
 
     expect(sent).toEqual({
       sent: 'refused',
-      words: 'That character has been played on another device since.',
+      words: 'Those keys do not carry on from the run the boards hold.',
       because: 'moved-on',
     });
   });
