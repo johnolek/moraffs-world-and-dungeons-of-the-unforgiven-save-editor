@@ -421,7 +421,12 @@ describe('defend, the puffball', () => {
     expect(monsterAt(game, 10, 10)).toBe(-1);
     expect(monster).toEqual({ x: 100, y: 100, hp: 0, type: 0, level: 0 });
     expect(game.redrawView).toBe(true);
-    expect(game.events).toContainEqual({ kind: 'statChanged', stat: 'CONSTITUTION', by: -1 });
+    expect(game.events).toContainEqual({
+      kind: 'statChanged',
+      stat: 'CONSTITUTION',
+      by: -1,
+      monster: { type: 23, level: 40, name: 'GARGALON' },
+    });
   });
 
   it('holds its line the way the game holds it, however fast the game is set to run', () => {
@@ -580,7 +585,12 @@ describe('defend, the drains', () => {
     attackUntilItLands(game);
     expect(game.pc.str).toBe(before - 1);
     expect(game.messages).toContain('STRENGTH HAS BEEN DRAINED!');
-    expect(game.events).toContainEqual({ kind: 'statChanged', stat: 'STRENGTH', by: -1 });
+    expect(game.events).toContainEqual({
+      kind: 'statChanged',
+      stat: 'STRENGTH',
+      by: -1,
+      monster: { type: 23, level: 40, name: 'GARGALON' },
+    });
   });
 });
 

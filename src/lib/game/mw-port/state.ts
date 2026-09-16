@@ -341,15 +341,8 @@ export type MwEvent =
   /** FUN_3000_a047 (WORLD.EXE 3000:a047): the pockets opened, and which of its five pages was
    *  read. */
   | { kind: 'pocketsRead'; page: number }
-  /**
-   * A characteristic moved by a monster (WORLD.EXE 2000:615c): a puffball's parting gift or a
-   * drainer's, by the name the game's own message calls it. `by` is negative for a drain.
-   */
-  | { kind: 'statChanged'; stat: string; by: number; monster: MonsterSeen }
   /** A poisoning or a disease a blow brought with it (WORLD.EXE 2000:615c). */
   | { kind: 'afflicted'; what: 'poison' | 'disease'; monster: MonsterSeen }
-  /** Hit points a battle spell took off the monster being fought. */
-  | { kind: 'spellDamaged'; monster: MonsterSeen; damage: number }
   /**
    * One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
    * where the kinds a run counts as actions carry their numbers.

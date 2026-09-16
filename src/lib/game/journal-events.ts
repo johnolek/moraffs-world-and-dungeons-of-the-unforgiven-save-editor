@@ -32,6 +32,7 @@ export const JOURNAL_KINDS = [
   'buildingEntered',
   'swung',
   'breathed',
+  'spellDamaged',
   'cast',
   'itemUsed',
   'dropped',
@@ -39,6 +40,7 @@ export const JOURNAL_KINDS = [
   'met',
   'hit',
   'killed',
+  'statChanged',
   'found',
   'pillFound',
   'wandMade',
@@ -129,6 +131,14 @@ export type JournalEvent =
    *  for an ordinary swing. */
   | { kind: 'hit'; monster: MonsterSeen; damage: number; breath: number | null }
   | { kind: 'killed'; monster: MonsterSeen; experience: number }
+  /** Hit points a battle spell took off the monster being fought. */
+  | { kind: 'spellDamaged'; monster: MonsterSeen; damage: number }
+  /**
+   * One of the six characteristics moved by a point, which a life drainer's blow and a puffball
+   * both do. `stat` is the game's own name for it, and `by` is 1 for a raise and -1 for a drain,
+   * since every value the monster tables hold moves its characteristic by exactly one point.
+   */
+  | { kind: 'statChanged'; stat: string; by: number; monster: MonsterSeen }
   | { kind: 'found'; find: Find }
   /** A vitamin pill, which the two Moraff games hand over by colour and nothing else. */
   | { kind: 'pillFound'; colour: string }
