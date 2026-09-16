@@ -6,6 +6,7 @@ import { expValue } from '../port/combat';
 import { FAITHFUL_RULES } from '../port/rules';
 import { newGame } from '../port/state';
 import { BOTTOM_LEVEL } from '../unfmap.js';
+import { endlessSection, type SectionTheme } from './monsters';
 import { endlessRules, ENDLESS_BOTTOM } from './rules';
 
 /** The hundred sections under the bottom of the game, and one far deeper than anybody will
@@ -208,6 +209,39 @@ describe("an endless section's five monsters", () => {
   it("are the game's own five, byte for byte, in the twenty sections the game has", () => {
     for (let section = 1; section <= 20; section += 1) {
       expect(tough.monsterKinds(section), `section ${section}`).toEqual(FAITHFUL_RULES.monsterKinds(section));
+    }
+  });
+});
+
+describe("an endless section's theme", () => {
+  /** Enough sections of enough worlds for every theme to have come up a few dozen times. */
+  const SWEEP_WORLDS = [SEED, SEED + 1, SEED + 2];
+  const SWEEP_SECTIONS = Array.from({ length: 200 }, (unused, index) => 21 + index);
+
+  const themesOf = (seed: number, sections: number[]): SectionTheme[] =>
+    sections.map((section) => endlessSection(seed, section).theme);
+
+  const sweep = (): SectionTheme[] => SWEEP_WORLDS.flatMap((seed) => themesOf(seed, SWEEP_SECTIONS));
+
+  it('is the same theme for everybody playing the same world', () => {
+    expect(themesOf(SEED, ENDLESS_SECTIONS)).toEqual(themesOf(SEED, ENDLESS_SECTIONS));
+  });
+
+  it('is drawn again in a world seeded differently', () => {
+    expect(themesOf(SEED + 1, SWEEP_SECTIONS)).not.toEqual(themesOf(SEED, SWEEP_SECTIONS));
+  });
+
+  it('leaves about one section in three with no theme at all', () => {
+    const drawn = sweep();
+    const plain = drawn.filter((theme) => theme === 'plain').length / drawn.length;
+    expect(plain).toBeGreaterThan(0.25);
+    expect(plain).toBeLessThan(0.5);
+  });
+
+  it('draws every theme there is', () => {
+    const drawn = new Set(sweep());
+    for (const theme of ['plain', 'fire', 'ice', 'drainers', 'afflictions', 'elites'] as const) {
+      expect(drawn.has(theme), theme).toBe(true);
     }
   });
 });

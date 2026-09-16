@@ -6,7 +6,7 @@ import type { MonsterKind } from '../port/state';
 
 /**
  * What a section below the bottom of the game is made of: the section it is drawn and described
- * as, and the five monsters that stand in it.
+ * as, the five monsters that stand in it, and the theme they stand there under.
  *
  * The game has five monsters per section and twenty sections, and an endless dungeon has as many
  * sections as a character can walk down to. Each new one takes its five from the hundred the game
@@ -14,6 +14,28 @@ import type { MonsterKind } from '../port/state';
  * it the game's own arithmetic reads — and paints them in a colour set other than their own so
  * that they do not read as the section they came from.
  */
+
+/**
+ * What a section does with its five monsters beyond standing them (John, MORF-512).
+ *
+ * A theme is about the monsters and nothing else. Module IV's last section is the model: every
+ * one of its five breathes fire, which is what a character remembers about it long after the
+ * names have gone. Nothing about the floor itself — its walls, its trap doors, its ladders —
+ * knows that a theme exists.
+ *
+ * - `plain` — the five as they were drawn, stocked on the game's own odds.
+ * - `fire` — every one of the five breathes fire.
+ * - `ice` — every one of the five breathes ice.
+ * - `drainers` — a second level drainer stands among the three regulars, and the section's own
+ *   drainer comes up far more often.
+ * - `afflictions` — the poison and the disease monsters come up far more often.
+ * - `elites` — every monster of the section's floors is rolled as if the floor were deeper.
+ */
+export type SectionTheme = 'plain' | 'fire' | 'ice' | 'drainers' | 'afflictions' | 'elites';
+
+/** The draw a section's theme is taken from: three sections in eight are plain, and each of the
+ *  five themes has one in eight. */
+const THEME_DRAW: SectionTheme[] = ['plain', 'plain', 'plain', 'fire', 'ice', 'drainers', 'afflictions', 'elites'];
 
 /** The twenty sections the game itself has, which everything an endless section is made of is
  *  drawn out of. */
@@ -57,6 +79,8 @@ export interface EndlessSection {
   /** Which of the game's own twenty this section is drawn and described as: its walls, its
    *  palette and the words of its S screen. */
   source: number;
+  /** What the section does with its five monsters. */
+  theme: SectionTheme;
   /** The five monsters of slots 22 to 26. */
   monsters: MonsterKind[];
 }
@@ -77,10 +101,11 @@ export function endlessSection(seed: number, section: number): EndlessSection {
   const boss = borrow(rng, BOSS_SLOT);
   const regulars = threeRegulars(rng);
   const drainer = borrow(rng, DRAINER_SLOT);
-  return {
-    source,
-    monsters: [rowOf(boss), ...regulars.map((one) => repainted(one, rng)), repainted(drainer, rng)],
-  };
+  const monsters = [rowOf(boss), ...regulars.map((one) => repainted(one, rng)), repainted(drainer, rng)];
+  // The theme comes out of the generator after the five monsters, so which five a section
+  // stands does not depend on which theme it drew.
+  const theme = THEME_DRAW[rng.random(THEME_DRAW.length)];
+  return { source, theme, monsters };
 }
 
 /** The 27 rows an endless section keeps loaded: the 22 monsters every section has, then its own
