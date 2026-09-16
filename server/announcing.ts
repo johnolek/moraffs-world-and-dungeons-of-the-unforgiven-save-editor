@@ -1,4 +1,4 @@
-import type { Milestone, MilestoneKind } from '../src/lib/play/run';
+import type { Milestone } from '../src/lib/play/run';
 import type { Queries } from './sql';
 
 /**
@@ -61,14 +61,22 @@ export interface AnnouncedRun {
 }
 
 /**
- * The milestone kinds announced one by one.
+ * Whether a milestone is one to announce.
  *
- * A module, a dungeon and a floor are not among them. A character reaches dozens of those over a
+ * A boss is, every time: a section's Shadow is the hardest thing the game asks for. A level only
+ * when it is the twentieth or a fifth past it — a character gains its first twenty levels in the
+ * first hour and nobody would stop to read about those.
+ *
+ * A module, a dungeon and a floor are never announced. A character reaches dozens of those over a
  * run, and the feed is read on every page of the site, so it holds only what somebody would stop
  * to read. A death and a win are the run's outcome instead, and that is announced once whatever
  * the chain says about how it ended.
  */
-const ANNOUNCED_MILESTONES: readonly MilestoneKind[] = ['boss', 'level'];
+function worthAnnouncing(milestone: Milestone): boolean {
+  if (milestone.kind === 'boss') return true;
+  if (milestone.kind === 'level') return milestone.which >= 20 && milestone.which % 5 === 0;
+  return false;
+}
 
 /**
  * Announce a run: the milestones it reached that have not been announced, oldest first, and then
@@ -85,7 +93,7 @@ export async function announceRun(sql: Queries, run: AnnouncedRun): Promise<Anno
   for (const milestone of run.milestones) {
     if (milestone.kind === 'dungeon') dungeon = milestone.which;
     if (milestone.kind === 'level') level = Math.max(level, milestone.which);
-    if (!ANNOUNCED_MILESTONES.includes(milestone.kind)) continue;
+    if (!worthAnnouncing(milestone)) continue;
     const written = await announce(sql, run, {
       kind: milestone.kind,
       which: milestone.which,

@@ -23,8 +23,8 @@ describe('asking the server what it has announced', () => {
       leaderboard: 'speedrun',
       outcome: 'death',
       milestones: [
-        { kind: 'level', which: 2, actions: 4, time: 10, floor: 1 },
-        { kind: 'level', which: 3, actions: 8, time: 20, floor: 2 },
+        { kind: 'level', which: 20, actions: 4, time: 10, floor: 1 },
+        { kind: 'level', which: 25, actions: 8, time: 20, floor: 2 },
         { kind: 'death', which: 0, actions: 12, time: 30, floor: 2 },
       ],
       actions: 12,
@@ -63,7 +63,7 @@ describe('asking the server what it has announced', () => {
     const next = await (await fetch(`${origin}/announcements?before=${first.announcements[0].id}&limit=1`)).json();
 
     expect(first.more).toBe(true);
-    expect(next.announcements.map((announcement: { which: number }) => announcement.which)).toEqual([3]);
+    expect(next.announcements.map((announcement: { which: number }) => announcement.which)).toEqual([25]);
   });
 
   it('refuses a place in the history that is not one', async () => {

@@ -51,7 +51,7 @@ describe('announcing a run that has been checked', () => {
       run({
         milestones: [
           reached({ kind: 'boss', which: 2 }),
-          reached({ kind: 'level', which: 12 }),
+          reached({ kind: 'level', which: 20 }),
           reached({ kind: 'death', which: 0, floor: 7 }),
         ],
       }),
@@ -59,9 +59,22 @@ describe('announcing a run that has been checked', () => {
 
     expect(made.map((announcement) => [announcement.kind, announcement.which])).toEqual([
       ['boss', 2],
-      ['level', 12],
+      ['level', 20],
       ['death', 0],
     ]);
+  });
+
+  it('announces the twentieth level and every fifth past it, and no other', async () => {
+    const made = await announceRun(
+      sql,
+      run({
+        milestones: [15, 19, 20, 21, 25, 30, 32].map((level) => reached({ kind: 'level', which: level })),
+      }),
+    );
+
+    expect(made.filter((announcement) => announcement.kind === 'level').map((announcement) => announcement.which)).toEqual(
+      [20, 25, 30],
+    );
   });
 
   it('says nothing about a module, a dungeon or a floor reached', async () => {
@@ -85,7 +98,7 @@ describe('announcing a run that has been checked', () => {
       run({
         milestones: [
           reached({ kind: 'dungeon', which: 2 }),
-          reached({ kind: 'level', which: 12 }),
+          reached({ kind: 'level', which: 20 }),
           reached({ kind: 'death', which: 0, floor: 7 }),
         ],
       }),
@@ -95,7 +108,7 @@ describe('announcing a run that has been checked', () => {
       kind: 'death',
       floor: 7,
       dungeon: 2,
-      level: 12,
+      level: 20,
       player: 'Moraff',
       name: 'Grond',
       game: 'unforgiven',
@@ -122,14 +135,14 @@ describe('announcing a run that has been checked', () => {
   });
 
   it('announces only what a later run of the same character added', async () => {
-    await announceRun(sql, run({ milestones: [reached({ kind: 'level', which: 4 })] }));
+    await announceRun(sql, run({ milestones: [reached({ kind: 'level', which: 20 })] }));
 
     const later = await announceRun(
       sql,
-      run({ milestones: [reached({ kind: 'level', which: 4 }), reached({ kind: 'level', which: 5 })] }),
+      run({ milestones: [reached({ kind: 'level', which: 20 }), reached({ kind: 'level', which: 25 })] }),
     );
 
-    expect(later.map((announcement) => [announcement.kind, announcement.which])).toEqual([['level', 5]]);
+    expect(later.map((announcement) => [announcement.kind, announcement.which])).toEqual([['level', 25]]);
   });
 });
 
@@ -149,9 +162,9 @@ describe('reading the announcements back', () => {
       sql,
       run({
         milestones: [
-          reached({ kind: 'level', which: 2 }),
-          reached({ kind: 'level', which: 3 }),
-          reached({ kind: 'level', which: 4 }),
+          reached({ kind: 'level', which: 20 }),
+          reached({ kind: 'level', which: 25 }),
+          reached({ kind: 'level', which: 30 }),
         ],
       }),
     );
@@ -164,7 +177,7 @@ describe('reading the announcements back', () => {
   it('answers with the newest first', async () => {
     const page = await announcementsBefore(sql, null, 50);
 
-    expect(page.announcements.map((announcement) => announcement.which)).toEqual([0, 4, 3, 2]);
+    expect(page.announcements.map((announcement) => announcement.which)).toEqual([0, 30, 25, 20]);
     expect(page.more).toBe(false);
   });
 
@@ -180,7 +193,7 @@ describe('reading the announcements back', () => {
 
     const next = await announcementsBefore(sql, first.announcements[1].id, 2);
 
-    expect(next.announcements.map((announcement) => announcement.which)).toEqual([3, 2]);
+    expect(next.announcements.map((announcement) => announcement.which)).toEqual([25, 20]);
     expect(next.more).toBe(false);
   });
 });

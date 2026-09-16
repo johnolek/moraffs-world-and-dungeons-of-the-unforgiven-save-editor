@@ -370,7 +370,7 @@ describe('replaying a run once its last batch has arrived', () => {
 describe('announcing a run that has been checked', () => {
   const DIED: Milestone[] = [
     { kind: 'dungeon', which: 2, actions: 4, time: 10, floor: 3 },
-    { kind: 'level', which: 5, actions: 9, time: 20, floor: 3 },
+    { kind: 'level', which: 20, actions: 9, time: 20, floor: 3 },
     { kind: 'death', which: 0, actions: 12, time: 30, floor: 7 },
   ];
   let sql: Sql;
@@ -395,10 +395,10 @@ describe('announcing a run that has been checked', () => {
     const announcements = await playToADeath(fakeEngines(() => ({ replayed: { actions: 12, time: 30, milestones: DIED } })));
 
     expect(announcements.map((announcement) => [announcement.kind, announcement.which])).toEqual([
-      ['level', 5],
+      ['level', 20],
       ['death', 0],
     ]);
-    expect(announcements[1]).toMatchObject({ player: 'Moraff', name: 'Grond', game: 'unforgiven', floor: 7, level: 5 });
+    expect(announcements[1]).toMatchObject({ player: 'Moraff', name: 'Grond', game: 'unforgiven', floor: 7, level: 20 });
   });
 
   it('checks and announces nothing for a character rolled for no board', async () => {

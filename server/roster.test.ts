@@ -256,7 +256,7 @@ describe('forgetting a character', () => {
       game: 'unforgiven',
       leaderboard: 'speedrun',
       outcome: 'death',
-      milestones: [{ kind: 'level', which: 5, actions: 9, time: 20, floor: 3 }],
+      milestones: [{ kind: 'level', which: 20, actions: 9, time: 20, floor: 3 }],
       actions: 12,
       time: 30,
       playMs: 0,
