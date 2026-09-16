@@ -23,6 +23,7 @@
 <script lang="ts">
   import { app, type Leaderboard } from '../app-state.svelte';
   import { leaderboardLabel } from '../character/leaderboard';
+  import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import Segmented from '../ui/Segmented.svelte';
   import Announcements from './Announcements.svelte';
@@ -51,7 +52,6 @@
   import {
     boardsOf,
     BOARD_LEADERBOARDS,
-    CURRENT_ENDLESS_WORLD,
     hasBoard,
     isBoardName,
     LIVING_BOARDS,
@@ -82,9 +82,9 @@
 
   let leaderboard = $state<LeaderboardPick>('both');
   let picked = $state<Picked>('everyone');
-  let world = $state(CURRENT_ENDLESS_WORLD);
-  let worlds = $state<number[]>([CURRENT_ENDLESS_WORLD]);
-  let currentWorld = $state(CURRENT_ENDLESS_WORLD);
+  let world = $state(ENDLESS_WORLD_SEED);
+  let worlds = $state<number[]>([ENDLESS_WORLD_SEED]);
+  let currentWorld = $state(ENDLESS_WORLD_SEED);
   let showing = $state<LoadedBoard>(NO_BOARD);
   let alive = $state<LoadedLiving>(NO_BOARD);
   let reading = $state(false);

@@ -1,4 +1,5 @@
 import type { GameId, Leaderboard } from '../app-state.svelte';
+import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
 
 /**
  * The two things a roll decides about a character and never decides again: the mode it is locked
@@ -78,6 +79,15 @@ export const CHARACTER_TYPES: CharacterType[] = [
 export function characterTypes(game: GameId): CharacterType[] {
   return CHARACTER_TYPES.filter((type) => type.game === undefined || type.game === game);
 }
+
+/**
+ * What the roller says when it could not ask the run server which endless world to roll into.
+ *
+ * The world is decided at the roll and never again, so a character rolled while the server was
+ * unreachable is in the world of the game's own rules for life — which is world
+ * {@link ENDLESS_WORLD_SEED}, and may be a world nobody else is playing any more.
+ */
+export const ENDLESS_WORLD_UNKNOWN = `The run server could not be reached, so this character will be rolled into endless world ${ENDLESS_WORLD_SEED}, which may not be the one being played now. A world is decided at the roll and cannot be changed afterwards.`;
 
 /** Why free play is not on offer while the leaderboard is on. */
 export const FREE_PLAY_OFF_A_BOARD =

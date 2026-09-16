@@ -1,8 +1,9 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app, currentEntry, type GameId, type Leaderboard, type Tab } from '../app-state.svelte';
+  import { loadCurrentEndlessWorld } from '../boards/server';
   import { keepRolledCharacter } from '../character/current';
-  import { characterTypes, FREE_PLAY_OFF_A_BOARD } from '../character/leaderboard';
+  import { characterTypes, ENDLESS_WORLD_UNKNOWN, FREE_PLAY_OFF_A_BOARD } from '../character/leaderboard';
   import { downloadBytes } from '../download';
   import { goToTab } from '../history';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
@@ -160,6 +161,17 @@
   let onBoard = $state(true);
   /** Whether the finished character has been put on the roster; a roll keeps it once. */
   let kept = false;
+  /**
+   * The endless world the run server says a character rolled now is rolled into, and null while
+   * it has not been asked or could not be reached.
+   *
+   * A world is decided at the roll and never again, so it is read when the endless type is picked
+   * rather than when the finished character is kept. A roll that could not reach the server keeps
+   * the world in the game's own rules and says so, since a character rolled into a world of its
+   * own would be on a board nobody else is on.
+   */
+  let endlessWorld = $state<number | null>(null);
+  let endlessWorldUnknown = $state(false);
 
   /** Which game is being rolled for. All three have a roller, so it is whichever the switch is on. */
   const rolling = $derived<GameId>(app.game);
@@ -210,6 +222,18 @@
     if (!types.some((type) => type.id === chosen)) lock = 'faithful';
   });
 
+  // The world is the run server's to hand out, so picking the endless type is when it is asked
+  // for; the answer has the whole roll to arrive in.
+  $effect(() => {
+    if (lock === 'endless') void readEndlessWorld();
+  });
+
+  async function readEndlessWorld() {
+    const world = await loadCurrentEndlessWorld();
+    endlessWorld = world;
+    endlessWorldUnknown = world === null;
+  }
+
   function start() {
     const started = chosen.newSession(slot);
     session = started;
@@ -241,6 +265,7 @@
       lock,
       onBoard,
       session?.rolledAt ?? null,
+      endlessWorld,
     );
   }
 
@@ -387,6 +412,9 @@
             </label>
           {/each}
         </div>
+        {#if lock === 'endless' && endlessWorldUnknown}
+          <p class="hint" role="status">{ENDLESS_WORLD_UNKNOWN}</p>
+        {/if}
       </section>
 
       <div class="row">
