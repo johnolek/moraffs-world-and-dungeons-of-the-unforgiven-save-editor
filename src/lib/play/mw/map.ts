@@ -1,4 +1,6 @@
 import { DUNGEON_XMAX as MW_DUNGEON_XMAX, DUNGEON_YMAX as MW_DUNGEON_YMAX } from '../../game/mwmap.js';
+import type { Rgb } from '../../game/dotu-pic.js';
+import { GRADIENT_STEP_MS } from '../plaque';
 import { fillRect, type Frame } from '../view3d/frame';
 import {
   drawExpandedZoomMap,
@@ -53,7 +55,8 @@ export const MORAFFS_WORLD_ZOOM_MAP: ZoomMapStyle = {
   buildingOn: (square) => square.surface ?? 0,
   buildingColour: (building) => building + 2,
   // FUN_2000_7c8a (exe 2000:7c8a) fills the cell in the next of sixteen palette entries every
-  // pass, so it blinks; one of them has to stand for that here, and the recording's own is yellow.
+  // pass, so it blinks. The frame gets one of them — the recording's own yellow — and
+  // `MwScreen.svelte` blinks a canvas of its own over {@link mwMarkerRect}.
   marker: { kind: 'cell', colour: MW_COLOURS.menuKey },
   clipDoorTick: false,
   lastColumn: MW_DUNGEON_XMAX,
@@ -100,8 +103,9 @@ export const mwExpandedMapWindow = (): ZoomMapWindow => ({
  * The colour the character's own square is left in on that map. FUN_2000_7d00 (exe 2000:7d00) is
  * handed the counter movecontrol's wait keeps adding to, and unlike the corner map's own
  * FUN_2000_7c8a (exe 2000:7c8a) it does not take it modulo 16, so the square blinks through the
- * whole palette rather than through the first sixteen entries. One colour has to stand for that
- * here, and it is the one the corner map's cursor is drawn in.
+ * whole palette rather than through the first sixteen entries. The frame gets the colour the
+ * corner map's cursor is drawn in, and `MwScreen.svelte` blinks a canvas over
+ * {@link mwExpandedMarkerRect}.
  */
 const MW_EXPANDED_CURSOR = MW_COLOURS.menuKey;
 
@@ -122,4 +126,62 @@ export function drawMwExpandedMap(frame: Frame, floor: ZoomMapFloor): void {
     cursor: MW_EXPANDED_CURSOR,
   });
   drawZoomMonsters(frame, window, MW_EXPANDED_CENTRE, floor.monsters ?? [], floor.thumbnail);
+}
+
+/**
+ * The two blinks the game marks the character's own square with.
+ *
+ * `movecontrol` keeps a counter it adds one to every time round the loop it waits for a key in
+ * and hands to whichever fill is drawing the square. `FUN_2000_7c8a` (WORLD.EXE 2000:7c8a) takes
+ * that counter modulo sixteen for the map beside the views, so that square turns over the first
+ * sixteen entries of the palette; `FUN_2000_7d00` (WORLD.EXE 2000:7d00) takes it as it stands for
+ * the map the X key fills the screen with, so that one walks the whole palette and round again.
+ * Neither game ever settles on a colour, which is how a character is found on a floor with a lot
+ * of it revealed.
+ */
+const MW_MARKER_ENTRIES = 0x10;
+const MW_EXPANDED_MARKER_ENTRIES = 0x100;
+
+/** Which palette entry the square beside the views stands in on a given pass of that loop. */
+export const mwMarkerColour = (pass: number): number => pass % MW_MARKER_ENTRIES;
+
+/** Which palette entry the square on the X key's map stands in on the same pass. */
+export const mwExpandedMarkerColour = (pass: number): number => pass % MW_EXPANDED_MARKER_ENTRIES;
+
+/**
+ * How many passes of that loop have gone by at a moment in time.
+ *
+ * The original counts them rather than the clock, so the pace is the machine's; `GRADIENT_STEP_MS`
+ * is the one number the site counts such a pass at, which everything that crawls or flickers over
+ * a screen takes.
+ */
+export const mwMarkerPass = (timeMs: number): number => Math.floor(timeMs / GRADIENT_STEP_MS);
+
+/**
+ * The pixels of the screen the character's own square covers on the map beside the views, which
+ * is the rectangle `FUN_2000_7c8a` fills: two pixels inside the cell and out to the first pixel
+ * of the next one. The map is centred on the character, so the cell is the middle of the window.
+ */
+export function mwMarkerRect(frame: { width: number; height: number }): { x: number; y: number; size: number } {
+  const window = MORAFFS_WORLD_ZOOM_MAP.window(frame);
+  const x = window.left + (window.columns >> 1) * window.cell;
+  const y = window.top + (window.rows >> 1) * window.cell;
+  return { x: x + 2, y: y + 2, size: window.cell - 1 };
+}
+
+/** The same square on the map the X key fills the screen with, which `FUN_2000_7d00` fills where
+ *  the character stands on the floor rather than in the middle of a window. */
+export function mwExpandedMarkerRect(at: { x: number; y: number }): { x: number; y: number; size: number } {
+  const { left, top, cell } = mwExpandedMapWindow();
+  return { x: left + cell * at.x + 2, y: top + cell * at.y + 2, size: cell - 1 };
+}
+
+/**
+ * The colour that square stands in at a moment in time, as a CSS colour, for the site's own 2-D
+ * map (`src/lib/map/FloorCanvas.svelte`). It follows the corner map's sixteen, which is the map
+ * of the game this one stands in for.
+ */
+export function mwYouColour(palette: Rgb[], timeMs: number): string {
+  const [r, g, b] = palette[mwMarkerColour(mwMarkerPass(timeMs))] ?? [0, 0, 0];
+  return `rgb(${r} ${g} ${b})`;
 }

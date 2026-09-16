@@ -13,6 +13,9 @@
   import { onScreen } from '../ui/on-screen.svelte';
   import { renderWallTexture, wallTexture, wallTilePattern } from './wall-texture';
   import { youAlpha, youFlash } from './you';
+  import { mwYouColour } from '../play/mw/map';
+  import { floorPalette } from '../mw-bestiary/pictures';
+  import type { Rgb } from '../game/dotu-pic.js';
 
   /** The marker's square, and the facing it is drawn pointing along where it has one. */
   export type YouHere = Point & { dir?: number };
@@ -157,6 +160,20 @@
   // and over, and coming back to a floor finds it already drawn.
   const tiles = new Map<string, HTMLCanvasElement>();
 
+  // Moraff's World's own palette for a floor, kept rather than made: the square the character
+  // stands on is redrawn out of it every animation frame.
+  const mwPalettes = new Map<number, Rgb[]>();
+
+  /** The palette Moraff's World draws this floor in, or null for the other two games. */
+  function mwFloorPalette(floor: number): Rgb[] | null {
+    if (game.id !== 'moraffsWorld') return null;
+    const kept = mwPalettes.get(floor);
+    if (kept) return kept;
+    const made = floorPalette(floor);
+    mwPalettes.set(floor, made);
+    return made;
+  }
+
   /** One tile of the wall texture this floor's rock is laid with, or null when the floor has
    *  no wall texture or the site does not bundle its picture. */
   function wallTile(floor: number, dungeon: number): HTMLCanvasElement | null {
@@ -284,10 +301,18 @@
     if (route) drawRoute(ctx, route, view);
     // Dungeons of the Unforgiven is the one of the three whose own map marks the character with
     // an arrow, so it is the one drawn with that arrow, and with the white and black the game
-    // turns that arrow over between. The other two, and the map explorer walking someone about a
-    // floor without a facing, get the site's own white faded in and out.
+    // turns that arrow over between. Moraff's World has no facing and fills the whole square
+    // instead, blinking it through the first sixteen entries of the floor's palette
+    // (WORLD.EXE 2000:7c8a), so this map blinks it the same way. Moraff's Revenge, and the map
+    // explorer walking someone about a floor without a facing, get the site's own white faded in
+    // and out.
     const gameArrow = game.id === 'unforgiven' && you?.dir !== undefined;
-    const marker = gameArrow ? youFlash(performance.now()) : `rgba(255, 255, 255, ${youAlpha(performance.now())})`;
+    const mwPalette = mwFloorPalette(floor);
+    const marker = gameArrow
+      ? youFlash(performance.now())
+      : mwPalette
+        ? mwYouColour(mwPalette, performance.now())
+        : `rgba(255, 255, 255, ${youAlpha(performance.now())})`;
     if (you) drawYou(ctx, you.x, you.y, view, marker, you.dir ?? null, gameArrow);
     if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
     if (highlight) drawOutline(ctx, highlight.x, highlight.y, view, 2, '#ffffff');

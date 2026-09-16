@@ -81,8 +81,8 @@ citations rather than make them. What each routine does is in `../decomp/functio
 | `FUN_2000_7b4f` | 2000:7b4f |  | `play/mw/town.ts` |
 | `FUN_2000_7b86` | 2000:7b86 | `play/mw/quit.ts` | `play/mw/engine.ts` |
 | `surface_feature` | 2000:7c2d | `play/mw/town.ts` | `game/mwmap.js`, `play/mw/engine.ts`, `play/mw/view3d/render.ts` |
-| `FUN_2000_7c8a` | 2000:7c8a |  | `play/mw/map.ts`, `play/zoom-map.ts` |
-| `FUN_2000_7d00` | 2000:7d00 |  | `play/mw/map.ts`, `play/zoom-map.ts` |
+| `FUN_2000_7c8a` | 2000:7c8a |  | `map/FloorCanvas.svelte`, `play/mw/MwScreen.svelte`, `play/mw/map.ts`, `play/zoom-map.ts` |
+| `FUN_2000_7d00` | 2000:7d00 |  | `play/mw/MwScreen.svelte`, `play/mw/map.ts`, `play/zoom-map.ts` |
 | `FUN_2000_7d60` | 2000:7d60 | `game/mw-port/combat.ts` | `game/mw-port/sound.ts` |
 | `tick_spell_timers` | 2000:7e4f | `game/mw-port/combat.ts`, `game/mw-port/magic.ts` | `editor/games.ts` |
 | `FUN_2000_7fb1` | 2000:7fb1 | `game/mw-port/combat.ts` |  |

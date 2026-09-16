@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { Rgb } from '../../game/dotu-pic.js';
 import type { MapSquare } from '../../map/game';
+import { GRADIENT_STEP_MS } from '../plaque';
 import { UNFORGIVEN_ZOOM_MAP } from '../display';
 import { newFrame, pixelAt, type Frame } from '../view3d/frame';
 import {
@@ -9,7 +11,17 @@ import {
   ZOOM_MARK_COLOUR,
   ZOOM_SIDE_COLOUR,
 } from '../zoom-map';
-import { drawMwExpandedMap, drawMwZoomMap, MORAFFS_WORLD_ZOOM_MAP } from './map';
+import {
+  drawMwExpandedMap,
+  drawMwZoomMap,
+  MORAFFS_WORLD_ZOOM_MAP,
+  mwExpandedMarkerColour,
+  mwExpandedMarkerRect,
+  mwMarkerColour,
+  mwMarkerPass,
+  mwMarkerRect,
+  mwYouColour,
+} from './map';
 import {
   MW_COLOURS,
   MW_EXPANDED_CELL,
@@ -190,5 +202,44 @@ describe("the map Moraff's World's X key fills the screen with", () => {
     // The square next door is a plain black one, so the mark is one square and not a smear.
     const next = cell(standing.x + 1, standing.y);
     expect(pixelAt(frame, next.x + 3, next.y + 3)).toBe(0);
+  });
+});
+
+describe("the blink on the character's own square", () => {
+  it('turns the map beside the views over the first sixteen palette entries', () => {
+    expect([0, 1, 15, 16, 17, 255, 256].map(mwMarkerColour)).toEqual([0, 1, 15, 0, 1, 15, 0]);
+  });
+
+  it('walks the map the X key fills the screen with through the whole palette', () => {
+    expect([0, 15, 16, 255, 256, 257].map(mwExpandedMarkerColour)).toEqual([0, 15, 16, 255, 0, 1]);
+  });
+
+  it('counts one pass of the loop the game waits for a key in per step', () => {
+    expect(mwMarkerPass(0)).toBe(0);
+    expect(mwMarkerPass(GRADIENT_STEP_MS - 1)).toBe(0);
+    expect(mwMarkerPass(GRADIENT_STEP_MS)).toBe(1);
+    expect(mwMarkerPass(16 * GRADIENT_STEP_MS)).toBe(16);
+  });
+
+  it("reads the site's own map marker out of the floor's palette, sixteen entries round", () => {
+    const palette: Rgb[] = Array.from({ length: 256 }, (_, entry) => [entry, entry, entry]);
+    expect(mwYouColour(palette, 0)).toBe('rgb(0 0 0)');
+    expect(mwYouColour(palette, 3 * GRADIENT_STEP_MS)).toBe('rgb(3 3 3)');
+    expect(mwYouColour(palette, 16 * GRADIENT_STEP_MS)).toBe('rgb(0 0 0)');
+  });
+
+  it('fills the square the map beside the views draws in the middle of its window', () => {
+    const window = MORAFFS_WORLD_ZOOM_MAP.window(MW_SCREEN_PIXELS);
+    const rect = mwMarkerRect(MW_SCREEN_PIXELS);
+    expect(rect.x).toBe(window.left + (window.columns >> 1) * window.cell + 2);
+    expect(rect.y).toBe(window.top + (window.rows >> 1) * window.cell + 2);
+    expect(rect.size).toBe(window.cell - 1);
+  });
+
+  it("fills the square the X key's map draws the character on", () => {
+    const rect = mwExpandedMarkerRect({ x: 3, y: 5 });
+    expect(rect.x).toBe(MW_MAP_LEFT + 3 * MW_EXPANDED_CELL + 2);
+    expect(rect.y).toBe(MW_EXPANDED_TOP + 5 * MW_EXPANDED_CELL + 2);
+    expect(rect.size).toBe(MW_EXPANDED_CELL - 1);
   });
 });

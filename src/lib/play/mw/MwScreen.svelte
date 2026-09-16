@@ -16,7 +16,18 @@
   import { drawnSmaller } from '../../ui/drawn-smaller.svelte';
   import { onScreen } from '../../ui/on-screen.svelte';
   import { zoomMapMonsterAt } from '../zoom-monsters';
-  import { MORAFFS_WORLD_ZOOM_MAP, drawMwExpandedMap, drawMwZoomMap, mwExpandedMapWindow } from './map';
+  import {
+    MORAFFS_WORLD_ZOOM_MAP,
+    drawMwExpandedMap,
+    drawMwZoomMap,
+    mwExpandedMapWindow,
+    mwExpandedMarkerColour,
+    mwExpandedMarkerRect,
+    mwMarkerColour,
+    mwMarkerRect,
+  } from './map';
+  import { GRADIENT_STEP_MS } from '../plaque';
+  import { whileShowing } from '../while-showing';
   import { mwMonsterThumbnail } from './monster-thumbnails';
   import { messageBoxAnnouncement } from '../announcement-box.svelte';
   import { MW_MESSAGE_BOX_GRID } from './screens';
@@ -111,6 +122,8 @@
   const HEIGHT = MW_SCREEN_PIXELS.height;
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** The little canvas the character's own square blinks on, over whichever map is showing. */
+  let markerCanvas = $state.raw<HTMLCanvasElement | null>(null);
   /** Whether the tab the screen is on is the one showing, since every tab of the site stays
    *  mounted and a wipe behind one would be drawing for nobody. */
   const visible = onScreen(() => canvas);
@@ -126,6 +139,47 @@
    *  player a half-drawn screen to come back to. */
   $effect(() => {
     if (!visible.showing) painter.finish();
+  });
+
+  /** Where the character's own square is on whichever map is on the screen. */
+  const marker = $derived(
+    expandedMap ? mwExpandedMarkerRect(place) : mwMarkerRect({ width: WIDTH, height: HEIGHT }),
+  );
+
+  /**
+   * Whether that square is blinking, which is whether a map is on the screen at all: movecontrol
+   * fills it every pass of the loop it waits for a key in, and a page that has taken the display
+   * over or a view zoomed over the whole screen has covered the map.
+   */
+  const markerBlinking = $derived(!cleared && (expandedMap || zoomed === null));
+
+  /**
+   * The square the character stands on, blinking through the palette.
+   *
+   * The original fills it in a new colour every pass of that loop — the first sixteen entries on
+   * the map beside the views (WORLD.EXE 2000:7c8a) and the whole palette on the map the X key
+   * fills the screen with (WORLD.EXE 2000:7d00) — so it is a canvas of its own over the frame
+   * rather than a reason to rebuild the whole 1024 by 768 screen thirty times a second.
+   */
+  $effect(() => {
+    const target = markerCanvas;
+    if (!target) return;
+    const context = target.getContext('2d');
+    if (!context) return;
+    const palette = floorPalette(place.floor);
+    const entry = expandedMap ? mwExpandedMarkerColour : mwMarkerColour;
+    const size = marker.size;
+    let pass = 0;
+    const draw = (): void => {
+      const [r, g, b] = palette[entry(pass)] ?? [0, 0, 0];
+      context.fillStyle = `rgb(${r} ${g} ${b})`;
+      context.fillRect(0, 0, size, size);
+    };
+    draw();
+    return whileShowing(visible.showing, GRADIENT_STEP_MS, () => {
+      pass += 1;
+      draw();
+    });
   });
 
   const drawn = $derived.by((): MwViewMonster[] =>
@@ -232,20 +286,40 @@
 
 <!-- The game's screen: the views, the boxes around them and the game's own lines of text. -->
 <div class="screen" class:smooth={shrunk.smaller} style:aspect-ratio="{MW_SCREEN_UNITS_X} / {MW_SCREEN_UNITS_Y}">
-  <canvas bind:this={canvas} width={WIDTH} height={HEIGHT} {onpointerup}></canvas>
+  <canvas class="screen-pixels" bind:this={canvas} width={WIDTH} height={HEIGHT} {onpointerup}></canvas>
+  {#if markerBlinking}
+    <canvas
+      class="marker"
+      bind:this={markerCanvas}
+      width={marker.size}
+      height={marker.size}
+      style:left="{(marker.x / WIDTH) * 100}%"
+      style:top="{(marker.y / HEIGHT) * 100}%"
+      style:width="{(marker.size / WIDTH) * 100}%"
+      style:height="{(marker.size / HEIGHT) * 100}%"
+    ></canvas>
+  {/if}
 </div>
 
 <style>
   .screen {
+    position: relative;
     width: 100%;
     background: #000;
   }
   .screen canvas {
     display: block;
-    width: 100%;
-    height: 100%;
     /* The game's pixels stay pixels however far it is scaled up. */
     image-rendering: pixelated;
+  }
+  .screen canvas.screen-pixels {
+    width: 100%;
+    height: 100%;
+  }
+  /* The character's own square, blinking over whichever map is on the screen. It is placed by the
+     pixels it stands in, as fractions of the same box the screen's own canvas fills. */
+  .screen canvas.marker {
+    position: absolute;
   }
   /* Shown smaller than it is, the screen is shrunk by dropping whole rows of pixels, and a
      one-pixel line of the map in the corner can be the row that is dropped. */

@@ -254,10 +254,6 @@ for Dungeons of the Unforgiven.
   flips and the key menu's sound line offers the opposite of. The speaker is opened on the first
   key pressed in the tab, since a browser will not start audio that nothing the player did asked
   for, and a replay never opens one.
-* **The X key's map does not blink.** FUN_2000_7d00 (exe 2000:7d00) redraws the character's own
-  square in a new colour every time round the wait, and it takes the counter raw where the corner
-  map's FUN_2000_7c8a takes it modulo 16, so that square runs through the whole palette. The port
-  draws it once, in the corner map's own cursor colour.
 * **The screen is the game's own.** `view3d/` and `MwScreen.svelte` draw what `movecontrol`
   draws — the four views, the message box, the key menu, the zoom map and the lines of text the
   game lays over them — and the top-down map of the floor is a switch away from it. On that map
