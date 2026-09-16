@@ -97,15 +97,15 @@ Read the thunk-aware listing from `rev-tools/reference/list_basic.py`, not the G
 
 | document | size | what it answers |
 |---|---:|---|
-| `src/lib/play/README.md` | 62K | `movecontrol`, the loop Dungeons of the Unforgiven is played in, and everything that hangs off it. The longest document here and the one the Play tab rests on. |
+| `src/lib/play/README.md` | 76K | `movecontrol`, the loop Dungeons of the Unforgiven is played in, and everything that hangs off it. The longest document here and the one the Play tab rests on. |
 | `src/lib/play/rev/README.md` | 30K | The same for Moraff's Revenge, whose loop and clock work unlike the other two. |
 | `src/lib/play/mw/README.md` | 20K | The same for Moraff's World. |
 | `src/lib/game/port/README.md` | 14K | Dungeons of the Unforgiven's rules, function by function, and the rules the port itself is written under — naming, citations, and the three deliberate departures. |
 | `src/lib/game/mw-port/README.md` | 11K | Moraff's World's rules, function by function. |
 | `src/lib/game/endless/README.md` | 6K | Dungeons of the Unforgiven below the floor it bottoms out at: what one endless world is, how a section past the twentieth gets its five monsters, and what it borrows from the sections the game has. |
-| `src/lib/boards/README.md` | 6K | The leaderboard pages over the run server. |
+| `src/lib/boards/README.md` | 8K | The leaderboard pages over the run server. |
 | `src/lib/journal/README.md` | 3K | A run written up in words, as the Play tab and the boards both show it. |
-| `server/README.md` | 42K | The run server: what it answers, the database, how a run is verified, and how it is deployed. |
+| `server/README.md` | 48K | The run server: what it answers, the database, how a run is verified, and how it is deployed. |
 
 The three files under `src/lib/tidbits/` — `TIDBITS.md` (53K), `MW-TIDBITS.md` (52K) and
 `REVENGE-TIDBITS.md` (42K) — are not documentation about the code. They are the content the

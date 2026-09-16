@@ -358,15 +358,16 @@ stretches of keys that arrived.
 
 | Endpoint                               | What it does                                      |
 | -------------------------------------- | ------------------------------------------------- |
-| `GET /boards/:game/:leaderboard/:board` | One page of one board, fifty runs to a page. `?page=` for the ones after the first, counting from one. 404 when the three parts do not name a board there is, 400 when `page` is not a page number. |
+| `GET /boards/:game/:leaderboard/:board` | One page of one board, fifty runs to a page. `?page=` for the ones after the first, counting from one. `?world=` for an endless board, which is read for one world and answers for the world being played now where the query names none. 404 when the three parts do not name a board there is, 400 when `page` is not a page number or `world` is not a world. |
+| `GET /boards/:game/endless/worlds`      | The endless worlds of that game there are boards for: `{ "game": ..., "current": n, "worlds": [n, ...] }`, the world being played now first and then every world some character of that game stands on a board in, the newest first. 404 when the game is not one the site plays. |
 
 `:game` is `unforgiven`, `moraffsWorld` or `revenge`; `:leaderboard` is
-`faithful` or `speedrun`. A path that names anything else is a 404 rather than
-an empty board, since a board with nothing on it means nobody has played it yet
-and that is a different answer.
+`faithful`, `speedrun` or `endless`. A path that names anything else is a 404
+rather than an empty board, since a board with nothing on it means nobody has
+played it yet and that is a different answer.
 
-`:board` is one of six, and `server/boards.ts` is where the rules about them
-live, so that the site can name them the same way when it draws them:
+`server/boards.ts` is where the rules about the boards live, so that the site
+can name them the same way when it draws them. The game as it shipped has six:
 
 | Board     | What stands on it                                   |
 | --------- | --------------------------------------------------- |
@@ -377,12 +378,27 @@ live, so that the site can name them the same way when it draws them:
 | `level`   | Every run, highest level first, then fewest actions |
 | `deaths`  | Deaths, newest first                                |
 
-Faithful and speedrun are never mixed: they are different games to play, so
-runs of one say nothing about runs of the other. A run's board is the one its
+The endless dungeon has three of its own, and none of the boards of wins, since
+a dungeon with no bottom is never won:
+
+| Board     | What stands on it                                            |
+| --------- | ------------------------------------------------------------ |
+| `deepest` | Every run, deepest Shadow killed first, then fewest actions   |
+| `level`   | Every run, highest level first, then fewest actions           |
+| `kills`   | Every run, most monsters killed first, then fewest actions    |
+
+The three ways of playing are never mixed: they are different games to play, so
+runs of one say nothing about runs of another. A run's board is the one its
 character was rolled for and locked to for life, and a character rolled for no
 board is on none of them. Only a run that came out verified with no record
 written into it from outside the game is on a board at all, which is what
 `eligible` on its verdict says.
+
+An endless board is cut finer still: it is one world as well as one game, since
+a world decides which of the game's twenty sections each endless section
+borrows its monsters from and two worlds stand different monsters on the same
+floor. Until MORF-513 hands the number out there is one world, and
+`CURRENT_ENDLESS_WORLD` in `server/boards.ts` is it.
 
 Every board's rows are the same shape — the player's name and the character's,
 the actions, the game's clock, the play time and whether it may be believed,
@@ -402,6 +418,16 @@ which is Module I and the town. The highest level is the highest a run levelled
 to, and a character that never gained a level stands at 0: what it was rolled
 at is no part of the run.
 
+An endless run is measured by the deepest floor it killed a Shadow monster on,
+which goes in the same column. It is not the deepest floor the character stood
+on, because reaching a floor down there costs nothing: a trap door drops a
+character hundreds of floors in one step, and a board of the deepest floor
+reached would be won by whoever fell furthest before dying. Killing the Shadow
+of the section is the hardest thing a floor asks for, so a floor counts once
+its Shadow is dead. That number and the count of kills are read off the journal
+the replay wrote, which is where a kill and the floor it happened on stand
+together.
+
 ## The boards of the living
 
 Who is alive right now: the characters of one game and board that are still
@@ -410,7 +436,7 @@ got.
 
 | Endpoint                                      | What it does                                    |
 | --------------------------------------------- | ----------------------------------------------- |
-| `GET /boards/:game/:leaderboard/living`       | One page of the living, fifty characters to a page. `?sort=level` or `?sort=deepest`, and a request naming neither is asking for the level. `?page=` for the ones after the first, counting from one. 404 when the game and the board are not ones there are, 400 when `sort` is not one of the two or `page` is not a page number. |
+| `GET /boards/:game/:leaderboard/living`       | One page of the living, fifty characters to a page. `?sort=level` or `?sort=deepest`, and a request naming neither is asking for the level. `?page=` for the ones after the first, counting from one. `?world=` for the endless dungeon, the same way a ranked board takes one. 404 when the game and the board are not ones there are, 400 when `sort` is not one of the two, `page` is not a page number or `world` is not a world. |
 
 A character reaches this board by being played and leaves it by dying, by
 winning or by the player forgetting it, since a run that has ended has a
@@ -445,7 +471,10 @@ of two things holds:
 The claims are a reason to look and never what goes on the board. They are not
 read at all for a character whose last replay did not pass: such a character is
 off the board whatever the site says about it, so the two minutes are soon
-enough.
+enough. An endless character claims no depth of the kind its board shows — the
+deepest Shadow it killed is in the journal a replay writes and in nothing a
+sitting claims — so its chain is replayed again on the level or on the two
+minutes alone.
 
 These replays share the line the verdicts are done in, one at a time, so a
 chain long enough to take longer than two minutes only keeps that line busy
