@@ -2,6 +2,7 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { RosterEntry } from '../src/lib/app-state.svelte';
+import type { KeptEndlessState } from '../src/lib/game/endless/state';
 import {
   deviceIsAhead,
   entryFromServer,
@@ -92,7 +93,7 @@ describe('a character streamed to the server and read back off it', () => {
   });
 
   /** The sender as the Play tab starts it, posting to the server over HTTP. */
-  function sender(log: RunSession, earlier: RunSession[]): RunStream {
+  function sender(log: RunSession, earlier: RunSession[], carried: KeptEndlessState | null = null): RunStream {
     const streamed: StreamedSession = {
       index: earlier.length,
       log: () => log,
@@ -105,7 +106,7 @@ describe('a character streamed to the server and read back off it', () => {
         leaderboard: 'faithful',
         lock: 'faithful',
         worldSeed: null,
-        endless: null,
+        endless: carried,
         createdAt: '2026-09-08T09:00:00.000Z',
         editedAt: '2026-09-09T12:00:00.000Z',
       }),
@@ -177,5 +178,17 @@ describe('a character streamed to the server and read back off it', () => {
       words: 'That character has been played on another device since.',
       because: 'moved-on',
     });
+  });
+
+  it('brings back what an endless character carries beside its record', async () => {
+    const carried = { keys: [44], bossSquares: [{ section: 22, x: 39, y: 63 }], hp: 40000 };
+    const earlier = [sitting(0, [104, 106]), sitting(1, [107])];
+
+    expect(await sender(sitting(2, [108]), earlier, carried).send(false)).toEqual({ sent: 'taken' });
+
+    const character = (await readServerRoster())![0];
+
+    expect(character.endless).toEqual(carried);
+    expect(entryFromServer(character, null)!.endless).toEqual(carried);
   });
 });

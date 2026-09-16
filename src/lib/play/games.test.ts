@@ -287,8 +287,8 @@ describe('which games are played on the clock', () => {
 describe('an endless character picked up on a second device', () => {
   /**
    * The character as the run server hands it back to another device of the same player: the
-   * newest record any device sent and the sittings of its run with their keys, and nothing about
-   * what it carries beside the record, which the server is never told.
+   * newest record any device sent, what it carries beside that record, and the sittings of its
+   * run with their keys.
    */
   function asTheServerHoldsIt(entry: RosterEntry): ServerCharacter {
     return {
@@ -300,6 +300,7 @@ describe('an endless character picked up on a second device', () => {
       leaderboard: entry.leaderboard,
       lock: entry.lock,
       worldSeed: entry.worldSeed ?? null,
+      endless: entry.endless ?? null,
       createdAt: entry.createdAt,
       editedAt: entry.editedAt,
       record: base64FromBytes(entry.bytes),
@@ -310,16 +311,20 @@ describe('an endless character picked up on a second device', () => {
     };
   }
 
+  /** The character as the one being worked on here, which is where playing it on starts. */
+  function nowOnThisDevice(entry: RosterEntry): RosterEntry {
+    app.roster = [entry];
+    app.characterId = entry.id;
+    return entryById(entry.id)!;
+  }
+
   /** The character on the roster of a device that has never played it, which is what signing in
    *  somewhere else leaves. */
   function onTheOtherDevice(entry: RosterEntry): RosterEntry {
-    const taken = entryFromServer(asTheServerHoldsIt(entry), null);
-    app.roster = [taken!];
-    app.characterId = taken!.id;
-    return entryById(taken!.id)!;
+    return nowOnThisDevice(entryFromServer(asTheServerHoldsIt(entry), null)!);
   }
 
-  it('works out what it carries from the chain and plays on holding it', async () => {
+  it('starts holding what the server sent and plays on, and the run verifies', async () => {
     const played = standingDeep();
     const first = await playASession(played, [KEY.enter], 'endless');
     first.save();
@@ -328,9 +333,6 @@ describe('an endless character picked up on a second device', () => {
     expect(played.endless?.bossSquares).toHaveLength(1);
 
     const elsewhere = onTheOtherDevice(played);
-    expect(elsewhere.endless).toBeUndefined();
-
-    await bringRunKeysHere(elsewhere.id);
 
     expect(elsewhere.endless).toEqual(played.endless);
 
@@ -346,8 +348,33 @@ describe('an endless character picked up on a second device', () => {
     await playASession(played, [KEY.enter]);
 
     const elsewhere = onTheOtherDevice(played);
-    await bringRunKeysHere(elsewhere.id);
 
     expect(elsewhere.endless).toBeUndefined();
+  });
+
+  it('takes the server\u2019s state back from the device that played on, and the run verifies', async () => {
+    const deviceA = standingDeep();
+    (await playASession(deviceA, [KEY.enter], 'endless')).save();
+    const carriedByA = deviceA.endless;
+
+    const deviceB = onTheOtherDevice(deviceA);
+    const second = await playASession(deviceB, [KEY.enter], 'endless');
+    // The key a level drainer killed this deep carries, which is labelled for a floor the record
+    // has no flag for, so the sitting on the second device leaves something the first never held.
+    second.game.rules.keys.take(second.game.pc, DEEP_FLOOR);
+    second.save();
+
+    // The first device signs back in. The server's copy is the one the second device wrote, and
+    // what it carries was written beside the very record standing here now.
+    const backOnA = nowOnThisDevice(entryFromServer(asTheServerHoldsIt(deviceB), deviceA)!);
+
+    expect(backOnA.endless).toEqual(deviceB.endless);
+    expect(backOnA.endless).not.toEqual(carriedByA);
+
+    await playASession(backOnA, [KEY.enter], 'endless');
+    const verdict = await verifyRun(runLogOf(backOnA.run));
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
   });
 });

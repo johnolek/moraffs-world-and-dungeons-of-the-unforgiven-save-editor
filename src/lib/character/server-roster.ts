@@ -1,4 +1,5 @@
 import type { RosterEntry } from '../app-state.svelte';
+import { isKeptEndlessState, type KeptEndlessState } from '../game/endless/state';
 import { offTheBoards, playerSecret } from '../player';
 import type { RunSession } from '../play/run';
 import { characterSave } from '../play/streaming';
@@ -46,6 +47,9 @@ export interface ServerCharacter {
   /** The number the endless world it plays in is built from, for a character locked to the
    *  endless dungeon, and null for every other character. */
   worldSeed: number | null;
+  /** What it carries in that world beside its record, and null for a character carrying
+   *  nothing. */
+  endless: KeptEndlessState | null;
   createdAt: string;
   editedAt: string | null;
   /** The newest record any device of this player's sent, base64. */
@@ -166,6 +170,7 @@ function serverCharacter(value: unknown): ServerCharacter | null {
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
     lock: isLeaderboard(character.lock) ? character.lock : null,
     worldSeed: typeof character.worldSeed === 'number' ? character.worldSeed : null,
+    endless: isKeptEndlessState(character.endless) ? character.endless : null,
     createdAt,
     editedAt: typeof character.editedAt === 'string' ? character.editedAt : null,
     record: typeof character.record === 'string' ? character.record : null,
@@ -199,11 +204,10 @@ function serverSession(value: unknown): ServerSession | null {
  * `kept` is the copy this device already had, and two things are taken from it: the file the
  * character was imported from, which never leaves the device it was dropped on, and the journal,
  * which the server does not keep -- it replays a run's log for one. A session of the chain this
- * device has not played has no journal here until something replays it. What an endless character
- * carries in its world is taken from it as well: the server is not told what it is, because
- * replaying the chain works it out again, which is what the run server does before passing a
- * verdict. A device that has never played the character holds none of it until it replays the
- * chain itself, which `bringRunKeysHere` (`current.ts`) does before the character is played on.
+ * device has not played has no journal here until something replays it.
+ *
+ * What an endless character carries in its world does come back, beside the record it was written
+ * with, so that a device signing in picks the character up holding what it really holds.
  */
 export function entryFromServer(character: ServerCharacter, kept: RosterEntry | null): RosterEntry | null {
   const bytes = character.record === null ? null : fromBase64(character.record);
@@ -227,7 +231,10 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
     // dungeon on the next. A server that has not been told which world it was rolled into leaves
     // the one this device holds.
     worldSeed: character.worldSeed ?? kept?.worldSeed,
-    endless: kept?.endless,
+    // What the character carries beside its record comes back with the record. A server that
+    // holds none of it leaves what this device holds, which is where a character last saved
+    // before the server had a column for it stands.
+    endless: character.endless ?? kept?.endless,
     run: character.run.map((session, at) => sittingWithKeys(session, kept?.run[at])),
     journal: kept?.journal ?? [],
   };
