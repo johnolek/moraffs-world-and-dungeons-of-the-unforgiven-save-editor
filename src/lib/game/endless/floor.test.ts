@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { UNFORGIVEN_MAP, type MapSquare } from '../../map/game';
 import { monsterById, MONSTER_SLOTS } from '../../map/stocking';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from '../../play/floor';
+import { manualOpening } from '../../play/manual';
 import { explainTrapdoor } from '../../play/trapdoor';
+import data from '../dotu-data.json';
 import { bundledDungeon } from '../dungeon';
 import { drainerBonus } from '../port/kills';
 import { BorlandRng } from '../port/rng';
@@ -95,6 +97,22 @@ describe('arriving on a floor below the bottom of the game', () => {
     loadLevelMap(game, new FloorMonsters(), floorRows(FLOOR), FLOOR, game.rng);
     expect(rules.monsterLevel(MODULE_V, FLOOR)).toBe(FLOOR + 60);
     expect(game.monsters.some((monster) => monster.level > 130)).toBe(true);
+  });
+});
+
+describe('the S screen on a floor below the bottom of the game', () => {
+  it('says which section it is and whose monsters are standing on it', () => {
+    const game = gameOn(FLOOR);
+    const opening = manualOpening(game);
+    const source = rules.sectionSource(21);
+    expect(opening.source).toBe(source);
+    expect(opening.intro[0]).toBe('SECTION 21');
+    expect(opening.intro.join(' ')).toContain(`section ${source}`);
+  });
+
+  it('opens on MD.BIN itself for a floor of a section the game describes', () => {
+    const game = gameOn(50);
+    expect(manualOpening(game)).toEqual({ source: 18, part: 2, intro: data.sections[17].intro });
   });
 });
 

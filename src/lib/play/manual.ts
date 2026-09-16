@@ -69,16 +69,39 @@ export interface ManualHost {
   sectionScreen: SectionScreen | null;
 }
 
+/** What the S key opens on. */
+export interface ManualOpening {
+  /** The section the five monsters under the letters come from, 1 to 20. */
+  source: number;
+  /** Which of its module's sections the character is standing in, counted from 1. */
+  part: number;
+  /** The four lines on the slab. */
+  intro: string[];
+}
+
+/**
+ * The section the S key shows for the floor the character is standing on: the row of MD.BIN the
+ * five monsters and their descriptions come from, and the words the screen opens on.
+ */
+export function manualOpening(game: Game): ManualOpening {
+  const standingIn = game.rules.sectionOf(game.pc.module, game.pc.level);
+  const source = game.rules.sectionSource(standingIn);
+  const row = data.sections[source - 1];
+  return {
+    source,
+    part: game.rules.sectionPlace(standingIn)?.part ?? row.part,
+    intro: source === standingIn ? row.intro : borrowedIntro(standingIn, source),
+  };
+}
+
 /** The S key, until the reader leaves it. */
 export async function readTheMonsterManual(turn: Turn): Promise<void> {
   const game = turn.game;
-  const standingIn = game.rules.sectionOf(game.pc.module, game.pc.level);
-  const source = game.rules.sectionSource(standingIn);
-  const section = data.sections[source - 1];
-  const part = game.rules.sectionPlace(standingIn)?.part ?? section.part;
-  let shown: string[] = source === standingIn ? section.intro : borrowedIntro(standingIn, source);
+  const opening = manualOpening(game);
+  const section = data.sections[opening.source - 1];
+  let shown: string[] = opening.intro;
   for (;;) {
-    drawManualPage(turn.session, source, part - 1, shown);
+    drawManualPage(turn.session, opening.source, opening.part - 1, shown);
     const block = letterPressed(await game.key());
     if (block === null) break;
     shown = section.descriptions.slice(block * BLOCK_LINES, (block + 1) * BLOCK_LINES);
