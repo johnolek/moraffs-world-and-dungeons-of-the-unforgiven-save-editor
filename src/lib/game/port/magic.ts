@@ -411,10 +411,26 @@ export function goAway(game: Game): boolean {
 /**
  * autokill (exe 3000:dc18, unf.c "autokill"): Autokill, which sets the monster's hit points to
  * -100 when the roll lands. Reports success either way; only the message changes.
+ *
+ * The one branch the original has no address for is the depth the rules put on it
+ * (`GameRules.autokillDeepestFloor`), and the wording of that box is the port's own. A spell that
+ * reports failure is charged nothing, so a cast too deep to work costs neither spell points nor
+ * time.
  */
 export function autokill(game: Game): boolean {
   if (game.engaged === -1) {
     msgNoMonster(game);
+    return false;
+  }
+  const deepest = game.rules.autokillDeepestFloor;
+  if (deepest !== null && game.pc.level > deepest) {
+    game.say(
+      'YOUR MIND REACHES DOWN AND',
+      '   FINDS NOTHING TO HOLD.',
+      'THE DEPTHS ARE TOO GREAT.',
+      '',
+      'HIT ANY KEY',
+    );
     return false;
   }
   if (bossImmuneCheck(game)) return false;

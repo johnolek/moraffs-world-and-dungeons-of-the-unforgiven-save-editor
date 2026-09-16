@@ -33,6 +33,7 @@ import {
   spellMenuIndex,
 } from './inventory';
 import type { Rng } from './rng';
+import { FAITHFUL_RULES } from './rules';
 import { ESCAPE } from './screens';
 import { newGame } from './state';
 
@@ -291,6 +292,22 @@ describe('casting the spell', () => {
     const game = newGame({ rng: always(1), pc: { cls: 3, sp: 10 }, engaged: -1 });
     const result = castSpell(game, CAST_SPELLBOOK, 2, 0, 1);
     expect(game.pc.sp).toBe(10);
+    expect(result.seconds).toBe(0);
+  });
+
+  it('charges nothing for an Autokill cast deeper than the rules let it reach', () => {
+    const game = newGame({
+      rng: always(1),
+      rules: { ...FAITHFUL_RULES, autokillDeepestFloor: 200 },
+      pc: { cls: 3, sp: 10, lev: 200, iq: 30, wis: 30, level: 201 },
+    });
+    Object.assign(game.monsters[0], { x: 10, y: 10, hp: 5000, type: 23, level: 40 });
+    game.engaged = 0;
+    // Wizard battle level 10 slot 2: Autokill.
+    const result = castSpell(game, CAST_SPELLBOOK, 2, 9, 1);
+    expect(game.messages[0]).toBe('YOUR MIND REACHES DOWN AND');
+    expect(game.pc.sp).toBe(10);
+    expect(game.monsters[0].hp).toBe(5000);
     expect(result.seconds).toBe(0);
   });
 

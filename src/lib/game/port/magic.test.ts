@@ -37,6 +37,7 @@ import {
   wizardBattle,
 } from './magic';
 import { BorlandRng } from './rng';
+import { FAITHFUL_RULES, type GameRules } from './rules';
 import type { Game, Monster } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
 
@@ -60,8 +61,12 @@ function engage(game: Game, monster: Partial<Monster> = {}): Monster {
 }
 
 /** A game with the player at (40, 50) on an open floor and one monster engaged. */
-function fighting(seed = 1, monster: Partial<Monster> = {}): { game: Game; monster: Monster } {
-  const game = newGame({ rng: new BorlandRng(seed) });
+function fighting(
+  seed = 1,
+  monster: Partial<Monster> = {},
+  rules: GameRules = FAITHFUL_RULES,
+): { game: Game; monster: Monster } {
+  const game = newGame({ rng: new BorlandRng(seed), rules });
   setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
   return { game, monster: engage(game, monster) };
 }
@@ -217,6 +222,50 @@ describe('autokill', () => {
     expect(autokill(game)).toBe(true);
     expect(monster.hp).toBe(-100);
     expect(game.messages[0]).toBe("THE MONSTER'S BRAIN EXPLODES");
+  });
+
+  it('reaches any depth at all under rules that name no deepest floor', () => {
+    const rules: GameRules = { ...FAITHFUL_RULES, autokillDeepestFloor: null };
+    const { game, monster } = fighting(1, { level: 1 }, rules);
+    game.pc.lev = 200;
+    game.pc.level = 9000;
+    expect(autokill(game)).toBe(true);
+    expect(monster.hp).toBe(-100);
+  });
+
+  it('still reaches the deepest floor the rules name', () => {
+    const rules: GameRules = { ...FAITHFUL_RULES, autokillDeepestFloor: 200 };
+    const { game, monster } = fighting(1, { level: 1 }, rules);
+    game.pc.lev = 200;
+    game.pc.level = 200;
+    expect(autokill(game)).toBe(true);
+    expect(monster.hp).toBe(-100);
+  });
+
+  it('reaches no further, and says so rather than rolling', () => {
+    const rules: GameRules = { ...FAITHFUL_RULES, autokillDeepestFloor: 200 };
+    const { game, monster } = fighting(1, { level: 1 }, rules);
+    game.pc.lev = 200;
+    game.pc.level = 201;
+    // False is what makes the cast free: cast_a_spell charges nothing for a spell that reports
+    // failure.
+    expect(autokill(game)).toBe(false);
+    expect(monster.hp).toBe(5000);
+    expect(game.messages).toEqual([
+      'YOUR MIND REACHES DOWN AND',
+      '   FINDS NOTHING TO HOLD.',
+      'THE DEPTHS ARE TOO GREAT.',
+      '',
+      'HIT ANY KEY',
+    ]);
+  });
+
+  it('refuses on depth before it asks whether the monster is a boss', () => {
+    const rules: GameRules = { ...FAITHFUL_RULES, autokillDeepestFloor: 200 };
+    const { game } = fighting(1, { type: BOSS }, rules);
+    game.pc.level = 201;
+    expect(autokill(game)).toBe(false);
+    expect(game.messages[0]).toBe('YOUR MIND REACHES DOWN AND');
   });
 });
 

@@ -96,6 +96,18 @@ const ENDLESS_TRAP_DOOR_LIMIT = 84;
 const ENDLESS_TRAP_DOOR_DROP = 100;
 
 /**
+ * The deepest floor Autokill still reaches in the endless dungeon.
+ *
+ * Autokill is the only attack that never looks at a monster's hit points, so it is the only one
+ * whose worth does not fall away as the floors stock monsters with millions of them. Its own odds
+ * do not fall away either: an endless monster's level grows one for one with the floor, exactly
+ * as the character's depth roll does, so the roll settles near a coin flip at any great depth and
+ * stays there however strong the character gets. Left alone it would be the one spell worth
+ * casting past a certain point, and this is where it stops instead (John, 2026-09-16).
+ */
+const ENDLESS_AUTOKILL_DEEPEST = 200;
+
+/**
  * The first endless world, and the one a roll falls back to.
  *
  * A world is one number, and two characters rolled into the same one meet the same monsters on
@@ -221,6 +233,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     // The level of an endless monster is only ever a number in memory, so the nudge has no
     // byte to count round.
     monsterLevelWrap: null,
+    autokillDeepestFloor: ENDLESS_AUTOKILL_DEEPEST,
     pictureFiles: (section) => FAITHFUL_RULES.pictureFiles(sectionSource(section)),
   };
 }

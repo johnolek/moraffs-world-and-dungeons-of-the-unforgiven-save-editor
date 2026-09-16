@@ -61,6 +61,12 @@ describe('an endless dungeon', () => {
     for (const module of [0, 1, 2, 4]) expect(normal.bottomLevel(module)).toBe(BOTTOM_LEVEL[module]);
     for (const module of [0, 1, 2, 3]) expect(tough.bottomLevel(module)).toBe(BOTTOM_LEVEL[module]);
   });
+
+  it('stops Autokill reaching past floor 200, however deep the dungeon goes', () => {
+    expect(normal.autokillDeepestFloor).toBe(200);
+    expect(tough.autokillDeepestFloor).toBe(200);
+    expect(FAITHFUL_RULES.autokillDeepestFloor).toBeNull();
+  });
 });
 
 describe('the endless section numbering', () => {
