@@ -173,6 +173,26 @@ describe('a character played on another device since', () => {
   });
 });
 
+describe('a character the boards have already seen die', () => {
+  it('says so and leaves the copy here alone', async () => {
+    browser();
+    setOffTheBoards(false);
+    const dead: Answer = () =>
+      new Response(JSON.stringify({ error: 'That character has already died.', because: 'dead' }), { status: 409 });
+
+    const run = sender(dead);
+    run.stop();
+    await settled();
+
+    expect(run.movedOn).toBe(0);
+    expect(run.marks[run.marks.length - 1]).toEqual({
+      words: 'This character has already died.',
+      note: 'The boards keep nothing more of this run.',
+      tone: 'bad',
+    });
+  });
+});
+
 describe('sending a run while the player is off the boards', () => {
   it('sends nothing at all, and says so', async () => {
     browser();

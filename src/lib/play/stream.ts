@@ -136,10 +136,19 @@ export interface StreamedSession {
  * The server's word for a character it has been sent a newer run of than this device is playing:
  * another device carried the character on while this one was away.
  *
- * It is the one refusal the site does something about rather than only showing, which is why the
+ * It is a refusal the site does something about rather than only showing, which is why the
  * server's word for it is written down here beside the shapes the two halves agree on.
  */
 export const MOVED_ON = 'moved-on';
+
+/**
+ * The server's word for a character whose run has already ended in a death: the server takes no
+ * more keys for it, whatever the page playing it thinks.
+ *
+ * It is here for the same reason {@link MOVED_ON} is: the site says something of its own about it
+ * rather than only showing the server's words.
+ */
+export const DEAD = 'dead';
 
 /**
  * What came of posting a batch: the server has it, it refused it in words, or it was not reached

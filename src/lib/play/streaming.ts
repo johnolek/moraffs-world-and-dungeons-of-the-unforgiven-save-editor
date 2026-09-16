@@ -6,6 +6,7 @@ import { runServerUrl } from '../run-server';
 import type { PlayMode } from './mode';
 import type { RunRecorder, RunSession } from './run';
 import {
+  DEAD,
   MOVED_ON,
   RunStream,
   type BatchAnswer,
@@ -62,6 +63,11 @@ const NOT_CHECKED_YET: RunMark = { words: 'Still being checked.', note: null, to
 const PLAYED_ELSEWHERE: RunMark = {
   words: 'This character was played elsewhere.',
   note: 'The copy here has been replaced with the one from the boards.',
+  tone: 'bad',
+};
+const ALREADY_DEAD: RunMark = {
+  words: 'This character has already died.',
+  note: 'The boards keep nothing more of this run.',
   tone: 'bad',
 };
 const OFF_THE_CLOCK = 'Off the wall clock: more keys than a person could press.';
@@ -251,17 +257,25 @@ class Streamer implements RunStreamer {
   }
 
   /**
-   * A run the server will not take. A character it holds a newer run of than this device is
-   * playing is the one refusal there is something to do about: the copy here is behind, so the
-   * tab takes the server's over and says so.
+   * A run the server will not take.
+   *
+   * A character the server holds a newer run of than this device is playing is the one refusal
+   * there is something to do about: the copy here is behind, so the tab takes the server's over
+   * and says so. A character the server has already seen die gets words of its own, since
+   * nothing about the keys being played now will ever be kept. The rest are shown as the server
+   * worded them.
    */
   private refused(words: string, because: string | null): void {
-    if (because !== MOVED_ON) {
-      this.run.onMark(refusedMark(words));
+    if (because === MOVED_ON) {
+      this.run.onMark(PLAYED_ELSEWHERE);
+      this.run.movedOn();
       return;
     }
-    this.run.onMark(PLAYED_ELSEWHERE);
-    this.run.movedOn();
+    if (because === DEAD) {
+      this.run.onMark(ALREADY_DEAD);
+      return;
+    }
+    this.run.onMark(refusedMark(words));
   }
 
   /** Replaying a run happens behind the answer to the batch that ended it, so the verdict is
