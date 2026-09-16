@@ -1,6 +1,5 @@
+import type { GameRules } from '../game/port/rules';
 import type { Monster } from './monsters';
-
-const MAX_HP = 32000;
 
 /** The game's random(n): an integer 0..n-1. */
 const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
@@ -29,16 +28,22 @@ export function hpSpan(entry: Monster, baseLevel: number): number {
   return entry.type.hpPerLevel * baseLevel + 1;
 }
 
-/** The Shadow boss bonus and the game's cap, applied to the average of the two rolls. The bonus
- *  counts the floor's base level, the same number the rolls were drawn from. */
-export function stockedHp(entry: Monster, baseLevel: number, averaged: number): number {
+/**
+ * The Shadow boss bonus and the rules' cap, applied to the average of the two rolls. The bonus
+ * counts the floor's base level, the same number the rolls were drawn from.
+ *
+ * The game's own cap of 32,000 is what keeps the roll inside the two bytes a monster's record
+ * holds its hit points in. Rules whose floors go deeper than the game's answer with a cap of
+ * their own.
+ */
+export function stockedHp(entry: Monster, baseLevel: number, averaged: number, rules: GameRules): number {
   let hp = averaged;
   if (entry.isBoss) {
     hp += 20 * baseLevel;
     // The last three sections give their bosses double hit points.
     if (entry.origin.kind === 'section' && entry.origin.section >= 18) hp *= 2;
   }
-  return Math.max(1, Math.min(MAX_HP, hp));
+  return Math.max(1, Math.min(rules.monsterHpMax, hp));
 }
 
 /**
@@ -48,7 +53,7 @@ export function stockedHp(entry: Monster, baseLevel: number, averaged: number): 
  * stock_level (exe 2000:671e, unf.c "stock_level") rolls the hit points first and jitters the
  * stored level afterwards, so the two numbers a player sees need not agree.
  */
-export function rollHp(entry: Monster, baseLevel: number, rnd: () => number): number {
+export function rollHp(entry: Monster, baseLevel: number, rnd: () => number, rules: GameRules): number {
   const span = hpSpan(entry, baseLevel);
-  return stockedHp(entry, baseLevel, Math.trunc((random(rnd, span) + random(rnd, span) + 2) / 2));
+  return stockedHp(entry, baseLevel, Math.trunc((random(rnd, span) + random(rnd, span) + 2) / 2), rules);
 }

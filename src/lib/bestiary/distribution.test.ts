@@ -27,7 +27,7 @@ function everyRoll(entry: Monster, baseLevel: number): Map<number, number> {
       // random(rnd, span) truncates rnd() * span, so the midpoint of a slice picks that value.
       const rolls = [(a + 0.5) / span, (b + 0.5) / span];
       let i = 0;
-      const hp = rollHp(entry, baseLevel, () => rolls[i++]);
+      const hp = rollHp(entry, baseLevel, () => rolls[i++], FAITHFUL_RULES);
       out.set(hp, (out.get(hp) ?? 0) + 1 / (span * span));
     }
   }
@@ -66,8 +66,8 @@ describe('hpDistribution', () => {
     const entry = named('Shadow Stone Giant');
     const computed = hpDistribution(entry, 3);
     // Both rolls at their lowest, then both at their highest.
-    expect(computed[0].hp).toBe(rollHp(entry, 3, () => 0));
-    expect(computed[computed.length - 1].hp).toBe(rollHp(entry, 3, () => 0.999999));
+    expect(computed[0].hp).toBe(rollHp(entry, 3, () => 0, FAITHFUL_RULES));
+    expect(computed[computed.length - 1].hp).toBe(rollHp(entry, 3, () => 0.999999, FAITHFUL_RULES));
   });
 
   it('matches what rolling monsters actually produces', () => {
@@ -79,7 +79,7 @@ describe('hpDistribution', () => {
     for (let i = 0; i < rounds; i++) {
       // The nudge is rolled and thrown away, so that this walks the generator the way a floor
       // being stocked does.
-      const hp = rollHp(entry, baseLevel, rnd);
+      const hp = rollHp(entry, baseLevel, rnd, FAITHFUL_RULES);
       nudgeLevel(baseLevel, rnd, FAITHFUL_RULES.monsterLevelMax);
       seen.set(hp, (seen.get(hp) ?? 0) + 1);
     }

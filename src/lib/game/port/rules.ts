@@ -48,6 +48,8 @@ export interface GameRules {
   monsterLevel(module: number, floor: number): number;
   /** The highest level a stocked monster may be nudged to; one nudged past it is put back to 1. */
   readonly monsterLevelMax: number;
+  /** The most hit points a stocked monster may be rolled with. */
+  readonly monsterHpMax: number;
   /** The two picture files a section's corridors and monsters are drawn from. */
   pictureFiles(section: number): SectionPictures;
 }
@@ -130,7 +132,9 @@ type GameData = typeof data;
  * section, and `pictureFiles` the two files load_section_pictures (exe 2000:372c) reads for one.
  * `sectionPlace` is the twenty-row section table of `dotu-data.json`, which counts four sections
  * to a module and puts each section's Shadow boss on the last of its floors, and
- * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005).
+ * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005), and
+ * `monsterHpMax` the 32,000 the same routine tops a hit point roll off at, which keeps the roll
+ * inside the two bytes the monster's record holds it in.
  * `sectionSource` is every section's own number: the game has a wall file, a palette and a row
  * of MD.BIN for each of the twenty, so none of them borrows another's. `keys` and `bossSquares` are the two tables of the
  * character record that a dungeon deeper than the game's own would run off the end of.
@@ -148,6 +152,7 @@ export function faithfulRules(data: GameData): GameRules {
     bossSquares: RECORD_BOSS_SQUARES,
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
     monsterLevelMax: data.constants.monsterLevelMax,
+    monsterHpMax: data.constants.monsterHpMax,
     pictureFiles: sectionPictures,
   };
 }

@@ -5,6 +5,7 @@ import { rollHp } from '../bestiary/roll';
 import { SPELL_MENU_KEYS, SPELL_MENU_NAMES, spellCost, spellIndex } from '../game/port/inventory';
 import { savePlayer } from '../game/port/record';
 import type { Rng } from '../game/port/rng';
+import { FAITHFUL_RULES } from '../game/port/rules';
 import { portedSpell } from '../game/port/spell-index';
 import { cureDisease, curePoison } from '../game/port/magic';
 import {
@@ -174,7 +175,7 @@ export function monsterLevelRange(baseLevel: number): { from: number; to: number
 
 /** The hit points stock_level rolls a monster of this kind on a floor of this base level. */
 export function rollFightHp(entry: Monster, baseLevel: number, rnd: () => number = Math.random): number {
-  return rollHp(entry, baseLevel, rnd);
+  return rollHp(entry, baseLevel, rnd, FAITHFUL_RULES);
 }
 
 /**

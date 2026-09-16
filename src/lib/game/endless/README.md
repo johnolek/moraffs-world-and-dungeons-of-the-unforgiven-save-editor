@@ -142,6 +142,6 @@ numbers alone.
 
 | limit | what the game does | what the port does | faithful keeps it |
 |---|---|---|---|
-| **Hit points**, the slot's two bytes | `stock_level` (exe 2000:671e) caps a roll at 32,000, and the pair is read back unsigned, so the cap keeps the word out of trouble with room to spare. | `stockedHp` (`src/lib/bestiary/roll.ts`) caps at 32,000 as well. | Yes. |
+| **Hit points**, the slot's two bytes | `stock_level` (exe 2000:671e) caps a roll at 32,000, and the pair is read back unsigned, so the cap keeps the word out of trouble with room to spare. | `stockedHp` (`src/lib/bestiary/roll.ts`) caps at `GameRules.monsterHpMax`. | Yes: the faithful rules answer 32,000. **Endless lifts it** to the largest whole number a double holds, since the port writes no monster record for the cap to protect. |
 | **The stored level**, the slot's sixth byte | The jitter is done on the byte itself, so it counts round at 256; the byte is then read unsigned and a level over 210 is put back to 1 (exe 2000:6fdf and 2000:7005). The base level is only written into the byte at all when it is under 221. | `nudgeLevel` counts the jitter round 256 as well, and puts a level over `GameRules.monsterLevelMax` back to 1. | Yes. |
 | **The attack timers**, `Game.monsterTimers` | Seconds until each slot's next swing, a word in the data segment. | An `Int16Array`, which is the same word. | Yes, and nothing to lift: the values are a handful of seconds. |

@@ -50,7 +50,7 @@ describe('rollHp', () => {
       for (const level of [1, 7, 61, 210]) {
         const [lo, hi] = monsterHpRange(entry.type.hpPerLevel, level, entry.isBoss, section);
         for (let i = 0; i < 40; i++) {
-          const hp = rollHp(entry, level, rnd);
+          const hp = rollHp(entry, level, rnd, FAITHFUL_RULES);
           expect(hp).toBeGreaterThanOrEqual(lo);
           expect(hp).toBeLessThanOrEqual(hi);
         }
@@ -60,7 +60,7 @@ describe('rollHp', () => {
 
   it('gives a Shadow boss 20 per level on top, doubled in the last three sections', () => {
     const lowest = () => 0;
-    expect(rollHp(named('Shadow Vulture'), 10, lowest)).toBe(1 + 200);
-    expect(rollHp(named('Shadow Stone Giant'), 10, lowest)).toBe((1 + 200) * 2);
+    expect(rollHp(named('Shadow Vulture'), 10, lowest, FAITHFUL_RULES)).toBe(1 + 200);
+    expect(rollHp(named('Shadow Stone Giant'), 10, lowest, FAITHFUL_RULES)).toBe((1 + 200) * 2);
   });
 });

@@ -1,4 +1,5 @@
 import { monsterLevelDistribution } from '../game/dotu-mech.js';
+import { FAITHFUL_RULES } from '../game/port/rules';
 import type { Monster } from './monsters';
 import { hpSpan, stockedHp } from './roll';
 
@@ -18,7 +19,9 @@ export interface HpBin {
   p: number;
 }
 
-const MAX_HP = 32000;
+/** The Monsters tab charts the game as it shipped, so the widest a bar can stand is the
+ *  game's own cap on a hit point roll. */
+const MAX_HP = FAITHFUL_RULES.monsterHpMax;
 
 /** How often a floor with this base level stocks a monster at each level, after the nudge. */
 export function levelDistribution(baseLevel: number): LevelChance[] {
@@ -36,7 +39,7 @@ export function hpDistribution(entry: Monster, baseLevel: number): HpChance[] {
   // The game averages two rolls of 0..span-1, and trunc((sum + 2) / 2) is floor(sum / 2) + 1,
   // so an average of `raw` comes from a sum of 2·raw−2 or 2·raw−1.
   for (let raw = 1; raw <= span; raw++) {
-    weights[stockedHp(entry, baseLevel, raw)] += sumChance(2 * raw - 2, span) + sumChance(2 * raw - 1, span);
+    weights[stockedHp(entry, baseLevel, raw, FAITHFUL_RULES)] += sumChance(2 * raw - 2, span) + sumChance(2 * raw - 1, span);
   }
   const out: HpChance[] = [];
   for (let hp = 0; hp <= MAX_HP; hp++) if (weights[hp] > 0) out.push({ hp, p: weights[hp] });

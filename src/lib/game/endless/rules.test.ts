@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readRecolouredId } from '../../bestiary/monsters';
+import { rollHp } from '../../bestiary/roll';
 import { monsterById } from '../../map/stocking';
 import { expValue } from '../port/combat';
 import { FAITHFUL_RULES } from '../port/rules';
@@ -14,6 +15,14 @@ const ENDLESS_SECTIONS = [...Array.from({ length: 100 }, (unused, index) => 21 +
 const SEED = 20260915;
 const MODULE_IV = 3;
 const MODULE_V = 4;
+
+/** One of the 22 monsters every section keeps loaded, which is as good a monster as any to roll
+ *  hit points for. */
+const BUILT_IN_SLOT = 0;
+
+/** A generator whose every roll lands in the middle, so a roll of the same floor is the same
+ *  number every time. */
+const half = () => 0.5;
 
 const normal = endlessRules({ hard: false, seed: SEED });
 const tough = endlessRules({ hard: true, seed: SEED });
@@ -212,6 +221,13 @@ describe('an endless floor', () => {
 
   it('answers for the floors of a module it has nothing to do with the way the game does', () => {
     for (const floor of faithfulFloors(1)) expect(tough.monsterLevel(1, floor)).toBe(FAITHFUL_RULES.monsterLevel(1, floor));
+  });
+
+  it("rolls its monsters more hit points than the game's own two bytes hold", () => {
+    const entry = monsterById(FAITHFUL_RULES.monsterKinds(1)[BUILT_IN_SLOT].id);
+    const baseLevel = tough.monsterLevel(MODULE_V, 4000);
+    expect(rollHp(entry, baseLevel, half, tough)).toBeGreaterThan(FAITHFUL_RULES.monsterHpMax);
+    expect(rollHp(entry, baseLevel, half, FAITHFUL_RULES)).toBe(FAITHFUL_RULES.monsterHpMax);
   });
 });
 

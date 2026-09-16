@@ -54,6 +54,17 @@ const LEVELS_PER_MODULE = 15;
 const ENDLESS_EXPERIENCE_CAP = 3407;
 
 /**
+ * The most hit points an endless floor may stock a monster with.
+ *
+ * The game's own 32,000 is the size of the two bytes a monster's record keeps its hit points in,
+ * and this port writes no such record — a floor's monsters live in memory for as long as the
+ * floor does. So the only number left to respect is the arithmetic's: the largest whole number a
+ * double holds. A floor at the bottom of the endless dungeon rolls its bosses a few million,
+ * which is nowhere near it, so nothing is ever capped in practice.
+ */
+const ENDLESS_MONSTER_HP_MAX = Number.MAX_SAFE_INTEGER;
+
+/**
  * The floor an endless trap door's roll must name to be a door at all, which is Module V's own
  * number.
  *
@@ -162,6 +173,7 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     // The deepest base level the endless dungeon rolls monsters around, so that no monster is ever
     // put back to level 1 for standing deeper than the rules allow.
     monsterLevelMax: ENDLESS_BOTTOM + LEVELS_PER_MODULE * endlessModule,
+    monsterHpMax: ENDLESS_MONSTER_HP_MAX,
     pictureFiles: (section) => FAITHFUL_RULES.pictureFiles(sectionSource(section)),
   };
 }
