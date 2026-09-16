@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
   import type { JournalEntry } from '../play/journal';
-  import { summarizeJournal, summaryLines, type RunClockTotals, type SummaryNames } from '../play/summary';
+  import { summarizeJournal, summarySections, type RunClockTotals, type SummaryNames } from '../play/summary';
   import { journalGroups } from './grouping';
   import { JOURNAL, placeHeading } from './words';
 
@@ -24,7 +24,7 @@
 
   let { entries, reached, names }: Props = $props();
 
-  const lines = $derived(summaryLines(summarizeJournal(entries, reached), names));
+  const sections = $derived(summarySections(summarizeJournal(entries, reached), names));
   const groups = $derived(journalGroups(entries));
 
   /**
@@ -48,11 +48,14 @@
   {#if entries.length === 0}
     <p class="empty">{JOURNAL.nothing}</p>
   {:else}
-    <ul class="summary">
-      {#each lines as line, at (at)}
-        <li>{line}</li>
-      {/each}
-    </ul>
+    {#each sections as section (section.heading)}
+      <h4>{section.heading}</h4>
+      <ul class="summary">
+        {#each section.lines as line, at (at)}
+          <li>{line}</li>
+        {/each}
+      </ul>
+    {/each}
     <h3>{JOURNAL.timeline}</h3>
     <div class="timeline">
       {#each groups as group, at (at)}
@@ -82,6 +85,11 @@
     margin: 6px 0 0;
     font-size: 13px;
     color: var(--muted);
+  }
+  h4 {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--accent-dim);
   }
   .summary {
     margin: 0;

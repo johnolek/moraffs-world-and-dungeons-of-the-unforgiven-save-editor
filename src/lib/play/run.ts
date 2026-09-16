@@ -4,7 +4,9 @@ import { isActionKind } from '../game/action';
 import { ENDLESS_WORLD_SEED } from '../game/endless/rules';
 import type { EndlessStore, KeptEndlessState } from '../game/endless/state';
 import { BorlandRng, SeededRng, type Rng } from '../game/port/rng';
+import { INN_NAMES } from '../game/port/town';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
+import { grouped } from '../ui/format';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { journalEntry, unforgivenJournal, type JournalEntry, type JournalWords } from './journal';
 import { runPlayLoop, type PlayLoopSession } from './loop';
@@ -811,6 +813,20 @@ export interface RunGameEngine {
   /** What the dungeon turns up, which in Dungeons of the Unforgiven is not the money the town is
    *  paid in. */
   foundMoneyWords(amount: number): string;
+  /** A building named the way a player would know it. Every other building in a game has one
+   *  name, but the one inn of Dungeons of the Unforgiven is called something different in each
+   *  of the five modules, so its name is told which module it belongs to. */
+  buildingWords(where: string): string;
+}
+
+/**
+ * The inn of Dungeons of the Unforgiven named with the module it stands in: "PALACE, Module V's
+ * inn". `INN_NAMES` holds one name per module, so the name alone says which.
+ */
+function unforgivenBuilding(where: string): string {
+  const module = INN_NAMES.indexOf(where);
+  if (module === -1) return where;
+  return `${where}, ${UNFORGIVEN_MAP.dungeonName(module)}'s inn`;
 }
 
 /**
@@ -1054,28 +1070,31 @@ export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
   unforgiven: {
     replay: replayUnforgiven,
     journal: unforgivenJournal,
-    clockWords: (seconds) => `${seconds} second${seconds === 1 ? '' : 's'}`,
+    clockWords: (seconds) => `${grouped(seconds)} second${seconds === 1 ? '' : 's'}`,
     dungeonName: UNFORGIVEN_MAP.dungeonName,
-    moneyWords: (amount) => `${amount} rubles`,
-    foundMoneyWords: (amount) => `${amount} Greater-American Dollars`,
+    moneyWords: (amount) => `${grouped(amount)} rubles`,
+    foundMoneyWords: (amount) => `${grouped(amount)} Greater-American Dollars`,
+    buildingWords: unforgivenBuilding,
   },
   moraffsWorld: {
     replay: replayMoraffsWorld,
     journal: moraffsWorldJournal,
     // The clock counts in fractions of a move, which is rounded wherever it is shown.
-    clockWords: (moves) => `${Math.round(moves)} move${Math.round(moves) === 1 ? '' : 's'}`,
+    clockWords: (moves) => `${grouped(Math.round(moves))} move${Math.round(moves) === 1 ? '' : 's'}`,
     dungeonName: MORAFFS_WORLD_MAP.dungeonName,
-    moneyWords: (amount) => `${amount} jewels`,
-    foundMoneyWords: (amount) => `${amount} jewels' worth of stones`,
+    moneyWords: (amount) => `${grouped(amount)} jewels`,
+    foundMoneyWords: (amount) => `${grouped(amount)} jewels' worth of stones`,
+    buildingWords: (where) => where,
   },
   revenge: {
     replay: replayMoraffsRevenge,
     journal: moraffsRevengeJournal,
     // This game's clock is the ticks of the poll its monsters move on, which `rev/clock.ts` has.
-    clockWords: (ticks) => `${ticks} tick${ticks === 1 ? '' : 's'}`,
+    clockWords: (ticks) => `${grouped(ticks)} tick${ticks === 1 ? '' : 's'}`,
     dungeonName: MORAFFS_REVENGE_MAP.dungeonName,
-    moneyWords: (amount) => `${amount} jewel pieces`,
-    foundMoneyWords: (amount) => `${amount} in treasure`,
+    moneyWords: (amount) => `${grouped(amount)} jewel pieces`,
+    foundMoneyWords: (amount) => `${grouped(amount)} in treasure`,
+    buildingWords: (where) => where,
   },
 };
 

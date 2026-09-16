@@ -2,7 +2,7 @@ import type { Leaderboard } from '../lib/app-state.svelte';
 import { shortCommit } from '../lib/commit';
 import { GAME_CHOICES } from '../lib/game-choice';
 import { actionWords, RUN_GAMES, type RunGame } from '../lib/play/run';
-import { summarizeJournal, summaryLines, type SummaryNames } from '../lib/play/summary';
+import { summarizeJournal, summarySections, type SummaryNames } from '../lib/play/summary';
 import { milestoneLine, readRunLog, verifyRun, type RunVerdict } from '../lib/play/verify';
 
 /**
@@ -61,7 +61,11 @@ function summaryOfTheRun(verdict: RunVerdict, names: SummaryNames): string[] {
   if (journal.length === 0) return [];
   const totals = verdict.replayed ?? verdict.claimed;
   const summary = summarizeJournal(journal, totals);
-  return ['', 'The run:', ...summaryLines(summary, names).map((line) => `  ${line}`)];
+  const lines: string[] = [];
+  for (const section of summarySections(summary, names)) {
+    lines.push('', `${section.heading}:`, ...section.lines.map((line) => `  ${line}`));
+  }
+  return lines;
 }
 
 function heading(verdict: RunVerdict): string {
