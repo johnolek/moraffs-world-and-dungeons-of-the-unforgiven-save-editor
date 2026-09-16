@@ -89,7 +89,10 @@ Everything else about the tab follows the game switch the way the others do.
   every tab, and the Boards tab is not kept mounted, so a feed that closed with
   this panel would leave the footer deaf for the rest of the visit. One feed for
   the page also means the footer, the marker and the timeline cannot disagree
-  about what the newest announcement is.
+  about what the newest announcement is. It keeps the newest arrival beside the
+  list as well (`latestArrival`), since the history read as the page loads is
+  mostly hours old and the Play tab prints only what has just happened
+  (`src/lib/play/announcement-box.ts`).
 - **`server.ts`** — every call to the run server, each one a shape a page can
   draw. A call that could not be made leaves what is on screen where it is and
   says so, so an unreachable server does not empty a board.

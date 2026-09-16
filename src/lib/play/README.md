@@ -583,6 +583,37 @@ showHint(game, TELEPORTER_MENU);                // the lines the menu prints
 const chosen = await session.choice([0x31, 0x32, 0x33]);
 ```
 
+### Announcements in the message box
+
+The run server announces the rare things — a boss beaten, level 20 and every fifth after it, kill
+counts, rare finds, a Shadow killed in the endless dungeon, wins and deaths. They show in the
+footer and in the timeline the header opens, and a player at the game's screen is looking at
+neither. The **Announcements in the message box** switch (`mode.ts`, one key per game, off until
+it is asked for, and offered only in a build given a run server) prints each one that arrives
+while the game is being played on the bottom two lines of the game's own message box, in the
+box's own font and colour.
+
+`announcement-box.ts` is all of the deciding and none of the drawing. `announcementBoxLines` turns
+an announcement into lines: the words the footer shows, upper-cased, wrapped to the longest line
+the box prints at the font's own spacing and cut short at two lines. They go on the bottom of the
+box because all three games fill a box from the top, so that is the part the game has printed
+nothing on; a box that has filled all eight of its own lines is written over until the game next
+prints. `announcementCarried` is when one goes: an announcement goes up over the box that was
+showing when it arrived, and goes as soon as the box holds something else, which is the game
+having printed something the player asked for. `announcement-box.svelte.ts` is that rule wired to
+the feed, one per display, so what had already arrived when the display went up counts as read and
+nothing outlives the sitting it arrived in.
+
+None of it reaches the game. The lines are added where the tab paints — `Screen.svelte` puts them
+in `standing` beside the box, `MessageBox.svelte` beside the box it draws for the map display, and
+`MwScreen.svelte` beside the lines it paints — so `view.box` never holds one, the engine is never
+told, the run log never hears of it and a replay of the run draws none of it.
+
+Moraff's World's screen carries them the same way. The corners it lays over the top-down map are
+the map's own drawing rather than the game's screen, so that display leaves the switch off the
+column. Moraff's Revenge has none: its message area is four rows of a text screen the port paints
+itself rather than a box of drawn lines, so there is nothing here to draw over.
+
 ### How fast a screen appears
 
 The Redraw speed slider on `ScreenSwitch.svelte` is the tab drawing a screen the way a machine
