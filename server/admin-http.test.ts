@@ -112,6 +112,21 @@ describe('the admin endpoints', () => {
     expect(await sql.query('SELECT id FROM characters')).toEqual([{ id: 'moraffs-own' }]);
   });
 
+  it('tells an admin that they are one, and what they are called', async () => {
+    const response = await asAdmin('/admin/me', johns);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ admin: true, name: 'John' });
+  });
+
+  it('tells everybody else nothing about being an admin', async () => {
+    for (const asked of [fetch(`${origin}/admin/me`), asAdmin('/admin/me', somebodyElses)]) {
+      const response = await asked;
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'No such endpoint: /admin/me' });
+    }
+  });
+
   it('hands the admin every character here, whoever’s it is', async () => {
     const response = await asAdmin('/admin/characters', johns);
 

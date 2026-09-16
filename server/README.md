@@ -382,6 +382,7 @@ again but the database.
 
 | Endpoint                      | What it does                                                     |
 | ----------------------------- | ---------------------------------------------------------------- |
+| `GET /admin/me`               | 200 with `{ "admin": true, "name": "..." }` when the words are an admin's. It is how the site knows whether to draw the Admin tab, and it is cheap so that every page load may ask. |
 | `GET /admin/characters`       | Every character here, whoever's it is, the newest first, fifty to a page: the player's name and the character's, the game, the board or the mode it was rolled for, whether it is alive, dead or has won, and when the server last heard from it. `?page=` for the ones after the first, counting from one. |
 | `DELETE /admin/characters/:id` | Forgets one for good, whoever it belongs to: its run, the verdict on it and whatever was announced about it go with it. 404 when no character here has that id. |
 | `POST /admin/admins`          | `{ "name": "..." }` makes that player an admin as well. 404 when nobody here has the name. |

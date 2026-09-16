@@ -276,8 +276,8 @@ function sendNoSuchEndpoint(response: ServerResponse, path: string): void {
 }
 
 /**
- * The admin's own endpoints: every character here, deleting anybody's, and flagging another
- * player as an admin.
+ * The admin's own endpoints: whether the words said are an admin's at all, every character here,
+ * deleting anybody's, and flagging another player as an admin.
  *
  * They are all behind one check rather than three, so that there is one place where the rule
  * holds: a caller who is not an admin is answered exactly what a path this server does not know
@@ -295,6 +295,14 @@ async function serveAdmin(
   const admin = await adminAsking(request, sql, attempts);
   if (admin === null) {
     sendNoSuchEndpoint(response, path);
+    return;
+  }
+
+  // The site asks this on its way in, so that the Admin tab is drawn for an admin and for nobody
+  // else. It is here rather than read off the list of characters because it is asked on every
+  // page load and the list is fifty rows and a join.
+  if (request.method === 'GET' && path === '/admin/me') {
+    sendJson(response, 200, { admin: true, name: admin.name });
     return;
   }
 
