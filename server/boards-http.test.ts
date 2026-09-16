@@ -1,7 +1,7 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { RUNS_PER_PAGE } from './boards';
+import { CURRENT_ENDLESS_WORLD, RUNS_PER_PAGE } from './boards';
 import { createRunServer } from './http';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
@@ -309,5 +309,104 @@ describe('asking the server for a board of the living', () => {
     expect(first.more).toBe(true);
     expect(second.rows).toHaveLength(2);
     expect(second.more).toBe(false);
+  });
+});
+
+describe('asking the server for the boards of the endless dungeon', () => {
+  let sql: Sql;
+  let server: Server;
+  let origin: string;
+
+  /** A world nobody is rolled into any more, which has a board of its own all the same. */
+  const OLDER_WORLD = 9;
+
+  /** An endless run that has been replayed and written down, in the world named. */
+  async function keepEndless(run: { id: string; world: number; deepest?: number; kills?: number }): Promise<void> {
+    await sql.query(
+      `INSERT INTO characters (id, player_id, game, name, created_at, finished_at, outcome, world_seed)
+       VALUES ($1, 1, 'unforgiven', $2, '2026-09-01T00:00:00.000Z', '2026-09-08T00:00:00.000Z', 'death', $3)`,
+      [run.id, `Grond ${run.id}`, run.world],
+    );
+    await sql.query(
+      `INSERT INTO verdicts (character_id, status, actions, time, milestones, play_ms, timed, eligible,
+                             game, leaderboard, deepest, level, kills, engine_commits)
+       VALUES ($1, 'verified', 100, 30, '[]', 5000, true, true, 'unforgiven', 'endless', $2, 7, $3, '[]')`,
+      [run.id, run.deepest ?? 0, run.kills ?? 0],
+    );
+  }
+
+  beforeAll(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES (1, $1)', ['John']);
+    await keepEndless({ id: 'now-deep', world: CURRENT_ENDLESS_WORLD, deepest: 460, kills: 40 });
+    await keepEndless({ id: 'now-shallow', world: CURRENT_ENDLESS_WORLD, deepest: 120, kills: 900 });
+    await keepEndless({ id: 'older-world', world: OLDER_WORLD, deepest: 2000, kills: 5 });
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve, reject) => {
+      server.close((thrown) => (thrown ? reject(thrown) : resolve()));
+    });
+    await sql.close();
+  });
+
+  async function board(path: string) {
+    const response = await fetch(`${origin}/boards/unforgiven/endless${path}`);
+    return { status: response.status, body: await response.json() };
+  }
+
+  it('answers with the worlds there are boards for, the one being played now first', async () => {
+    const { status, body } = await board('/worlds');
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      game: 'unforgiven',
+      current: CURRENT_ENDLESS_WORLD,
+      worlds: [CURRENT_ENDLESS_WORLD, OLDER_WORLD],
+    });
+  });
+
+  it('says there is no such board of worlds for a game it does not play', async () => {
+    expect((await fetch(`${origin}/boards/chess/endless/worlds`)).status).toBe(404);
+  });
+
+  it('answers with the world being played now where the request names none', async () => {
+    const { body } = await board('/deepest');
+
+    expect(body).toMatchObject({ leaderboard: 'endless', board: 'deepest', world: CURRENT_ENDLESS_WORLD });
+    expect(body.rows.map((row: { characterId: string }) => row.characterId)).toEqual(['now-deep', 'now-shallow']);
+  });
+
+  it('answers with the board of the world asked for', async () => {
+    const { body } = await board('/deepest?world=9');
+
+    expect(body).toMatchObject({ world: OLDER_WORLD });
+    expect(body.rows.map((row: { characterId: string }) => row.characterId)).toEqual(['older-world']);
+  });
+
+  it('ranks the monsters killed on the board of kills', async () => {
+    const { body } = await board('/kills');
+
+    expect(body.rows.map((row: { characterId: string }) => row.characterId)).toEqual(['now-shallow', 'now-deep']);
+    expect(body.rows[0]).toMatchObject({ kills: 900, deepest: 120 });
+  });
+
+  it('says there is no such board for a board of wins, there being no winning it', async () => {
+    expect((await board('/actions')).status).toBe(404);
+    expect((await board('/deaths')).status).toBe(404);
+  });
+
+  it('says there is no board of kills for the game as it shipped', async () => {
+    expect((await fetch(`${origin}/boards/unforgiven/speedrun/kills`)).status).toBe(404);
+  });
+
+  it('refuses a world that is not a world', async () => {
+    const { status, body } = await board('/deepest?world=other');
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('That is not an endless world.');
   });
 });

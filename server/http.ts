@@ -7,6 +7,7 @@ import { openSignInAttempts, type SignInAttempts } from './attempts';
 import {
   boardPage,
   boardWorld,
+  endlessWorlds,
   hasBoard,
   isBoardGame,
   isBoardLeaderboard,
@@ -196,6 +197,12 @@ export function createRunServer(
       return;
     }
 
+    const worlds = path.match(/^\/boards\/([^/]+)\/endless\/worlds$/);
+    if (request.method === 'GET' && worlds !== null) {
+      void sendEndlessWorlds(response, sql, decodeURIComponent(worlds[1]));
+      return;
+    }
+
     const living = path.match(/^\/boards\/([^/]+)\/([^/]+)\/living$/);
     if (request.method === 'GET' && living !== null) {
       void sendLivingBoard(
@@ -318,6 +325,20 @@ async function sendLivingBoard(
   }
   const read = { game, leaderboard, sort: order, page, world: boardWorld(leaderboard, world) };
   sendJson(response, 200, await livingPage(sql, read, Date.now()));
+}
+
+/**
+ * The endless worlds of one game there are boards for, and which of them is being played now.
+ *
+ * A board of the endless dungeon is one world's own, so a page of them has to know which worlds
+ * there are before it can offer one. Who is in the list is `server/boards.ts`.
+ */
+async function sendEndlessWorlds(response: ServerResponse, sql: Queries, game: string): Promise<void> {
+  if (!isBoardGame(game)) {
+    sendJson(response, 404, { error: `No such board: ${game}/endless/worlds` });
+    return;
+  }
+  sendJson(response, 200, await endlessWorlds(sql, game));
 }
 
 /**

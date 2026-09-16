@@ -179,6 +179,43 @@ export function isLivingSort(sort: string): sort is LivingSort {
   return LIVING_BOARDS.some((board) => board.sortedOn === sort);
 }
 
+/** The endless worlds of one game that are worth a board, and which of them is being played now. */
+export interface EndlessWorlds {
+  game: string;
+  /** The world every endless character is rolled into today. */
+  current: number;
+  /** The worlds there are boards to read, the current one first and then the rest, the world of
+   *  the newest character first among those. */
+  worlds: number[];
+}
+
+/**
+ * The endless worlds of one game there is anything to show.
+ *
+ * The world being played now is always offered, even where nobody has finished a run in it yet:
+ * it is the board a reader arriving is looking for, and an empty board of it says the true thing
+ * about it. The rest are the worlds some character of this game stands on a board in, which is a
+ * run that has ended with a verdict that may go on a board, or a character still being played
+ * whose chain the replay passed — exactly who the boards of that world hold.
+ */
+export async function endlessWorlds(sql: Queries, game: string): Promise<EndlessWorlds> {
+  const rows = await sql.query<{ world_seed: number }>(
+    `SELECT c.world_seed, max(c.created_at) AS newest
+     FROM characters c
+     WHERE c.game = $1 AND c.world_seed IS NOT NULL
+       AND (EXISTS (SELECT 1 FROM verdicts v
+                    WHERE v.character_id = c.id AND v.leaderboard = 'endless' AND v.eligible)
+            OR EXISTS (SELECT 1 FROM living l
+                       WHERE l.character_id = c.id AND l.leaderboard = 'endless'
+                         AND l.status = 'verified'))
+     GROUP BY c.world_seed
+     ORDER BY newest DESC`,
+    [game],
+  );
+  const older = rows.map((row) => row.world_seed).filter((world) => world !== CURRENT_ENDLESS_WORLD);
+  return { game, current: CURRENT_ENDLESS_WORLD, worlds: [CURRENT_ENDLESS_WORLD, ...older] };
+}
+
 /** How many runs a page of a board holds. */
 export const RUNS_PER_PAGE = 50;
 
