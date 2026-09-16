@@ -105,6 +105,7 @@ describe('a character streamed to the server and read back off it', () => {
         leaderboard: 'faithful',
         lock: 'faithful',
         worldSeed: null,
+        endless: null,
         createdAt: '2026-09-08T09:00:00.000Z',
         editedAt: '2026-09-09T12:00:00.000Z',
       }),

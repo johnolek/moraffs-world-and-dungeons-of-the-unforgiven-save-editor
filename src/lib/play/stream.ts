@@ -1,3 +1,4 @@
+import type { KeptEndlessState } from '../game/endless/state';
 import type { Milestone, RunSession } from './run';
 
 /**
@@ -62,12 +63,21 @@ export interface CharacterSave {
    * The number the endless world the character plays in is built from, for one locked to the
    * endless dungeon, and null for every other character
    * (`src/lib/game/endless/rules.ts`).
-   *
-   * What the character carries in that world — the trap door keys and the Shadow boss squares its
-   * record has no room for — does not travel with it: a replay of its chain works those out again
-   * from the keys that were pressed (`src/lib/game/endless/state.ts`).
    */
   worldSeed: number | null;
+  /**
+   * What the character carries in that world — the trap door keys, the Shadow boss squares and
+   * the hit points its record has no room for — and null for a character carrying nothing
+   * (`src/lib/game/endless/state.ts`).
+   *
+   * It is the half of the save the 2695 bytes cannot hold, written at the same moment the record
+   * is, and it travels for the same reason the record does: so that the next device picks the
+   * character up holding what it really holds. The server does not weigh it when it judges a run.
+   * That verdict comes from replaying the chain, which works the state out again from the keys
+   * that were pressed, so a device that sent a state its keys do not account for fails its own
+   * next sitting rather than passing one.
+   */
+  endless: KeptEndlessState | null;
   /** When the character was rolled or imported, as the device stamped it. */
   createdAt: string;
   /** When the character was last changed, as the device stamped it. */

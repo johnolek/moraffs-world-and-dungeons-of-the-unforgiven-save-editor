@@ -43,6 +43,7 @@ const save: CharacterSave = {
   leaderboard: 'speedrun',
   lock: 'speedrun',
   worldSeed: null,
+  endless: null,
   createdAt: '2026-09-08T09:00:00.000Z',
   editedAt: '2026-09-09T12:00:00.000Z',
 };
@@ -395,5 +396,20 @@ describe('reading a batch off a request', () => {
     expect(readRunBatch({ ...batch(), save: { ...save, record: 5 } })).toBeNull();
     expect(readRunBatch({ ...batch(), save: { ...save, dead: 'yes' } })).toBeNull();
     expect(readRunBatch({ ...batch(), save: { ...save, createdAt: 'whenever' } })).toBeNull();
+    expect(readRunBatch({ ...batch(), save: { ...save, endless: { keys: ['44'], bossSquares: [] } } })).toBeNull();
+  });
+
+  it('reads what an endless character is carrying beside its record', () => {
+    const carried = { keys: [44], bossSquares: [{ section: 22, x: 39, y: 63 }], hp: 40000 };
+
+    expect(readRunBatch({ ...batch(), save: { ...save, endless: carried } })).toMatchObject({
+      save: { endless: carried },
+    });
+  });
+
+  it('takes a save from a device that says nothing about what it carries', () => {
+    const { endless: _carried, ...older } = save;
+
+    expect(readRunBatch({ ...batch(), save: older })).toMatchObject({ save: { endless: null } });
   });
 });

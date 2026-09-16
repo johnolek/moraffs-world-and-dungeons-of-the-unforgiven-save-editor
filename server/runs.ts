@@ -1,3 +1,4 @@
+import { isKeptEndlessState } from '../src/lib/game/endless/state';
 import type { Milestone } from '../src/lib/play/run';
 import type { BatchClaims, BatchSession, CharacterSave, RunBatch } from '../src/lib/play/stream';
 import type { Queries, Sql } from './sql';
@@ -661,6 +662,9 @@ export function readCharacterSave(value: unknown): CharacterSave | undefined {
   // A device on a build from before the endless world was recorded names none, which is not a
   // reason to turn the batch away either.
   if (save.worldSeed !== undefined && save.worldSeed !== null && !Number.isInteger(save.worldSeed)) return undefined;
+  // What an endless character carries beside its record, which a device on an older build sends
+  // none of. Anything else in its place is a batch the server will not take.
+  if (save.endless !== undefined && save.endless !== null && !isKeptEndlessState(save.endless)) return undefined;
   // The moments are the device's own, and `created_at` is kept as a timestamp rather than as the
   // text it arrived as, so one that is not a moment at all would stop the whole batch.
   if (!isInstant(save.createdAt) || !isInstant(save.editedAt)) return undefined;
@@ -672,6 +676,7 @@ export function readCharacterSave(value: unknown): CharacterSave | undefined {
     leaderboard: save.leaderboard,
     lock: typeof save.lock === 'string' ? save.lock : null,
     worldSeed: typeof save.worldSeed === 'number' ? save.worldSeed : null,
+    endless: isKeptEndlessState(save.endless) ? save.endless : null,
     createdAt: save.createdAt,
     editedAt: save.editedAt,
   };

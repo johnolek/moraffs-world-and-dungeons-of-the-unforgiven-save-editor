@@ -11,6 +11,7 @@ function save(over: Partial<CharacterSave> = {}): CharacterSave {
     leaderboard: 'speedrun',
     lock: 'speedrun',
     worldSeed: null,
+    endless: null,
     createdAt: '2026-09-09T11:00:00.000Z',
     editedAt: '2026-09-09T12:00:00.000Z',
     ...over,

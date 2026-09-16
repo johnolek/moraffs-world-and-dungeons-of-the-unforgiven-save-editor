@@ -54,6 +54,7 @@ function playing(recorded: RunSession): { sitting: StreamedSession; play(keys: n
         leaderboard: recorded.leaderboard,
         lock: recorded.leaderboard,
         worldSeed: null,
+        endless: null,
         createdAt: recorded.startedAt,
         editedAt: recorded.startedAt,
       }),

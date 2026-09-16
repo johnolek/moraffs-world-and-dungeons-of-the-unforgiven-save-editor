@@ -60,6 +60,7 @@ function batch(over: Partial<RunBatch> = {}): RunBatch {
       leaderboard: 'speedrun',
       lock: 'speedrun',
       worldSeed: null,
+      endless: null,
       createdAt: '2026-09-08T09:00:00.000Z',
       editedAt: '2026-09-09T12:00:00.000Z',
     },

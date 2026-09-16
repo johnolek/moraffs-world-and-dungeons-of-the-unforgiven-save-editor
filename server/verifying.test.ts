@@ -851,6 +851,7 @@ describe('a run of the endless dungeon', () => {
         leaderboard: null,
         lock: 'endless',
         worldSeed: log.worldSeed,
+        endless: null,
         createdAt: log.startedAt,
         editedAt: log.startedAt,
       },
