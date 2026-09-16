@@ -608,11 +608,14 @@ like, and half a table cannot be sorted.
 
 When a run comes out verified and may go on a board, the server announces the
 few things about it worth stopping to read that have not been announced for
-that character before: a boss beaten, the twentieth level and every fifth past
-it, the hundredth kill and then the five hundredth, the thousandth, the two
+that character before: a boss of the game as it shipped beaten, the twentieth
+level and every fifth past it, the hundredth kill and then the five hundredth, the thousandth, the two
 thousand five hundredth and the five thousandth, one of the twelve rare things
 `find_item` turns up, a floor an endless character has taken a Shadow deeper
-than it ever had before, and how the run ended. A chain carries every milestone
+than it ever had before, and how the run ended. An endless run gets no boss
+line: the first twenty sections down there are the game's own, so each of their
+Shadows is a boss milestone as well, and the floor it died on is the thing that
+run is measured by. A chain carries every milestone
 the character has ever reached and the journal is the whole run written up, so
 a run checked again repeats most of them and only what is new is said.
 

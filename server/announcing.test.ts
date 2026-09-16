@@ -181,6 +181,23 @@ describe('announcing a run that has been checked', () => {
     );
   });
 
+  it('leaves an endless run’s bosses out, since its Shadows are said by the floor they died on', async () => {
+    const made = await announceRun(
+      sql,
+      run({
+        leaderboard: 'endless',
+        milestones: [reached({ kind: 'boss', which: 2 }), reached({ kind: 'level', which: 20 })],
+        journal: [killedAShadow(120)],
+      }),
+    );
+
+    expect(made.map((announcement) => [announcement.kind, announcement.which])).toEqual([
+      ['level', 20],
+      ['shadow', 120],
+      ['death', 0],
+    ]);
+  });
+
   it('leaves a Shadow of a run that is on no endless board to its boss milestone', async () => {
     const made = await announceRun(sql, run({ leaderboard: 'speedrun', journal: [killedAShadow(120)] }));
 

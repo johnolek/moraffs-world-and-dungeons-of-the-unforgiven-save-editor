@@ -7,10 +7,11 @@ import type { Queries } from './sql';
  * What the server says about a run once it has been checked.
  *
  * A verified run that may go on a board is announced: the few things of its whole run worth
- * stopping to read that have not been announced before. Those are a boss beaten, the twentieth
- * level and every fifth past it, the kill counts in {@link ANNOUNCED_KILLS}, one of the rare finds
- * in `ANNOUNCED_FINDS` (`server/boards.ts`), a floor an endless character has taken a Shadow
- * deeper than it ever had before, and how the run ended. A module, a dungeon and a floor reached
+ * stopping to read that have not been announced before. Those are a boss of the game as it shipped
+ * beaten, the twentieth level and every fifth past it, the kill counts in
+ * {@link ANNOUNCED_KILLS}, one of the rare finds in `ANNOUNCED_FINDS` (`server/boards.ts`), a
+ * floor an endless character has taken a Shadow deeper than it ever had before, and how the run
+ * ended. A module, a dungeon and a floor reached
  * are not among them: a character reaches dozens of those, and the feed is read on every page of
  * the site.
  *
@@ -90,17 +91,22 @@ export interface AnnouncedRun {
 /**
  * Whether a milestone is one to announce.
  *
- * A boss is, every time: a section's Shadow is the hardest thing the game asks for. A level only
- * when it is the twentieth or a fifth past it — a character gains its first twenty levels in the
- * first hour and nobody would stop to read about those.
+ * A boss is, in the game as it shipped: a section's Shadow is the hardest thing it asks for. Not
+ * in the endless dungeon, though. Its first twenty sections are the game's own, so each of their
+ * Shadows is a boss milestone as well as a Shadow killed, and announcing both would say the same
+ * kill twice over. Down there the floor a Shadow died on is what the run is measured by, and
+ * {@link journalMoments} is what says it.
+ *
+ * A level only when it is the twentieth or a fifth past it — a character gains its first twenty
+ * levels in the first hour and nobody would stop to read about those.
  *
  * A module, a dungeon and a floor are never announced. A character reaches dozens of those over a
  * run, and the feed is read on every page of the site, so it holds only what somebody would stop
  * to read. A death and a win are the run's outcome instead, and that is announced once whatever
  * the chain says about how it ended.
  */
-function worthAnnouncing(milestone: Milestone): boolean {
-  if (milestone.kind === 'boss') return true;
+function worthAnnouncing(milestone: Milestone, leaderboard: string | null): boolean {
+  if (milestone.kind === 'boss') return leaderboard !== 'endless';
   if (milestone.kind === 'level') return milestone.which >= 20 && milestone.which % 5 === 0;
   return false;
 }
@@ -142,7 +148,7 @@ function momentsOf(run: AnnouncedRun): AnnouncementMoment[] {
   for (const milestone of run.milestones) {
     if (milestone.kind === 'dungeon') dungeon = milestone.which;
     if (milestone.kind === 'level') level = Math.max(level, milestone.which);
-    if (!worthAnnouncing(milestone)) continue;
+    if (!worthAnnouncing(milestone, run.leaderboard)) continue;
     moments.push({
       kind: milestone.kind,
       which: milestone.which,
@@ -177,7 +183,8 @@ function momentsOf(run: AnnouncedRun): AnnouncementMoment[] {
  * deepest floor it has killed the Shadow of -- `deepestShadowKilled` in `server/boards.ts` is the
  * same reading, for the board. Every floor that beats the deepest before it is worth saying, so
  * the walk keeps the running deepest as it goes. The other two ways of playing stop where the
- * game does, and their Shadows are the `boss` milestones the run already carries.
+ * game does, and their Shadows are the `boss` milestones the run already carries, which is what
+ * {@link worthAnnouncing} announces for them instead.
  */
 function journalMoments(run: AnnouncedRun): AnnouncementMoment[] {
   const moments: AnnouncementMoment[] = [];
