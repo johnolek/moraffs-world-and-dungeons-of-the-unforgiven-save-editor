@@ -5,7 +5,10 @@ at once or on whichever ranked board is picked — the boards of runs that have
 ended and the two of the characters still being played — a page for any run on
 them, and the announcements the server has made, with each new one arriving as
 it happens. The announcements are the one part of this that is not the tab's
-alone: the newest one shows in the footer on every tab, off the same feed.
+alone, and all of it is off the one feed: the newest one shows in the footer on
+every tab, a marker in the header says when the newest is one this browser has
+not been shown, and the whole timeline slides in from the left edge over
+whatever tab the reader is on.
 
 Which boards there are depends on the way of playing: the game as it shipped has
 six, and the endless dungeon has three of its own and no boards of wins, since a
@@ -53,8 +56,31 @@ Everything else about the tab follows the game switch the way the others do.
   the site's own wherever it is read. A run of a game this build has never heard
   of came from a newer server and has no words to fold it into, so it shows the
   rest of the page and no journal.
-- **`Announcements.svelte`** — the panel down the side, which draws what the
-  store below is holding and asks it for the older ones.
+- **`Announcements.svelte`** — the list itself, which draws what the store below
+  is holding and asks it for the older ones. It is drawn twice over: down the
+  side of this tab, and filling the slide-out timeline, which is what its
+  `fills` prop is for. One list either way, so the two cannot read differently
+  or disagree about what there is.
+- **`AnnouncementTimeline.svelte`** — that list in a panel anchored to the left
+  edge, laid over the page rather than over a tab, since it is opened from the
+  header whatever tab is underneath. Its own button, Escape and a click
+  anywhere off it all close it. While it is open `app.panelOverPage` says the
+  keyboard is the panel's, and the tabs that answer keys ask `keysGoTo`
+  (`src/lib/app-state.svelte.ts`) rather than only whether they are showing.
+  Whatever is newest while it is open counts as read, an announcement arriving
+  in front of the reader included.
+- **`AnnouncementsMarker.svelte`** — the envelope at the top left of the page,
+  beside the title, shown only while something is unread and cleared by opening
+  the timeline. The space it stands in is always kept so the title does not move
+  when an announcement arrives. `src/App.svelte` holds the two of them together
+  and builds neither into a page with no run server address.
+- **`unread.svelte.ts`** — whether there is anything unread, and how far the
+  reader has read. The decision is a function of two moments — when the newest
+  announcement showing was made and when the newest one this browser has been
+  shown was made — so what counts as unread is testable without a browser or a
+  feed. How far the reader has read is kept in this browser's storage, because
+  nothing identifies a reader: the server knows a player by a passphrase and
+  somebody reading announcements has not been asked for one.
 - **`announcement-feed.svelte.ts`** — the announcements the whole page is
   following, in one module store. It opens the feed the first time anything
   reads it, asks for the history second so that a run announced while the
@@ -62,8 +88,8 @@ Everything else about the tab follows the game switch the way the others do.
   (`src/lib/character/CharacterPanel.svelte`) shows the newest announcement on
   every tab, and the Boards tab is not kept mounted, so a feed that closed with
   this panel would leave the footer deaf for the rest of the visit. One feed for
-  the page also means the footer and the panel cannot disagree about what the
-  newest announcement is.
+  the page also means the footer, the marker and the timeline cannot disagree
+  about what the newest announcement is.
 - **`server.ts`** — every call to the run server, each one a shape a page can
   draw. A call that could not be made leaves what is on screen where it is and
   says so, so an unreachable server does not empty a board.
