@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { everyoneOf, type EveryoneRow } from './everyone';
+import { everyoneOf, statusOf, type EveryoneRow } from './everyone';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 
@@ -354,6 +354,20 @@ describe('what a character is now', () => {
     });
 
     expect((await rows(sql))[0]).toMatchObject({ level: 12, now: { cls: 'Fighter' } });
+  });
+
+  it('reads the whole of a character for a run’s page, not only the table’s few numbers', () => {
+    const record = unforgivenRecord({ cls: 5, hp: 5690, maxHp: 5808, level: 45, stats: [94, 88, 63, 101, 70, 55] });
+
+    const status = statusOf('unforgiven', 'SAGEY', record);
+
+    expect(status).toMatchObject({ cls: 'Sage', lev: 45, hp: 5690, maxHp: 5808 });
+    expect(status?.stats.map((stat) => stat.value)).toEqual([94, 88, 63, 101, 70, 55]);
+  });
+
+  it('reads nothing out of bytes that are no character', () => {
+    expect(statusOf('unforgiven', 'SHORTY', new Uint8Array(3))).toBeNull();
+    expect(statusOf('unforgiven', 'NOBODY', null)).toBeNull();
   });
 
   it('is nothing for a character the server holds no record of', async () => {

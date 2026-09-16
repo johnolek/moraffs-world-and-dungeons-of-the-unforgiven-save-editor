@@ -104,7 +104,7 @@
     <!-- A run whose replay wrote no lines -- a game whose journal has not been written, or a
          verdict reached without a replay -- shows the rest of the page and no timeline. -->
     {#if run.journal !== null && run.journal.entries.length > 0 && names !== null}
-      <RunJournal entries={run.journal.entries} reached={run.journal} {names} />
+      <RunJournal entries={run.journal.entries} reached={run.journal} {names} status={run.character} />
     {/if}
   {/if}
 </div>

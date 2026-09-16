@@ -1,4 +1,4 @@
-import { characterStatus } from '../src/lib/character/record';
+import { characterStatus, type CharacterStatus } from '../src/lib/character/record';
 import type { Queries } from './sql';
 
 /**
@@ -197,30 +197,38 @@ function livingRow(row: LivingShape, game: string, now: number): EveryoneRow {
   };
 }
 
+/** The few of a character's numbers the table shows, out of the newest record sent for it. */
+function numbersOf(game: string, name: string, record: Uint8Array | null): EveryoneNumbers | null {
+  const status = statusOf(game, name, record);
+  if (status === null) return null;
+  return {
+    cls: status.cls,
+    hp: status.hp,
+    maxHp: status.maxHp,
+    stats: status.stats.map((stat) => stat.value),
+  };
+}
+
 /**
- * What the character is now, out of the newest record a device sent for it.
+ * A stored record read as a character, and null for anything that will not read as one.
+ *
+ * A run's page shows the whole of this and the table above shows a few of its numbers, so both
+ * come through here rather than each reading the bytes its own way.
  *
  * The record is the device's bytes and the server never reads them anywhere else, so this is the
  * one place they could be anything: a character kept before the server held records at all has
  * none, and one shorter than the game's own file, or of a game this build cannot read, is bytes
- * this cannot make a character of. None of that is worth failing the whole table for, so
- * anything but a record that reads is nothing to show, and the rest of the row stands.
+ * this cannot make a character of. None of that is worth failing a whole table or page for, so
+ * anything but a record that reads is nothing to show and the rest of it stands.
  *
  * The bytes are copied onto an ArrayBuffer of their own because what the database hands back may
  * be a view into a buffer it shares with other rows, and a reader given the buffer would be
  * reading the wrong character.
  */
-function numbersOf(game: string, name: string, record: Uint8Array | null): EveryoneNumbers | null {
+export function statusOf(game: string, name: string, record: Uint8Array | null): CharacterStatus | null {
   if (record === null) return null;
   try {
-    const status = characterStatus({ game, name, slot: null, bytes: new Uint8Array(record) });
-    if (status === null) return null;
-    return {
-      cls: status.cls,
-      hp: status.hp,
-      maxHp: status.maxHp,
-      stats: status.stats.map((stat) => stat.value),
-    };
+    return characterStatus({ game, name, slot: null, bytes: new Uint8Array(record) });
   } catch {
     return null;
   }

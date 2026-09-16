@@ -334,6 +334,17 @@ export async function runFor(sql: Queries, characterId: string): Promise<KeptRun
   };
 }
 
+/**
+ * The newest record a device sent for a character, and null for one the server has never been
+ * sent a record of. A run's page reads the character out of it.
+ */
+export async function recordOf(sql: Queries, characterId: string): Promise<Uint8Array | null> {
+  const rows = await sql.query<{ record: Uint8Array | null }>('SELECT record FROM characters WHERE id = $1', [
+    characterId,
+  ]);
+  return rows[0]?.record ?? null;
+}
+
 /** The lease on a character, for a reader that wants to know whether it is being played
  *  elsewhere. A character nobody has ever played here has none. */
 export async function leaseOn(sql: Queries, characterId: string): Promise<LeasedCharacter> {

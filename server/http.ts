@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { CharacterStatus } from '../src/lib/character/record';
 import { shortCommit } from '../src/lib/commit';
 import type { JournalEntry } from '../src/lib/play/journal';
 import type { ServerConfig } from './config';
@@ -17,7 +18,7 @@ import {
 } from './boards';
 import { writeCorsHeaders } from './cors';
 import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
-import { everyoneOf } from './everyone';
+import { everyoneOf, statusOf } from './everyone';
 import { openFeed, type Feed } from './feed';
 import {
   claimPlayerName,
@@ -42,6 +43,7 @@ import {
   leaseOn,
   leasedElsewhere,
   readRunBatch,
+  recordOf,
   runFor,
   sessionsOf,
   takeBatch,
@@ -966,6 +968,9 @@ export interface RunAnswer {
   verdict: JudgedRun | null;
   /** The timeline of the run, and null while nothing has been replayed for it. */
   journal: RunJournalAnswer | null;
+  /** What the character came to be, out of the newest record sent for it, and null for a run the
+   *  server holds no readable record of. */
+  character: CharacterStatus | null;
   /**
    * Whether another device of the player's own is playing this character now, which is what the
    * Play tab asks before it starts a game: one character is played from one device at a time.
@@ -1025,6 +1030,7 @@ async function sendRun(
     })),
     verdict: verdict === null ? null : judgedRun(verdict),
     journal: runJournal(verdict, living),
+    character: statusOf(run.game, run.name, await recordOf(sql, characterId)),
     leasedElsewhere: lease !== null && secret !== null && leasedElsewhere(lease, secretHash(secret), Date.now()),
   };
   sendJson(response, 200, answer);

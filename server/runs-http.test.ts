@@ -234,6 +234,15 @@ describe('streaming a run over HTTP', () => {
     expect(Object.keys(run.verdict ?? {})).not.toContain('journal');
   });
 
+  it('shows no character for a run whose record will not read as one', async () => {
+    const run = await untilVerdict();
+
+    // The batches above carry three bytes where a record goes, which is shorter than any of the
+    // games' own files. The rest of the page stands.
+    expect(run.character).toBeNull();
+    expect(run.journal).not.toBeNull();
+  });
+
   it('refuses keys for a character it has seen die', async () => {
     const response = await send(MINE, batch({ sequence: 2, inputs: [107], pressed: 1 }));
 
