@@ -1,0 +1,12 @@
+-- What an endless character carries that its 2695-byte record has no room for: the trap door keys
+-- found below floor 179, the Shadow boss squares of the sections past the twentieth, and the hit
+-- points above what the record's own signed word holds. It is null for every other character.
+--
+-- This is what the next device is handed, the way the record is. The verdict on a run is not read
+-- off it: the replay that judges a chain works the state out again from the keys that were
+-- pressed, so a device that sent a state its keys do not account for fails its own next sitting.
+--
+-- A save carrying none leaves whatever is here, the way `world_seed` does: a device on an older
+-- build carries none, and a character that has once carried something is never emptied, only
+-- written over by a newer state.
+ALTER TABLE characters ADD COLUMN endless jsonb;

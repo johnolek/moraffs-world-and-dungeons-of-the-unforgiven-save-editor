@@ -279,9 +279,9 @@ export async function keepCharacterSave(
     `UPDATE characters
      SET record = $1, maps = CASE WHEN $2::boolean THEN $3::text ELSE maps END, slot = $4, dead = $5,
          leaderboard = $6, play_lock = coalesce($7, play_lock),
-         world_seed = coalesce($8, world_seed), edited_at = $9,
-         saved_at = to_timestamp($10::double precision / 1000.0)
-     WHERE id = $11`,
+         world_seed = coalesce($8, world_seed), endless = coalesce($9::jsonb, endless),
+         edited_at = $10, saved_at = to_timestamp($11::double precision / 1000.0)
+     WHERE id = $12`,
     [
       Buffer.from(save.record, 'base64'),
       save.maps !== undefined,
@@ -295,6 +295,9 @@ export async function keepCharacterSave(
       // The endless world is decided at the roll and never again as well, so a save that names
       // none leaves the one here.
       save.worldSeed,
+      // A save carrying no state leaves the one here, so that a device on an older build does not
+      // empty a character that has picked something up on another one.
+      save.endless === null ? null : JSON.stringify(save.endless),
       save.editedAt,
       savedAt,
       characterId,

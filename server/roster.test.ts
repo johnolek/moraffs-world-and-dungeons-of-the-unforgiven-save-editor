@@ -143,6 +143,35 @@ describe("a player's characters", () => {
     expect(character.worldSeed).toBeNull();
   });
 
+  it('hands back what an endless character carries, so its next device holds it too', async () => {
+    const carried = { keys: [44], bossSquares: [{ section: 22, x: 39, y: 63 }], hp: 40000 };
+    const endless = { ...save, leaderboard: null, lock: 'endless', worldSeed: 7, endless: carried };
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: endless }), 1000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character.endless).toEqual(carried);
+  });
+
+  it('keeps what it holds when a batch carries none, the way an older build sends one', async () => {
+    const carried = { keys: [44], bossSquares: [] };
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: { ...save, endless: carried } }), 1000);
+    const { endless: _carried, ...older } = save;
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, save: older as CharacterSave }), 6000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character.endless).toEqual(carried);
+  });
+
+  it('hands back nothing carried for a character that plays the game as it shipped', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+
+    expect(character.endless).toBeNull();
+  });
+
   it('carries the chain without its keys, counting them instead', async () => {
     await playedTwice();
 
