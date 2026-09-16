@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { isClockReading, type Milestone, type RunLog, type RunSession } from '../src/lib/play/run';
 import { firstSwingsReading, unforgivenClockedRun } from '../src/lib/play/test-clocked-run';
+import { endlessChain, RUN_WORLD } from '../src/lib/play/test-endless-run';
 import type { JournalEntry } from '../src/lib/play/journal';
 import { verifyRun, verifySession, type RunVerdict } from '../src/lib/play/verify';
 import { announcementsBefore, type Announcement } from './announcing';
@@ -754,5 +755,81 @@ describe('a run played on the clock', () => {
     // clock ends a second short of what the log claims.
     expect(verdict.status).toBe('failed');
     expect(verdict.reason).toBe(`The replay's clock reached 38 seconds and the log claims ${log.time} seconds.`);
+  });
+});
+
+describe('a run of the endless dungeon', () => {
+  let sql: Sql;
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  /** The engine builds the server keeps, answered by the engine these tests were built with, the
+   *  way the clocked run's tests do. */
+  function thisBuildsEngine(commit: string): EngineStore {
+    const engine: KeptEngine = { commit, verifyRun, verifySession };
+    return {
+      keptCommits: () => Promise.resolve([commit]),
+      engineFor: (asked) =>
+        Promise.resolve(asked === commit ? { kept: true, engine } : { kept: false, reason: 'not kept' }),
+    };
+  }
+
+  /** One sitting of the chain as its first and only batch, with the character it was played
+   *  with. */
+  function sittingBatch(log: RunSession, at: number): RunBatch {
+    return {
+      sessionIndex: at,
+      sequence: 0,
+      inputs: log.inputs,
+      pressed: log.inputs.length,
+      ending: false,
+      claims: { mode: log.mode, actions: log.actions, time: log.time, edits: log.edits, milestones: log.milestones },
+      session: {
+        seed: log.seed,
+        engine: log.engine,
+        game: log.game,
+        leaderboard: log.leaderboard,
+        sound: log.sound,
+        name: log.name,
+        startedAt: log.startedAt,
+        record: log.record,
+      },
+      save: {
+        record: log.record,
+        maps: null,
+        slot: null,
+        dead: false,
+        leaderboard: null,
+        lock: 'endless',
+        worldSeed: log.worldSeed,
+        createdAt: log.startedAt,
+        editedAt: log.startedAt,
+      },
+    };
+  }
+
+  it('verifies a chain whose second sitting carries what the first one found', async () => {
+    const chain = await endlessChain();
+    await takeBatch(sql, CHARACTER, ME, sittingBatch(chain[0], 0), 1000);
+    await takeBatch(sql, CHARACTER, ME, sittingBatch(chain[1], 1), 6000);
+    const kept = runLogFrom(await sessionsOf(sql, CHARACTER), await batchesOf(sql, CHARACTER));
+
+    expect(kept.sessions.map((session) => session.worldSeed)).toEqual([RUN_WORLD, RUN_WORLD]);
+    const verdict = await replayChain(thisBuildsEngine(chain[0].engine), kept);
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+    expect(verdict.replayed).toEqual({
+      actions: chain[1].actions,
+      time: chain[1].time,
+      milestones: [...chain[0].milestones, ...chain[1].milestones],
+    });
   });
 });

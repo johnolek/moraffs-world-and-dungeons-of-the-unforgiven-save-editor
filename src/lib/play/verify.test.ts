@@ -12,7 +12,7 @@ import { MW_KEY, mwTurn } from './mw/keys';
 import { runRevDungeon, startRevGame } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/test-engine';
 import { REV_KEY } from './rev/keys';
-import { ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
+import { actionWords, ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
 import { RUN_LOG_VERSION } from './run';
 import { firstSwingsReading, unforgivenClockedRun } from './test-clocked-run';
 import { endlessChain, endlessRun, RUN_BOSS_SQUARE, RUN_SECTION, RUN_WORLD } from './test-endless-run';
@@ -381,7 +381,7 @@ describe('judging one session of a chain on its own', () => {
   it('counts a session on from what the sessions before it came to', async () => {
     const log = await unforgivenChain();
 
-    const first = await verifySession({ session: log.sessions[0], at: 0, of: 2, before: nothingYet, after: null });
+    const first = await verifySession({ session: log.sessions[0], at: 0, of: 2, before: nothingYet, after: null, endless: null });
     expect(first.status).toBe('verified');
     if (first.status !== 'verified') return;
     expect(first.totals).toEqual(runTotals([log.sessions[0]]));
@@ -392,6 +392,7 @@ describe('judging one session of a chain on its own', () => {
       of: 2,
       before: first.totals,
       after: first.record,
+      endless: first.endless,
     });
     expect(second.status).toBe('verified');
     if (second.status !== 'verified') return;
@@ -407,6 +408,7 @@ describe('judging one session of a chain on its own', () => {
       of: 2,
       before: runTotals([log.sessions[0]]),
       after: bytesFromBase64(log.sessions[0].record),
+      endless: null,
     });
 
     expect(checked.status).toBe('failed');
@@ -415,8 +417,10 @@ describe('judging one session of a chain on its own', () => {
 });
 
 describe('verifying a run of the endless dungeon', () => {
-  /** The two worlds these tests tell apart, and the endless section they differ over. */
+  /** The difficulty the runs here are played at, which is what decides the module the endless
+   *  floors are in. */
   const NORMAL = { hard: false };
+  const nothingYet = { actions: 0, time: 0, milestones: [] };
 
   it('replays a sitting in the endless world its log names', async () => {
     const log = await endlessRun(RUN_WORLD);
@@ -446,6 +450,36 @@ describe('verifying a run of the endless dungeon', () => {
 
   it('hands back nothing for a sitting of the game as it shipped', async () => {
     expect((await replayRun(await unforgivenRun())).endless).toBeNull();
+  });
+
+  it('verifies a character played twice, the second sitting carrying what the first found', async () => {
+    const chain = await endlessChain();
+
+    const verdict = await verifyRun(runLogOf(chain));
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+    expect(verdict.replayed).toEqual(runTotals(chain));
+  });
+
+  it('fails the second sitting where it is handed nothing the first was carrying', async () => {
+    const chain = await endlessChain();
+    const first = await verifySession({ session: chain[0], at: 0, of: 2, before: nothingYet, after: null, endless: null });
+    if (first.status !== 'verified') throw new Error(first.reason);
+
+    const second = await verifySession({
+      session: chain[1],
+      at: 1,
+      of: 2,
+      before: first.totals,
+      after: first.record,
+      endless: null,
+    });
+
+    // The section's Shadow boss is rolled back into the middle of the floor rather than onto the
+    // square he was left on, so the swings the sitting really made reach nothing.
+    expect(second.status).toBe('failed');
+    expect(second.reason).toBe(`Session 2: The replay spent ${actionWords(chain[0].actions)} and the log claims ${actionWords(chain[1].actions)}.`);
   });
 
   it('replays a log written before the world was recorded in the first world', async () => {

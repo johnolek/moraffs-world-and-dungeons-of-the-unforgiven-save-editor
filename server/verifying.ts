@@ -1,4 +1,5 @@
 import { shortCommit } from '../src/lib/commit';
+import type { KeptEndlessState } from '../src/lib/game/endless/state';
 import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone, RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
@@ -290,7 +291,8 @@ async function replayWholeChain(newest: KeptEngine, log: RunLog): Promise<RunVer
  *
  * The builds judge the sittings and this joins them: a sitting is handed what the run had come to
  * before it, so its own numbers count on from there, and the record the last replay ended with,
- * which it has to start from for the chain to be one character's run rather than several.
+ * which it has to start from for the chain to be one character's run rather than several, along
+ * with what an endless character was carrying beside that record.
  */
 async function replaySittingBySitting(
   bySitting: readonly SessionVerifier[],
@@ -302,10 +304,11 @@ async function replaySittingBySitting(
   verdict.notes.push(EACH_BY_ITS_OWN_BUILD);
   let before: RunTotals = { actions: 0, time: 0, milestones: [] };
   let after: Uint8Array | null = null;
+  let carried: KeptEndlessState | null = null;
   for (const [at, session] of sessions.entries()) {
     let checked: CheckedSession;
     try {
-      checked = await bySitting[at]({ session, at, of: sessions.length, before, after });
+      checked = await bySitting[at]({ session, at, of: sessions.length, before, after, endless: carried });
     } catch (thrown) {
       // A build that throws here is a broken build rather than a bad run: a replay that stops
       // part-way is caught inside the build and comes back as a verdict of its own.
@@ -322,6 +325,9 @@ async function replaySittingBySitting(
     }
     before = checked.totals;
     after = checked.record;
+    // A build kept from a commit older than this carries nothing between sittings, so what it
+    // hands back is the record alone.
+    carried = checked.endless ?? null;
   }
   verdict.status = 'verified';
   return verdict;

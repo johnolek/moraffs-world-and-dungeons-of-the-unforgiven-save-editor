@@ -1,6 +1,7 @@
 import type { Leaderboard } from '../app-state.svelte';
 import type { JournalEntry } from './journal';
 import { bytesFromBase64, sameBytes } from '../bytes';
+import type { KeptEndlessState } from '../game/endless/state';
 import { isLeaderboard } from '../character/leaderboard';
 import {
   actionWords,
@@ -92,7 +93,7 @@ export interface RunVerdict {
 
 /**
  * One session of a chain and what it takes to judge it: where it comes in the chain, what the run
- * had come to before it, and the record the session before it ended with.
+ * had come to before it, and the record and the carried state the session before it ended with.
  */
 export interface SessionInChain {
   session: RunSession;
@@ -107,6 +108,16 @@ export interface SessionInChain {
   /** The record the replay of the session before this one ended with, and null for the first
    *  session of a chain, which starts from whatever the character was rolled as. */
   after: Uint8Array | null;
+  /**
+   * What an endless character was carrying beside that record — the trap door keys and the Shadow
+   * boss squares the record has no room for — and null for the first session of a chain and for
+   * every session of a character playing the game as it shipped.
+   *
+   * It is threaded the way the record is, and for the same reason: a key found below floor 179 in
+   * one sitting is a key the character still holds in the next, and a replay that started without
+   * it would walk into a trap door it could not open.
+   */
+  endless: KeptEndlessState | null;
 }
 
 /** What replaying one session of a chain came to. */
@@ -122,6 +133,9 @@ export type CheckedSession =
       /** The record the replay ended with, which the next session of the chain has to start
        *  from. */
       record: Uint8Array;
+      /** What the character was carrying beside that record, which the next session of the chain
+       *  starts carrying. */
+      endless: KeptEndlessState | null;
     }
   | {
       status: 'failed' | 'unverifiable';
@@ -144,7 +158,7 @@ export type CheckedSession =
  * walks the chain itself and only the judging is shared.
  */
 export async function verifySession(chain: SessionInChain): Promise<CheckedSession> {
-  const { session, at, of, before, after } = chain;
+  const { session, at, of, before, after, endless } = chain;
   if (session.edits > 0) {
     return refusedSession('unverifiable', `${whichSession(of, at)}${recordWrittenFromOutside(session.edits)}`);
   }
@@ -153,7 +167,7 @@ export async function verifySession(chain: SessionInChain): Promise<CheckedSessi
   }
   let replay: RunReplay;
   try {
-    replay = await replayRun(session, { ...before });
+    replay = await replayRun(session, { ...before }, endless);
   } catch (thrown) {
     // A replay that stopped part-way says nothing about the run either way: the log may be an
     // honest one and the engine may be what broke. So the verdict is that it cannot be checked,
@@ -187,6 +201,7 @@ export async function verifySession(chain: SessionInChain): Promise<CheckedSessi
     journal: replay.journal,
     ending,
     record: replay.record,
+    endless: replay.endless,
   };
 }
 
@@ -207,7 +222,8 @@ function recordWrittenFromOutside(edits: number): string {
  * The log is a chain of sessions, and each of them is replayed from the record it says it began
  * with, counting on from what the sessions before it came to. Two things have to hold for the
  * chain: every session has to reach what it claims, and every session has to start from the
- * record the replay of the one before it ended with. The second is what stops a run being padded
+ * record the replay of the one before it ended with, carrying what that replay was carrying
+ * beside it. The second is what stops a run being padded
  * with a session of a character somebody else played, or with the same session twice. Both are
  * {@link verifySession}; this walks the chain and puts a verdict on the whole run.
  *
@@ -242,8 +258,9 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
   const journal = verdict.journal;
   let before: RunTotals = { actions: 0, time: 0, milestones: [] };
   let after: Uint8Array | null = null;
+  let carried: KeptEndlessState | null = null;
   for (const [at, session] of sessions.entries()) {
-    const checked = await verifySession({ session, at, of: sessions.length, before, after });
+    const checked = await verifySession({ session, at, of: sessions.length, before, after, endless: carried });
     journal.push(...checked.journal);
     if (checked.totals !== null) verdict.replayed = checked.totals;
     if (checked.ending !== null) verdict.ending = checked.ending;
@@ -254,6 +271,7 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
     }
     before = checked.totals;
     after = checked.record;
+    carried = checked.endless;
   }
   verdict.status = 'verified';
   return verdict;
