@@ -110,3 +110,29 @@ export function clampedToRecord(pc: PlayerCharacter): PlayerCharacter {
   if (pc.hp <= RECORD_HP_MAX && pc.maxHp <= RECORD_HP_MAX) return pc;
   return { ...pc, hp: Math.min(pc.hp, RECORD_HP_MAX), maxHp: Math.min(pc.maxHp, RECORD_HP_MAX) };
 }
+
+/**
+ * Whether this is a state an endless character can be carrying, for reading one off a request
+ * body or off a roster answer.
+ *
+ * A state travels with the character between devices, so it arrives over the open internet and
+ * every field is checked here before anything is done with it. The hit points are the two the
+ * record has no room for, and a character whose hit points fit the record carries neither.
+ */
+export function isKeptEndlessState(value: unknown): value is KeptEndlessState {
+  if (typeof value !== 'object' || value === null) return false;
+  const state = value as Record<string, unknown>;
+  if (!Array.isArray(state.keys) || !state.keys.every((key) => Number.isInteger(key))) return false;
+  if (!Array.isArray(state.bossSquares) || !state.bossSquares.every(isBossSquare)) return false;
+  if (state.hp !== undefined && !Number.isInteger(state.hp)) return false;
+  if (state.maxHp !== undefined && !Number.isInteger(state.maxHp)) return false;
+  return true;
+}
+
+/** Whether this is one of a state's Shadow boss squares: the section it belongs to and where in
+ *  that section's last floor he stands. */
+function isBossSquare(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  const square = value as Record<string, unknown>;
+  return Number.isInteger(square.section) && Number.isInteger(square.x) && Number.isInteger(square.y);
+}

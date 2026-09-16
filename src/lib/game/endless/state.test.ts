@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../port/state';
-import { clampedToRecord, endlessStateOf, keptEndlessState, restoreEndlessState } from './state';
+import {
+  clampedToRecord,
+  endlessStateOf,
+  isKeptEndlessState,
+  keptEndlessState,
+  restoreEndlessState,
+} from './state';
 
 /** The largest number the record's two hit point fields hold, they being signed words at 0x31 and
  *  0x33, and a number of hit points past it. */
@@ -85,5 +91,46 @@ describe('the record written for an endless character', () => {
     played.hp = RECORD_HP_MAX;
 
     expect(clampedToRecord(played)).toBe(played);
+  });
+});
+
+/**
+ * The state a character arrives carrying when it is picked up on a second device, which comes off
+ * the open internet and is read before anything is done with it.
+ */
+describe('a state read off a request or a roster answer', () => {
+  it('takes what an endless character writes down', () => {
+    const played = newGame().pc;
+    endlessStateOf(played).keys.add(44);
+    endlessStateOf(played).bossSquares.set(23, { x: 12, y: 34 });
+
+    expect(isKeptEndlessState(keptEndlessState(played))).toBe(true);
+  });
+
+  it('takes one carrying the hit points the record has no room for', () => {
+    const played = newGame().pc;
+    played.hp = DEEP_HP;
+    played.maxHp = DEEP_HP;
+
+    expect(isKeptEndlessState(keptEndlessState(played))).toBe(true);
+  });
+
+  it('refuses something that is not a state at all', () => {
+    expect(isKeptEndlessState(null)).toBe(false);
+    expect(isKeptEndlessState('keys')).toBe(false);
+    expect(isKeptEndlessState({})).toBe(false);
+  });
+
+  it('refuses a key that is not a floor number', () => {
+    expect(isKeptEndlessState({ keys: ['44'], bossSquares: [] })).toBe(false);
+  });
+
+  it('refuses a boss square that does not say which section it belongs to', () => {
+    expect(isKeptEndlessState({ keys: [], bossSquares: [{ x: 12, y: 34 }] })).toBe(false);
+  });
+
+  it('refuses hit points that are not a number', () => {
+    expect(isKeptEndlessState({ keys: [], bossSquares: [], hp: '40000' })).toBe(false);
+    expect(isKeptEndlessState({ keys: [], bossSquares: [], maxHp: null })).toBe(false);
   });
 });
