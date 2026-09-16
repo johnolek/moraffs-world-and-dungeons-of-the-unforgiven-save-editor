@@ -77,6 +77,7 @@ describe('applyMigrations', () => {
       'schema_migrations',
       'sessions',
       'verdicts',
+      'worlds',
     ]);
     const elsewhere = await sql.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
     expect(elsewhere).toEqual([]);
