@@ -9,7 +9,7 @@
   import type { Point } from '../map/viewport';
   import { ARROW_FLASH_MS, facingArrowCells } from '../map/you';
   import ClockBar from './ClockBar.svelte';
-  import { framedMonsterLines, liveHitBox, liveHitLine, paintLiveHit } from './debug-screen';
+  import { clockBarSlot, framedMonsterLines, liveHitBox, liveHitLine, paintLiveHit } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
   import { drawnSmaller } from '../ui/drawn-smaller.svelte';
   import { onScreen } from '../ui/on-screen.svelte';
@@ -367,6 +367,8 @@
   /** The pixels the layer covers, which never move: the box holds the longest reading the line
    *  can take. */
   const hitBox = liveHitBox(SCREEN_PIXELS);
+  /** Where the bar of the sawtooth stands over the screen, as fractions of it. */
+  const clockSlot = clockBarSlot();
 
   const drawn = $derived(viewMonsters(monsters));
   const skull = $derived(killedMonster(killed));
@@ -796,9 +798,16 @@
     ></canvas>
   {/if}
   <!-- The bar stands with the HIT percentage: while a monster is engaged, and not over the tablet
-       or a fade. -->
+       or a fade. It runs along the bottom of the forward view. -->
   {#if liveHit}
-    <ClockBar {tick} overScreen />
+    <div
+      class="clock-slot"
+      style:left="{clockSlot.left * 100}%"
+      style:width="{clockSlot.width * 100}%"
+      style:bottom="{clockSlot.bottom * 100}%"
+    >
+      <ClockBar {tick} overScreen />
+    </div>
   {/if}
 </div>
 
@@ -807,7 +816,7 @@
     position: relative;
     width: 100%;
     background: #000;
-    /* The bar in the corner sizes its type off the width of the picture rather than the page. */
+    /* The bar of the sawtooth sizes its type off the width of the picture rather than the page. */
     container-type: inline-size;
   }
   canvas {
@@ -837,5 +846,9 @@
      map are opened. */
   canvas.live-hit {
     pointer-events: none;
+  }
+  /* Placed by the same fractions of the screen as the canvases above it. */
+  .clock-slot {
+    position: absolute;
   }
 </style>

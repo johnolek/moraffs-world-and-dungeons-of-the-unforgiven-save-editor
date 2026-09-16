@@ -94,6 +94,6 @@ describe("the bar of the sawtooth a swing's roll climbs", () => {
 
   it("stands over the game's own screen behind the same monster the HIT percentage does", () => {
     const screen = readFileSync('src/lib/play/Screen.svelte', 'utf8');
-    expect(screen).toMatch(/\{#if liveHit\}\s*<ClockBar \{tick\} overScreen \/>/);
+    expect(screen).toMatch(/\{#if liveHit\}\s*<div\s+class="clock-slot"[\s\S]*?>\s*<ClockBar \{tick\} overScreen \/>/);
   });
 });

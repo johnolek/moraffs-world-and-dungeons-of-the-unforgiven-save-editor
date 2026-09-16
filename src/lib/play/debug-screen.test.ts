@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newGame, type Game } from '../game/port/state';
 import { describeEffects } from '../bestiary/monsters';
 import {
+  clockBarSlot,
   debugMonsterLines,
   framedMonsterLines,
   liveHitBox,
@@ -16,6 +17,7 @@ import { dropOdds } from './drop-odds';
 import { engagedMonster } from './panel';
 import { swingRoll } from './sawtooth';
 import { AHEAD_VIEW } from './view3d/geometry';
+import { UNITS_X, UNITS_Y } from './view3d/stroke-font';
 
 /** A game with one monster standing in slot 3 and the character facing it. */
 function facing(): Game {
@@ -216,5 +218,17 @@ describe('the HIT line while the tick is live', () => {
         expect(y >= wide.y && y < wide.y + wide.height).toBe(true);
       }
     }
+  });
+});
+
+describe('the slot the bar of the sawtooth stands in', () => {
+  it('lies inside the forward view, along its bottom edge', () => {
+    const slot = clockBarSlot();
+
+    expect(slot.left * UNITS_X).toBeGreaterThan(AHEAD_VIEW.left);
+    expect((slot.left + slot.width) * UNITS_X).toBeLessThan(AHEAD_VIEW.right);
+    const barBottom = UNITS_Y - slot.bottom * UNITS_Y;
+    expect(barBottom).toBeLessThanOrEqual(AHEAD_VIEW.bottom);
+    expect(AHEAD_VIEW.bottom - barBottom).toBeLessThanOrEqual(0x25);
   });
 });

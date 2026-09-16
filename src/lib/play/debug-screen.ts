@@ -175,6 +175,31 @@ export function liveHitBox(screen: TextScreen): ScreenBox {
   return { x, y, width: right - x + 1, height: bottom - y + 1 };
 }
 
+/** Where the bar of the sawtooth stands: how far across the screen it starts, how wide it is,
+ *  and how far up from the screen's bottom edge its own bottom edge sits, each as a fraction of
+ *  the screen. */
+export interface ClockBarSlot {
+  left: number;
+  width: number;
+  bottom: number;
+}
+
+/**
+ * The slot the bar of the sawtooth stands in over the forward view: along the bottom of the
+ * view, in from its two sides by the same margin the numbers in its corner keep, and up from its
+ * bottom edge by the margin they keep from its top. The bar is placed by its bottom edge because
+ * its height is whatever its lettering takes at the size the screen is shown at.
+ */
+export function clockBarSlot(): ClockBarSlot {
+  const inset = CORNER.x - AHEAD_VIEW.left;
+  const margin = CORNER.y - AHEAD_VIEW.top;
+  return {
+    left: CORNER.x / UNITS_X,
+    width: (AHEAD_VIEW.right - inset - CORNER.x) / UNITS_X,
+    bottom: (UNITS_Y - (AHEAD_VIEW.bottom - margin)) / UNITS_Y,
+  };
+}
+
 /** The colour of a pixel nothing has been drawn on, which is what the game clears a screen to. */
 const NOTHING_DRAWN = 0;
 

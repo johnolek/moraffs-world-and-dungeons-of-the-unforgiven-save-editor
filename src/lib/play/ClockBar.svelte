@@ -18,8 +18,8 @@
   interface Props {
     /** What the tick counter reads now, or null when nothing is being drawn from it. */
     tick: number | null;
-    /** Whether the bar stands over the game's own screen, which draws it smaller and darker than
-     *  the one on the map. */
+    /** Whether the bar stands over the game's own screen, where its type is sized to the picture
+     *  rather than the page. */
     overScreen?: boolean;
   }
 
@@ -88,13 +88,10 @@
   .seconds {
     width: 3ch;
   }
-  /* Over the game's own screen it stands in a corner of a 4:3 picture that is scaled to whatever
-     room the page has, so it is sized in that picture's own terms rather than in pixels. */
+  /* Over the game's own screen it is shown at whatever size the 4:3 picture is scaled to, so its
+     type is sized in that picture's own terms rather than in pixels; where it stands is the
+     screen's to say. */
   .over-screen {
-    position: absolute;
-    left: 2%;
-    bottom: 2%;
-    width: 24%;
     font-size: clamp(7px, 1.1cqw, 11px);
   }
 </style>
