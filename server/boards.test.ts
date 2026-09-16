@@ -1,7 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone, MilestoneKind } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
-import { boardPage, deepestReach, highestLevel, isBoardLeaderboard, RUNS_PER_PAGE, type BoardName } from './boards';
+import {
+  boardPage,
+  deepestReach,
+  deepestShadowKilled,
+  highestLevel,
+  isBoardLeaderboard,
+  killsIn,
+  RUNS_PER_PAGE,
+  type BoardName,
+} from './boards';
 import type { EngineStore } from './engines';
 import { endRun, takeBatch, type BatchSender } from './runs';
 import type { Sql } from './sql';
@@ -38,6 +48,68 @@ describe('how far a run got', () => {
 
   it('is nothing for a run with no milestones at all', () => {
     expect(deepestReach('unforgiven', [])).toBe(0);
+  });
+});
+
+/** One line of a run's journal: what happened, and the floor the character was standing on. */
+function wrote(event: JournalEntry['event'], floor = 0): JournalEntry {
+  return { at: 0, floor, module: 3, text: '', event };
+}
+
+/** A monster as a kill names it: the row of the section's five it was standing in, which is 22
+ *  for the section's Shadow. */
+function monster(type: number): { type: number; level: number; name: string } {
+  return { type, level: 100, name: 'SHADOW CENTIPEDE' };
+}
+
+describe('the deepest floor a run killed a Shadow on', () => {
+  it('is the deepest floor a kill of the section boss happened on', () => {
+    const journal = [
+      wrote({ kind: 'killed', monster: monster(22), experience: 10 }, 120),
+      wrote({ kind: 'killed', monster: monster(22), experience: 10 }, 460),
+      wrote({ kind: 'killed', monster: monster(22), experience: 10 }, 305),
+    ];
+
+    expect(deepestShadowKilled(journal)).toBe(460);
+  });
+
+  it('leaves out a floor the run only stood on, however deep a trap door dropped it', () => {
+    const journal = [
+      wrote({ kind: 'killed', monster: monster(22), experience: 10 }, 120),
+      wrote({ kind: 'trapdoorTaken', from: { x: 1, y: 1 }, to: 800 }, 120),
+      wrote({ kind: 'floorReached', floor: 800 }, 800),
+      wrote({ kind: 'died', monster: null, floor: 800, dungeon: 3 }, 800),
+    ];
+
+    expect(deepestShadowKilled(journal)).toBe(120);
+  });
+
+  it('leaves out the four monsters of a section that are not its Shadow', () => {
+    const journal = [23, 24, 25, 26].map((row) =>
+      wrote({ kind: 'killed', monster: monster(row), experience: 10 }, 700),
+    );
+
+    expect(deepestShadowKilled(journal)).toBe(0);
+  });
+
+  it('is nothing for a run that killed no Shadow at all', () => {
+    expect(deepestShadowKilled([])).toBe(0);
+  });
+});
+
+describe('how many monsters a run killed', () => {
+  it('counts every kill of its journal', () => {
+    const journal = [
+      wrote({ kind: 'killed', monster: monster(22), experience: 10 }, 120),
+      wrote({ kind: 'hit', monster: monster(23), damage: 4, breath: null }, 120),
+      wrote({ kind: 'killed', monster: monster(24), experience: 10 }, 120),
+    ];
+
+    expect(killsIn(journal)).toBe(2);
+  });
+
+  it('is nothing for a run with no journal to read', () => {
+    expect(killsIn([])).toBe(0);
   });
 });
 

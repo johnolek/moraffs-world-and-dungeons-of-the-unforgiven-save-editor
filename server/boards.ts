@@ -1,4 +1,5 @@
 import type { Leaderboard, PortedGameId } from '../src/lib/app-state.svelte';
+import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone } from '../src/lib/play/run';
 import type { Queries } from './sql';
 
@@ -43,6 +44,42 @@ export function deepestReach(game: string, milestones: readonly Milestone[]): nu
  */
 export function highestLevel(milestones: readonly Milestone[]): number {
   return highest(milestones.filter((milestone) => milestone.kind === 'level').map((milestone) => milestone.which));
+}
+
+/**
+ * The row of a section's five monsters that its Shadow boss stands in.
+ *
+ * Every section of the game loads five rows — the Shadow first, three regulars, then a level
+ * drainer (`load_md_bin`, exe 2000:5fec) — and the endless sections are stocked the same way
+ * (`src/lib/game/endless/monsters.ts`). A kill in the journal names the row its monster was
+ * standing in, so this is how a Shadow is told from anything else that died.
+ */
+const SHADOW_ROW = 22;
+
+/**
+ * The deepest floor a run killed a Shadow monster on.
+ *
+ * This is what the endless dungeon is ranked by rather than the deepest floor reached, because
+ * reaching a floor down there costs nothing: a trap door drops a character hundreds of floors in
+ * one step, and a board of the deepest floor stood on would be a lottery of trap doors won by
+ * whoever fell furthest before dying. Killing the Shadow of the section is the hardest thing a
+ * floor asks for, so a floor counts once its Shadow is dead.
+ *
+ * It is read off the journal the replay wrote, which is the one place a kill and the floor it
+ * happened on stand together. A run that has killed no Shadow at all has no floor to show and
+ * stands at 0.
+ */
+export function deepestShadowKilled(journal: readonly JournalEntry[]): number {
+  const floors: number[] = [];
+  for (const entry of journal) {
+    if (entry.event?.kind === 'killed' && entry.event.monster.type === SHADOW_ROW) floors.push(entry.floor);
+  }
+  return highest(floors);
+}
+
+/** How many monsters a run killed, which is a kill of the journal the replay wrote. */
+export function killsIn(journal: readonly JournalEntry[]): number {
+  return journal.filter((entry) => entry.event?.kind === 'killed').length;
 }
 
 function highest(numbers: number[]): number {
