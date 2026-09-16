@@ -84,4 +84,22 @@ describe('TimedScreens', () => {
     timed.hold([line('YOU FIND...')], 0);
     expect(timed.holding).toBe(false);
   });
+
+  it("holds the boss's office without the taunt on it while the fade brings it up", () => {
+    const timed = new TimedScreens(() => {});
+    const read = { section: 4, lines: ['I HAVE BEEN WATCHING YOU', 'AND I AM NOT IMPRESSED', '', 'THE SHADOW'] };
+    timed.hold([], 448, { fade: 'in', bossOffice: { section: 4, lines: [] } });
+    expect(timed.showingBossOffice(read)).toEqual({ section: 4, lines: [] });
+    expect(timed.showingFade()).toBe('in');
+    vi.advanceTimersByTime(448);
+    expect(timed.showingBossOffice(read)).toBe(read);
+    expect(timed.showingFade()).toBeNull();
+  });
+
+  it('leaves the office the game has now to a frame that is about something else', () => {
+    const timed = new TimedScreens(() => {});
+    const read = { section: 4, lines: ['THE SHADOW'] };
+    timed.hold([line('YOU KILLED IT!')], 1050);
+    expect(timed.showingBossOffice(read)).toBe(read);
+  });
 });

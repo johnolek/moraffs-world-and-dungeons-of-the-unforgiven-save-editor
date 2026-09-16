@@ -17,9 +17,10 @@ import { drawTabletLines, drawTabletSlab, SLAB_BASE, SLAB_TINT, TABLET_LOWERED, 
  * Everything here is the drawing, and every coordinate is in the 1600 by 1200 grid the game
  * places everything in.
  *
- * The one thing the port declines is the palette: `FUN_3000_9026` blacks the DAC before it draws
- * the slab and brings it back up afterwards (exe 4000:5b3f and 4000:5b91), so the original's
- * office rises out of black. The port has no palette to fade and draws the whole screen at once.
+ * The office rises out of black: `FUN_3000_9026` blacks the DAC before it draws the slab and
+ * brings it back up afterwards (exe 4000:5b3f and 4000:5b91). `office.ts` runs that fade over a
+ * frame whose office is handed no lines, because the original cuts the four lines into the stone
+ * after the fade rather than during it.
  */
 
 /** The screen the grid is drawn onto, in pixels. */

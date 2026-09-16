@@ -66,6 +66,14 @@ export async function randomEventsTick(turn: Turn): Promise<void> {
  * the display again, which is what takes the three lines off it and leaves movecontrol to draw
  * the dungeon afresh.
  *
+ * The screen arrives out of black. FUN_3000_9026 (exe 3000:9026) blacks the DAC before it draws
+ * the slab and fades it back up afterwards, and it skips both only for the monster manual, which
+ * is the 2 in DS:2412 (exe 3000:9076 and 3000:911d); the taunt's 3 gets the fade. The four lines
+ * are cut into the stone after that fade, so they are not part of what comes up. Nothing else
+ * ends this screen: the pause, the key wait and the fade out at the bottom of the routine are all
+ * skipped for a tablet moved off the middle of the screen (exe 3000:92e1), and the taunt's is
+ * dropped by 0xfa.
+ *
  * The port also keeps the four lines in the message box, where the column beside the map reads
  * them; the original has them on the tablet alone.
  */
@@ -76,8 +84,10 @@ async function bossOfficeMessage(session: GameSession): Promise<void> {
   showHint(game, 123);
   const chosen = await session.choice(MESSAGE_MENU);
   if (chosen !== READ_IT) return;
+  const section = game.rules.sectionOf(game.pc.module, game.pc.level);
   const lines = readBossOfficeMessage(game, tablet);
-  session.bossOffice = { section: game.rules.sectionOf(game.pc.module, game.pc.level), lines };
+  session.bossOffice = { section, lines };
+  session.fadeScreen('in', { bossOffice: { section, lines: [] } });
   await game.key();
   session.bossOffice = null;
   game.eraseScreen();

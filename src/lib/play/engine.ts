@@ -62,7 +62,7 @@ import type { SectionScreen } from './section-screen';
 import type { TownBuilding } from './building';
 import type { BossOffice } from './boss-office';
 import { fadeMs, type Fade } from './fade';
-import { TimedScreens } from './timed';
+import { TimedScreens, type FrameExtras } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
@@ -453,7 +453,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       // FUN_3000_9026 draws the slab on a screen it has already blanked, brings the palette up
       // (exe 3000:9124) and cuts the four lines in afterwards, so the stone comes out of black
       // bare and the words appear on it once it has arrived.
-      this.fadeScreen('in', TABLET_WITHOUT_ITS_WORDS);
+      this.fadeScreen('in', { tablet: TABLET_WITHOUT_ITS_WORDS });
       this.waitOwed = true;
     };
     // movecontrol puts the map cursor in the middle of the view before its first pass. newGame
@@ -654,8 +654,13 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     return fadeMs('in') + (this.game.highSpeed ? 0 : TABLET_PAUSE_MS);
   }
 
-  fadeScreen(fade: Fade, tablet: string[] | null = this.tablet): void {
-    this.timed.hold(this.game.screen, fadeMs(fade), { fade, tablet });
+  /**
+   * @param held what the frame the fade runs over carries beside the lines on the screen. The
+   *   default keeps the tablet that is up now; a screen that is coming out of black passes the
+   *   version of itself that the fade is allowed to show.
+   */
+  fadeScreen(fade: Fade, held: Omit<FrameExtras, 'fade'> = { tablet: this.tablet }): void {
+    this.timed.hold(this.game.screen, fadeMs(fade), { ...held, fade });
   }
 
   /**
@@ -888,7 +893,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       tablet: this.timed.showingTablet(this.tablet),
       sectionScreen: this.sectionScreen,
       buildingScreen: this.buildingScreen,
-      bossOffice: this.bossOffice,
+      bossOffice: this.timed.showingBossOffice(this.bossOffice),
       tunnel: this.tunnel,
       plaque: this.plaque,
       fade: this.timed.showingFade(),

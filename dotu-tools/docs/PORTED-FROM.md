@@ -167,7 +167,7 @@ citations rather than make them. What each routine does is in `FUNCTION-CATALOG.
 | `FUN_3000_8e75` | 3000:8e75 | `play/display.ts` | `map/draw-floor.ts`, `play/Screen.svelte`, `play/engine.ts`, `play/zoom-map.ts` |
 | `FUN_3000_8fcc` | 3000:8fcc |  | `play/engine.ts`, `play/tablet.ts` |
 | `FUN_3000_9004` | 3000:9004 |  | `play/boss-office.ts`, `play/tablet.ts` |
-| `FUN_3000_9026` | 3000:9026 |  | `game/port/state.ts`, `play/Screen.svelte`, `play/boss-office.ts`, `play/engine.ts`, `play/help.ts`, `play/manual.ts`, `play/section-screen.ts`, `play/tablet.ts` |
+| `FUN_3000_9026` | 3000:9026 |  | `game/port/state.ts`, `play/Screen.svelte`, `play/boss-office.ts`, `play/engine.ts`, `play/help.ts`, `play/manual.ts`, `play/office.ts`, `play/section-screen.ts`, `play/tablet.ts` |
 | `tablet_message` | 3000:931c | `game/port/hints.ts` | `game/port/state.ts`, `play/tablet.ts`, `snake/situations.ts` |
 | `FUN_3000_9488` | 3000:9488 | `game/port/hints.ts` | `play/engine.ts`, `snake/situations.ts` |
 | `level_up_screen` | 3000:955f | `game/port/hints.ts`, `game/port/levels.ts` |  |

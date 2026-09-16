@@ -1,4 +1,5 @@
 import type { ScreenLine } from '../game/port/state';
+import type { BossOffice } from './boss-office';
 import type { Fade } from './fade';
 
 /**
@@ -31,12 +32,19 @@ interface Frame {
    * fade that takes it down runs after the game has already put it away.
    */
   tablet?: string[] | null;
+  /**
+   * The Shadow boss's office that was on the screen when the frame was taken
+   * (`boss-office.ts`), for the same reason the tablet is here: the fade that brings the office
+   * up out of black runs over a frame whose office has none of the taunt's words on it, so the
+   * words appear when the frame is released rather than rising with the stone.
+   */
+  bossOffice?: BossOffice | null;
   /** The palette fade this frame is the screen for (`fade.ts`), or none. */
   fade?: Fade;
 }
 
 /** What a frame carries beside the lines on the screen. */
-type FrameExtras = Pick<Frame, 'banner' | 'tablet' | 'fade'>;
+export type FrameExtras = Pick<Frame, 'banner' | 'tablet' | 'bossOffice' | 'fade'>;
 
 export class TimedScreens {
   /** The frames still to show, oldest first. The one being shown is not among them. */
@@ -62,6 +70,7 @@ export class TimedScreens {
       ms,
       banner: extras.banner?.slice(),
       tablet: extras.tablet?.slice(),
+      bossOffice: extras.bossOffice,
       fade: extras.fade,
     });
     if (this.current === null) this.next();
@@ -81,6 +90,12 @@ export class TimedScreens {
    *  away. */
   showingTablet(tablet: string[] | null): string[] | null {
     return this.current?.tablet ?? tablet;
+  }
+
+  /** The same for the Shadow boss's office, which the fade that brings it out of black holds on
+   *  the screen without the taunt's words on it. */
+  showingBossOffice(office: BossOffice | null): BossOffice | null {
+    return this.current?.bossOffice ?? office;
   }
 
   /** The fade the frame being shown is the screen for, or null when nothing is fading. */
