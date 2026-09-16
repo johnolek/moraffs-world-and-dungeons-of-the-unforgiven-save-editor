@@ -326,9 +326,10 @@
   }
 
   /** A tab closed or switched away from leaves whatever was played last unwritten and unsent
-   *  otherwise. */
+   *  otherwise, and its timers running. */
   onDestroy(() => {
     writeTheGameDown();
+    session?.finish();
     streamer?.stop();
   });
 
