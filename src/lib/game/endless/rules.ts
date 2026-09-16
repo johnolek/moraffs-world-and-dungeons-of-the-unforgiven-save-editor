@@ -87,19 +87,18 @@ export interface EndlessWorld {
  * exactly what the faithful rules answer.
  */
 export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
-  const faithful = FAITHFUL_RULES;
   const endlessModule = hard ? MODULE_V : MODULE_IV;
   const sectionFloors = 5 * (endlessModule + 1);
   /** The first floor of the twenty-first section, which is where the game stopped counting. */
   const firstEndlessFloor = sectionFloors * 4 + 1;
 
   const sectionOf = (module: number, floor: number): number => {
-    if (module !== endlessModule || floor < firstEndlessFloor) return faithful.sectionOf(module, floor);
+    if (module !== endlessModule || floor < firstEndlessFloor) return FAITHFUL_RULES.sectionOf(module, floor);
     return LAST_OWN_SECTION + 1 + Math.trunc((floor - firstEndlessFloor) / sectionFloors);
   };
 
   const sectionPlace = (section: number): SectionPlace | null => {
-    if (section <= LAST_OWN_SECTION) return faithful.sectionPlace(section);
+    if (section <= LAST_OWN_SECTION) return FAITHFUL_RULES.sectionPlace(section);
     const beyond = section - LAST_OWN_SECTION;
     return {
       module: endlessModule,
@@ -118,11 +117,11 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     // upper four fifths of the module, and the deepest floor it can ever roll is 11995. A module
     // 32767 floors deep therefore has a trap door on nearly every square that has no ladder,
     // where Module V as the game ships it has about twenty per floor.
-    bottomLevel: (module) => (module === endlessModule ? ENDLESS_BOTTOM : faithful.bottomLevel(module)),
+    bottomLevel: (module) => (module === endlessModule ? ENDLESS_BOTTOM : FAITHFUL_RULES.bottomLevel(module)),
     sectionOf,
     sectionPlace,
     sectionSource,
-    monsterKinds: (section) => faithful.monsterKinds(sectionSource(section)),
+    monsterKinds: (section) => FAITHFUL_RULES.monsterKinds(sectionSource(section)),
     experienceCap: ENDLESS_EXPERIENCE_CAP,
     keys: ENDLESS_KEYS,
     bossSquares: ENDLESS_BOSS_SQUARES,
@@ -130,11 +129,11 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     // deep enough to reach; an endless floor is, and a dungeon that got easier the deeper it went
     // would be no dungeon at all.
     monsterLevel: (module, floor) =>
-      module === endlessModule ? floor + LEVELS_PER_MODULE * module : faithful.monsterLevel(module, floor),
+      module === endlessModule ? floor + LEVELS_PER_MODULE * module : FAITHFUL_RULES.monsterLevel(module, floor),
     // The deepest base level the endless dungeon rolls monsters around, so that no monster is ever
     // put back to level 1 for standing deeper than the rules allow.
     monsterLevelMax: ENDLESS_BOTTOM + LEVELS_PER_MODULE * endlessModule,
-    pictureFiles: (section) => faithful.pictureFiles(sectionSource(section)),
+    pictureFiles: (section) => FAITHFUL_RULES.pictureFiles(sectionSource(section)),
   };
 }
 
