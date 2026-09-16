@@ -261,9 +261,11 @@ describe('the pills and the wands', () => {
 });
 
 describe('the keys that do nothing to the character or the world', () => {
-  it('counts nothing for A, whose coins this port does not drop', async () => {
-    const session = await playing();
+  it('counts nothing for A, which throws coins away rather than gaining anything', async () => {
+    const session = await playing({ 18: 4434 + 900 });
     await press(session, REV_KEY.abandon);
+    await press(session, 'Y'.charCodeAt(0));
+    expect(session.game.pc.treasure).toBe(0);
     expect(actionsPushed(session.game)).toEqual([]);
     session.finish();
   });

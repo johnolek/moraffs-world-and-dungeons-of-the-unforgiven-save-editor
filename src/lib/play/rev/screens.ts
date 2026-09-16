@@ -2,8 +2,7 @@ import type { RevClearedScreen, RevGame } from './state';
 import type { RevTownDesk } from './town';
 
 /**
- * The screens the game takes the whole display over with, and what the tab says where the port
- * has not built what a key does.
+ * The screens the game takes the whole display over with.
  *
  * A `CLS` in `SCREEN 1` blacks the screen out and puts the cursor at 1, 1, and nothing draws the
  * dungeon again until the redraw at the end of the pass (1000:4275). So between the two, what is
@@ -124,15 +123,4 @@ export const REV_BETTER_LUCK = '   Better luck next time!';
  */
 export function revSayGoodbye(game: RevGame, dead: boolean): void {
   game.say('', dead ? REV_BETTER_LUCK : REV_GRAB_A_SANDWICH);
-}
-
-/**
- * What the tab says where the port has not built what the key does.
- *
- * Nothing is ever silently nothing: a key the original dispatches on that this port does not
- * answer says what the game would have done with it, the way `../screens.ts` and
- * `../mw/screens.ts` do for the other two games.
- */
-export function REV_NOT_BUILT(what: string): string[] {
-  return ['NOT BUILT YET:', `   ${what}.`];
 }

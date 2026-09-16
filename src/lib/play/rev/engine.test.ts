@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { REV_DROP_ALL_COINS } from './abandon';
 import { blocked } from '../../game/revmap.js';
 import { SeededRng } from '../../game/port/rng';
 import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
@@ -148,11 +149,18 @@ describe('the loop', () => {
     session.finish();
   });
 
-  it('says what a key it has not built would have done', async () => {
-    const { session } = await playing();
+  it('asks on A whether to drop the coins, and drops them on a yes', async () => {
+    // Value 18 is the treasure carried and value 17 the weight, each written down with the
+    // shift the record keeps it under. The character wears no armour, so dropping the nine
+    // hundred of treasure leaves the hundred and fifty pounds they weigh themselves.
+    const { session } = await playing(5, revRecord({ 18: 4434 + 900, 17: 71 + 400 }));
     session.press(REV_KEY.abandon);
     await settled();
-    expect(session.view().box.join(' ')).toContain('NOT BUILT YET');
+    expect(session.view().box).toEqual([REV_DROP_ALL_COINS]);
+    session.press('Y'.charCodeAt(0));
+    await settled();
+    expect(session.game.pc.treasure).toBe(0);
+    expect(session.game.pc.weight).toBe(150);
     session.finish();
   });
 

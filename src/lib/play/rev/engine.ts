@@ -1,5 +1,6 @@
 import { LEVELS } from '../../game/revmap.js';
 import type { Rng } from '../../game/port/rng';
+import { revDropAllTheCoins } from './abandon';
 import { REV_TICK_MS, revTick } from './clock';
 import { revFallDownAChute } from './chute';
 import { RevHeldScreens } from './held';
@@ -77,7 +78,7 @@ import { drawRevTextScreen } from './screen/text-screen';
 import type { Frame } from '../view3d/frame';
 import { debugDrawn, discoveredMapOnly, panelVisible } from '../mode';
 import type { RevStanding } from './monsters';
-import { REV_NOT_BUILT, revClearScreen, revDrawTheDungeonAgain, revSayGoodbye } from './screens';
+import { revClearScreen, revDrawTheDungeonAgain, revSayGoodbye } from './screens';
 
 /**
  * The loop Moraff's Revenge is played in — the `INKEY$` poll at DUNSMALL.EXE 1000:087F and the
@@ -446,7 +447,7 @@ export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
   [REV_KEY.cast]: { c: '1000:35AC, cast a spell', run: (turn) => revCastInTheDungeon(turn.game, turn.session.magic()) },
   [REV_KEY.magic]: { c: '1000:3B16, the magic items owned', run: (turn) => revShowMagicItems(turn.game, turn.session.desk()) },
   [REV_KEY.item]: { c: '1000:1340, use an item', run: (turn) => revUseAnItem(turn.game, turn.session.magic()) },
-  [REV_KEY.abandon]: { c: '1000:1918, drop all the coins', run: (turn) => notBuiltYet(turn, 'drop all of your coins') },
+  [REV_KEY.abandon]: { c: '1000:1918, drop all the coins', run: (turn) => revDropAllTheCoins(turn.game, turn.session.magic()) },
   [REV_KEY.help]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.f1]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.pause]: { c: '1000:7FFB, the pause screen', run: (turn) => revPause(turn.game, turn.session.desk(), () => saveAndSignOff(turn.session)) },
@@ -468,11 +469,6 @@ const KEYS_THE_RINGS_HEAL_ON = new Set<number>([REV_KEY.cast, REV_KEY.pause, REV
 /** 1000:10BE: Escape counts the movement mode 0, 1, 0. */
 function switchArrows(turn: RevTurn): void {
   turn.game.arrowMode = (turn.game.arrowMode + 1) % 2;
-}
-
-/** A key whose function this port has not built, saying what the game would have done. */
-function notBuiltYet(turn: RevTurn, what: string): void {
-  turn.game.say(...REV_NOT_BUILT(what));
 }
 
 /** 1000:0DE0: D takes a ladder down, and the false floor a chute left behind. */
