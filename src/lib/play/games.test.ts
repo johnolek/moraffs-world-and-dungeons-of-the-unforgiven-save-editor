@@ -13,7 +13,14 @@ import { PLAY_GAMES } from './games';
 import { KEY } from './keys';
 import { runPlayLoop } from './loop';
 import { mwCharacterFile } from './mw/test-engine';
-import { writePlayClockReseed, type PlayMode } from './mode';
+import {
+  discoveredMapOnly,
+  lockedPlayMode,
+  modeIsChosen,
+  panelVisible,
+  writePlayClockReseed,
+  type PlayMode,
+} from './mode';
 import { runLogOf, type RunRecorder } from './run';
 import { verifyRun } from './verify';
 
@@ -137,7 +144,7 @@ describe('a character played again', () => {
 
 describe('a character rolled for the endless dungeon', () => {
   it('is played in the world it was rolled into, where a faithful character is not', () => {
-    const endless = PLAY_GAMES.unforgiven.start(rosteredEndless(), false, 'endless');
+    const endless = PLAY_GAMES.unforgiven.start(rosteredEndless(), false, 'faithful');
     expect(endless.game.rules.bottomLevel(MODULE_IV)).toBe(ENDLESS_BOTTOM);
     endless.finish();
 
@@ -148,7 +155,7 @@ describe('a character rolled for the endless dungeon', () => {
 
   it('keeps what it carries beside its record on its roster entry', () => {
     const entry = rosteredEndless();
-    const session = PLAY_GAMES.unforgiven.start(entry, false, 'endless');
+    const session = PLAY_GAMES.unforgiven.start(entry, false, 'faithful');
     session.game.rules.keys.take(session.game.pc, DEEP_FLOOR);
 
     session.save();
@@ -161,7 +168,7 @@ describe('a character rolled for the endless dungeon', () => {
     const entry = rosteredEndless();
     entry.endless = { keys: [DEEP_FLOOR / 5], bossSquares: [] };
 
-    const session = PLAY_GAMES.unforgiven.start(entry, false, 'endless');
+    const session = PLAY_GAMES.unforgiven.start(entry, false, 'faithful');
 
     expect(session.game.rules.keys.flag(session.game.pc, DEEP_FLOOR)).toBe(1);
     session.finish();
@@ -170,38 +177,89 @@ describe('a character rolled for the endless dungeon', () => {
   it('plays on below the bottom of its module and picks up where it left off', async () => {
     const entry = standingDeep();
 
-    const first = await playASession(entry, [KEY.enter], 'endless');
+    const first = await playASession(entry, [KEY.enter], 'faithful');
     // The key a level drainer killed this deep carries, which is labelled for a floor the
     // record has no flag for.
     first.game.rules.keys.take(first.game.pc, DEEP_FLOOR);
     first.save();
 
-    const second = await playASession(entry, [KEY.enter], 'endless');
+    const second = await playASession(entry, [KEY.enter], 'faithful');
 
     expect(first.game.rules.sectionOf(MODULE_IV, ENDLESS_FLOOR)).toBeGreaterThan(20);
     expect(second.view().place.floor).toBe(ENDLESS_FLOOR);
-    expect(entry.run.map((sitting) => sitting.mode)).toEqual(['endless', 'endless']);
+    expect(entry.run.map((sitting) => sitting.mode)).toEqual(['faithful', 'faithful']);
     expect(entry.endless?.keys).toEqual([DEEP_FLOOR / 5]);
     expect(second.game.rules.keys.flag(second.game.pc, DEEP_FLOOR)).toBe(1);
   });
 
   it('replays a sitting played on a floor the game itself has no map of', async () => {
     const entry = standingDeep();
-    await playASession(entry, [KEY.enter, KEY.arrowLeft, KEY.enter], 'endless');
+    await playASession(entry, [KEY.enter, KEY.arrowLeft, KEY.enter], 'faithful');
 
     const verdict = await verifyRun(runLogOf(entry.run));
 
     expect(verdict.reason).toBeNull();
     expect(verdict.status).toBe('verified');
-    expect(verdict.mode).toBe('endless');
+    expect(verdict.mode).toBe('faithful');
   });
 
   it('writes the world it was rolled into into its run log, for a replay to read', async () => {
     const entry = standingDeep();
 
-    await playASession(entry, [KEY.enter], 'endless');
+    await playASession(entry, [KEY.enter], 'faithful');
 
     expect(entry.run[0].worldSeed).toBe(ENDLESS_WORLD_SEED);
+  });
+
+  it('is offered the mode radios while it is on no board, and shows what debug shows', async () => {
+    const entry = standingDeep();
+
+    const session = await playASession(entry, [KEY.enter], 'debug');
+
+    expect(entry.leaderboard).toBeNull();
+    expect(modeIsChosen(entry.lock, entry.leaderboard !== null)).toBe(true);
+    expect(panelVisible(session.mode)).toBe(true);
+    expect(discoveredMapOnly(session.mode)).toBe(false);
+  });
+
+  it('plays the endless dungeon in debug all the same, and writes the mode down', async () => {
+    const entry = standingDeep();
+
+    const session = await playASession(entry, [KEY.enter], 'debug');
+    const section = session.game.rules.sectionOf(MODULE_IV, ENDLESS_FLOOR);
+
+    expect(session.game.rules.bottomLevel(MODULE_IV)).toBe(ENDLESS_BOTTOM);
+    expect(section).toBeGreaterThan(20);
+    expect(session.game.monsterKinds).toEqual(session.game.rules.monsterKinds(section));
+    expect(entry.run.map((sitting) => sitting.mode)).toEqual(['debug']);
+  });
+
+  it('keeps the faithful presentation and no radios while it is on a board', () => {
+    const bytes = Uint8Array.from(characterFile({ level: 3, dir: 0, ...floorSquare(3) }).bytes);
+    const onBoard = newEntry({
+      game: 'unforgiven',
+      name: 'RANKED',
+      slot: 3,
+      bytes,
+      imported: false,
+      lock: 'endless',
+      onBoard: true,
+    });
+
+    expect(onBoard.leaderboard).toBe('endless');
+    expect(modeIsChosen(onBoard.lock, onBoard.leaderboard !== null)).toBe(false);
+    expect(lockedPlayMode('endless')).toBe('faithful');
+  });
+
+  it('replays a debug sitting in the endless dungeon, which its log names the world of', async () => {
+    const entry = standingDeep();
+    await playASession(entry, [KEY.enter, KEY.arrowLeft, KEY.enter], 'debug');
+
+    const verdict = await verifyRun(runLogOf(entry.run));
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+    expect(verdict.mode).toBe('debug');
   });
 
   it('leaves a character rolled to play the game as it shipped where it was', async () => {
@@ -326,7 +384,7 @@ describe('an endless character picked up on a second device', () => {
 
   it('starts holding what the server sent and plays on, and the run verifies', async () => {
     const played = standingDeep();
-    const first = await playASession(played, [KEY.enter], 'endless');
+    const first = await playASession(played, [KEY.enter], 'faithful');
     first.save();
     // The Shadow boss of a section past the twentieth is put down where the record has no square
     // for him, so this is a sitting with something to carry.
@@ -336,7 +394,7 @@ describe('an endless character picked up on a second device', () => {
 
     expect(elsewhere.endless).toEqual(played.endless);
 
-    await playASession(elsewhere, [KEY.enter], 'endless');
+    await playASession(elsewhere, [KEY.enter], 'faithful');
     const verdict = await verifyRun(runLogOf(elsewhere.run));
 
     expect(verdict.reason).toBeNull();
@@ -354,11 +412,11 @@ describe('an endless character picked up on a second device', () => {
 
   it('takes the server\u2019s state back from the device that played on, and the run verifies', async () => {
     const deviceA = standingDeep();
-    (await playASession(deviceA, [KEY.enter], 'endless')).save();
+    (await playASession(deviceA, [KEY.enter], 'faithful')).save();
     const carriedByA = deviceA.endless;
 
     const deviceB = onTheOtherDevice(deviceA);
-    const second = await playASession(deviceB, [KEY.enter], 'endless');
+    const second = await playASession(deviceB, [KEY.enter], 'faithful');
     // The key a level drainer killed this deep carries, which is labelled for a floor the record
     // has no flag for, so the sitting on the second device leaves something the first never held.
     second.game.rules.keys.take(second.game.pc, DEEP_FLOOR);
@@ -371,7 +429,7 @@ describe('an endless character picked up on a second device', () => {
     expect(backOnA.endless).toEqual(deviceB.endless);
     expect(backOnA.endless).not.toEqual(carriedByA);
 
-    await playASession(backOnA, [KEY.enter], 'endless');
+    await playASession(backOnA, [KEY.enter], 'faithful');
     const verdict = await verifyRun(runLogOf(backOnA.run));
 
     expect(verdict.reason).toBeNull();

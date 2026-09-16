@@ -12,7 +12,7 @@
   import { onDestroy, untrack } from 'svelte';
   import { app, currentEntry, entryById, type Leaderboard } from '../app-state.svelte';
   import { bringRunKeysHere, catchUpWithTheServer } from '../character/current';
-  import { leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
+  import { ENDLESS_PLAY_NOTE, leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
   import { beingPlayedElsewhere } from '../character/server-roster';
   import RunJournal from '../journal/RunJournal.svelte';
   import { journalIsOpen } from '../journal/lock';
@@ -37,6 +37,8 @@
   import {
     colourblindFilter,
     debugDrawn,
+    lockedPlayMode,
+    modeIsChosen,
     PLAY_MODES,
     readPlayColourblind,
     readPlayDisplay,
@@ -123,9 +125,12 @@
   /** Whether that character's runs go on the leaderboard of its mode, which is what the note
    *  beside the lock says it would lose. */
   let lockedToABoard = $state.raw(false);
-  /** The mode this game is being played in: the board's for a locked character, and the one the
-   *  radios were left on for any other. */
-  const mode = $derived<PlayMode>(lock ?? chosenMode);
+  /** Whether the radios are offered rather than the mode the character is locked to
+   *  ({@link modeIsChosen}). */
+  const choosingMode = $derived(modeIsChosen(lock, lockedToABoard));
+  /** The mode this game is being played in: the one the radios were left on where they are
+   *  offered, and the lock's own otherwise. */
+  const mode = $derived<PlayMode>(lock !== null && !choosingMode ? lockedPlayMode(lock) : chosenMode);
   /** The run being sent to the run server as it is played, and what to say about it. A build
    *  given no server address has neither. */
   let streamer = $state.raw<RunStreamer | null>(null);
@@ -215,13 +220,15 @@
     // this sitting as soon as a key is pressed.
     const at = entry.run.length;
     const earlier = [...entry.run];
+    // The lock goes down before the game is started, because the mode the game is started in is
+    // worked out from it.
+    lock = entry.lock;
+    lockedToABoard = entry.leaderboard !== null;
     const started = game.start(entry, sound, mode);
     started.onChange = () => (view = started.view());
     centredFloor = null;
     session = started;
     playingId = entry.id;
-    lock = entry.lock;
-    lockedToABoard = entry.leaderboard !== null;
     view = started.view();
     runMark = null;
     if (started.run) {
@@ -523,12 +530,15 @@
         {@render afterRun?.(stage)}
         <div class="keys">
           <div class="key-note">Play mode:</div>
-          {#if lock}
+          {#if lock && !choosingMode}
             <div class="locked">
               <span>{leaderboardLabel(lock)}</span>
               <span class="how">{lockedPlayNote(lock, lockedToABoard)}</span>
             </div>
           {:else}
+            {#if lock === 'endless'}
+              <p class="endless-note">{ENDLESS_PLAY_NOTE}</p>
+            {/if}
             <div class="styles">
               {#each PLAY_MODES as choice}
                 <label>

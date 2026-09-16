@@ -7,7 +7,9 @@ import {
   debugDrawn,
   DEFAULT_PLAY_DISPLAY,
   discoveredMapOnly,
+  lockedPlayMode,
   mapDrawn,
+  modeIsChosen,
   monstersDrawn,
   panelVisible,
   PLAY_DISPLAYS,
@@ -154,10 +156,9 @@ describe("the marks debug mode puts on the game's own screen", () => {
 describe('the map the floor is drawn from', () => {
   const memory = { discovered: () => ({ known: () => true, knownOnArrival: () => true }) };
 
-  it('is the one the character has discovered in faithful and in endless', () => {
+  it('is the one the character has discovered in faithful', () => {
     expect(discoveredMapOnly('faithful')).toBe(true);
-    expect(discoveredMapOnly('endless')).toBe(true);
-    expect(mapDrawn('endless', memory)).not.toBeNull();
+    expect(mapDrawn('faithful', memory)).not.toBeNull();
   });
 
   it('is none at all where the whole floor is drawn', () => {
@@ -167,22 +168,35 @@ describe('the map the floor is drawn from', () => {
   });
 });
 
-describe('what the endless mode shows', () => {
-  const sight = { monsters: [monster(0), monster(1), monster(2)], visible: [monster(2)], engaged: monster(1) };
-
-  it('is what faithful shows, since a character locked to it is playing the game', () => {
-    expect(panelVisible('endless')).toBe(false);
-    expect(debugDrawn('endless')).toBe(false);
-    expect(zoomMapMonsters('endless', sight)).toEqual([]);
-    expect(monstersDrawn('endless', sight)).toEqual(monstersDrawn('faithful', sight));
+describe('the mode a character locked to a board is played in', () => {
+  it("is the lock's own for the two locks that are modes", () => {
+    expect(lockedPlayMode('faithful')).toBe('faithful');
+    expect(lockedPlayMode('speedrun')).toBe('speedrun');
   });
 
-  it('is played on the clock, the way the two modes a run is played in are', () => {
-    expect(clockReseeds('endless', false)).toBe(true);
+  it('is faithful for an endless character, whose lock names a dungeon instead', () => {
+    expect(lockedPlayMode('endless')).toBe('faithful');
+    expect(PLAY_MODES.some((mode) => mode.id === 'faithful')).toBe(true);
   });
 
-  it('is not one of the modes the switch offers', () => {
-    expect(PLAY_MODES.some((mode) => mode.id === 'endless')).toBe(false);
+  it('is played on the clock, the way every mode but debug is', () => {
+    expect(clockReseeds(lockedPlayMode('endless'), false)).toBe(true);
+  });
+});
+
+describe('whether the radios are offered at all', () => {
+  it('offers them to a character with no lock', () => {
+    expect(modeIsChosen(null, false)).toBe(true);
+  });
+
+  it('offers them to an endless character that is on no board', () => {
+    expect(modeIsChosen('endless', false)).toBe(true);
+  });
+
+  it('withholds them from a locked character whose runs are being compared', () => {
+    expect(modeIsChosen('endless', true)).toBe(false);
+    expect(modeIsChosen('faithful', false)).toBe(false);
+    expect(modeIsChosen('speedrun', true)).toBe(false);
   });
 });
 

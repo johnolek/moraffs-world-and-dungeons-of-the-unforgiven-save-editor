@@ -1,4 +1,4 @@
-import type { PortedGameId } from '../app-state.svelte';
+import type { Leaderboard, PortedGameId } from '../app-state.svelte';
 import { readStored, writeStored } from '../character/storage';
 import type { DiscoveredMap } from '../map/draw-floor';
 import type { StockedMonster } from '../map/stocking';
@@ -16,13 +16,12 @@ import type { StockedMonster } from '../map/stocking';
  * rolled afresh every game and finding them is part of the run; and **debug** shows everything
  * the port knows.
  *
- * **endless** is the fourth, and the switch never offers it: it is the mode of a character rolled
- * to play the endless dungeon (`src/lib/game/endless/rules.ts`), which is a choice made once at
- * the roll and never again. Everything it shows, faithful shows: the same map, the same monsters,
- * the same absence of the numbers the game keeps to itself. What differs is the dungeon it is
- * played in, and nothing here decides that.
+ * This says how much of the game is shown and nothing else. Which dungeon is being played is a
+ * separate fact and is decided elsewhere: a character rolled to play the endless dungeon plays it
+ * in every one of the three, because the rules come from the lock on its roster entry rather than
+ * from here (`startUnforgiven` in `games.ts`, `src/lib/game/endless/rules.ts`).
  */
-export type PlayMode = 'faithful' | 'speedrun' | 'debug' | 'endless';
+export type PlayMode = 'faithful' | 'speedrun' | 'debug';
 
 /** What a game is played in until the player says otherwise. */
 export const DEFAULT_PLAY_MODE: PlayMode = 'faithful';
@@ -53,6 +52,30 @@ export const PLAY_MODES: { id: PlayMode; label: string; how: string }[] = [
 
 function isPlayMode(value: unknown): value is PlayMode {
   return PLAY_MODES.some((mode) => mode.id === value);
+}
+
+/**
+ * How much of the game a character locked to a mode is shown.
+ *
+ * Two of the three locks are modes and answer for themselves. The endless lock is not: it names
+ * the dungeon the character plays in and says nothing about how much of it is shown, and a
+ * character on the endless board is shown what faithful shows, so that every run on that board is
+ * a run of the same game.
+ */
+export function lockedPlayMode(lock: Leaderboard): PlayMode {
+  return lock === 'endless' ? 'faithful' : lock;
+}
+
+/**
+ * Whether the Play tab offers a character the mode radios rather than the mode it is locked to.
+ *
+ * A locked character is played its own way and has no radios, with one exception: an endless
+ * character that is on no board. Its lock is the dungeon rather than the presentation, and John
+ * (2026-09-15) wants one carried down to any floor and looked at in debug. Its runs are on no
+ * board, so no run of it is being compared with anything.
+ */
+export function modeIsChosen(lock: Leaderboard | null, onBoard: boolean): boolean {
+  return lock === null || (lock === 'endless' && !onBoard);
 }
 
 /** Which mode this game is played in: the player's choice, or faithful. */
@@ -277,15 +300,15 @@ export function zoomMapMonsters(mode: PlayMode, sight: { monsters: StockedMonste
 
 /**
  * Whether the floor is drawn as the character has discovered it rather than whole, which is what
- * faithful and endless do and what speedrun and debug do not.
+ * faithful does and what speedrun and debug do not.
  */
 export function discoveredMapOnly(mode: PlayMode): boolean {
-  return mode === 'faithful' || mode === 'endless';
+  return mode === 'faithful';
 }
 
 /**
- * The map the floor is drawn from: the one the character has discovered in faithful and in
- * endless, and none in the other two modes, where the whole floor is drawn.
+ * The map the floor is drawn from: the one the character has discovered in faithful, and none in
+ * the other two modes, where the whole floor is drawn.
  *
  * `MapMemory` is what the two games that share a map engine hand it; Moraff's Revenge keeps its
  * own and hands over the same one question, which is all this asks for.

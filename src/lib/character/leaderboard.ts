@@ -96,6 +96,16 @@ export function lockedPlayNote(lock: Leaderboard, onBoard: boolean): string {
     : `Locked: this character was rolled as ${aCharacterOf(lock)}, so every run of it is played this way. Its runs go on no leaderboard.`;
 }
 
+/**
+ * What the Play tab says over the mode radios of an endless character that is on no board.
+ *
+ * Such a character keeps its radios, because its lock names the dungeon it plays in rather than
+ * how much of that dungeon is shown, and this is what says so: whichever radio is picked, the
+ * floors below the bottom of the game are still there.
+ */
+export const ENDLESS_PLAY_NOTE =
+  'This character plays the endless dungeon whichever mode you pick. Its runs go on no leaderboard.';
+
 /** "a faithful character", "an endless character": the mode's own name with the article it
  *  wants. */
 function aCharacterOf(lock: Leaderboard): string {

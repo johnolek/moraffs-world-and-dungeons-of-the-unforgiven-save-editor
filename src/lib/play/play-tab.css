@@ -260,6 +260,13 @@
   font-size: 11px;
   line-height: 1.4;
 }
+/* What stands over the radios of an endless character that is on no board. */
+.play .endless-note {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
 /* What stands where the radios would be for a character locked to a board. */
 .play .locked {
   display: flex;
