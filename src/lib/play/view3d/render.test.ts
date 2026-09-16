@@ -130,7 +130,7 @@ describe('a monster two squares ahead', () => {
     renderView(
       withOne,
       scene(corridor(), {
-        monsters: [{ x: 5, y: 3, picnum: 0, builtin: true, colour: 20, colorSet: 2 }],
+        monsters: [{ x: 5, y: 3, picnum: 0, builtin: true, section: null, colour: 20, colorSet: 2 }],
       }),
       AHEAD_VIEW,
       0,
@@ -145,7 +145,7 @@ describe('a monster two squares ahead', () => {
     renderView(
       frame,
       scene(corridor(), {
-        monsters: [{ x: 5, y: 3, picnum: 0, builtin: true, colour: 20, colorSet: 2 }],
+        monsters: [{ x: 5, y: 3, picnum: 0, builtin: true, section: null, colour: 20, colorSet: 2 }],
       }),
       AHEAD_VIEW,
       0,
@@ -156,7 +156,7 @@ describe('a monster two squares ahead', () => {
 });
 
 describe('the monster on the square in front of you', () => {
-  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, colour: 20, colorSet: 2 };
+  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, section: null, colour: 20, colorSet: 2 };
 
   /** A straight corridor with nothing in the way: open to (5, 4) and (5, 3). */
   function straightAhead(): MapSquare[][] {
@@ -240,7 +240,7 @@ describe('the monster on the square in front of you', () => {
 
 describe("the water a section pours over a built-in monster", () => {
   const overlayPictures = parsePicRows(readFileSync('src/lib/game/pics/overlay.pic'));
-  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, colour: 20, colorSet: 2 };
+  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, section: null, colour: 20, colorSet: 2 };
 
   /** A straight corridor: open to (5, 4) and (5, 3), so a monster can stand on either. */
   function straightAhead(): MapSquare[][] {
@@ -425,7 +425,7 @@ describe('the ceiling of the 3-D view', () => {
 
 describe('the skull over a monster you have just killed', () => {
   const overlayPictures = parsePicRows(readFileSync('src/lib/game/pics/overlay.pic'));
-  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, colour: 20, colorSet: 2 };
+  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, section: null, colour: 20, colorSet: 2 };
 
   /** A crossroads, so that the skull can be asked for in any of the four views. */
   function crossroads(): MapSquare[][] {

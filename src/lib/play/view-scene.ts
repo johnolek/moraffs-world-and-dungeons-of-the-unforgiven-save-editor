@@ -121,6 +121,7 @@ function viewMonster(monster: { x: number; y: number; monsterId: string }): View
     y: monster.y,
     picnum: entry.picnum,
     builtin: entry.origin.kind === 'builtin',
+    section: entry.origin.kind === 'section' ? entry.origin.section : null,
     colour: entry.color,
     colorSet: entry.colorSet,
   };

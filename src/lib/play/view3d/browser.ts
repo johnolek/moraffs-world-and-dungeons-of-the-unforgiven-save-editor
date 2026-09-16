@@ -1,6 +1,6 @@
 import { bytesFromDataUrl } from '../../bytes';
 import { parsePicRows, type PicRowImage } from './texture';
-import type { SectionPictures, ViewPictures } from './pictures';
+import { sectionPictures, type SectionPictures, type ViewPictures } from './pictures';
 
 /**
  * The pictures the 3-D view draws with, taken from the bundle. The renderer itself is handed a
@@ -33,9 +33,12 @@ export function viewPictures(files: SectionPictures): ViewPictures {
     wall: images(files.wall),
     overlay: images('overlay.pic'),
     // A built-in monster's picture number counts from ufmon.pic's third image; a section
-    // monster's counts from 7 into its own file.
-    monster: (picnum, isBuiltin) =>
-      isBuiltin ? (builtin?.[picnum + 2] ?? null) : (own?.[picnum - 7] ?? null),
+    // monster's counts from 7 into the file of the section it belongs to.
+    monster: (picnum, isBuiltin, section) => {
+      if (isBuiltin) return builtin?.[picnum + 2] ?? null;
+      const file = section == null ? own : images(sectionPictures(section).monsters);
+      return file?.[picnum - 7] ?? null;
+    },
     ladder: (down) => builtin?.[down ? 0 : 1] ?? null,
   };
 }

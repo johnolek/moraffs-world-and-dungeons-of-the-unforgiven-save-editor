@@ -72,8 +72,15 @@ export interface ViewPictures {
   wall: PicRowImage[] | null;
   /** `overlay.pic`, whose two images are {@link OVERLAY_WATER} and {@link OVERLAY_SKULL}. */
   overlay: PicRowImage[] | null;
-  /** A monster's picture, by the picture number and colour set in its record. */
-  monster(picnum: number, builtin: boolean): PicRowImage | null;
+  /**
+   * A monster's picture, by the picture number in its record.
+   *
+   * A built-in monster's is in `ufmon.pic`. A section monster's is in the file of the section
+   * that owns it, which is the file of the section being drawn unless `section` names another
+   * one: an endless floor stands monsters borrowed from sections all over the game
+   * (`src/lib/game/endless/README.md`).
+   */
+  monster(picnum: number, builtin: boolean, section?: number | null): PicRowImage | null;
   /** The two ladder marks, `ufmon.pic` images 0 (down) and 1 (up). */
   ladder(down: boolean): PicRowImage | null;
 }

@@ -31,6 +31,9 @@ export interface ViewMonster {
   picnum: number;
   /** Whether it is one of the 22 built-ins rather than one of the section's own four. */
   builtin: boolean;
+  /** The section whose `ufmon<N>.pic` its picture is in, which on an endless floor need not be
+   *  the section the floor is in. Null for a built-in monster. */
+  section: number | null;
   /** The record's `color` byte. */
   colour: number;
   colorSet: number;
@@ -172,7 +175,7 @@ export function drawKilledSkull(frame: Frame, scene: ViewScene, rect: ViewRect):
   if (!skull) return;
 
   const { left, top, right, bottom } = engagedMonsterRect(rect);
-  const picture = scene.pictures.monster(killed.monster.picnum, killed.monster.builtin);
+  const picture = scene.pictures.monster(killed.monster.picnum, killed.monster.builtin, killed.monster.section);
   if (picture) {
     scaleImage(frame, left, top, right, bottom, picture, 0, 255, monsterPaint(scene, killed.monster));
     // The screen the original paints the skull onto still has the water the view drew over this
@@ -332,7 +335,7 @@ function drawEngagedMonster(frame: Frame, scene: ViewScene, rect: ViewRect, faci
   const ahead = viewPointToSquare(0, 1, facing, scene.at);
   const monster = scene.monsters.find((m) => m.x === ahead.x && m.y === ahead.y);
   if (!monster) return;
-  const picture = scene.pictures.monster(monster.picnum, monster.builtin);
+  const picture = scene.pictures.monster(monster.picnum, monster.builtin, monster.section);
   if (!picture) return;
 
   const { left, top, right, bottom } = engagedMonsterRect(rect);
@@ -393,7 +396,7 @@ function drawSquare(
   const engaged = x1 === -0.5 && z1 === 1.5;
   const monster = engaged ? undefined : scene.monsters.find((m) => m.x === face.square.x && m.y === face.square.y);
   if (monster) {
-    const picture = scene.pictures.monster(monster.picnum, monster.builtin);
+    const picture = scene.pictures.monster(monster.picnum, monster.builtin, monster.section);
     if (picture) {
       const mirrored = (ftol(face.square.x) & 1) === 1;
       const from = mirrored ? Math.trunc(255 - face.to * 255) : Math.trunc(face.from * 255);

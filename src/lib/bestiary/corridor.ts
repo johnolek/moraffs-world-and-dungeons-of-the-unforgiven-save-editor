@@ -92,6 +92,7 @@ export function corridorScene(entry: Monster, place: CorridorPlace): ViewScene {
         y: STANDING.y - 1,
         picnum: entry.picnum,
         builtin: entry.origin.kind === 'builtin',
+        section: entry.origin.kind === 'section' ? entry.origin.section : null,
         colour: entry.color,
         colorSet: entry.colorSet,
       },
