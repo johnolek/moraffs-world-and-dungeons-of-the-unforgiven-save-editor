@@ -31,8 +31,13 @@ const tough = endlessRules({ hard: true, seed: SEED });
 const faithfulFloors = (module: number): number[] =>
   Array.from({ length: BOTTOM_LEVEL[module] + 1 }, (unused, floor) => floor);
 
+/** The deepest floor the record's signed word at 0x7b4 can say a character is standing on. */
+const RECORD_FLOOR_MAX = 32767;
+
 describe('an endless dungeon', () => {
-  it('bottoms out where the record can no longer say which floor you are on', () => {
+  it("bottoms out at 30,000, which is inside the floor the record can hold", () => {
+    expect(ENDLESS_BOTTOM).toBe(30000);
+    expect(ENDLESS_BOTTOM).toBeLessThanOrEqual(RECORD_FLOOR_MAX);
     expect(normal.bottomLevel(MODULE_IV)).toBe(ENDLESS_BOTTOM);
     expect(tough.bottomLevel(MODULE_V)).toBe(ENDLESS_BOTTOM);
   });

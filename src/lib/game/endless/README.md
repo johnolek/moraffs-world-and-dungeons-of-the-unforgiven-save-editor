@@ -1,9 +1,9 @@
 # The endless dungeon
 
 Dungeons of the Unforgiven bottoms out at floor 105. The endless dungeon carries the same game on
-below that, in sections of its own numbered past the twentieth, until floor 32767 — which is as
-deep as a character can be saved standing, since the record keeps the floor in a signed 16-bit
-word at 0x7b4.
+below that, in sections of its own numbered past the twentieth, until floor 30,000 — which is
+deeper than anybody is going to walk, and short of the 32,767 a character can be saved standing
+on, since the record keeps the floor in a signed 16-bit word at 0x7b4.
 
 None of this is a departure from the port. Every ported function goes on doing exactly what it
 did; a game is handed the tables it looks a floor up in (`GameRules`, `src/lib/game/port/rules.ts`)
@@ -122,7 +122,7 @@ difference is a faithful gap, and it is written down as one in
 | **Spell points and their maximum**, 0x35 and 0x39, 32-bit floats | These are the only two numbers of the record the game keeps as floats. There is no word to overflow; whole numbers stay exact to 16,777,216. | The same float fields, written back by `savePlayer` unchanged. | Yes. There is nothing to lift: a character's maximum grows by at most a few dozen a level and the level count stops at 1000, so spell points are nowhere near where a float loses whole numbers. |
 | **Experience**, 0x7a4, a 64-bit float | The one double in the record. `exp_value` (exe 3000:a0fa) is what could make it useless rather than the field: it stops counting a monster's level at 130. | The same double. The cap is a rule (`GameRules.experienceCap`). | Yes. The endless rules already raise the cap to 3407, the level where `5 * 1.23 ** level` stops being a number a double holds. |
 | **Experience level**, 0x7ac, a signed word | `gain_level` counts up from zero and gives up at 1000, so the level never approaches the word. | The same loop (`gainLevel`, `src/lib/game/port/levels.ts`). | Yes, and nothing to lift. |
-| **The floor and the deepest floor reached**, 0x7b4 and 0x8f9, signed words | The game's own deepest floor is 105, so the word is never close. | The same words. | Yes. This is the one limit the endless dungeon was built around: `ENDLESS_BOTTOM` is 32,767 because that is the deepest floor a character can be saved standing on. |
+| **The floor and the deepest floor reached**, 0x7b4 and 0x8f9, signed words | The game's own deepest floor is 105, so the word is never close. | The same words. | Yes, and the endless dungeon stays inside it: `ENDLESS_BOTTOM` is 30,000, which is out of anybody's reach and short of the 32,767 a character can be saved standing on. |
 | **Rubles in pocket and in the bank**, 0x454 and 0x458, signed 32-bit | Neither has a cap of its own, so both would wrap at 2,147,483,647. | The same. | Yes. An endless character grinding long enough reaches it; nothing here lifts it. |
 | **Greater-American Dollars**, 0x470, signed 32-bit | Capped by the game at 2,000,000,000, and one find at 107,000,000 (`drop_money`, exe 4000:6aca). Both are rules somebody chose, not the field. | `DOLLARS_CAP` and `MONEY_FIND_CAP` in `src/lib/game/port/drops.ts`. | Yes. |
 | **The six characteristics, potions of healing, stones of teleportation**, signed words | A puffball moves a characteristic by one and a drop adds one item; nothing caps any of them, so 32,768 of anything wraps. | Plain numbers in play, wrapped by the save. | Yes. Out of reach in the game; an endless character could in principle reach it. Not lifted here. |

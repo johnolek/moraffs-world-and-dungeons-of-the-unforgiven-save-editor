@@ -20,13 +20,13 @@ import { endlessStateOf } from './state';
  */
 
 /**
- * The deepest floor an endless dungeon reaches.
+ * The deepest floor an endless dungeon reaches (John, 2026-09-15).
  *
- * The record keeps the floor the character is standing on as a signed 16-bit word at 0x7b4, so
- * this is as deep as a character can be saved standing, and there is no point generating a floor
- * below it.
+ * The number is there to be out of reach rather than to be met: nobody is going to walk thirty
+ * thousand floors. It stops short of the 32,767 the record could hold, which is the deepest floor
+ * a character can be saved standing on, the floor being a signed 16-bit word at 0x7b4.
  */
-export const ENDLESS_BOTTOM = 32767;
+export const ENDLESS_BOTTOM = 30000;
 
 /** The last of the twenty sections the game itself has; the endless ones are numbered on from
  *  here. */
@@ -69,8 +69,8 @@ const ENDLESS_MONSTER_HP_MAX = Number.MAX_SAFE_INTEGER;
  * number.
  *
  * The game keeps a door when the roll names a floor in the upper four fifths of the module, and
- * four fifths of a module 32767 floors deep is every floor the roll can name, so an endless floor
- * that asked the question the game's way would have a door on nearly every square. Module V asks
+ * four fifths of a module thirty thousand floors deep is every floor the roll can name, so an
+ * endless floor that asked the question the game's way would have a door on nearly every square. Module V asks
  * it of 105 floors and keeps sixteen of the 2400 rolls, which is a couple of dozen doors on a
  * floor, and the endless floors keep that test and move the floors it names instead.
  */
