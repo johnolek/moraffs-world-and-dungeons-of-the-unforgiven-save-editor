@@ -23,6 +23,17 @@ function killed(at: number): JournalEntry {
   };
 }
 
+/** Something turned up, as the journal writes it down. */
+function found(item: string): JournalEntry {
+  return {
+    at: 40,
+    floor: 9,
+    module: 1,
+    text: `Found a ${item}`,
+    event: { kind: 'found', find: { what: 'item', item } },
+  };
+}
+
 /** A journal of nothing but kills, one an action. */
 function kills(count: number): JournalEntry[] {
   return Array.from({ length: count }, (ignored, index) => killed(index + 1));
@@ -125,6 +136,23 @@ describe('announcing a run that has been checked', () => {
     const later = await announceRun(sql, run({ journal: kills(600) }));
 
     expect(later.map((announcement) => [announcement.kind, announcement.which])).toEqual([['kills', 500]]);
+  });
+
+  it('announces a rare find by its place in the list of them', async () => {
+    const made = await announceRun(sql, run({ journal: [found('RING OF REGENERATION')] }));
+
+    expect(made.filter((announcement) => announcement.kind === 'find')).toMatchObject([
+      { which: 5, actions: 40, floor: 9, dungeon: 1 },
+    ]);
+  });
+
+  it('says nothing about a find that is not one of them', async () => {
+    const made = await announceRun(
+      sql,
+      run({ journal: [found('LONG SWORD'), found('ORANGE POTION'), found('PLUS 3 MACE')] }),
+    );
+
+    expect(made.map((announcement) => announcement.kind)).toEqual(['death']);
   });
 
   it('says where a death happened, which is the last milestone and what the run had reached', async () => {

@@ -84,6 +84,33 @@ export function killsIn(journal: readonly JournalEntry[]): number {
   return journal.filter((entry) => entry.event?.kind === 'killed').length;
 }
 
+/**
+ * The finds worth announcing, named as the game's own message names them.
+ *
+ * These are the twelve things `find_item` turns up in Dungeons of the Unforgiven, in the order it
+ * rolls them (`FOUND_ITEM_NAMES` in `src/lib/game/port/drops.ts`). A `find` announcement's `which`
+ * is a name's place in this list, which is how the site names what was found from a row alone; a
+ * find of any other kind, and a find of Moraff's World whose line reads differently, matches
+ * nothing here and is not announced.
+ *
+ * It sits in this file rather than beside the rest of the announcing because the site reads it
+ * too, and this is the one module of the server the site may import a value from.
+ */
+export const ANNOUNCED_FINDS: readonly string[] = [
+  'NUCLEAR HAND GRENADE',
+  'STONE OF TELEPORTATION',
+  'STONE OF SEEING',
+  'FLOOR SLOSHER',
+  'POTION OF HEALING',
+  'RING OF REGENERATION',
+  'BOOK OF STRENGTH',
+  'BOOK OF INTELLIGENCE',
+  'BOOK OF WISDOM',
+  'BOOK OF CONSTITUTION',
+  'BOOK OF DEXTERITY',
+  'BOOK OF LUCK',
+];
+
 function highest(numbers: number[]): number {
   return numbers.reduce((most, number) => Math.max(most, number), 0);
 }

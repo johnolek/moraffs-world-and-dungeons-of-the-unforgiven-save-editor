@@ -1,8 +1,10 @@
 import { actionWords } from '../play/run';
 import { dungeonName, gameName } from './words';
 // The server sends fields and no sentence, so this is the one place either page turns one of its
-// rows into words. Nothing of the server's code comes along: the row is a type and nothing else.
+// rows into words. The row is a type and nothing else; the finds are a table of names, which is
+// all that `server/boards.ts` is safe to import a value from.
 import type { Announcement } from '../../../server/announcing';
+import { ANNOUNCED_FINDS } from '../../../server/boards';
 
 /**
  * What an announcement says.
@@ -22,6 +24,8 @@ export function announcementWords(announcement: Announcement): string {
       return `${who} beat Boss ${announcement.which + 1}`;
     case 'kills':
       return `${who} has killed ${announcement.which} monsters`;
+    case 'find':
+      return `${who} found a ${ANNOUNCED_FINDS[announcement.which]}`;
     case 'dungeon':
       return `${who} reached ${dungeonName(announcement.game, announcement.which)}`;
     case 'level':

@@ -1,5 +1,6 @@
 import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone } from '../src/lib/play/run';
+import { ANNOUNCED_FINDS } from './boards';
 import type { Queries } from './sql';
 
 /**
@@ -21,14 +22,15 @@ import type { Queries } from './sql';
  * `dungeon` and `floor` are kinds nothing writes any more. They are here because the table still
  * holds rows of them from when it did, and a row nobody can name is a row nobody can read.
  */
-export type AnnouncementKind = 'win' | 'death' | 'boss' | 'kills' | 'dungeon' | 'level' | 'floor';
+export type AnnouncementKind = 'win' | 'death' | 'boss' | 'kills' | 'find' | 'dungeon' | 'level' | 'floor';
 
 /** One announcement, as it is kept and as it goes out over the feed. */
 export interface Announcement {
   id: number;
   characterId: string;
   kind: AnnouncementKind;
-  /** Which boss, which level, which kill count, which module or dungeon, which floor. */
+  /** Which boss, which level, which kill count, which find, which module or dungeon, which
+   *  floor. */
   which: number;
   game: string;
   leaderboard: string | null;
@@ -56,8 +58,8 @@ export interface AnnouncedRun {
   outcome: 'win' | 'death';
   /** Every milestone of the whole chain, oldest first. */
   milestones: readonly Milestone[];
-  /** The whole run written up by the replay, oldest first, which is what the kills are counted
-   *  out of. */
+  /** The whole run written up by the replay, oldest first, which is what the kills and the finds
+   *  are read out of. */
   journal: readonly JournalEntry[];
   actions: number;
   time: number;
@@ -143,14 +145,24 @@ function momentsOf(run: AnnouncedRun): AnnouncementMoment[] {
   return moments;
 }
 
-/** What the journal the replay wrote has to announce: the kill counts the run passed. */
+/** What the journal the replay wrote has to announce: the kill counts the run passed, and the
+ *  rare things it turned up. */
 function journalMoments(run: AnnouncedRun): AnnouncementMoment[] {
   const moments: AnnouncementMoment[] = [];
   let kills = 0;
   for (const entry of run.journal) {
-    if (entry.event?.kind !== 'killed') continue;
-    kills += 1;
-    if (ANNOUNCED_KILLS.includes(kills)) moments.push(momentAt(run, entry, 'kills', kills));
+    const event = entry.event;
+    if (event === null) continue;
+    if (event.kind === 'killed') {
+      kills += 1;
+      if (ANNOUNCED_KILLS.includes(kills)) moments.push(momentAt(run, entry, 'kills', kills));
+    }
+    // A spellbook, a trap door key and a purse of money have no name to match, and the finds that
+    // do are matched by the name the game's own line gives them.
+    if (event.kind === 'found' && 'item' in event.find) {
+      const found = ANNOUNCED_FINDS.indexOf(event.find.item);
+      if (found !== -1) moments.push(momentAt(run, entry, 'find', found));
+    }
   }
   return moments;
 }

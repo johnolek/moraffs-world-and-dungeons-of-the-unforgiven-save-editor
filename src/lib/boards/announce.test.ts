@@ -52,6 +52,10 @@ describe('what an announcement says', () => {
     expect(said({ kind: 'kills', which: 500 })).toBe('Grond (Moraff) has killed 500 monsters');
   });
 
+  it('names what a run found the way the game names it', () => {
+    expect(said({ kind: 'find', which: 5 })).toBe('Grond (Moraff) found a RING OF REGENERATION');
+  });
+
   it('calls a dungeon what the game it was played in calls it', () => {
     expect(said({ kind: 'dungeon', which: 3 })).toBe('Grond (Moraff) reached Module IV');
     expect(said({ kind: 'dungeon', which: 3, game: 'moraffsWorld' })).toBe('Grond (Moraff) reached Dungeon 3');
