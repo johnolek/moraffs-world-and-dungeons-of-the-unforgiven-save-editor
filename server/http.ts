@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { shortCommit } from '../src/lib/commit';
 import type { JournalEntry } from '../src/lib/play/journal';
 import type { ServerConfig } from './config';
+import { adminFor, allCharacters, flagAdminPlayer, logAdminAction, type AdminPlayer } from './admins';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { openSignInAttempts, type SignInAttempts } from './attempts';
 import {
@@ -27,8 +28,16 @@ import {
   playerNameFor,
   secretHash,
   signInWithPassphrase,
+  validPlayerName,
 } from './players';
-import { forgetKeptCharacter, keepEditedCharacter, keptRunOf, readCharacterEdit, rosterOf } from './roster';
+import {
+  forgetAnyCharacter,
+  forgetKeptCharacter,
+  keepEditedCharacter,
+  keptRunOf,
+  readCharacterEdit,
+  rosterOf,
+} from './roster';
 import {
   endRun,
   leaseOn,
@@ -70,6 +79,9 @@ const NO_SUCH_RUN = 'No such run.';
 const NO_SUCH_CHARACTER = 'No character of yours has that name here.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 const NOT_A_PAGE = 'That is not a page of a board.';
+const NOT_A_PAGE_OF_CHARACTERS = 'That is not a page of the characters.';
+const NO_SUCH_CHARACTER_HERE = 'No character here has that name.';
+const NO_SUCH_PLAYER = 'Nobody here has that name.';
 const NOT_A_LIVING_SORT = 'That is not an order the living are ranked in.';
 const NOT_A_WORLD = 'That is not an endless world.';
 const NOT_A_HISTORY_PAGE = 'That is not a page of the announcements.';
@@ -175,6 +187,11 @@ export function createRunServer(
       return;
     }
 
+    if (path.startsWith('/admin/')) {
+      void serveAdmin(request, response, sql, attempts, asked);
+      return;
+    }
+
     const batches = path.match(/^\/runs\/([^/]+)\/batches$/);
     if (request.method === 'POST' && batches !== null) {
       void takeRunBatch(request, response, sql, verifier, decodeURIComponent(batches[1]));
@@ -242,8 +259,132 @@ export function createRunServer(
       return;
     }
 
-    sendJson(response, 404, { error: `No such endpoint: ${path}` });
+    sendNoSuchEndpoint(response, path);
   });
+}
+
+/** What a path this server does not know is answered with, and what everything under `/admin/`
+ *  is answered with for anybody who is not an admin. */
+function sendNoSuchEndpoint(response: ServerResponse, path: string): void {
+  sendJson(response, 404, { error: `No such endpoint: ${path}` });
+}
+
+/**
+ * The admin's own endpoints: every character here, deleting anybody's, and flagging another
+ * player as an admin.
+ *
+ * They are all behind one check rather than three, so that there is one place where the rule
+ * holds: a caller who is not an admin is answered exactly what a path this server does not know
+ * is answered with. Nothing here tells a stranger that these endpoints exist, that a character
+ * exists, or that the words they said were nearly right.
+ */
+async function serveAdmin(
+  request: IncomingMessage,
+  response: ServerResponse,
+  sql: Sql,
+  attempts: SignInAttempts,
+  asked: URL,
+): Promise<void> {
+  const path = asked.pathname;
+  const admin = await adminAsking(request, sql, attempts);
+  if (admin === null) {
+    sendNoSuchEndpoint(response, path);
+    return;
+  }
+
+  if (request.method === 'GET' && path === '/admin/characters') {
+    await sendAdminCharacters(response, sql, asked.searchParams.get('page'));
+    return;
+  }
+
+  const character = path.match(/^\/admin\/characters\/([^/]+)$/);
+  if (request.method === 'DELETE' && character !== null) {
+    await forgetAnybodysCharacter(response, sql, admin, decodeURIComponent(character[1]));
+    return;
+  }
+
+  if (request.method === 'POST' && path === '/admin/admins') {
+    await flagAnotherAdmin(request, response, sql, admin);
+    return;
+  }
+
+  sendNoSuchEndpoint(response, path);
+}
+
+/**
+ * The admin asking, or null for everybody else.
+ *
+ * An admin says their passphrase in the `Authorization` header and nothing else: the six words
+ * are something John can read off a piece of paper into curl on any machine, where the secret a
+ * player is otherwise recognised by lives in one browser's storage. Which admin is asking is
+ * worked out from the words themselves (`server/admins.ts`).
+ *
+ * Guesses are slowed down the way guesses at a sign-in are, and by the same count, since both are
+ * guesses at a passphrase; the admin endpoints share one name to be counted against, so five
+ * wrong tries from anywhere leave them unreachable for a quarter of an hour, John's own tries
+ * included.
+ */
+async function adminAsking(request: IncomingMessage, sql: Queries, attempts: SignInAttempts): Promise<AdminPlayer | null> {
+  const said = bearerValue(request);
+  const from = whereFrom(request);
+  if (said === null || attempts.tooMany(ADMIN_TRIES, from)) return null;
+  const admin = await adminFor(sql, said);
+  if (admin === null) attempts.failed(ADMIN_TRIES, from);
+  return admin;
+}
+
+/** The name wrong tries at an admin endpoint are counted against, which stands for all of them:
+ *  there is no name in an admin request to count against instead. */
+const ADMIN_TRIES = 'admin';
+
+/** One page of every character here, whoever's it is, which is what an admin picks the character
+ *  to delete out of. */
+async function sendAdminCharacters(response: ServerResponse, sql: Queries, asked: string | null): Promise<void> {
+  const page = pageAsked(asked);
+  if (page === null) {
+    sendJson(response, 400, { error: NOT_A_PAGE_OF_CHARACTERS });
+    return;
+  }
+  sendJson(response, 200, await allCharacters(sql, page));
+}
+
+/** One character forgotten for good, whoever it belongs to. The row in `admin_actions` is what is
+ *  left to say it was an admin who did it. */
+async function forgetAnybodysCharacter(
+  response: ServerResponse,
+  sql: Sql,
+  admin: AdminPlayer,
+  characterId: string,
+): Promise<void> {
+  if (!CHARACTER_ID.test(characterId) || !(await forgetAnyCharacter(sql, characterId))) {
+    sendJson(response, 404, { error: NO_SUCH_CHARACTER_HERE });
+    return;
+  }
+  await logAdminAction(sql, { by: admin.id, did: 'forget-character', about: characterId });
+  sendJson(response, 200, { forgotten: characterId });
+}
+
+/**
+ * Another player made an admin.
+ *
+ * They are named rather than picked by id because the name is the only thing anybody knows about
+ * a player here. The player has to have claimed the name already: this flags a row and does not
+ * make one.
+ */
+async function flagAnotherAdmin(
+  request: IncomingMessage,
+  response: ServerResponse,
+  sql: Queries,
+  admin: AdminPlayer,
+): Promise<void> {
+  const body = (await readJsonBody(request)) as { name?: unknown } | null;
+  const flagged = await flagAdminPlayer(sql, validPlayerName(body?.name));
+  if (flagged === null) {
+    sendJson(response, 404, { error: NO_SUCH_PLAYER });
+    return;
+  }
+  await logAdminAction(sql, { by: admin.id, did: 'flag-admin', about: flagged.name });
+  sendJson(response, 200, { admin: flagged.name });
 }
 
 /**
@@ -851,11 +992,19 @@ function runJournal(verdict: KeptVerdict | null, living: LivingSnapshot | null):
 /** The secret from `Authorization: Bearer <secret>`, or null when the header carries anything
  *  else. Nothing is looked up until it is shaped like a secret. */
 function bearerSecret(request: IncomingMessage): string | null {
+  const value = bearerValue(request);
+  return value !== null && isPlayerSecret(value) ? value : null;
+}
+
+/** Everything after `Bearer ` in the `Authorization` header: a device's secret at the player
+ *  endpoints, and an admin's six words at the admin ones, which is why the spaces are kept. */
+function bearerValue(request: IncomingMessage): string | null {
   const header = request.headers.authorization;
   if (header === undefined) return null;
-  const [scheme, value] = header.split(' ');
-  if (scheme?.toLowerCase() !== 'bearer' || value === undefined) return null;
-  return isPlayerSecret(value) ? value : null;
+  const space = header.indexOf(' ');
+  if (space < 0 || header.slice(0, space).toLowerCase() !== 'bearer') return null;
+  const value = header.slice(space + 1).trim();
+  return value === '' ? null : value;
 }
 
 /** The body parsed as JSON, or null when it is not JSON, is not an object, or is longer than a
