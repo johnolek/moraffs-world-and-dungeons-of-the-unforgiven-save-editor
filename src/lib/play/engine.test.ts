@@ -384,6 +384,12 @@ describe('saving', () => {
 const RECORD_HP_MAX = 32767;
 const DEEP_HP = 40000;
 
+/** The largest number one of the record's item counts holds, they being single signed bytes, a
+ *  pile of loot past it, and what that pile reads as once the byte has been written. */
+const RECORD_ITEM_MAX = 127;
+const DEEP_PILE = 200;
+const WRAPPED_PILE = -56;
+
 describe('a character playing the endless dungeon', () => {
   /** The world every endless character is rolled into for now. */
   const WORLD = ENDLESS_WORLD_SEED;
@@ -464,6 +470,34 @@ describe('a character playing the endless dungeon', () => {
     expect(tomorrow.game.pc.maxHp).toBe(DEEP_HP);
   });
 
+  it('is picked up carrying the items it had, past what the record holds', () => {
+    const kept = store();
+    const file: CharacterFile = { ...characterFile(), endless: { seed: WORLD, kept } };
+    const session = startGame(file, new BorlandRng(3));
+    session.game.pc.luckyCharms = DEEP_PILE;
+    session.game.pc.regenRings = DEEP_PILE;
+    session.game.pc.grenades = DEEP_PILE;
+    session.game.pc.seeingStones = DEEP_PILE;
+    session.game.pc.potions = [0, DEEP_PILE, 0, 0, 0, 0];
+
+    session.save();
+
+    // The sitting goes on with the counts it really has, and the bytes are still a save the 1993
+    // game would load: each of them pegged at what its one byte holds.
+    expect(session.game.pc.luckyCharms).toBe(DEEP_PILE);
+    expect(parseSave(file.bytes).checksumOk).toBe(true);
+    const written = loadPlayer(file.bytes);
+    expect(written.luckyCharms).toBe(RECORD_ITEM_MAX);
+    expect(written.regenRings).toBe(RECORD_ITEM_MAX);
+    expect(written.grenades).toBe(RECORD_ITEM_MAX);
+    expect(written.seeingStones).toBe(RECORD_ITEM_MAX);
+    expect(written.potions).toEqual([0, RECORD_ITEM_MAX, 0, 0, 0, 0]);
+
+    const tomorrow = startGame({ ...file, endless: { seed: WORLD, kept } }, new BorlandRng(3));
+    expect(tomorrow.game.pc.luckyCharms).toBe(DEEP_PILE);
+    expect(tomorrow.game.pc.potions).toEqual([0, DEEP_PILE, 0, 0, 0, 0]);
+  });
+
   it('keeps nothing beside the record for a character the record can hold', () => {
     const kept = store();
     const session = endlessGame(kept);
@@ -473,14 +507,25 @@ describe('a character playing the endless dungeon', () => {
 
     expect(kept.kept?.hp).toBeUndefined();
   });
+
+  it('keeps no item count beside the record for a character the record can hold', () => {
+    const kept = store();
+    const session = endlessGame(kept);
+    session.game.pc.luckyCharms = RECORD_ITEM_MAX;
+
+    session.save();
+
+    expect(kept.kept?.luckyCharms).toBeUndefined();
+  });
 });
 
-describe('a faithful character with more hit points than the record holds', () => {
+describe('a faithful character with more of something than its record holds', () => {
   /**
    * Nothing catches this, and nothing here changes that. The original would have killed the
-   * character at the blow that took them past the word; the port lets the number grow and narrows
-   * it only when the record is written, which is the gap `dotu-tools/docs/FAITHFUL-GAPS.md` ends
-   * with. Only an endless character is lifted out of it.
+   * character at the blow that took them past the word, and would have counted a hundred and
+   * twenty-eighth lucky charm as -128 the moment it was picked up; the port lets the numbers grow
+   * and narrows them only when the record is written, which is the gap
+   * `dotu-tools/docs/FAITHFUL-GAPS.md` ends with. Only an endless character is lifted out of it.
    */
   it('still comes back from the record wrapped, the way it always has', () => {
     const file = characterFile();
@@ -490,6 +535,18 @@ describe('a faithful character with more hit points than the record holds', () =
     session.save();
 
     expect(loadPlayer(file.bytes).hp).toBeLessThan(0);
+  });
+
+  it('wraps a pile of lucky charms in its byte the way it always has', () => {
+    const file = characterFile();
+    const session = startGame(file, new BorlandRng(3));
+    session.game.pc.luckyCharms = DEEP_PILE;
+    session.game.pc.potions = [0, DEEP_PILE, 0, 0, 0, 0];
+
+    session.save();
+
+    expect(loadPlayer(file.bytes).luckyCharms).toBe(WRAPPED_PILE);
+    expect(loadPlayer(file.bytes).potions[1]).toBe(WRAPPED_PILE);
   });
 });
 
