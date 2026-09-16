@@ -48,6 +48,11 @@ export interface GameRules {
   monsterLevel(module: number, floor: number): number;
   /** The highest level a stocked monster may be nudged to; one nudged past it is put back to 1. */
   readonly monsterLevelMax: number;
+  /**
+   * The number the nudge on a stocked monster's level counts round, which for a game that keeps
+   * the level in one byte is 256, and null for rules that keep it in a number of any width.
+   */
+  readonly monsterLevelWrap: number | null;
   /** The most hit points a stocked monster may be rolled with. */
   readonly monsterHpMax: number;
   /** The two picture files a section's corridors and monsters are drawn from. */
@@ -132,9 +137,10 @@ type GameData = typeof data;
  * section, and `pictureFiles` the two files load_section_pictures (exe 2000:372c) reads for one.
  * `sectionPlace` is the twenty-row section table of `dotu-data.json`, which counts four sections
  * to a module and puts each section's Shadow boss on the last of its floors, and
- * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005), and
+ * `monsterLevelMax` the 210 stock_level reads a nudged level against (exe 2000:7005),
  * `monsterHpMax` the 32,000 the same routine tops a hit point roll off at, which keeps the roll
- * inside the two bytes the monster's record holds it in.
+ * inside the two bytes the monster's record holds it in, and `monsterLevelWrap` the 256 its nudge
+ * counts round, the level being one byte of that record.
  * `sectionSource` is every section's own number: the game has a wall file, a palette and a row
  * of MD.BIN for each of the twenty, so none of them borrows another's. `keys` and `bossSquares` are the two tables of the
  * character record that a dungeon deeper than the game's own would run off the end of.
@@ -153,9 +159,14 @@ export function faithfulRules(data: GameData): GameRules {
     monsterLevel: (module, floor) => monsterLevelBase(floor, module),
     monsterLevelMax: data.constants.monsterLevelMax,
     monsterHpMax: data.constants.monsterHpMax,
+    monsterLevelWrap: MONSTER_LEVEL_BYTE,
     pictureFiles: sectionPictures,
   };
 }
+
+/** What a stocked monster's level counts round at in the game itself: it is one byte of the
+ *  monster's six (exe 2000:671e, unf.c "stock_level"). */
+const MONSTER_LEVEL_BYTE = 256;
 
 /** How many floors apart the trap door keys are: one key per five floors, which is what both the
  *  door's label and the record's index are worked out from (explain_trapdoor, exe 2000:be3d). */

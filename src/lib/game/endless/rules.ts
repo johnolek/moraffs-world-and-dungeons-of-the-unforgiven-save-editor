@@ -174,6 +174,9 @@ export function endlessRules({ hard, seed }: EndlessWorld): GameRules {
     // put back to level 1 for standing deeper than the rules allow.
     monsterLevelMax: ENDLESS_BOTTOM + LEVELS_PER_MODULE * endlessModule,
     monsterHpMax: ENDLESS_MONSTER_HP_MAX,
+    // The level of an endless monster is only ever a number in memory, so the nudge has no
+    // byte to count round.
+    monsterLevelWrap: null,
     pictureFiles: (section) => FAITHFUL_RULES.pictureFiles(sectionSource(section)),
   };
 }

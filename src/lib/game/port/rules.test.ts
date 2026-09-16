@@ -139,6 +139,10 @@ describe('the faithful rules', () => {
     expect(rules.monsterHpMax).toBe(32000);
   });
 
+  it("counts a nudged monster level round the byte stock_level keeps it in", () => {
+    expect(rules.monsterLevelWrap).toBe(256);
+  });
+
   it("rolls every floor's monsters around the level dotu-mech works out", () => {
     for (const module of MODULES) {
       for (const floor of floorsOf(module)) {

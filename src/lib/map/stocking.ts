@@ -194,7 +194,7 @@ export function stockFloor(
     // The hit points are rolled from the floor's base level and the stored level is jittered
     // only afterwards, so a monster's hit points and its level need not match.
     const hp = rollHp(entry, baseLevel, rnd, rules);
-    monsters.push({ slot, x, y, monsterId: entry.id, level: nudgeLevel(baseLevel, rnd, rules.monsterLevelMax), hp });
+    monsters.push({ slot, x, y, monsterId: entry.id, level: nudgeLevel(baseLevel, rnd, rules), hp });
   }
   return monsters;
 }

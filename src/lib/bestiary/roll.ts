@@ -8,19 +8,24 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  * The stocked level: while a 1 in 3 roll keeps succeeding the base level moves by -1, 0 or +1
  * (stock_level, exe 2000:671e, unf.c "stock_level").
  *
- * The level lives in one byte of the monster's six, which is why the jitter is done in a byte
- * here too. Once it is over, stock_level puts the byte back to 1 if it is 0 (exe 2000:6fdf) and
- * again if it is over the top level read unsigned (exe 2000:7005), so a level nudged past the top
- * comes out as 1 rather than stopping there. Nothing in the game can reach its own top of 210:
- * Module V's deepest base level is 165, and the jitter would have to survive dozens of
+ * The level lives in one byte of the monster's six, which is why the game's own jitter counts
+ * round at 256. Once it is over, stock_level puts the byte back to 1 if it is 0 (exe 2000:6fdf)
+ * and again if it is over the top level read unsigned (exe 2000:7005), so a level nudged past the
+ * top comes out as 1 rather than stopping there. Nothing in the game can reach its own top of
+ * 210: Module V's deepest base level is 165, and the jitter would have to survive dozens of
  * one-in-three rolls in a row.
  *
- * @param maxLevel the top level the rules of the game allow, which the game's own rules put at 210.
+ * Rules that stock monsters deeper than the game does keep the level in a number of any width,
+ * and answer with no wrap at all (`GameRules.monsterLevelWrap`).
  */
-export function nudgeLevel(base: number, rnd: () => number, maxLevel: number): number {
+export function nudgeLevel(base: number, rnd: () => number, rules: GameRules): number {
+  const wrap = rules.monsterLevelWrap;
   let level = base;
-  while (random(rnd, 3) === 0) level = (level + random(rnd, 3) - 1) & 0xff;
-  return level === 0 || level > maxLevel ? 1 : level;
+  while (random(rnd, 3) === 0) {
+    level += random(rnd, 3) - 1;
+    if (wrap !== null) level = ((level % wrap) + wrap) % wrap;
+  }
+  return level === 0 || level > rules.monsterLevelMax ? 1 : level;
 }
 
 /** The number of values each of the two hit point rolls can take on a floor of this base level. */

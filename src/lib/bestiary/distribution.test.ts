@@ -80,7 +80,7 @@ describe('hpDistribution', () => {
       // The nudge is rolled and thrown away, so that this walks the generator the way a floor
       // being stocked does.
       const hp = rollHp(entry, baseLevel, rnd, FAITHFUL_RULES);
-      nudgeLevel(baseLevel, rnd, FAITHFUL_RULES.monsterLevelMax);
+      nudgeLevel(baseLevel, rnd, FAITHFUL_RULES);
       seen.set(hp, (seen.get(hp) ?? 0) + 1);
     }
     for (const { hp, p } of hpDistribution(entry, baseLevel)) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readRecolouredId } from '../../bestiary/monsters';
-import { rollHp } from '../../bestiary/roll';
+import { nudgeLevel, rollHp } from '../../bestiary/roll';
 import { monsterById } from '../../map/stocking';
 import { expValue } from '../port/combat';
 import { FAITHFUL_RULES } from '../port/rules';
@@ -221,6 +221,23 @@ describe('an endless floor', () => {
 
   it('answers for the floors of a module it has nothing to do with the way the game does', () => {
     for (const floor of faithfulFloors(1)) expect(tough.monsterLevel(1, floor)).toBe(FAITHFUL_RULES.monsterLevel(1, floor));
+  });
+
+  it("keeps a monster's level past the byte the game's own nudge counts round", () => {
+    // Three steps up from 255, which the game's jitter takes round the byte to 2.
+    const stepsUp = () => {
+      const rolls = [0, 0.9, 0, 0.9, 0, 0.9, 0.9];
+      let at = 0;
+      return () => rolls[at++];
+    };
+    expect(nudgeLevel(255, stepsUp(), tough)).toBe(258);
+    expect(nudgeLevel(255, stepsUp(), FAITHFUL_RULES)).toBe(2);
+  });
+
+  it('stands a monster of a deep floor at the level the floor calls for', () => {
+    const noJitter = () => 0.9;
+    expect(nudgeLevel(300, noJitter, tough)).toBe(300);
+    expect(nudgeLevel(300, noJitter, FAITHFUL_RULES)).toBe(1);
   });
 
   it("rolls its monsters more hit points than the game's own two bytes hold", () => {
