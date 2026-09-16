@@ -31,15 +31,18 @@ export interface CurrentCharacter {
 }
 
 /**
- * Which of the two leaderboards a character's runs go on, and which of the two modes a character
- * can be locked to for the rest of its life. The two are one list of words because a board is a
- * set of runs played the same way: the board is named after the mode its runs are played in.
+ * Which leaderboard a character's runs go on, and which mode a character can be locked to for the
+ * rest of its life. The two are one list of words because a board is a set of runs played the
+ * same way: the board is named after the mode its runs are played in.
  *
- * Faithful shows only what the game shows, speedrun adds the whole floor. Debug is not here — a
- * run played with the port's own numbers on screen is not a run anybody competes with, and it is
- * not a way a character can be locked to play.
+ * Faithful shows only what the game shows, speedrun adds the whole floor, and endless is faithful
+ * played in a dungeon that goes on below the bottom of the last module
+ * (`src/lib/game/endless/rules.ts`), which is Dungeons of the Unforgiven's alone. Endless has no
+ * board of its own to stand on yet, and a character can be locked to it all the same. Debug is
+ * not here — a run played with the port's own numbers on screen is not a run anybody competes
+ * with, and it is not a way a character can be locked to play.
  */
-export type Leaderboard = 'faithful' | 'speedrun';
+export type Leaderboard = 'faithful' | 'speedrun' | 'endless';
 
 /** One of the characters the browser keeps. */
 export interface RosterEntry extends CurrentCharacter {
@@ -69,7 +72,7 @@ export interface RosterEntry extends CurrentCharacter {
    * played whichever way the Play tab is set to.
    *
    * It is the roller's other question and it outlives the board: a record written from outside
-   * the game takes a character off its board, and the character is still the faithful or speedrun
+   * the game takes a character off its board, and the character goes on being the kind of
    * character it was rolled as.
    */
   lock: Leaderboard | null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { characterTypeWords, lockedPlayNote } from './leaderboard';
+import { characterTypeWords, leaderboardEditWarning, lockedPlayNote } from './leaderboard';
 
 describe('what the roster says a character is', () => {
   it('names the board for one whose runs go on one', () => {
@@ -15,6 +15,11 @@ describe('what the roster says a character is', () => {
   it('is free play for one that can be played any way', () => {
     expect(characterTypeWords(null, null)).toBe('Free play');
   });
+
+  it('names the endless dungeon for a character rolled into it', () => {
+    expect(characterTypeWords(null, 'endless')).toBe('Endless');
+    expect(characterTypeWords('endless', 'endless')).toBe('Endless board');
+  });
 });
 
 describe('what the Play tab says in place of the mode radios', () => {
@@ -26,5 +31,10 @@ describe('what the Play tab says in place of the mode radios', () => {
     const note = lockedPlayNote('speedrun', false);
     expect(note).toContain('rolled as a speedrun character');
     expect(note).toContain('no leaderboard');
+  });
+
+  it('puts the article the endless character wants in front of its name', () => {
+    expect(lockedPlayNote('endless', false)).toContain('rolled as an endless character');
+    expect(leaderboardEditWarning('endless')).toContain('stays an endless character');
   });
 });

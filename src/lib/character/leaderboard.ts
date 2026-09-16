@@ -9,8 +9,8 @@ import type { Leaderboard } from '../app-state.svelte';
  * `RosterEntry.leaderboard`). This is what the pages say about them.
  */
 
-/** The two boards, in the order they are offered. */
-const LEADERBOARDS: Leaderboard[] = ['faithful', 'speedrun'];
+/** Every mode a character can be locked to, in the order they are offered. */
+const LEADERBOARDS: Leaderboard[] = ['faithful', 'speedrun', 'endless'];
 
 export function isLeaderboard(value: unknown): value is Leaderboard {
   return LEADERBOARDS.includes(value as Leaderboard);
@@ -18,7 +18,9 @@ export function isLeaderboard(value: unknown): value is Leaderboard {
 
 /** What a board is called where there is room for a word: the roster's column, the Play tab. */
 export function leaderboardLabel(board: Leaderboard): string {
-  return board === 'faithful' ? 'Faithful' : 'Speedrun';
+  if (board === 'faithful') return 'Faithful';
+  if (board === 'speedrun') return 'Speedrun';
+  return 'Endless';
 }
 
 /**
@@ -62,7 +64,13 @@ export const FREE_PLAY_OFF_A_BOARD =
 export function lockedPlayNote(lock: Leaderboard, onBoard: boolean): string {
   return onBoard
     ? `Locked: this character was rolled for the ${lock} leaderboard, so every run of it is played this way.`
-    : `Locked: this character was rolled as a ${lock} character, so every run of it is played this way. Its runs go on no leaderboard.`;
+    : `Locked: this character was rolled as ${aCharacterOf(lock)}, so every run of it is played this way. Its runs go on no leaderboard.`;
+}
+
+/** "a faithful character", "an endless character": the mode's own name with the article it
+ *  wants. */
+function aCharacterOf(lock: Leaderboard): string {
+  return `${lock === 'endless' ? 'an' : 'a'} ${lock} character`;
 }
 
 /**
@@ -85,5 +93,5 @@ export function characterTypeWords(leaderboard: Leaderboard | null, lock: Leader
  * nobody expects an edit to set the character free.
  */
 export function leaderboardEditWarning(board: Leaderboard): string {
-  return `This character was rolled for the ${board} board. Editing it here takes it off that board for good, and its runs will stop counting. It stays a ${board} character and is still played that way. Edit it anyway?`;
+  return `This character was rolled for the ${board} board. Editing it here takes it off that board for good, and its runs will stop counting. It stays ${aCharacterOf(board)} and is still played that way. Edit it anyway?`;
 }
