@@ -1,5 +1,8 @@
 <script lang="ts">
   import { app, currentEntry, type Tab } from '../app-state.svelte';
+  import { announcementWords } from '../boards/announce';
+  import { latestAnnouncement } from '../boards/announcement-feed.svelte';
+  import { agoWords } from '../boards/words';
   import { GAMES, UNFORGIVEN } from '../editor/games';
   import { goToTab } from '../history';
   import CharacterList from './CharacterList.svelte';
@@ -10,9 +13,23 @@
   /** Whether the panel was left folded away, remembered between visits. */
   const COLLAPSED_KEY = 'moraff-tools.character-panel-collapsed';
 
+  /** How often the moment "how long ago" is counted against is read again. */
+  const AGO_TICK_MS = 60000;
+
   let collapsed = $state(readStored(COLLAPSED_KEY) === 'yes');
   let choosing = $state(false);
   let showingExpNeeded = $state(false);
+
+  /** The newest thing the run server has announced, which is on every tab. A build with no run
+   *  server has none and shows nothing here. */
+  const latest = $derived(latestAnnouncement());
+  let now = $state(new Date());
+
+  $effect(() => {
+    if (latest === null) return;
+    const tick = setInterval(() => (now = new Date()), AGO_TICK_MS);
+    return () => clearInterval(tick);
+  });
 
   const character = $derived(currentEntry());
   const status = $derived.by(() => {
@@ -55,88 +72,96 @@
 </script>
 
 <section class="character-panel">
-  {#if expRows.length > 0}
-    <!-- The game's own EXP NEEDED screen, on the black it prints its screens on. -->
-    <div class="exp-needed">
-      <div class="line">{EXP_NEEDED_HEADING}</div>
-      {#each expRows as row}
-        <div class="line">{row.level}) {withSeparators(row.exp)}</div>
-      {/each}
-    </div>
-  {/if}
+  <div class="body">
+    {#if expRows.length > 0}
+      <!-- The game's own EXP NEEDED screen, on the black it prints its screens on. -->
+      <div class="exp-needed">
+        <div class="line">{EXP_NEEDED_HEADING}</div>
+        {#each expRows as row}
+          <div class="line">{row.level}) {withSeparators(row.exp)}</div>
+        {/each}
+      </div>
+    {/if}
 
-  {#if choosing}
-    {#if ours.length > 0}
-      <CharacterList entries={ours} currentId={character?.id ?? null} onpicked={() => (choosing = false)} />
+    {#if choosing}
+      {#if ours.length > 0}
+        <CharacterList entries={ours} currentId={character?.id ?? null} onpicked={() => (choosing = false)} />
+      {/if}
+      {#if elsewhere > 0}
+        <p class="elsewhere">{elsewhereLine}</p>
+      {/if}
     {/if}
-    {#if elsewhere > 0}
-      <p class="elsewhere">{elsewhereLine}</p>
-    {/if}
-  {/if}
-  {#if !character || !status}
-    {#if app.roster.length > 0}
+    {#if !character || !status}
+      {#if app.roster.length > 0}
+        <div class="identity">
+          <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({ours.length})</button>
+        </div>
+      {/if}
+      <div class="status empty">
+        <span class="line">
+          NO CHARACTER.
+          <button type="button" class="dos-link" onclick={() => show('editor')}>LOAD A SAVE</button>
+          OR
+          <button type="button" class="dos-link" onclick={() => show('roller')}>ROLL ONE</button>.
+        </span>
+      </div>
+    {:else if collapsed}
+      <div class="status">
+        <span class="line green">{collapsedLine(status, character.name)}</span>
+      </div>
+    {:else}
       <div class="identity">
+        <strong>{character.name}</strong>
+        {#if character.dead}<span class="dead">Dead</span>{/if}
+        <span>{status.cls}</span>
+        {#if game}<span>{game.displayName}</span>{/if}
+        {#if character.slot !== null}<span>Character {character.slot}</span>{/if}
+        <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
+        <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
+        <button type="button" class="link" onclick={showOnMap}>Show on map</button>
+        {#if character.game === UNFORGIVEN.id}
+          <button type="button" class="link" onclick={() => (showingExpNeeded = !showingExpNeeded)}>Exp needed</button>
+        {/if}
         <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({ours.length})</button>
       </div>
-    {/if}
-    <div class="status empty">
-      <span class="line">
-        NO CHARACTER.
-        <button type="button" class="dos-link" onclick={() => show('editor')}>LOAD A SAVE</button>
-        OR
-        <button type="button" class="dos-link" onclick={() => show('roller')}>ROLL ONE</button>.
-      </span>
-    </div>
-  {:else if collapsed}
-    <div class="status">
-      <span class="line green">{collapsedLine(status, character.name)}</span>
-    </div>
-  {:else}
-    <div class="identity">
-      <strong>{character.name}</strong>
-      {#if character.dead}<span class="dead">Dead</span>{/if}
-      <span>{status.cls}</span>
-      {#if game}<span>{game.displayName}</span>{/if}
-      {#if character.slot !== null}<span>Character {character.slot}</span>{/if}
-      <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
-      <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
-      <button type="button" class="link" onclick={showOnMap}>Show on map</button>
-      {#if character.game === UNFORGIVEN.id}
-        <button type="button" class="link" onclick={() => (showingExpNeeded = !showingExpNeeded)}>Exp needed</button>
-      {/if}
-      <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({ours.length})</button>
-    </div>
-    <div class="boxes">
-      <div class="status">
-        <div class="left">
-          <div class="line cyan">ARMOR:{status.armor} &nbsp; WEAPON:{status.weapon}</div>
-          <div class="line yellow">{levelLabel(status.lev)}{status.lev} &nbsp; {expLabel(status.lev)}{withSeparators(status.exp)}</div>
-          <div class="line green">SPELL POINTS:{points(status.sp)}{status.maxSp === null ? '' : ` OF ${points(status.maxSp)}`}</div>
-          <div class="line green">HEALTH POINTS:{status.hp} OF {status.maxHp}</div>
-        </div>
-        <div class="stats">
-          {#each [0, 2, 4] as first}
-            <div class="line red">
-              {#each status.stats.slice(first, first + 2) as stat}
-                <span class="stat">{stat.label}:{stat.value}</span>
-              {/each}
-            </div>
-          {/each}
-        </div>
-      </div>
-      {#if status.battleSpells.length > 0}
-        <div class="spells">
-          <div class="line heading">CURRENT BATTLE SPELLS IN EFFECT</div>
-          <div class="spell-lines">
-            {#each status.battleSpells as spell}
-              <div class="line">{spell}</div>
+      <div class="boxes">
+        <div class="status">
+          <div class="left">
+            <div class="line cyan">ARMOR:{status.armor} &nbsp; WEAPON:{status.weapon}</div>
+            <div class="line yellow">{levelLabel(status.lev)}{status.lev} &nbsp; {expLabel(status.lev)}{withSeparators(status.exp)}</div>
+            <div class="line green">SPELL POINTS:{points(status.sp)}{status.maxSp === null ? '' : ` OF ${points(status.maxSp)}`}</div>
+            <div class="line green">HEALTH POINTS:{status.hp} OF {status.maxHp}</div>
+          </div>
+          <div class="stats">
+            {#each [0, 2, 4] as first}
+              <div class="line red">
+                {#each status.stats.slice(first, first + 2) as stat}
+                  <span class="stat">{stat.label}:{stat.value}</span>
+                {/each}
+              </div>
             {/each}
           </div>
         </div>
-      {/if}
-    </div>
-  {/if}
+        {#if status.battleSpells.length > 0}
+          <div class="spells">
+            <div class="line heading">CURRENT BATTLE SPELLS IN EFFECT</div>
+            <div class="spell-lines">
+              {#each status.battleSpells as spell}
+                <div class="line">{spell}</div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
+  </div>
 
+  {#if latest}
+    <p class="latest">
+      <span class="said">{announcementWords(latest)}</span>
+      <span class="ago">{agoWords(latest.at, now)}</span>
+    </p>
+  {/if}
 
   {#if character && status}
     <button type="button" class="chevron" aria-label={collapsed ? 'Show the whole character' : 'Fold the character away'} onclick={toggle}>
@@ -155,8 +180,38 @@
   }
   .character-panel {
     position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
     padding: 10px 44px 10px 24px;
     border-top: 1px solid var(--line);
+  }
+  /* The character keeps the width it would have taken on its own and the announcement has what is
+     left over, so no announcement is long enough to move anything about the character. Where the
+     two of them do not fit, the announcement drops to a line of its own underneath. */
+  .body {
+    flex: 0 1 auto;
+  }
+  .latest {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 1 1 0;
+    min-width: 16em;
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .latest .said {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--ink);
+  }
+  .latest .ago {
+    flex: none;
   }
   .boxes {
     display: flex;
