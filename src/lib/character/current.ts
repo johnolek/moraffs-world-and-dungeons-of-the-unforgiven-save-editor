@@ -75,7 +75,9 @@ export function importRevExploredMap(bytes: Uint8Array): RosterEntry | null {
  *
  * `lock` is the mode the roller was asked to lock the character to, and `onBoard` whether its
  * runs go on that mode's leaderboard. Neither can be given later: the lock is what the character
- * was rolled as, and a board is a chain of runs from the roll.
+ * was rolled as, and a board is a chain of runs from the roll. `worldSeed` is the endless world
+ * the run server was playing when the roll was made, for a character locked to the endless
+ * dungeon, and is decided at the roll in the same way.
  */
 export function keepRolledCharacter(
   game: string,
@@ -85,8 +87,9 @@ export function keepRolledCharacter(
   lock: Leaderboard | null = null,
   onBoard = false,
   rolledAt: number | null = null,
+  worldSeed: number | null = null,
 ): void {
-  const entry = newEntry({ game, name, slot, bytes, imported: false, lock, onBoard, rolledAt });
+  const entry = newEntry({ game, name, slot, bytes, imported: false, lock, onBoard, rolledAt, worldSeed });
   app.roster = withEntry(app.roster, entry);
   chooseEntry(entry.id);
   keepNow(entry);

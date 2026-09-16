@@ -27,6 +27,14 @@ export interface NewCharacter {
   /** The second the roll was started in, which is what seeded it (`RosterEntry.rolledAt`). An
    *  imported file has none. */
   rolledAt?: number | null;
+  /**
+   * The endless world this character is rolled into, for a roll locked to the endless dungeon.
+   *
+   * The run server hands the number out, so that everybody rolling at the same time is rolled
+   * into the same dungeon, and the character keeps it for life. A roller that could not reach the
+   * server names none, and the world in the game's own rules stands instead.
+   */
+  worldSeed?: number | null;
 }
 
 export function newId(): string {
@@ -49,7 +57,7 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     lock,
     leaderboard: lock !== null && character.onBoard === true ? lock : null,
     rolledAt: character.imported ? null : (character.rolledAt ?? null),
-    worldSeed: lock === 'endless' ? ENDLESS_WORLD_SEED : undefined,
+    worldSeed: lock === 'endless' ? (character.worldSeed ?? ENDLESS_WORLD_SEED) : undefined,
     run: [],
     journal: [],
   };

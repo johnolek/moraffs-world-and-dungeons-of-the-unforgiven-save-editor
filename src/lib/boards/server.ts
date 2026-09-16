@@ -120,6 +120,20 @@ export async function loadEndlessWorlds(game: PortedGameId): Promise<EndlessWorl
   return await readJson<EndlessWorlds>(`/boards/${game}/endless/worlds`);
 }
 
+/**
+ * The endless world a character rolled now is rolled into, or null when this build has no server
+ * or the server could not be reached.
+ *
+ * The roller asks before it writes the world on a new endless character, since the world is
+ * decided at the roll and never again. A roller that is answered null falls back to the world in
+ * the game's own rules and says so, rather than rolling a character into a world nobody else is
+ * playing.
+ */
+export async function loadCurrentEndlessWorld(): Promise<number | null> {
+  const answer = await readJson<{ world: number }>('/worlds/endless/current');
+  return answer?.world ?? null;
+}
+
 /** Everyone of one game as the page holds it. There is no paging: the whole table comes at once,
  *  since the reader sorts it themselves. */
 export interface LoadedEveryone {

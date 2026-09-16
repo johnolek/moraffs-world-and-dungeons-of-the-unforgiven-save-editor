@@ -40,7 +40,18 @@ describe('a character put on the roster', () => {
 });
 
 describe('the endless world a character is rolled into', () => {
-  it('is given to a character locked to the endless dungeon', () => {
+  it('is the world the run server was playing when the roll was made', () => {
+    const bytes = Uint8Array.from([7]);
+    const rolled = newEntry(
+      { game: 'unforgiven', name: 'DELVER', slot: 24, bytes, imported: false, lock: 'endless', worldSeed: 77 },
+      ROLLED_AT,
+      'e',
+    );
+
+    expect(rolled.worldSeed).toBe(77);
+  });
+
+  it('is the world of the game’s own rules for a roll that could not reach the server', () => {
     expect(rolledLockedOffTheBoard('endless').worldSeed).toBe(ENDLESS_WORLD_SEED);
     expect(rolledForTheBoard('endless').worldSeed).toBe(ENDLESS_WORLD_SEED);
   });
